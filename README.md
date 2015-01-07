@@ -12,7 +12,7 @@ Today, no such open-sourced security framework like Shiro exists for the Python 
 
 WORD ORIGIN:  Yosai
 -----------------------------------------------------------------------
-In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress".  Like the words, the security platforms are similiar yet not the same.
+In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress".  Like the words, the security platforms are similiar in meaning yet not the same.
 
 
 
