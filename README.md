@@ -18,13 +18,12 @@ In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortre
 
 PROJECT STATUS
 -----------------------------------------------------------------------
-01/07/2015:  I am a one man army who is eager to share the love for this open source project.   Well-seasoned 
-             Python developers who understand best practices in python design and software architecture
-             are urged to consider joining this Project.
-             
-             I am nearly finished with the rough-rough-rough port to python, leaving much of the source 
-             intact but addressing the lower hanging fruit.  I expect to release this v0.01 baseline to the
-             repository within the next two weeks.  
+01/07/2015  I am a one man army who is eager to share the love for this open source project.   Well-seasoned 
+Python developers who understand best practices in python design and software architecture are urged to consider joining this Project.  I am nearly finished with the rough-rough-rough port to python, leaving much of the source 
+intact but addressing the lower hanging fruit.  I expect to release this v0.01 baseline to the repository within the next two weeks.
+
+The v0.01 release is to reveal the effort being made to turn this into reality.  Upon release, the next major phase of development entails reconciling the java with the python.  Business logic inconsistences and any missing pieces
+will be reviewed and catalogued.
              
              
             
