@@ -26,6 +26,10 @@ My intention for releasing v0.01 is to reveal to the community the effort being 
              
              
             
-             
+CONTACT INFORMATION
+-----------------------------------------------------------------------
+If you would like to get involved, please contact me by the email address in my github profile.  I am often
+available on FreeNode IRC channels #python and #pyramid under the nickname dowwie.
+
              
       
