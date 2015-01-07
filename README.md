@@ -9,6 +9,8 @@ Please, first familiarize yourself with [Apache Shiro](http://shiro.apache.org/)
 
 Today, no such open-sourced security framework like Shiro exists for the Python community.  There's an unmet need for one.  Shiro has been battle tested and continues to evolve.  Let's learn from history by porting the java source.  Then, we'll refactor the source using techniques and libraries available in Python and with the expertise from this great development community.
 
+I am porting the [v2.0-alpha source code](https://github.com/YosaiProject/yosai)
+
 
 WORD ORIGIN:  Yosai
 -----------------------------------------------------------------------
