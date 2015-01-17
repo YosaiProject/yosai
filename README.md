@@ -1,4 +1,4 @@
-[Imgur](http://i.imgur.com/QDhDfKN.jpg)
+![alt text](http://i.imgur.com/QDhDfKN.jpg "Yosai")
 
 # yosai
 
