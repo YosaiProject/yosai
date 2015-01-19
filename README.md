@@ -24,7 +24,7 @@ PROJECT STATUS
 -----------------------------------------------------------------------
 I am a one man army who is eager to share the love for this open source project.   Well-seasoned 
 Python developers who understand best practices in python design and software architecture are urged to consider joining this Project.  I am nearly finished with the rough-rough-rough port to python, leaving much of the source 
-intact but addressing the lower hanging fruit.  I expect to release this v0.01 baseline to the repository within the next two weeks.
+intact but have been addressing the exceptionally-java-based solutions as I come across them.  I expect to release this v0.01 baseline to the repository within the next two weeks.
 
 01/15/2015:
 Today's push reveals to the community the effort being made to turn this project into reality
