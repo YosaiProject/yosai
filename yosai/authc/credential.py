@@ -160,3 +160,9 @@ class SimpleCredentialsMatcher(object):
         except (AttributeError, TypeError):
             traceback.print_exc()
             return False
+
+
+class AllowAllCredentialsMatcher(object):
+
+    def credentials_match(self, authc_token, account):
+        return True
