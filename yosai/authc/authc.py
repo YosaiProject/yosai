@@ -105,7 +105,7 @@ class UsernamePasswordToken(object):
         if (self.password is not None):
             for element in self.password:
                 self.password[element] = 0  # DG:  this equals 0x00
-            self.password = None 
+            del self.password
         
 
 class DefaultAuthenticator(object):

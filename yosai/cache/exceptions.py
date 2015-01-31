@@ -16,26 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.shiro.crypto;
+package org.apache.shiro.cache;
 
 import org.apache.shiro.ShiroException;
 
-/**
- * Base Shiro exception for problems encountered during cryptographic operations.
- *
- * @since 1.0
- */
-public class CryptoException extends ShiroException {
 
-    public CryptoException(String message) {
+/**
+ * Root class of all Shiro exceptions related to caching operations.
+ *
+ * @since 0.2
+ */
+public class CacheException extends ShiroException
+{
+
+    /**
+     * Creates a new <code>CacheException</code>.
+     */
+    public CacheException() {
+        super();
+    }
+
+    /**
+     * Creates a new <code>CacheException</code>.
+     *
+     * @param message the reason for the exception.
+     */
+    public CacheException(String message) {
         super(message);
     }
 
-    public CryptoException(Throwable cause) {
+    /**
+     * Creates a new <code>CacheException</code>.
+     *
+     * @param cause the underlying cause of the exception.
+     */
+    public CacheException(Throwable cause) {
         super(cause);
     }
 
-    public CryptoException(String message, Throwable cause) {
+    /**
+     * Creates a new <code>CacheException</code>.
+     *
+     * @param message the reason for the exception.
+     * @param cause   the underlying cause of the exception.
+     */
+    public CacheException(String message, Throwable cause) {
         super(message, cause);
     }
 }

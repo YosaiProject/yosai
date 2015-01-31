@@ -1,11 +1,14 @@
+from authc import PasswordMatcher
+
+
 class IncorrectCredentialsException(Exception):
     pass
 
 
 """
 Performs authentication and authorization for accounts in a <em>single</em>
-account data store.  It is expected that you configure one {@code
-AccountStoreRealm} for each data store that contains accounts accessible to
+account data store.  It is expected that you configure one 
+AccountStoreRealm for each data store that contains accounts accessible to
 your application.
 """
 

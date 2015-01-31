@@ -28,73 +28,64 @@ class AbstractHash(object):
         self.base64Encoded = None
     
     def get_digest(self, algorithm_name):
-        try {
-            return MessageDigest.getInstance(algorithmName);
-        } catch (NoSuchAlgorithmException e) {
-            String msg = "No native '" + algorithmName + "' MessageDigest instance available on the current JVM.";
-            throw new UnknownAlgorithmException(msg, e);
-        }
-    }
+        try:
+            return MessageDigest.getInstance(algorithm_name)
+        except NoSuchAlgorithmException as ex:
+            msg = ("No native '" + algorithm_name + "' MessageDigest instance "
+                   "available")
+            raise UnknownAlgorithmException(msg, ex)
 
-    protected byte[] hash(byte[] bytes) {
-        return hash(bytes, null, 1);
-    }
+    # DG:  renamed hash to do_hash to avoid reserved word conflict
+    def do_hash(self, bytes, salt=None, iterations=1):
+        try:
+            digest = self.get_digest(self.algorithm_name)
+            if (salt is not None):
+                digest.reset()
+                digest.update(salt)
+            
+            hashed = digest.digest(bytes)
+            iterations -= 1  # already hashed once above
+            # iterate remaining number:
+            for x in range(0, iterations):
+                digest.reset()
+                hashed = digest.digest(hashed)
 
-    protected byte[] hash(byte[] bytes, byte[] salt) {
-        return hash(bytes, salt, 1);
-    }
+        except UnknownAlgorithmException as ex:
+            traceback.print_exc()
+            raise
 
-    protected byte[] hash(byte[] bytes, byte[] salt, int hashIterations) throws UnknownAlgorithmException {
-        MessageDigest digest = getDigest(getAlgorithmName());
-        if (salt != null) {
-            digest.reset();
-            digest.update(salt);
-        }
-        byte[] hashed = digest.digest(bytes);
-        int iterations = hashIterations - 1; //already hashed once above
-        //iterate remaining number:
-        for (int i = 0; i < iterations; i++) {
-            digest.reset();
-            hashed = digest.digest(hashed);
-        }
-        return hashed;
-    }
+        return hashed
 
-    public String toHex() {
-        if (self.hexEncoded == null) {
-            self.hexEncoded = Hex.encodeToString(getBytes());
-        }
-        return self.hexEncoded;
-    }
+    def to_hex(self):
+        if (self.hex_encoded is None):
+            self.hex_encoded = Hex.encodeToString(self.bytes)  # DG:  TBD
+        
+        return self.hex_encoded
+    
 
-    public String toBase64() {
-        if (self.base64Encoded == null) {
-            //cache result in case self method is called multiple times.
-            self.base64Encoded = Base64.encodeToString(getBytes());
-        }
-        return self.base64Encoded;
-    }
+    def to_base64(self):
+        if (self.base64_encoded is None):
+            # cache result in case self method is called multiple times.
+            self.base64_encoded = Base64.encodeToString(self.bytes)
+        
+        return self.base64_encoded
 
-    public String toString() {
-        return toHex();
-    }
+    def to_string(self):
+        return self.to_hex()
+    
+    def __eq__(self, other):
+        if (isinstance(other, Hash)):
+            return self.bytes == other.bytes
+        
+        return False
 
-    public boolean equals(Object o) {
-        if (o instanceof Hash) {
-            Hash other = (Hash) o;
-            return Arrays.equals(getBytes(), other.getBytes());
-        }
-        return false;
-    }
+    def hashCode(self):
+        if (not self.bytes):
+            return 0
+        
+        return Arrays.hashCode(self.bytes)
 
-    public int hashCode() {
-        if (self.bytes == null || self.bytes.length == 0) {
-            return 0;
-        }
-        return Arrays.hashCode(self.bytes);
-    }
-
-    private static void printMainUsage(Class<? extends AbstractHash> clazz, String type) {
+    def printMainUsage(Class<? extends AbstractHash> clazz, String type) {
         System.out.println("Prints an " + type + " hash value.");
         System.out.println("Usage: java " + clazz.getName() + " [-base64] [-salt <saltValue>] [-times <N>] <valueToHash>");
         System.out.println("Options:");
@@ -103,9 +94,8 @@ class AbstractHash(object):
         System.out.println("\t-times\t\tHashes the input <N> number of times");
     }
 
-    private static boolean isReserved(String arg) {
-        return "-base64".equals(arg) || "-times".equals(arg) || "-salt".equals(arg);
-    }
+    def is_reserved(self, arg):
+        return (arg in ["-base64", "-times", "-salt"])
 
     static int doMain(Class<? extends AbstractHash> clazz, String[] args) {
         String simple = clazz.getSimpleName();
