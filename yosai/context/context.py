@@ -1,10 +1,10 @@
 from exception import IllegalArgumentException
 
 
-class Context(object):
+class MapContext(object):
 
     """
-    known in shiro as the MapContext, a Context is essentially a dictionary
+    a Context is essentially a dictionary
     with a validated getter, offering type-safe attribute retrieval
     """
 

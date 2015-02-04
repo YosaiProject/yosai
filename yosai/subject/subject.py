@@ -831,25 +831,22 @@ class DelegatingSubject(object):
             return StoppingAwareProxiedSession(session, self)
 
     class SubjectBuilder(object):
+        
+        def __init__(self,
+                     securitymanager=SecurityUtils.get_security_manager()):
+
+            if (securitymanager is None):
+                msg = "SecurityManager method argument cannot be null."
+                raise InvalidArgumentException(msg)
+            
+            self.security_manager = securitymanager
+            self.subject_context = self.new_subject_context_instance()
+            if (self.subject_context is None):
+                msg = ("Subject instance returned from" 
+                       "'new_subject_context_instance' cannot be null.")
+                raise IllegalStateException(msg)
+            self.subject_context.security_manager = securitymanager
       
-        def __init__(self, security_manager=None): 
-            if(not security_manager):
-                self._security_manager = SecurityUtils.get_security_manager()
-            else:
-                self._security_manager = security_manager
-
-            self._subject_context = self.new_subject_context_instance()
-       
-            try: 
-                if (not self._subject_context):
-                    raise IllegalStateException
-            except IllegalStateException:
-                        print("Subject instance returned from new subject "
-                              "context instance cannot be null")
-            else: 
-                self._subject_context.set_security_manager(
-                    self._security_manager)
-
         def new_subject_context_instance(self):
                 return DefaultSubjectContext()
 

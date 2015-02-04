@@ -23,6 +23,10 @@ class IAuthorizationInfo(metaclass=ABCMeta):
 class IAuthorizer(metaclass=ABCMeta):
 
     @abstractmethod
+    def check_permission(self, principals, permissions):
+        pass
+
+    @abstractmethod
     def is_permitted(self, principals, permissions):
         pass
 
