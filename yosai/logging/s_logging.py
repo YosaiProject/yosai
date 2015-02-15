@@ -3,7 +3,10 @@ import logging.config
 import anyjson as json
 import os
 import structlog
-import traceback
+import socket
+import datetime
+import traceback as tb
+import itertools
 
 
 class LogManager(object):
@@ -13,7 +16,7 @@ class LogManager(object):
             self.load_logconfig(json_config_path)
             self.configure_structlog()
         except (AttributeError, TypeError):
-            traceback.print_exc()
+            tb.print_exc()
             raise
 
     def load_logconfig(self, path):
@@ -33,23 +36,7 @@ class LogManager(object):
 
     def get_logger(self, logger=None):
         return structlog.get_logger(logger)
-import logging
-import json
-import socket
-import datetime
-import traceback as tb
-import itertools
 
-
-def _default_json_default(obj):
-    """
-    Coerce everything to strings.
-    All objects representing time get output as ISO8601.
-    """
-    if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
-        return obj.isoformat()
-    else:
-        return str(obj)
 
 
 class JSONFormatter(logging.Formatter):
@@ -58,7 +45,7 @@ class JSONFormatter(logging.Formatter):
                  fmt=None,
                  datefmt=None,
                  json_cls=None,
-                 json_default=_default_json_default):
+                 json_default=None):
         """
         :param fmt: Config as a JSON string, allowed fields;
                source_host: override source host name
@@ -73,7 +60,10 @@ class JSONFormatter(logging.Formatter):
             self._fmt = json.loads(fmt)
         else:
             self._fmt = {}
-        self.json_default = json_default
+
+        self.json_default = json_default if json_default\
+            else self._default_json_default()
+
         self.json_cls = json_cls
         if 'source_host' in self._fmt:
             self.source_host = self._fmt['source_host']
@@ -82,6 +72,17 @@ class JSONFormatter(logging.Formatter):
                 self.source_host = socket.gethostname()
             except:
                 self.source_host = ""
+
+    def _default_json_default(obj):
+        """
+        Coerce everything to strings.
+        All objects representing time get output as ISO8601.
+        """
+        if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
+            return obj.isoformat()
+        else:
+            return str(obj)
+
     
     def format_exception(self, ei, strip_newlines=True):
         lines = tb.format_exception(*ei)
