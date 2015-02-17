@@ -1,4 +1,0 @@
-
-class IncorrectCredentialsException(Exception):
-    pass
-

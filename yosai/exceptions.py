@@ -1,3 +1,7 @@
+class YosaiException(Exception):
+    pass
+
+
 class GenericException(Exception):
     pass
 
@@ -14,165 +18,61 @@ class UnavailableSecurityManagerException(Exception):
     pass
 
 
-class ShiroException(RuntimeException):
-    pass
-
-
-class YosaiException(Exception):
-    pass
-
 # ---------------------------------------------------------------------------
 # ---- Authentication Exceptions
 # ---------------------------------------------------------------------------
 
 
-class AuthenticationException(ShiroException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+class AuthenticationException(YosaiException):
+    pass
 
 
 class AccountException(AuthenticationException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class ConcurrentAccessException(AccountException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class CredentialsException(AuthenticationException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class DisabledAccountException(AccountException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class ExcessiveAttemptsException(AccountException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class ExpiredCredentialsException(CredentialsException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class IncorrectCredentialsException(CredentialsException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class LockedAccountException(DisabledAccountException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
+    pass
 
 
 class UnknownAccountException(AccountException):
-
-    def __init__(self, message=None, cause=None):
-        """
-        :type message: str
-        :param message: the reason for the exception
-        :type cause: Exception
-        :param cause: the underlying Exception that raised this one
-        """
-        super().__init__(message=message, cause=cause)
-
-
-class IllegalArgumentException(Exception):
     pass
 
 
 class YosaiException(Exception):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)  # DG:  not sure about the args..
+    pass
 
 
 class AuthenticationException(YosaiException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
+    pass
 
 
 class AccountException(AuthenticationException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
-
-
-class UnknownAccountException(AccountException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
-
-
-class ConcurrentAccessException(AccountException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
+    pass
 
 
 class UnsupportedTokenException(Exception):
@@ -199,19 +99,91 @@ class HostUnauthorizedException(UnauthorizedException):
     pass
 
 
-class IllegalArgumentException(Exception):
-    pass
-
-
-class IllegalStateException(Exception):
-    pass
-
-
 # ---------------------------------------------------------------------------
 # ----  Cache Exceptions
 # ---------------------------------------------------------------------------
 
 
 class CacheException(YosaiException):
+    pass
+
+
+# ---------------------------------------------------------------------------
+# ---- Realm Exceptions
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# ---- Security Management Exceptions
+# ---------------------------------------------------------------------------
+
+
+class AuthenticationException(Exception):
+    pass
+
+
+class IncorrectAttributeException(Exception):
+    pass
+
+
+class InvalidSessionException(Exception):
+    pass
+
+
+class UnrecognizedAttributeException(Exception):
+    pass
+
+
+# ---------------------------------------------------------------------------
+# ---- Session Management Exceptions
+# ---------------------------------------------------------------------------
+
+
+class AbstractMethodException(Exception):
+    pass
+
+
+class ExpiredSessionException(Exception):
+    pass
+
+
+class MissingMethodException(Exception):
+    pass
+
+
+class UnknownSessionException(Exception):
+    pass
+
+
+# ---------------------------------------------------------------------------
+# ----  Subject Exceptions
+# ---------------------------------------------------------------------------
+
+
+class ExecutionException(YosaiException):
+    pass
+
+
+class DisabledSessionException(Exception):
+    pass
+
+
+class NullPointerException(Exception):
+    pass
+
+
+class PrimaryPrincipalIntegrityException(Exception):
+    pass
+
+
+class SessionException(Exception):
+    pass
+
+
+class UnrecognizedPrincipalException(Exception):
+    pass
+
+
+class UnsupportedOperationException(Exception):
     pass
 

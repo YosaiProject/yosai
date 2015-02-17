@@ -16,34 +16,6 @@ def myself(self):
     return inspect.stack()[1][3]
 
 
-class AuthenticationException(Exception):
-    pass
-
-
-class IllegalArgumentException(Exception):
-    pass
-
-
-class IncorrectAttributeException(Exception):
-    pass
-
-
-class InvalidSessionException(Exception):
-    pass
-
-
-class UnavailableSecurityManagerException(Exception):
-    pass
-
-
-class UnrecognizedAttributeException(Exception):
-    pass
-
-
-class AuthenticationException(Exception):
-    pass
-
-
 class SecurityUtils(object):
     def __init__(self):
         self._security_manager = SecurityManager()
