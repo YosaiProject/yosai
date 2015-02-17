@@ -4,39 +4,6 @@ import traceback
 from authc_abstracts import AuthenticationEvent
 
 
-class IllegalArgumentException(Exception):
-    pass
-
-
-class YosaiException(Exception):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)  # DG:  not sure about the args..
-
-
-class AuthenticationException(YosaiException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
-
-
-class AccountException(AuthenticationException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
-
-
-class UnknownAccountException(AccountException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
-
-
-class ConcurrentAccessException(AccountException):
-    def __init__(self, msg=None, cause=None):
-        super().__init__(msg, cause)
-
-
-class UnsupportedTokenException(Exception):
-    pass
-
-
 class DefaultCompositeAccount(object):
 
     def __init__(self, overwrite=True):

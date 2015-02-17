@@ -1,21 +1,6 @@
 
-import org.apache.shiro.SecurityUtils
-import org.apache.shiro.authc.AuthenticationException
-import org.apache.shiro.authc.AuthenticationToken
-import org.apache.shiro.authz.AuthorizationException
-import org.apache.shiro.authz.Permission
-import org.apache.shiro.mgt.SecurityManager
-import org.apache.shiro.mgt.SubjectFactory
-import org.apache.shiro.session.Session
-import org.apache.shiro.subject.support.DefaultSubjectContext
-import org.apache.shiro.util.StringUtils
-
-import org.apache.shiro.authc.AuthenticationInfo
-import org.apache.shiro.authc.AuthenticationToken
-import org.apache.shiro.mgt.SecurityManager
-import org.apache.shiro.session.Session
-
 from abc import ABCMeta, abstractmethod
+from exceptions import InvalidArgumentException, IllegalArgumentException
 
 
 class IMutablePrincipalCollection(PrincipalCollection, metaclass=ABCMeta):
@@ -25,11 +10,7 @@ class IMutablePrincipalCollection(PrincipalCollection, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def addAll(self, principals, realm_name):
-        pass
-
-    @abstractmethod
-    def addAll(self, principals):
+    def addAll(self, principals=None, realm_name=None):
         pass
 
     @abstractmethod
@@ -357,3 +338,20 @@ class ISubject(metaclass=ABCMeta):
 
         def build_subject(self):
             return self._security_manager.create_subject(self.subject_context)
+
+
+class SubjectDAO(metaclass=ABCMeta):
+
+    @abstractmethod
+    def save(self, subject):
+        pass
+
+    @abstractmethod
+    def delete(self, subject):
+        pass
+
+
+class SubjectFactory(metaclass=ABCMeta):
+
+    def create_subject(self, context):
+        pass

@@ -1,16 +1,5 @@
 from authc import PasswordMatcher
-
-
-class IncorrectCredentialsException(Exception):
-    pass
-
-
-"""
-Performs authentication and authorization for accounts in a <em>single</em>
-account data store.  It is expected that you configure one 
-AccountStoreRealm for each data store that contains accounts accessible to
-your application.
-"""
+from exceptions import IncorrectCredentialsException
 
 
 class AccountStoreRealm(object):
@@ -18,14 +7,6 @@ class AccountStoreRealm(object):
     def __init__(self):
         # 80/20 rule:  most shiro deployments use passwords:
         self._credentials_matcher = PasswordMatcher()
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        self._name = name
 
     @property
     def account_store(self):
@@ -50,7 +31,6 @@ class AccountStoreRealm(object):
         except AssertionError as ex:
             print('cannot set credentialsmatcher with empty value!')
         self._credentials_matcher = credentialsmatcher
-
 
     @property
     def account_cache_handler(self):
@@ -116,9 +96,9 @@ class AccountStoreRealm(object):
         try:
             cm = self.credentials_matcher
             if (not cm.credentials_match(authc_token, account)):
-                #not successful - throw an exception to indicate self:
+                # not successful - throw an exception to indicate self:
                 # log here
-                msg = ("Submitted credentials for token [" + token + "] "
+                msg = ("Submitted credentials for token [" + authc_token + "] "
                        "did not match the stored credentials.")
                 raise IncorrectCredentialsException(msg)
         except IncorrectCredentialsException as ex:

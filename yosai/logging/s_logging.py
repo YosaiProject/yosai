@@ -38,7 +38,6 @@ class LogManager(object):
         return structlog.get_logger(logger)
 
 
-
 class JSONFormatter(logging.Formatter):
 
     def __init__(self,

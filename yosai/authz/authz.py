@@ -1,9 +1,11 @@
-class IllegalArgumentException(Exception):
-    pass
-
-
-class IllegalStateException(Exception):
-    pass
+from yosai import (
+    AuthorizationException, 
+    UnauthenticatedException,
+    UnauthorizedException,
+    HostUnauthorizedException,
+    IllegalArgumentException,
+    IllegalStateException,
+)
 
 
 class AllPermission(object):

@@ -509,3 +509,330 @@ class ApplicationSecurityManager(object):
 
     # DG:  omitted get_remembered Methods
 
+
+class DefaultSecurityManager(SessionsSecurityManager):
+
+    def __init__(self, realms=None):
+        """
+        Inputs:
+            realms = a List of one or more realm objects
+        """
+        super().__init__()
+        if (realms):
+            self.realms = realms
+            self.remember_me_manager = RememberMeManager()
+
+    @property
+    def subject_factory(self):
+        return self._subject_factory
+
+    @subject_factory.setter
+    def subject_factory(self, subjectfactory):
+        self._subject_factory = subjectfactory
+
+    @property
+    def subject_dao(self):
+        return self._subject_dao
+
+    @subject_dao.setter
+    def subject_dao(self, subjectdao):
+        self._subject_dao = subjectdao
+
+    @property
+    def remember_me_manager(self):
+        return self._remember_me_manager
+
+    @remember_me_manager.setter
+    def remember_me_manager(self, remembermemanager):
+        self._remember_me_manager = remembermemanager
+
+    def create_subject_context(self):
+        return DefaultSubjectContext()
+
+    def create_subject(self, **kwargs):
+        """
+        This method can be used in two ways:
+            1) passing a single parameter: subject_context
+            2) passing all acceptable parameters below EXCEPT subject_context
+        """
+        acceptable_args = ['subject_context', 'authc_token', 
+                           'authc_info', 'existing_subject']
+        try:
+            for x in kwargs.keys():
+                if x not in acceptable_args:
+                    msg = ('Unrecognized attribute passed to create_subject: ',
+                           x)
+                    raise IncorrectAttributeException(msg)
+        except IncorrectAttributeException as ex:
+            print('DefaultSecurityManager.create_subject: ', ex)
+
+        else: 
+            if (kwargs.get('subject_context', None)):
+                context = self.copy_subject_context(kwargs['subject_context'])
+                context = self.ensure_security_manager(context)
+                context = self.resolve_session(context)
+                context = self.resolve_principals(context)
+                subject = self.do_create_subject(context)
+
+                self.save(subject)
+
+                return subject
+
+            else: 
+                context = self.create_subject_context()
+                context.authenticated = True
+                context.authentication_token = kwargs.get('authc_token', None)
+                context.authentication_info = kwargs.get('authc_info', None)
+
+                if (kwargs.get('existing_subject', None)):
+                    context.subject = kwargs.get('existing_subject', None)
+
+                return self.create_subject(context)
+
+    def remember_me_successful_login(self, authc_token, authc_info, subject):
+        rmm = self._remember_me_manager
+        if (rmm is not None):
+            try:
+                rmm.on_successful_login(subject, authc_token, authc_info)
+            except Exception as ex:
+                # log here using the msg below:
+                msg = ("Delegate RememberMeManager instance of type [" +
+                       rmm.__class__.__name__ + "] threw an exception during "
+                       "onsuccessfullogin.  RememberMe services will not be " +
+                       "performed for account [" + authc_info + "].")
+                raise    
+        else:
+            # log here using the msg below:
+            msg = ("This " + self.__class__.__name__ + 
+                   " instance does not have a [" +
+                   RememberMeManager.__name__ + "] instance configured."
+                   "RememberMe services will not be performed for account "
+                   "[" + authc_info + "].")
+            print(msg)
+
+    def remember_me_failed_login(self, authc_token, authc_exc, subject):
+        """
+        authc_exc = the authentication exception 
+        """
+        rmm = self._remember_me_manager
+        if (rmm is not None): 
+            try:
+                rmm.on_failed_login(subject, authc_token, authc_exc)
+            except Exception as ex:
+                # log here, using msg below:
+                msg = ("Delegate RememberMeManager instance of type [" + 
+                       rmm.__class__.__name__ + "] threw an exception during "
+                       "on_failed_login for AuthenticationToken [" + 
+                       authc_token + "].", ex)
+                print(msg)
+
+    def remember_me_logout(self, subject): 
+        rmm = self._remember_me_manager
+        if (rmm is not None): 
+            try:
+                rmm.on_logout(subject)
+            except Exception as ex:
+                # log here using msg below:
+                prin = "[{prin}]".format(prin=subject.principals 
+                                         if (subject) else '')
+                msg = ("Delegate RememberMeManager instance of type [" + 
+                       rmm.__class__.__name__ + "] threw an exception during "
+                       "on_logout for subject with principals " + prin, ex)
+                print(msg)
+    
+    def login(self, subject, authc_token):
+        try:
+            authc_info = self.authenticate(authc_token)
+        except AuthenticationException as ex:
+            try:
+                self.on_failed_login(authc_token, ex, subject)
+            except Exception as ex:
+                # log here using msg:
+                msg = ("onFailedLogin method threw an exception.  Logging "
+                       "and propagating original AuthenticationException.", ex)
+                print(msg)
+                raise 
+        else:
+            logged_in = self.create_subject(authc_token, authc_info, subject)
+            self.on_successful_login(authc_token, authc_info, logged_in)
+
+            return logged_in
+    
+    def on_successful_login(self, authc_token, authc_info, subject):
+        self.remember_me_successful_login(authc_token, authc_info, subject)
+
+    def on_failed_login(self, authc_token, authc_exc, subject):
+        self.remember_me_failed_login(authc_token, authc_exc, subject)
+
+    def before_logout(self, subject):
+        self.remember_me_logout(subject)
+
+    def copy_subject_context(self, subject_context):  # DG:  renamed copy(
+        return DefaultSubjectContext(subject_context)
+
+    def do_create_subject(self, subject_context):
+        return self.get_subject_factory().create_subject(subject_context)
+
+    def save_subject(self, subject):  # DG:  renamed save(
+        self.subject_DAO.save(subject)
+    
+    def delete_subject(self, subject):  # DG:  renamed delete(
+        self.subject_DAO.delete_subject(subject)
+    
+    def ensure_security_manager(self, subject_context):
+        if (subject_context.resolve_security_manager() is not None):
+            # log here, using msg:
+            msg = ("Context already contains a SecurityManager instance. " 
+                   "Returning.")
+            print(msg)
+            return subject_context
+        
+        else:
+            # log here, using msg:
+            msg = ("No SecurityManager found in context.  Adding self "
+                   "reference.")
+            print(msg)
+
+            subject_context.security_manager = self
+            return subject_context
+
+    def resolve_session(self, subject_context):
+        if (subject_context.resolve_session() is not None):
+            # log here, using msg:
+            msg = "SubjectContext already contains a session.  Returning."
+            print(msg)
+            return subject_context
+        
+        try: 
+            # Context couldn't resolve it directly, let's see if we can 
+            # since we have direct access to the session manager
+            session = self.resolve_context_session(subject_context)
+            if (session is not None):
+                subject_context.session = session
+        except InvalidSessionException as ex:
+            msg = ("Resolved SubjectContext context session is invalid.  "
+                   "Ignoring and creating an anonymous (session-less) Subject "
+                   "instance.", ex)
+            print(msg)
+        else:
+            return subject_context
+
+    def resolve_context_session(self, subject_context):
+        try:
+            key = self.get_session_key(subject_context)
+            if (key is not None): 
+                return self.get_session(key)
+            else:
+                return None 
+    
+        except:
+            raise
+
+    def get_session_key(self, subject_context):
+        session_id = subject_context.session_id
+        if (session_id is not None):
+            return DefaultSessionKey(session_id)
+        else:
+            return None
+
+    def resolve_principals(self, subject_context):
+
+        principals = subject_context.resolve_principals()
+
+        if (principals is None):
+            # log here
+            msg = ("No identity (PrincipalCollection) found in the context. "
+                   "So, will look for a remembered identity.")
+
+            principals = self.get_remembered_identity(subject_context)
+
+            if (principals):
+                # log here
+                msg = ("Found remembered PrincipalCollection.  Adding to the "
+                       "context to be used for subject construction by the "
+                       "SubjectFactory.")
+                print(msg)
+                subject_context.principals = principals
+
+            else:
+                # log here
+                msg = ("No remembered identity found.  Returning original "
+                       "context.")
+                print(msg)
+
+        return subject_context
+    
+    def create_session_context(self, subject_context):
+        session_context = DefaultSessionContext()
+        if (subject_context):
+            session_context.put_all(subject_context)
+
+        session_id = subject_context.session_id
+        if (session_id is not None):
+            session_context.session_id = session_id
+
+        host = subject_context.resolve_host()
+        if (host is not None):
+            session_context.host = host
+        
+        return session_context
+
+    def logout(self, subject):
+
+        try:
+            if (subject is None):
+                msg = "Subject method argument cannot be null."
+                raise IllegalArgumentException(msg)
+        except IllegalArgumentException as ex:
+            print('DefaultSecurityManager.logout: ', ex)
+
+        else:
+            self.before_logout(subject)
+
+            principals = subject.principals
+            if (principals):
+                # log here using msg:
+                msg = ("Logging out subject with primary principal {0}".
+                       format(principals.primary_principal))
+                print(msg) 
+                authc = self.authenticator
+                # DG:  must add logout_away boolean to authenticator class!
+                if (getattr(authc, 'logout_aware', None)):
+                    authc.on_logout(principals)
+
+            try:
+                self.delete_subject(subject)
+            except Exception as ex:
+                # log here
+                msg = ("Unable to cleanly unbind Subject.  Ignoring "
+                       "(logging out).")
+                print(msg) 
+            finally:
+                try:
+                    self.stop_session(subject)
+                except Exception as ex:
+                    # log here 
+                    msg = ("Unable to cleanly stop Session for Subject [" +
+                           str(subject.principal) + 
+                           "] Ignoring (logging out).", ex)
+                    print(msg)
+
+    def stop_session(self, subject):
+        s = subject.get_session(False)
+        if (s is not None): 
+            s.stop()
+    
+    def get_remembered_identity(self, subject_context):
+        rmm = self.remember_me_manager
+        if (rmm is not None): 
+            try:
+                return rmm.get_remembered_principals(subject_context)
+            except Exception as ex:
+                # log here
+                msg = ("Delegate RememberMeManager instance of type [" +
+                       rmm.__class__.__name__ + "] threw an exception during "
+                       "get_remembered_principals.", ex)
+                print(msg)
+                raise
+        else:
+            return None 
