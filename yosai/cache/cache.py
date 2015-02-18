@@ -1,6 +1,8 @@
 from exceptions import IllegalArgumentException
 from interfaces import (ABCAbstractCacheManager, ICacheManager, ICache)
 
+from yosai import CacheException
+
 
 class DisabledCacheManager(ICacheManager):
 

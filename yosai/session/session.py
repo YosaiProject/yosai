@@ -1,11 +1,17 @@
-from context import Context
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from os import urandom
 from hashlib import sha256
 import time
 import uuid
-import exceptions
+
+from yosai import (
+    AbstractMethodException,
+    Context,
+    ExpiredSessionException,
+    MissingMethodException,
+    UnknownSessionException,
+)
 
 
 class AbstractSessionDAO(object):

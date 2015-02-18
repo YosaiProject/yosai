@@ -2,6 +2,20 @@ import copy
 import eventbus
 import traceback
 from authc_abstracts import AuthenticationEvent
+from yosai import (
+    AuthenticationException,
+    AccountException,
+    ConcurrentAccessException,
+    CredentialsException,
+    DisabledAccountException,
+    ExcessiveAttemptsException,
+    ExpiredCredentialsException,
+    IncorrectCredentialsException,
+    LockedAccountException,
+    UnknownAccountException,
+    UnsupportedTokenException,
+    YosaiException,
+)
 
 
 class DefaultCompositeAccount(object):

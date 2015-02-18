@@ -2,19 +2,19 @@ class YosaiException(Exception):
     pass
 
 
-class GenericException(Exception):
+class GenericException(YosaiException):
     pass
 
 
-class IllegalArgumentException(Exception):
+class IllegalArgumentException(YosaiException):
     pass
 
 
-class IllegalStateException(Exception):
+class IllegalStateException(YosaiException):
     pass
 
 
-class UnavailableSecurityManagerException(Exception):
+class UnavailableSecurityManagerException(YosaiException):
     pass
 
 
@@ -63,19 +63,7 @@ class UnknownAccountException(AccountException):
     pass
 
 
-class YosaiException(Exception):
-    pass
-
-
-class AuthenticationException(YosaiException):
-    pass
-
-
-class AccountException(AuthenticationException):
-    pass
-
-
-class UnsupportedTokenException(Exception):
+class UnsupportedTokenException(YosaiException):
     pass
 
 # ---------------------------------------------------------------------------
@@ -118,19 +106,19 @@ class CacheException(YosaiException):
 # ---------------------------------------------------------------------------
 
 
-class AuthenticationException(Exception):
+class AuthenticationException(YosaiException):
     pass
 
 
-class IncorrectAttributeException(Exception):
+class IncorrectAttributeException(YosaiException):
     pass
 
 
-class InvalidSessionException(Exception):
+class InvalidSessionException(YosaiException):
     pass
 
 
-class UnrecognizedAttributeException(Exception):
+class UnrecognizedAttributeException(YosaiException):
     pass
 
 
@@ -139,19 +127,19 @@ class UnrecognizedAttributeException(Exception):
 # ---------------------------------------------------------------------------
 
 
-class AbstractMethodException(Exception):
+class AbstractMethodException(YosaiException):
     pass
 
 
-class ExpiredSessionException(Exception):
+class ExpiredSessionException(YosaiException):
     pass
 
 
-class MissingMethodException(Exception):
+class MissingMethodException(YosaiException):
     pass
 
 
-class UnknownSessionException(Exception):
+class UnknownSessionException(YosaiException):
     pass
 
 
@@ -164,26 +152,26 @@ class ExecutionException(YosaiException):
     pass
 
 
-class DisabledSessionException(Exception):
+class DisabledSessionException(YosaiException):
     pass
 
 
-class NullPointerException(Exception):
+class NullPointerException(YosaiException):
     pass
 
 
-class PrimaryPrincipalIntegrityException(Exception):
+class PrimaryPrincipalIntegrityException(YosaiException):
     pass
 
 
-class SessionException(Exception):
+class SessionException(YosaiException):
     pass
 
 
-class UnrecognizedPrincipalException(Exception):
+class UnrecognizedPrincipalException(YosaiException):
     pass
 
 
-class UnsupportedOperationException(Exception):
+class UnsupportedOperationException(YosaiException):
     pass
 
