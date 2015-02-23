@@ -1,3 +1,13 @@
+__author__ = "Darin Gordon"
+__copyright__ = "Copyright 2015, The Yosai Project"
+__credits__ = ["Apache Shiro Project Contributors"]
+__license__ = "Apache"
+__version__ = "0.0.1"
+__maintainer__ = "Darin Gordon"
+__email__ = "dkcdkg@gmail.com"
+__status__ = "Development"
+
+
 from .authc.authc import (
     DefaultAuthenticator,
     DefaultCompositeAccount,

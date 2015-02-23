@@ -1,0 +1,4 @@
+
+Portions of this software was originally based on the following:
+    - Software copyright (c)  Django Software Foundation and individual contributors.
+    All rights reserved.

@@ -2,6 +2,10 @@ class YosaiException(Exception):
     pass
 
 
+class FileNotFoundException(YosaiException):
+    pass
+
+
 class GenericException(YosaiException):
     pass
 
@@ -15,6 +19,10 @@ class IllegalStateException(YosaiException):
 
 
 class UnavailableSecurityManagerException(YosaiException):
+    pass
+
+
+class MisconfiguredException(YosaiException):
     pass
 
 

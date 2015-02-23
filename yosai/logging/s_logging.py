@@ -1,6 +1,6 @@
 import logging
 import logging.config
-import anyjson as json
+import json
 import os
 import structlog
 import socket
@@ -8,16 +8,23 @@ import datetime
 import traceback as tb
 import itertools
 
+"""
+s_logging as in STRUCTURED LOGGING
+"""
+
 
 class LogManager(object):
 
     def __init__(self, json_config_path='logging.json'):
-        try:
-            self.load_logconfig(json_config_path)
-            self.configure_structlog()
-        except (AttributeError, TypeError):
-            tb.print_exc()
-            raise
+        log = logging.getLogger()
+        if (not log.hasHandlers()):  # validates whether configured
+            print('Configuring Logging..')
+            try:
+                self.load_logconfig(json_config_path)
+                self.configure_structlog()
+            except (AttributeError, TypeError):
+                tb.print_exc()
+                raise
 
     def load_logconfig(self, path):
         if os.path.exists(path):
