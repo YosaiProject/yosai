@@ -35,7 +35,13 @@ from .cache.cache import (
     MemoryConstrainedCacheManager,
 )
 
-from .context.context import (MapContext,)
+from .conf import (
+    settings,
+)
+
+from .context.context import (
+    MapContext,
+)
 
 from exceptions import (
     AbstractMethodException,
@@ -76,9 +82,13 @@ from exceptions import (
 )
 
 
-from .eventbus.eventbus import (EventBus,)
+from .eventbus.eventbus import (
+    EventBus,
+)
 
-from .logging.s_logging import (LogManager,)
+from .logging.s_logging import (
+    LogManager,
+)
 
 from .realm.realm import (
     AccountStoreRealm,
