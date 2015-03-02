@@ -1,12 +1,13 @@
 import logging
 import logging.config
-import json
+import anyjson as json
 import os
 import structlog
 import socket
 import datetime
 import traceback as tb
 import itertools
+from yosai import settings 
 
 """
 s_logging as in STRUCTURED LOGGING
@@ -15,30 +16,31 @@ s_logging as in STRUCTURED LOGGING
 
 class LogManager(object):
 
-    def __init__(self, json_config_path='logging.json'):
+    def __init__(self):
         log = logging.getLogger()
         if (not log.hasHandlers()):  # validates whether configured
             print('Configuring Logging..')
             try:
-                self.load_logconfig(json_config_path)
+                self.load_logconfig()
                 self.configure_structlog()
             except (AttributeError, TypeError):
                 tb.print_exc()
                 raise
 
-    def load_logconfig(self, path):
-        if os.path.exists(path):
-            with open(path) as conf_file:
-                config = json.loads(conf_file.read())
+    def load_logconfig(self):
+        config = settings.LOGGING_CONFIG
+
+        if (config):
             logging.config.dictConfig(config)
+
         else:
-            raise AttributeError('Could not find log config file.') 
+            raise AttributeError('Could not find log config file.')
 
     def configure_structlog(self):
         structlog.configure(logger_factory=structlog.stdlib.LoggerFactory(),
                             wrapper_class=structlog.stdlib.BoundLogger,
                             context_class=dict,
-                            cache_logger_on_first_use=True 
+                            cache_logger_on_first_use=True
                             )  
 
     def get_logger(self, logger=None):

@@ -1,4 +1,5 @@
 
+import passlib
 import copy
 import traceback
 from authc_abstracts import AuthenticationEvent
@@ -11,12 +12,19 @@ from yosai import (
     EventBus,
     ExcessiveAttemptsException,
     ExpiredCredentialsException,
+    IllegalStateException,
     IncorrectCredentialsException,
     LockedAccountException,
     LogManager,
+    PasswordMatchException,
+    settings,
     UnknownAccountException,
     UnsupportedTokenException,
     YosaiException,
+)
+
+from .interfaces import (
+    IHashingPasswordService,
 )
 
 
@@ -32,7 +40,7 @@ class DefaultCompositeAccount(object):
     @property
     def attributes(self):
         return self.merged_attrs  # not frozen
-    
+
     @property
     def realm_names(self):
         return frozenset(self.realm_attrs)
@@ -267,38 +275,20 @@ class SuccessfulAuthenticationEvent(AuthenticationEvent):
     
 
 class PasswordMatcher(object):
+    """ DG:  Dramatic changes made here adapting to passlib and python """
 
     def __init__(self):
         self.password_service = DefaultPasswordService()
 
     def credentials_match(self, authc_token, account):
-        service = self.ensure_password_service()
-
+        self.ensure_password_service()
         submitted_password = self.get_submitted_password(authc_token)
+
+        # stored_credentials should either be bytes or unicode:
         stored_credentials = self.get_stored_password(account)
-        self.assert_stored_credentials_type(stored_credentials)
 
-        if (isinstance(stored_credentials, Hash)):
-            hashed_password = copy.copy(stored_credentials)
-            hashing_service = self.assert_hashing_password_service(service)
-            return hashing_service.passwords_match(submitted_password, 
-                                                   hashed_password)
-        
-        # otherwise they are a String (asserted in the 
-        # 'assertStoredCredentialsType' method call above):
-        formatted = str(stored_credentials)
         return self.password_service.passwords_match(submitted_password,
-                                                     formatted)
-
-    def assert_hashing_password_service(self, service):
-        if (isinstance(service, HashingPasswordService)):
-            return service
-        
-        msg = ("AuthenticationInfo\'s stored credentials are a Hash instance, "
-               "but the configured passwordService is not a "
-               "HashingPasswordService instance.  This is required to "
-               "perform Hash object password comparisons.")
-        raise IllegalStateException(msg)
+                                                     stored_credentials)
 
     def ensure_password_service(self):
         if (self.password_service is None):
@@ -309,15 +299,163 @@ class PasswordMatcher(object):
     def get_submitted_password(self, authc_token):
         return authc_token.credentials if authc_token else None
 
-    def assert_stored_credentials_type(self, credentials):
-        if (isinstance(credentials, str) or isinstance(credentials, Hash)):
-            return
-
-        msg = ("Stored account credentials are expected to be either a "
-               "Hash instance or a formatted hash String.")
-        raise IllegalArgumentException(msg)
-    
     def get_stored_password(self, account_info): 
+        # should be either bytes or unicode:
         stored = getattr(account_info, 'credentials', None)
-        return str(stored)
+        return stored
 
+# Credentials Classes:  DefaultPasswordService,
+#                       SimpleCredentialsMatcher,
+#                       AllowAllCredentialsMatcher
+
+
+class DefaultPasswordService(IHashingPasswordService, object):
+
+    def __init__(self):
+        self.default_hash_algorithm = "bcrypt_sha256"
+        hash_scheme_settings = AUTHC_CONFIG.get('hash_algorithms', None).\
+                               get(self.default_hash_algorithm, None)
+        self.default_hash_iterations =\
+            hash_scheme_settings.get('iterations', None).get('default', None)
+
+        hash_service = DefaultHashService()
+        hash_service.hash_algorithm_name = self.default_hash_algorithm
+        hash_service.hash_iterations = self.default_hash_iterations
+        hash_service.generate_public_salt = True  # always want generated salts
+        self.hash_service = hash_service
+
+        self.hash_format = Shiro1CryptFormat()
+        self.hash_format_factory = DefaultHashFormatFactory()
+
+    def encrypt_password(self, plaintext):
+        hashed = self.hash_password(plaintext)
+        self.check_hash_format_durability()
+        return self.hash_format.format(hashed)
+    
+    def hash_password(self, plaintext):
+        plaintext_bytes = self.create_byte_source(plaintext)
+        if (not plaintext_bytes):
+            return None 
+        request = self.create_hash_request(plaintext_bytes)
+        return hash_service.compute_hash(request)
+
+    def passwords_match(self, plaintext, saved):
+        """
+        :type plaintext:
+        :param plaintext: the password requiring authentication, passed by user
+
+        :type saved: Hash or str
+        :param saved: the password saved for the corresponding account
+
+        :returns: a Boolean confirmation of whether plaintext equals saved
+        :rtype: bool
+        """
+
+        if isinstance(saved, Hash):
+
+            plaintext_bytes = self.create_byte_source(plaintext)
+
+            if (not saved):
+                return (not plaintext_bytes)
+            else:
+                if (not plaintext_bytes):
+                    return False
+
+            request = self.build_hash_request(plaintext_bytes, saved)
+
+            computed = self.hash_service.compute_hash(request)
+
+            return saved.equals(computed)
+
+        elif isinstance(saved, str): 
+            plaintext_bytes = self.create_byte_source(plaintext)
+
+            if (not saved):
+                return (not plaintext_bytes)
+            else: 
+                if (not plaintext_bytes):
+                    return False
+
+            """
+            First check to see if we can reconstitute the original hash - self
+            allows us to perform password hash comparisons even for previously
+            saved passwords that don't match the current HashService 
+            configuration values.  This is a very nice feature for password
+            comparisons because it ensures backwards compatibility even after
+            configuration changes.
+            """
+            discovered_format = self.hash_format_factory.get_instance(saved)
+
+            if (discovered_format):
+                try:
+                    saved_hash = discovered_format.parse(saved)
+                except:
+                    raise
+                return self.passwords_match(plaintext, saved_hash)
+
+            """
+            If we're at self point in the method's execution, We couldn't
+            reconstitute the original hash.  So, we need to hash the
+            submittedPlaintext using current HashService configuration and then
+            compare the formatted output with the saved string.  This will
+            correctly compare passwords, but does not allow changing the
+            HashService configuration without breaking previously saved 
+            passwords:
+        
+            The saved text value can't be reconstituted into a Hash instance.
+            We need to format the submittedPlaintext and then compare self
+            formatted value with the saved value: 
+            """
+            request = self.create_hash_request(plaintext_bytes)
+            computed = self.hash_service.compute_hash(request)
+            formatted = self.hash_format.format(computed)
+
+            return (saved == formatted)
+
+        else:
+            raise PasswordMatchException('unrecognized attribute type')
+
+    def create_hash_request(self, plaintext):
+        return HashRequest.Builder().set_source(plaintext).build()
+
+    def create_byte_source(self, target_object):
+        return bytearray(bytes(target_object))
+
+    def build_hash_request(self, plaintext, saved):
+        # keep everything from the saved hash except for the source:
+        # now use the existing saved data:
+        return HashRequest.Builder().set_source(plaintext).\
+                set_algorithm_name(saved.algorithm_name).\
+                set_salt(saved.salt).\
+                set_iterations(saved.iterations).\
+                build()
+
+
+class SimpleCredentialsMatcher(object):
+
+    def __init__(self):
+        pass
+
+    def get_credentials(self, credential_source):
+        """
+        :type credential_source: an AuthenticationToken or Account object
+        :param credential_source:  an object that manages state of credentials
+        """
+        try:
+            return credential_source.credentials
+        except (AttributeError, TypeError):
+            traceback.print_exc()
+            return None 
+
+    def credentials_match(self, authc_token, account):
+        try:
+            return authc_token.credentials == account.credentials
+        except (AttributeError, TypeError):
+            traceback.print_exc()
+            return False
+
+
+class AllowAllCredentialsMatcher(object):
+
+    def credentials_match(self, authc_token, account):
+        return True

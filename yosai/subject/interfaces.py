@@ -340,7 +340,7 @@ class ISubject(metaclass=ABCMeta):
             return self._security_manager.create_subject(self.subject_context)
 
 
-class SubjectDAO(metaclass=ABCMeta):
+class ISubjectDAO(metaclass=ABCMeta):
 
     @abstractmethod
     def save(self, subject):
@@ -351,7 +351,7 @@ class SubjectDAO(metaclass=ABCMeta):
         pass
 
 
-class SubjectFactory(metaclass=ABCMeta):
+class ISubjectFactory(metaclass=ABCMeta):
 
     def create_subject(self, context):
         pass

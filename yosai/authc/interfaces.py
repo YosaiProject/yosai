@@ -1,10 +1,12 @@
-import org.apache.shiro.account.AccountId
-import org.apache.shiro.account.Account
-import org.apache.shiro.authc.AuthenticationException
-import org.apache.shiro.authc.AuthenticationToken
-import org.apache.shiro.realm.Realm
-import org.apache.shiro.authc.AuthenticationInfo
-import org.apache.shiro.subject.PrincipalCollection
+from yosai import (
+    AccountId,
+    Account,
+    AuthenticationToken,
+    Realm,
+    AuthenticationInfo,
+    PrincipalCollection,
+)
+
 from abc import ABCMeta, abstractmethod
 
 
@@ -88,22 +90,18 @@ class ILogoutAware(metaclass=ABCMeta):
         pass
 
 
-class IRememberMeAuthenticationToken(AuthenticationToken, metaclass=ABCMeta):
+class IPasswordService(metaclass=ABCMeta):
 
-    @property
     @abstractmethod
-    def is_remember_me(self):
+    def encrypt_password(self, plaintext_password):
+        pass
+
+    @abstractmethod
+    def passwords_match(self, submitted_plaintext, encrypted):
         pass
 
 
-class ICredentialsMatcher(metaclass=ABCMeta):
-
-    @abstractmethod
-    def credentials_match(self, authc_token, account):
-        pass
-
-
-class IHashingPasswordService(PasswordService, metaclass=ABCMeta):
+class IHashingPasswordService(IPasswordService, metaclass=ABCMeta):
 
     @abstractmethod
     def hash_password(self, plaintext):
@@ -114,14 +112,11 @@ class IHashingPasswordService(PasswordService, metaclass=ABCMeta):
         pass
 
 
-class IPasswordService(metaclass=ABCMeta):
+class IRememberMeAuthenticationToken(AuthenticationToken, metaclass=ABCMeta):
 
+    @property
     @abstractmethod
-    def encrypt_password(self, plaintext_password):
-        pass
-
-    @abstractmethod
-    def passwords_match(self, submitted_plaintext, encrypted):
+    def is_remember_me(self):
         pass
 
 
@@ -143,4 +138,5 @@ class IAuthenticationStrategy(metaclass=ABCMeta):
     @abstractmethod
     def execute(self, attempt):
         pass
+
 

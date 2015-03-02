@@ -67,6 +67,10 @@ class LockedAccountException(DisabledAccountException):
     pass
 
 
+class PasswordMatchException(AuthenticationException):
+    pass
+
+
 class UnknownAccountException(AccountException):
     pass
 

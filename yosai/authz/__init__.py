@@ -1,4 +1,4 @@
-from .exceptions import (
+from yosai import (
     AuthorizationException, 
     UnauthenticatedException,
     UnauthorizedException,

@@ -8,7 +8,7 @@ __email__ = "dkcdkg@gmail.com"
 __status__ = "Development"
 
 
-from .authc.authc import (
+from .authc import (
     DefaultAuthenticator,
     DefaultCompositeAccount,
     DefaultCompositeAccountId,
@@ -18,7 +18,7 @@ from .authc.authc import (
     UsernamePasswordToken,
 )
 
-from .authz.authz import (
+from .authz import (
     AllPermission,
     DomainPermission,
     ModularRealmAuthorizer,
@@ -28,7 +28,7 @@ from .authz.authz import (
     WildcardPermissionResolver,
 )
 
-from .cache.cache import (
+from .cache import (
     DisabledCacheManager,
     DisabledCache,
     MapCache,
@@ -39,7 +39,7 @@ from .conf import (
     settings,
 )
 
-from .context.context import (
+from .context import (
     MapContext,
 )
 
@@ -67,6 +67,7 @@ from exceptions import (
     LockedAccountException,
     MissingMethodException,
     NullPointerException,
+    PasswordMatchException,
     PrimaryPrincipalIntegrityException,
     SessionException,
     UnauthenticatedException,
@@ -82,27 +83,27 @@ from exceptions import (
 )
 
 
-from .eventbus.eventbus import (
+from .eventbus import (
     EventBus,
 )
 
-from .logging.s_logging import (
+from .logging import (
     LogManager,
 )
 
-from .realm.realm import (
+from .realm import (
     AccountStoreRealm,
     AbstractCacheHandler,
     DefaultAccountCacheHandler,
 )
 
-from .security.security import (
+from .security import (
     ApplicationSecurityManager,
     DefaultSecurityManager,
     SecurityUtils,
 )
 
-from .session.session import (
+from .session import (
     AbstractSessionDAO,
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
@@ -125,7 +126,7 @@ from .session.session import (
     UUIDSessionGenerator,
 )
 
-from .subject.subject import(
+from .subject import(
     DefaultSubjectContext,
     DefaultSubjectDAO,
     DefaultSubjectFactory,
