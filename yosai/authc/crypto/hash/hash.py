@@ -1,4 +1,32 @@
 import copy
+from passlib.context import CryptContext
+from yosai import (
+    InvalidHashAlgorithmException,
+    settings,
+)
+
+AUTHC_CONFIG = settings.AUTHC_CONFIG
+
+
+def generate_cryptcontext(self, algorithms=None):
+    """
+    :type algorithms: list
+    :param algorithms: a list of strings representing the names of the 
+                       hashing schemes supported by passlib
+
+    :rtype: CryptContext
+    :returns: a passlib CryptContext object
+    """
+    if (not algorithms):
+        hash_settings = AUTHC_CONFIG.get('hash_algorithms', None)
+        algorithms = list(hash_settings.keys())
+
+    try:
+        myctx = CryptContext(schemes=algorithms) 
+    except (AttributeError, TypeError, KeyError):
+        raise InvalidHashAlgorithmException
+
+    return myctx
 
 
 class DefaultHashService(object):

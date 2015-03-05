@@ -63,6 +63,7 @@ from exceptions import (
     IllegalStateException,
     IncorrectCredentialsException,
     IncorrectAttributeException,
+    InvalidHashAlgorithmException,
     InvalidSessionException,
     LockedAccountException,
     MissingMethodException,

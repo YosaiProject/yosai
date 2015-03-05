@@ -2,18 +2,13 @@
         "hash_algorithms": {
             "bcrypt_sha256",
             "sha256_crypt": {
-                "rounds": { 
-                    "default": 110000,
-                    "max": 1000000,
-                    "min": 1000
-                },
-                "salt": {
-                    "default": 16,
-                    "max": 16,
-                    "min": 0
-                }
+                    "default_rounds": 110000,
+                    "max_rounds": 1000000,
+                    "min_rounds": 1000,
+                    "salt_size": 16
             }
         }
+        "private_salt": "N3wJ3rS3y"
 }
 
 "LOGGING_CONFIG": {

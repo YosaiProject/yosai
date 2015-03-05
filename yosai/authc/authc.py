@@ -1,5 +1,4 @@
-
-import passlib
+import importlib
 import copy
 import traceback
 from authc_abstracts import AuthenticationEvent
@@ -27,6 +26,7 @@ from .interfaces import (
     IHashingPasswordService,
 )
 
+AUTHC_CONFIG = settings.AUTHC_CONFIG
 
 class DefaultCompositeAccount(object):
 
@@ -314,9 +314,10 @@ class DefaultPasswordService(IHashingPasswordService, object):
     def __init__(self):
         self.default_hash_algorithm = "bcrypt_sha256"
         hash_scheme_settings = AUTHC_CONFIG.get('hash_algorithms', None).\
-                               get(self.default_hash_algorithm, None)
+            get(self.default_hash_algorithm, None)
         self.default_hash_iterations =\
             hash_scheme_settings.get('iterations', None).get('default', None)
+
 
         hash_service = DefaultHashService()
         hash_service.hash_algorithm_name = self.default_hash_algorithm

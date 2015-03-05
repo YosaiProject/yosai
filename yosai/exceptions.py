@@ -63,6 +63,10 @@ class IncorrectCredentialsException(CredentialsException):
     pass
 
 
+class InvalidHashAlgorithmException(YosaiException):
+    pass
+
+
 class LockedAccountException(DisabledAccountException):
     pass
 
