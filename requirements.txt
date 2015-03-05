@@ -1,3 +1,4 @@
+anyjson==0.3.3
 passlib==1.6.2
 SQLAlchemy==0.9.8
 structlog==15.1.0

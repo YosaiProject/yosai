@@ -8,21 +8,43 @@ from yosai import (
 AUTHC_CONFIG = settings.AUTHC_CONFIG
 
 
-def generate_cryptcontext(self, algorithms=None):
+def generate_cryptcontext(context=None):
     """
-    :type algorithms: list
-    :param algorithms: a list of strings representing the names of the 
-                       hashing schemes supported by passlib
+    :type context: dict
+    :param context: The context parameter is a dict in the format that is 
+                    recognized by passlib to generate a CryptContext object.  
+                    The context parameter contains the hashing schemes 
+                    supported by passlib.  Each hashing scheme, if enabled
+                    by passlib, may have custom settings defined for it in a 
+                    dict.
 
     :rtype: CryptContext
     :returns: a passlib CryptContext object
-    """
-    if (not algorithms):
-        hash_settings = AUTHC_CONFIG.get('hash_algorithms', None)
-        algorithms = list(hash_settings.keys())
 
+     
+        "AUTHC_CONFIG": {
+                "hash_algorithms": {
+                    "bcrypt_sha256": {}   # must be an empty dict
+                    "sha256_crypt": {
+                            "default_rounds": 110000,
+                            "max_rounds": 1000000,
+                            "min_rounds": 1000,
+                            "salt_size": 16
+                    }
+                }
+                "private_salt": "..."
+        }
+    """
+    # If algorithms aren't passed as parameters, revert to global settings
+    if (not context):
+        hash_settings = AUTHC_CONFIG.get('hash_algorithms', None)
+        context = dict(schemes=list(hash_settings.keys()))
+        for key, value in hash_settings.items(): 
+            context.update({"{0}__{1}".format(key, k): v for k, v in 
+                           value.items() if isinstance(value, dict)})
     try:
-        myctx = CryptContext(schemes=algorithms) 
+        myctx = CryptContext(**context)
+
     except (AttributeError, TypeError, KeyError):
         raise InvalidHashAlgorithmException
 
@@ -106,17 +128,3 @@ class DefaultHashService(object):
         
         return ((private_salt_bytes if private_salt_bytes else bytearray()) 
                 + (public_salt_bytes if public_salt_bytes else bytearray()))
-
-
-class SimpleHashRequest(object):
-
-    def __init__(self, algorithm_name=None, source=None, salt=None, 
-                 iterations=None):
-        if (source is None):
-            raise IllegalArgumentError("source argument cannot be null")
-        
-        self.source = source
-        self.salt = salt
-        self.algorithm_name = algorithm_name
-        self.iterations = (0, iterations)
-
