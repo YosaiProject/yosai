@@ -47,6 +47,10 @@ class CredentialsException(AuthenticationException):
     pass
 
 
+class CryptContextException(YosaiException):
+    pass
+
+
 class DisabledAccountException(AccountException):
     pass
 
@@ -63,15 +67,19 @@ class IncorrectCredentialsException(CredentialsException):
     pass
 
 
-class InvalidHashAlgorithmException(YosaiException):
-    pass
-
-
 class LockedAccountException(DisabledAccountException):
     pass
 
 
+class MissingDefaultHashAlgorithm(YosaiException):
+    pass
+
+
 class PasswordMatchException(AuthenticationException):
+    pass
+
+
+class MissingPrivateSaltException(YosaiException):
     pass
 
 
