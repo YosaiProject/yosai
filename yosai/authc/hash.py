@@ -34,12 +34,14 @@ class DefaultHashService(object):
     def compute_hash(self, request):
         if (not request or not request.source):
             return None 
+
         context = {}
         algo = self.get_algorithm_name(request)
         context['scheme'] = algo
         iterations = self.get_iterations(request)
         if (iterations):
             context[algo + "__default_rounds"] = iterations
+        crypt_context = self.generate_crypt_context(context)
 
         """
           A few differences between Shiro and Yosai regarding salts:
@@ -52,19 +54,16 @@ class DefaultHashService(object):
              else default passlib settings.
         """
         peppered_pass = self.private_salt + request.source  # bytearray 
-
-        crypto_context = self.generate_crypt_context(context)
        
         # Shiro's SimpleHash functionality is replaced by that of passlib's
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
 
-        result = crypto_context.encrypt(peppered_pass)
-        result['bytes'] = bytearray(result, 'utf-8') # this can change..
+        result = crypt_context.encrypt(peppered_pass)
+        result['bytes'] = bytearray(result, 'utf-8')  # passlib returns a str 
         result.iterations = iterations
-        #  Only expose the public salt - not the real/combined salt that 
-        #  might have been used:
-        result.salt = public_salt
+
+        # DG omitted public salt setting in result
 
         return result
 
@@ -75,11 +74,11 @@ class DefaultHashService(object):
 
         :type context: dict
         :param context: The context parameter is a dict in the format that is 
-                        recognized by passlib to generate a CryptContext object.  
+                       recognized by passlib to generate a CryptContext obj.  
                         The context parameter contains the hashing schemes 
                         supported by passlib.  Each hashing scheme, if enabled
-                        by passlib, may have custom settings defined for it in a 
-                        dict.
+                        by passlib, may have custom settings defined for it in 
+                        a dict.
 
         :rtype: CryptContext
         :returns: a passlib CryptContext object

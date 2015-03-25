@@ -11,3 +11,8 @@ During the port, I automatically replaced 'this' with 'self'.  Due to this
 string replacement, there may be incomprehensible comments in the code 
 where 'self' should be changed back to 'this'
 
+
+I am following J.B. Rainsberger's recommendation of rebranding unit and 
+integration testing to isolated and integrated testing, respectively.
+
+
