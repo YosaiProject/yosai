@@ -61,7 +61,7 @@ class DefaultHashService(object):
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
         result = {}
-        result['hash'] = crypt_context.encrypt(peppered_pass)
+        result['ciphertext'] = bytearray(crypt_context.encrypt(peppered_pass))
         result['config'] = crypt_context.to_dict() 
 
         return result  # DG:  this design is unique to Yosai, not Shiro 

@@ -28,12 +28,12 @@ private_salt mutatator test:
     + private_salt setting exception test(provide a non-string parameter)
 
 test_compute_hash(request)
+    - create a cryptcontext mock
     + test:  call argumentless compute_hash(), asserting None is returned
     + test:  call with a request object that is missing a source attribute, asserting None is returned
-    + test:  call with a request object that contains iterations 
-    + test:  call with a request object that does not contain iterations
-
-    change this method to return result of encrypt to a new method that formats it into a bytearray and adds iterations
+    + test:  call with a request object that contains iterations, asserting ciphertext value is returned 
+    + test:  call with a request object that does not contain iterations, asserting ciphertext value bytearray and config is returned in a result dict
+    + test:  call with a request object that does not contain iterations nor a source attribute, asserting PepperPasswordException
 
 4) test_generate_default_context()
 5) test_generate_crypt_context(context)
