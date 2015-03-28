@@ -1,0 +1,59 @@
+
+As to what extent authc settings need to be validated, it seems to largely
+be a data validation exercise and not a functionality exercise.
+
+Plan vanilla accessors aren't going to be unit tested.
+
+authc_config = {
+    "hash_algorithms": {
+            "bcrypt_sha256": {},
+            "sha256_crypt": {
+                    "default_rounds": 110000,
+                    "max_rounds": 1000000,
+                    "min_rounds": 1000,
+                    "salt_size": 16
+            }
+        },
+    "private_salt": "privatesalt"
+}
+
+DefaultHashService Tests
+=========================
+constructor test:
+    + create mock object for authc_config, giving it a private_salt attribute
+    + test constructor exception handling of private_salt==None by not 
+      defining the private_salt attribute of the mock
+
+private_salt mutatator test:
+    + private_salt setting exception test(provide a non-string parameter)
+
+test_compute_hash(request)
+    + test:  call argumentless compute_hash(), asserting None is returned
+    + test:  call with a request object that is missing a source attribute, asserting None is returned
+    + test:  call with a request object that contains iterations 
+    + test:  call with a request object that does not contain iterations
+
+    change this method to return result of encrypt to a new method that formats it into a bytearray and adds iterations
+
+4) test_generate_default_context()
+5) test_generate_crypt_context(context)
+5b) exception test:  pass an unrecognized scheme as a string
+5c) exception test:  pass a non-string attribute ?
+6) test_get_algorithm_name(request)
+
+test_get_iterations(request)
+    + test:  call with a request object that contains an itertions attribute
+    + test:  call with a request object that does not contain an itertions attribute
+             and default_context has default rounds
+    + test:  call with a request object that does not contain an itertions attribute
+             and default_context does not have default rounds
+
+
+HashRequest Tests
+=================
+1) constructor test
+    - source, iterations, algorithm_name params
+2) source property test - getter
+3) source property test - setter
+3b) source setter exception handling:  pass a list of strings
+
