@@ -13,10 +13,12 @@ from .authc import (
     DefaultCompositeAccount,
     DefaultCompositeAccountId,
     FailedAuthenticationEvent,
+    PepperPasswordException,
     PasswordMatcher,
     SuccessfulAuthenticationEvent,
     UsernamePasswordToken,
 )
+
 
 from .authz import (
     AllPermission,
