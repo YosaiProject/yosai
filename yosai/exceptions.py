@@ -79,6 +79,10 @@ class PasswordMatchException(AuthenticationException):
     pass
 
 
+class PepperPasswordException(YosaiException):
+    pass
+
+
 class MissingPrivateSaltException(YosaiException):
     pass
 

@@ -5,6 +5,7 @@ from yosai import (
     InvalidArgumentException,
     MissingPrivateSaltException,
     MissingDefaultHashAlgorithm,
+    PepperPasswordException,
     settings,
 )
 
@@ -32,16 +33,13 @@ class DefaultHashService(object):
                 raise InvalidArgumentException('private salt must be string')
 
     def compute_hash(self, request):
+        """
+        :returns: dict
+        """
         if (not request or not request.source):
             return None 
-
-        context = {}
-        algo = self.get_algorithm_name(request)
-        context['scheme'] = algo
-        iterations = self.get_iterations(request)
-        if (iterations):
-            context[algo + "__default_rounds"] = iterations
-        crypt_context = self.generate_crypt_context(context)
+        
+        crypt_context = self.generate_crypt_context(request)
 
         """
           A few differences between Shiro and Yosai regarding salts:
@@ -53,19 +51,20 @@ class DefaultHashService(object):
              is salted by passlib according to the cryptcontext settings
              else default passlib settings.
         """
-        peppered_pass = self.private_salt + request.source  # bytearray 
+        try:
+            peppered_pass = self.private_salt + request.source  # s/b bytearray 
+        except (AttributeError, TypeError):
+            msg = "could not pepper password"
+            raise PepperPasswordException(msg)
        
         # Shiro's SimpleHash functionality is replaced by that of passlib's
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
+        result = {}
+        result['hash'] = crypt_context.encrypt(peppered_pass)
+        result['config'] = crypt_context.to_dict() 
 
-        result = crypt_context.encrypt(peppered_pass)
-        result['bytes'] = bytearray(result, 'utf-8')  # passlib returns a str 
-        result.iterations = iterations
-
-        # DG omitted public salt setting in result
-
-        return result
+        return result  # DG:  this design is unique to Yosai, not Shiro 
 
     def generate_default_context(self):
         """
@@ -109,7 +108,17 @@ class DefaultHashService(object):
                            value.items() if isinstance(value, dict)})
         return context
 
-    def generate_crypt_context(self, context):
+    def generate_crypt_context(self, request): 
+        """
+        :type request: HashRequest
+        :returns: CryptContext
+        """
+        context = {}
+        algo = self.get_algorithm_name(request)
+        context['scheme'] = algo
+        iterations = self.get_iterations(request)
+        if (iterations):
+            context[algo + "__default_rounds"] = iterations
 
         try:
             myctx = CryptContext(**context)
