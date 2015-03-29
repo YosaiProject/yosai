@@ -134,9 +134,9 @@ class DefaultHashService(object):
         """
         name = request.algorithm_name
         if (name is None):
-            schemes = self.default_context.get('schemes', None)
+            name = self.default_context.get('schemes', None)[0]  # default val
         
-        return schemes[0]  # default is the first algorithm in the list
+        return name
 
     def get_iterations(self, request):
         """
@@ -176,7 +176,7 @@ class HashRequest(object):
         return self._source
 
     @source.setter
-    def source(self, source):
+    def source(self, source=None):
         if source is not None:
             if isinstance(source, str):
                 self._source = bytearray(source, 'utf-8')
