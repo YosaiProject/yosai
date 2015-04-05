@@ -1,22 +1,4 @@
 
-As to what extent authc settings need to be validated, it seems to largely
-be a data validation exercise and not a functionality exercise.
-
-Plan vanilla accessors aren't going to be unit tested.
-
-authc_config = {
-    "hash_algorithms": {
-            "bcrypt_sha256": {},
-            "sha256_crypt": {
-                    "default_rounds": 110000,
-                    "max_rounds": 1000000,
-                    "min_rounds": 1000,
-                    "salt_size": 16
-            }
-        },
-    "private_salt": "privatesalt"
-}
-
 DefaultHashService Tests
 =========================
 constructor test:

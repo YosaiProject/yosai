@@ -26,11 +26,15 @@ class DefaultHashService(object):
 
     @private_salt.setter
     def private_salt(self, salt):
+        print('salt: ', salt)
         if (salt):
             try:
                 self._private_salt = bytearray(salt, 'utf-8')
             except (TypeError, AttributeError):
-                raise InvalidArgumentException('private salt must be string')
+                raise InvalidArgumentException('private salt must be string: ',
+                                               salt)
+        else:
+            raise InvalidArgumentException('no salt argument passed')
 
     def compute_hash(self, request):
         """

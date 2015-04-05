@@ -59,3 +59,8 @@ class EventBus(object):
             raise
         finally:
             return unsubscribed_listeners
+
+# DG:  this is temporary 
+class Event(object):
+    pass
+

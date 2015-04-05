@@ -1,10 +1,7 @@
 from yosai import (
-    AccountId,
-    Account,
-    AuthenticationToken,
-    Realm,
-    AuthenticationInfo,
-    PrincipalCollection,
+    IAccountId,
+    IAccount,
+    Event,
 )
 
 from abc import ABCMeta, abstractmethod
@@ -14,7 +11,7 @@ class ABCAuthenticationEvent(Event, metaclass=ABCMeta):
 
     def __init__(self, source, authc_token):
         super().__init__(source)
-        self.authc_token = token
+        self.authc_token = authc_token
 
 
 class IAuthenticationListener(metaclass=ABCMeta):
@@ -52,14 +49,14 @@ class IAuthenticator (metaclass=ABCMeta):
         pass
 
 
-class ICompositeAccountId(AccountId, metaclass=ABCMeta):
+class ICompositeAccountId(IAccountId, metaclass=ABCMeta):
 
     @abstractmethod
     def get_realm_account_id(self, realm_name):
         pass
 
 
-class ICompositeAccount(Account, metaclass=ABCMeta):
+class ICompositeAccount(IAccount, metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -75,7 +72,7 @@ class ICompositeAccount(Account, metaclass=ABCMeta):
         pass
 
 
-class IHostAuthenticationToken(AuthenticationToken, metaclass=ABCMeta):
+class IHostAuthenticationToken(IAuthenticationToken, metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -112,7 +109,7 @@ class IHashingPasswordService(IPasswordService, metaclass=ABCMeta):
         pass
 
 
-class IRememberMeAuthenticationToken(AuthenticationToken, metaclass=ABCMeta):
+class IRememberMeAuthenticationToken(IAuthenticationToken, metaclass=ABCMeta):
 
     @property
     @abstractmethod

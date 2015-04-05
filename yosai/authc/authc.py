@@ -1,13 +1,13 @@
 import importlib
 import copy
 import traceback
-from authc_abstracts import AuthenticationEvent
 from yosai import (
     AuthenticationException,
     AccountException,
     ConcurrentAccessException,
     CredentialsException,
     DisabledAccountException,
+    Event,
     EventBus,
     ExcessiveAttemptsException,
     ExpiredCredentialsException,
@@ -22,11 +22,13 @@ from yosai import (
     YosaiException,
 )
 
-from .interfaces import (
+from . import (
+    ABCAuthenticationEvent,
     IHashingPasswordService,
 )
 
 AUTHC_CONFIG = settings.AUTHC_CONFIG
+
 
 class DefaultCompositeAccount(object):
 
@@ -260,14 +262,14 @@ class DefaultCompositeAccountId(object):
         return 0
 
 
-class FailedAuthenticationEvent(AuthenticationEvent):
+class FailedAuthenticationEvent(ABCAuthenticationEvent):
 
     def __init__(self, source, authc_token, exception):
         super().__init__(source, authc_token)
         self.exception = exception  # DG:  renamed throwable
 
 
-class SuccessfulAuthenticationEvent(AuthenticationEvent):
+class SuccessfulAuthenticationEvent(ABCAuthenticationEvent):
 
     def __init__(self, source, authc_token, account):
         super().__init__(source, authc_token)

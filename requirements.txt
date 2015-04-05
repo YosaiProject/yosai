@@ -1,5 +1,6 @@
 anyjson==0.3.3
 passlib==1.6.2
 py-bcrypt==0.4
+PyPubSub==3.3.0
 SQLAlchemy==0.9.8
 structlog==15.1.0

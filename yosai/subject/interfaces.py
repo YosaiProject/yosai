@@ -1,21 +1,12 @@
 
 from abc import ABCMeta, abstractmethod
-from exceptions import InvalidArgumentException, IllegalArgumentException
+from yosai import (
+    InvalidArgumentException, 
+    IllegalArgumentException,
+    IllegalStateException,
+)
 
-
-class IMutablePrincipalCollection(PrincipalCollection, metaclass=ABCMeta):
-
-    @abstractmethod
-    def add(self, principal, realm_name):
-        pass
-
-    @abstractmethod
-    def addAll(self, principals=None, realm_name=None):
-        pass
-
-    @abstractmethod
-    def clear(self):
-        pass
+from .subject import DefaultSubjectContext
 
 
 class IPrincipalCollection(metaclass=ABCMeta):
@@ -48,7 +39,22 @@ class IPrincipalCollection(metaclass=ABCMeta):
         pass
 
 
-class IPrincipalMap(PrincipalCollection, metaclass=ABCMeta):
+class IMutablePrincipalCollection(IPrincipalCollection, metaclass=ABCMeta):
+
+    @abstractmethod
+    def add(self, principal, realm_name):
+        pass
+
+    @abstractmethod
+    def addAll(self, principals=None, realm_name=None):
+        pass
+
+    @abstractmethod
+    def clear(self):
+        pass
+
+
+class IPrincipalMap(IPrincipalCollection, metaclass=ABCMeta):
 
     @abstractmethod
     def get_realm_principals(self, realm_name):
