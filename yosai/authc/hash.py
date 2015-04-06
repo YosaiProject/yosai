@@ -20,13 +20,16 @@ class DefaultHashService(object):
         if self.private_salt is None:
             raise MissingPrivateSaltException('must configure a private salt')
 
+    def __repr__(self):
+        return "<DefaultHashService(default_context={0},private_salt={1}".\
+            format(self.default_context, self.private_salt)
+
     @property
     def private_salt(self):
         return self._private_salt
 
     @private_salt.setter
     def private_salt(self, salt):
-        print('salt: ', salt)
         if (salt):
             try:
                 self._private_salt = bytearray(salt, 'utf-8')
@@ -135,8 +138,8 @@ class DefaultHashService(object):
     def get_algorithm_name(self, request):
         """
         :type request: HashRequest
-        """
-        name = request.algorithm_name
+       """
+        name = getattr(request, 'algorithm_name', None)
         if (name is None):
             name = self.default_context.get('schemes', None)[0]  # default val
         
@@ -171,9 +174,13 @@ class HashRequest(object):
                  iterations=0,
                  algorithm_name=None):
 
-        self.source = source
+        self._source = source
         self.iterations = iterations
         self.algorithm_name = algorithm_name
+
+    def __repr__(self):
+        return "<HashRequest(source={0},iterations={1},algorithm_name={2})>".\
+            format(self._source, self.iterations, self.algorithm_name)
 
     @property
     def source(self):
@@ -181,12 +188,10 @@ class HashRequest(object):
 
     @source.setter
     def source(self, source=None):
-        if source is not None:
-            if isinstance(source, str):
-                self._source = bytearray(source, 'utf-8')
-            elif isinstance(source, bytearray):
-                self._source = source
-            else:
-                msg = 'HashRequest expects str or bytearray'
-                raise InvalidArgumentException(msg)
-
+        if isinstance(source, str):
+            self._source = bytearray(source, 'utf-8')
+        elif isinstance(source, bytearray):
+            self._source = source
+        else:
+            msg = 'HashRequest expects str or bytearray'
+            raise InvalidArgumentException(msg)
