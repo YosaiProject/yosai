@@ -26,7 +26,7 @@ def authc_config():
 @pytest.fixture(scope='function')
 def default_context():
     return {'schemes': ['sha256_crypt'],
-            'sha256_crypt__default_rounds': 110000}
+            'sha256_crypt__default_rounds': 180000}
 
 @pytest.fixture(scope='function')
 def crypt_context():
@@ -45,10 +45,16 @@ def default_hash_service():
     return DefaultHashService()
 
 @pytest.fixture(scope='function')
-def patched_default_hash_service(default_hash_service, default_context, 
-                                 monkeypatch):
-    # changes from ['bcrypt_sha256', 'sha256_crypt'] to [sha256_crypt]
-    monkeypatch.setattr(default_hash_service, 'default_context',
-                        default_context) 
+def private_salt():
+    return 'privatesaltysnack'
 
-    return DefaultHashService()
+@pytest.fixture(scope='function')
+def patched_default_hash_service(default_context, monkeypatch,
+                                 default_hash_service, private_salt):
+
+    # changes from ['bcrypt_sha256', 'sha256_crypt'] to [sha256_crypt]
+    monkeypatch.setattr(default_hash_service, 'default_context', 
+                        default_context) 
+    monkeypatch.setattr(default_hash_service, 'private_salt', private_salt)
+
+    return default_hash_service 

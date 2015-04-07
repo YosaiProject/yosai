@@ -19,9 +19,11 @@ class DefaultHashService(object):
         self.private_salt = AUTHC_CONFIG.get('private_salt', None)  # pepper
         if self.private_salt is None:
             raise MissingPrivateSaltException('must configure a private salt')
+        else:
+            self.private_salt = str(self.private_salt)
 
     def __repr__(self):
-        return "<DefaultHashService(default_context={0},private_salt={1}".\
+        return "<DefaultHashService(default_context={0},private_salt={1})>".\
             format(self.default_context, self.private_salt)
 
     @property
@@ -30,14 +32,10 @@ class DefaultHashService(object):
 
     @private_salt.setter
     def private_salt(self, salt):
-        if (salt):
-            try:
-                self._private_salt = bytearray(salt, 'utf-8')
-            except (TypeError, AttributeError):
-                raise InvalidArgumentException('private salt must be string: ',
-                                               salt)
+        if isinstance(salt, str):
+            self._private_salt = salt 
         else:
-            raise InvalidArgumentException('no salt argument passed')
+            raise InvalidArgumentException('private salt must be string')
 
     def compute_hash(self, request):
         """
@@ -59,16 +57,17 @@ class DefaultHashService(object):
              else default passlib settings.
         """
         try:
-            peppered_pass = self.private_salt + request.source  # s/b bytearray 
+            peppered_pass = str(self.private_salt) + str(request.source)
         except (AttributeError, TypeError):
             msg = "could not pepper password"
             raise PepperPasswordException(msg)
-       
+
         # Shiro's SimpleHash functionality is replaced by that of passlib's
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
         result = {}
-        result['ciphertext'] = bytearray(crypt_context.encrypt(peppered_pass))
+        result['ciphertext'] = bytearray(crypt_context.encrypt(peppered_pass),
+                                         'utf-8')
         result['config'] = crypt_context.to_dict() 
 
         return result  # DG:  this design is unique to Yosai, not Shiro 
@@ -106,7 +105,8 @@ class DefaultHashService(object):
         # If algorithms aren't passed as parameters, revert to global settings
         hash_settings = AUTHC_CONFIG.get('hash_algorithms', None)
         context = dict(schemes=list(hash_settings.keys()))
-        if (not context):
+
+        if (not context['schemes']):
             msg = "must specify a default hash algorithm"
             raise MissingDefaultHashAlgorithm(msg)
 
@@ -122,7 +122,7 @@ class DefaultHashService(object):
         """
         context = {}
         algo = self.get_algorithm_name(request)
-        context['scheme'] = algo
+        context['schemes'] = algo
         iterations = self.get_iterations(request)
         if (iterations):
             context[algo + "__default_rounds"] = iterations
@@ -152,8 +152,9 @@ class DefaultHashService(object):
         iterations = request.iterations
         if (iterations is None):
             default_algorithm = self.get_algorithm_name(request)
-            iterations = self.default_context.get(default_algorithm +
-                                                  '__default_rounds', None)
+            if(default_algorithm):
+                iterations = self.default_context.get(default_algorithm +
+                                                      '__default_rounds', None)
         
         # if iterations is none, defer to passlib default
         return iterations
@@ -174,7 +175,7 @@ class HashRequest(object):
                  iterations=0,
                  algorithm_name=None):
 
-        self._source = source
+        self.source = source
         self.iterations = iterations
         self.algorithm_name = algorithm_name
 
@@ -184,14 +185,14 @@ class HashRequest(object):
 
     @property
     def source(self):
-        return self._source
+        return self._source 
 
     @source.setter
     def source(self, source=None):
         if isinstance(source, str):
-            self._source = bytearray(source, 'utf-8')
-        elif isinstance(source, bytearray):
             self._source = source
+        elif isinstance(source, bytearray):
+            self._source = source.decode('utf-8')
         else:
             msg = 'HashRequest expects str or bytearray'
             raise InvalidArgumentException(msg)

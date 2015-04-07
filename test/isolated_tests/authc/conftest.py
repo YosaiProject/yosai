@@ -5,4 +5,5 @@ from .fixtures import (
     default_hash_service,
     hash_request,
     patched_default_hash_service,
+    private_salt,
 )
