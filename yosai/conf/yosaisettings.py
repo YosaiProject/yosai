@@ -23,7 +23,6 @@ class LazySettings(object):
     Required settings that are not user-defined (custom) will default to those
     specified in default settings.
     """
-    _wrapped = None
 
     def __init__(self):
         self._wrapped = empty
@@ -31,7 +30,7 @@ class LazySettings(object):
     def __getattr__(self, name):
         if self._wrapped is empty:
             self._setup(name)
-        return getattr(self._wrapped, name)
+        return getattr(self._wrapped, name, None)
 
     def __setattr__(self, name, value):
         if name == "_wrapped":
@@ -76,19 +75,22 @@ class Settings(object):
     def __init__(self, settings_filepath='yosai_settings.json'):
         self.load_config(settings_filepath)
 
-    def load_config(self, filepath):
+    def get_config(self, filepath):
         if os.path.exists(filepath):
             with open(filepath) as conf_file:
                 config = json.loads(conf_file.read())
         else:
             raise FileNotFoundException('could not locate: ' + str(filepath)) 
+        return config
 
+    def load_config(self, filepath): 
         try:
+            config = self.get_config(filepath)
             tempdict = {}
             tempdict.update(self.__dict__)
             tempdict.update(config)
             self.__dict__ = tempdict
-        except (AttributeError, TypeError):
+        except (TypeError, ValueError):
             raise MisconfiguredException('Settings failed to load attrs')
 
 

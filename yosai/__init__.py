@@ -55,6 +55,8 @@ from .exceptions import (
 
 from .conf import (
     settings,
+    LazySettings,
+    Settings,
 )
 
 
