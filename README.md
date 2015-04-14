@@ -4,6 +4,9 @@
 
 Yosai is a pythonic port of Apache Shiro, a popular security framework written in Java.
 
+[ ![Build Status] [travis-image] ] [travis]
+[ ![Release] [release-image] ] [releases]
+
 
 [ ![Build Status] [travis-image] ] [travis]
 [ ![Release] [release-image] ] [releases]
