@@ -33,6 +33,7 @@ from .exceptions import (
     InvalidSessionException,
     LockedAccountException,
     MisconfiguredException,
+    MissingCredentialsException,
     MissingDefaultHashAlgorithm,
     MissingMethodException,
     MissingPrivateSaltException,

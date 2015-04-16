@@ -116,6 +116,13 @@ class ICompositeAccount(IAccount, metaclass=ABCMeta):
         pass
 
 
+class ICredentialsMatcher(metaclass=ABCMeta):
+
+    @abstractmethod
+    def credentials_match(authc_token, account):
+        pass
+
+
 class IHostAuthenticationToken(IAuthenticationToken, metaclass=ABCMeta):
 
     @property
@@ -145,11 +152,11 @@ class IPasswordService(metaclass=ABCMeta):
 class IHashingPasswordService(IPasswordService, metaclass=ABCMeta):
 
     @abstractmethod
-    def hash_password(self, plaintext):
+    def hash_password(self, plaintext_password):
         pass
 
     @abstractmethod
-    def passwords_match(self, plaintext, saved_password_hash):
+    def passwords_match(self, plaintext_password, saved_password_hash):
         pass
 
 

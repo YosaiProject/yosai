@@ -5,6 +5,7 @@ from .interfaces import (
     IAuthenticator,
     ICompositeAccountId,
     ICompositeAccount,
+    ICredentialsMatcher,
     IHostAuthenticationToken,
     ILogoutAware,
     IPasswordService,

@@ -88,6 +88,10 @@ class PepperPasswordException(YosaiException):
     pass
 
 
+class MissingCredentialsException(AuthenticationException):
+    pass
+
+
 class MissingPrivateSaltException(YosaiException):
     pass
 
