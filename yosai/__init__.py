@@ -40,6 +40,7 @@ from .exceptions import (
     PasswordMatchException,
     PepperPasswordException,
     PrimaryPrincipalIntegrityException,
+    RealmAttributesException,
     SessionException,
     UnauthenticatedException,
     UnauthorizedException,

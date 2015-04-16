@@ -92,6 +92,10 @@ class MissingPrivateSaltException(YosaiException):
     pass
 
 
+class RealmAttributesException(AuthenticationException):
+    pass
+
+
 class UnknownAccountException(AccountException):
     pass
 
