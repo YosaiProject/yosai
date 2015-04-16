@@ -36,6 +36,7 @@ class MisconfiguredException(YosaiException):
 
 
 class AuthenticationException(YosaiException):
+    """ General exception due to an error during the Authc process. """
     pass
 
 

@@ -1,6 +1,7 @@
 import importlib
 import copy
 import traceback
+from collections import defaultdict
 from yosai import (
     AuthenticationException,
     AccountException,
@@ -11,6 +12,7 @@ from yosai import (
     EventBus,
     ExcessiveAttemptsException,
     ExpiredCredentialsException,
+    IEventBusAware,
     IllegalStateException,
     IncorrectCredentialsException,
     LockedAccountException,
@@ -24,7 +26,11 @@ from yosai import (
 
 from . import (
     ABCAuthenticationEvent,
+    FirstRealmSuccessfulStrategy,
+    DefaultAuthenticationAttempt,
+    IAuthenticator,
     IHashingPasswordService,
+    ICompositeAccountId,
 )
 
 AUTHC_CONFIG = settings.AUTHC_CONFIG
@@ -101,7 +107,7 @@ class UsernamePasswordToken(object):
             del self.password
         
 
-class DefaultAuthenticator(object):
+class DefaultAuthenticator(object, IAuthenticator, IEventBusAware):
 
     def __init__(self): 
         """ Default in Shiro 2.0 is 'first successful'. This is the desired 
@@ -110,85 +116,73 @@ class DefaultAuthenticator(object):
         unnecessary I/O.  """
         self.authentication_strategy = FirstRealmSuccessfulStrategy()
         self.realms = None
-        self.event_bus = eventbus.EventBus()
+        self.event_bus = EventBus()
 
     def authenticate_single_realm_account(self, realm, authc_token):
-        try:
-            if (not realm.supports(authc_token)):
-                msg = ("Realm [" + realm + "] does not support "
-                       "authentication token [" + authc_token + 
-                       "].  Please ensure that the appropriate Realm "
-                       "implementation is configured correctly or that "
-                       "the realm accepts AuthenticationTokens of this type.")
-                raise UnsupportedTokenException(msg)
+        if (not realm.supports(authc_token)):
+            msg = ("Realm [{0}] does not support authentication token [{1}]."
+                   "Please ensure that the appropriate Realm implementation "
+                   "is configured correctly or that the realm accepts "
+                   "AuthenticationTokens of this type.".format(realm, 
+                                                               authc_token))
+            raise UnsupportedTokenException(msg)
             
-        except UnsupportedTokenException as ex:
-            print('DefaultAuthenticator.authenticate_single_realm_account: ',
-                  ex)
         else:
             return realm.authenticate_account(authc_token)
     
     def authenticate_multi_realm_account(self, realms, authc_token):
-        try:
-            attempt = DefaultAuthenticationAttempt(authc_token, 
-                                                   frozenset(realms))
-            return self.authentication_strategy.execute(attempt)
-        except:
-            raise
+        # DG TBD: replace with a strategy factory and init dependency injection
+        attempt = DefaultAuthenticationAttempt(authc_token, 
+                                               frozenset(realms))
+        return self.authentication_strategy.execute(attempt)
 
     def authenticate_account(self, authc_token):
 
-            if authc_token is None:
-                msg = "AuthenticationToken argument cannot be null."
-                raise IllegalArgumentException(msg) 
-
             # log here
-            msg2 = ("Authentication submission received for authentication "
-                    "token ["+authc_token+"]")
-            print(msg2)
+            msg = ("Authentication submission received for authentication "
+                   "token [" + authc_token + "]")
+            print(msg)
 
             try:
                 account = self.do_authenticate_account(authc_token)
                 if (account is None): 
-                    msg3 = ("No account returned by any configured realms for "
+                    msg2 = ("No account returned by any configured realms for "
                             "submitted authentication token [" + authc_token +
                             "].")
-                    raise UnknownAccountException(msg3)
+                    raise UnknownAccountException(msg2)
                 
             except Exception as ex: 
-                if (isinstance(ex, AuthenticationException)):
-                    ae = ex 
-                
-                if (ae is None): 
+                ae = ex
+                if (not isinstance(ae, AuthenticationException)):
                     """
                     Exception thrown was not an expected
                     AuthenticationException.  Therefore it is probably a 
                     little more severe or unexpected.  So, wrap in an
                     AuthenticationException, log to warn, and propagate:
                     """
-                    msg4 = ("Authentication failed for submitted token ["
-                            + authc_token + "].  Possible unexpected " 
+                    msg3 = ("Authentication failed for submitted token [" +
+                            authc_token + "].  Possible unexpected " 
                             "error? (Typical or expected login exceptions "
                             "should extend from AuthenticationException).")
-                    ae = AuthenticationException(msg4, ae)
+                    ae = AuthenticationException(msg3, ex)
                 
                 try:
                     self.notify_failure(authc_token, ae)
-                except:
+                except Exception as ex:
                     # log here
-                    msg5 = ("Unable to send notification for failed "
+                    msg4 = ("Unable to send notification for failed "
                             "authentication attempt - listener error?.  " 
                             "Please check your EventBus implementation.  "
                             "Logging 'send' exception  and propagating "
                             "original AuthenticationException instead...")
-                    print(msg5)
+                    print(msg4)
                 raise ae 
 
             # log here
-            msg6 = ("Authentication successful for submitted authentication "
+            msg5 = ("Authentication successful for submitted authentication "
                     "token [{0}].  Returned account [{1}]".
                     format(authc_token, account))
-            print(msg6)
+            print(msg5)
 
             self.notify_success(authc_token, account)
 
@@ -199,8 +193,7 @@ class DefaultAuthenticator(object):
         if (not self.realms):
             msg = ("One or more realms must be configured to perform "
                    "authentication.")
-            raise AuthenticationException(
-                'DefaultAuthenticator.do_authenticate_account: ' + msg)
+            raise AuthenticationException(msg)
 
         if (len(self.realms) == 1):
             return self.authenticate_single_realm_account(
@@ -219,48 +212,34 @@ class DefaultAuthenticator(object):
             self.event_bus.publish(event)
 
 
-class DefaultCompositeAccountId(object):
+class DefaultCompositeAccountId(object, ICompositeAccountId):
 
     def __init__(self):
-        self.realm_accountids = {} 
+        self.realm_accountids = defaultdict(list) 
 
-    def get_realm_accountid(self, realm_name):
+    def get_realm_accountid(self, realm_name=None):
         return self.realm_accountids.get(realm_name, None)
 
     def set_realm_accountid(self, realm_name, accountid):
-        try:
-            self.realm_accountids[realm_name] = accountid
-        except (AttributeError, TypeError):
-            traceback.print_exc()
+        self.realm_accountids[realm_name].append(accountid)
 
     def __eq__(self, other):
         if (other == self):
             return True
         
-        try:
+        if isinstance(other, DefaultCompositeAccountId):
             return self.realm_accountids == other.realm_accountids
 
-        except (AttributeError, TypeError):
-            traceback.print_exc()
-            return False
-
         return False 
-
-    def __repr__(self):
- 
-        try:
-            return str(self.realm_acctids) 
-        except (AttributeError, TypeError):
-            traceback.print_exc()
-            return '' 
-
-    def hash_code(self):
-        try:
+    
+    def __hash__(self):
+        if (self.realm_accountids):
             return id(self.realm_accountids)
-        except (AttributeError, TypeError):
-            return 0
         return 0
 
+    def __repr__(self):
+        return ', '.join(["{0}: {1}".format(realm, acctids) for realm, acctids 
+                         in self.realm_acctids.items()])
 
 class FailedAuthenticationEvent(ABCAuthenticationEvent):
 

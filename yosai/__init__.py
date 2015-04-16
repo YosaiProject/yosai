@@ -73,6 +73,7 @@ from .account import (
 from .eventbus import (
     Event,  # DG:  only temporary!
     EventBus,
+    IEventBusAware,
 )
 
 """
