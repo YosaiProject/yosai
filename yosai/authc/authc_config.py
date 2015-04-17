@@ -8,12 +8,11 @@ class AuthenticationSettings(object):
     AuthenticationSettings is a settings proxy.  It is new for Yosai.
     """
     def __init__(self):
-        self.authc_config = settings.AUTHC_CONFIG
         self.default_config = self.hashing_service_defaults()
+        self.authc_config = settings.AUTHC_CONFIG
 
     def __getattr__(self, attr):
-        return getattr(self.auch_config, attr, 
-                       self.default_config.get(attr, None))
+        return self.authc_config.get(attr, self.default_config.get(attr, None))
 
     def hashing_service_defaults(self):
         # hard coded for last-resort configuration

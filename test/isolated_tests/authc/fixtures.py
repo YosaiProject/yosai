@@ -1,9 +1,10 @@
 import pytest
 from unittest import mock
 
-from yosai import (
+from yosai.authc import (
     DefaultHashService,
     HashRequest,
+    AuthenticationSettings,
 )
 
 from passlib.context import CryptContext
@@ -22,6 +23,12 @@ def authc_config():
                 "salt_size": 16}},
         "private_salt": "privatesalt"
     }
+
+
+@pytest.fixture(scope='function')
+def authc_settings():
+    return AuthenticationSettings()
+
 
 @pytest.fixture(scope='function')
 def default_context():

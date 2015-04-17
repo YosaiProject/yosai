@@ -3,10 +3,13 @@ from unittest import mock
 
 from yosai import (
     CryptContextException,
-    DefaultHashService,
     InvalidArgumentException,
     MissingDefaultHashAlgorithm,
     PepperPasswordException,
+)
+
+from yosai.authc import (
+    DefaultHashService,
 )
 
 def test_init_private_salt_exception(authc_config, monkeypatch):

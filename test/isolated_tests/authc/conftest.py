@@ -1,5 +1,6 @@
 from .fixtures import (
     authc_config,
+    authc_settings,
     crypt_context,
     default_context,
     default_hash_service,
