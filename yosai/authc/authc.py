@@ -31,8 +31,8 @@ from . import (
     DefaultAuthenticationAttempt,
     IAuthenticator,
     IHashingPasswordService,
-    ICompositeAccountId,
     ICompositeAccount,
+    ICompositeAccountId,
     IHostAuthenticationToken, 
     IRememberMeAuthenticationToken,
 )
@@ -40,7 +40,7 @@ from . import (
 AUTHC_CONFIG = settings.AUTHC_CONFIG
 
 
-class DefaultCompositeAccount(object, ICompositeAccount):
+class DefaultCompositeAccount(ICompositeAccount, object):
 
     def __init__(self, overwrite=True):
         self.account_id = DefaultCompositeAccountId()  # DG renamed 
@@ -82,8 +82,9 @@ class DefaultCompositeAccount(object, ICompositeAccount):
         return self.realm_attrs.get(realm_name, dict())  # DG: no frozen dict
 
 
-class UsernamePasswordToken(object, IHostAuthenticationToken, 
-                            IRememberMeAuthenticationToken):
+class UsernamePasswordToken(IHostAuthenticationToken, 
+                            IRememberMeAuthenticationToken,
+                            object):
 
     def __init__(self, username=None, password=None, remember_me=False, 
                  host=None):
@@ -123,7 +124,7 @@ class UsernamePasswordToken(object, IHostAuthenticationToken,
                 self.password[element] = 0  # DG:  this equals 0x00
         
 
-class DefaultAuthenticator(object, IAuthenticator, IEventBusAware):
+class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
 
     def __init__(self): 
         """ Default in Shiro 2.0 is 'first successful'. This is the desired 
@@ -228,7 +229,7 @@ class DefaultAuthenticator(object, IAuthenticator, IEventBusAware):
             self.event_bus.publish(event)
 
 
-class DefaultCompositeAccountId(object, ICompositeAccountId):
+class DefaultCompositeAccountId(ICompositeAccountId, object):
 
     def __init__(self):
         self.realm_accountids = defaultdict(set) 

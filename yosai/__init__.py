@@ -10,6 +10,7 @@ __status__ = "Development"
 from .exceptions import (
     AbstractMethodException,
     AccountException,
+    AuthenticationConfigException,
     AuthenticationException,
     AuthorizationException,
     CacheException,
@@ -37,6 +38,7 @@ from .exceptions import (
     MissingDefaultHashAlgorithm,
     MissingMethodException,
     MissingPrivateSaltException,
+    MultiRealmAuthenticationException,
     NullPointerException,
     PasswordMatchException,
     PepperPasswordException,

@@ -5,19 +5,22 @@ from yosai import (
 )
 
 from . import (
+    AuthenticationSettings,
     DefaultHashService,
     ICredentialsMatcher,
     IHashingPasswordService,
 )
-
-AUTHC_CONFIG = settings.AUTHC_CONFIG
-
 
 class DefaultPasswordService(IHashingPasswordService, object):
 
     def __init__(self):
 
         self.default_hash_algorithm = "bcrypt_sha256"
+
+        # new to Yosai:
+        authc_config = AuthenticationSettings().get_password_service_defaults()
+
+        # Unlike Shiro, Yosai references a config file:
         hash_scheme_settings = AUTHC_CONFIG.get('hash_algorithms', None).\
             get(self.default_hash_algorithm, None)
 
@@ -27,11 +30,12 @@ class DefaultPasswordService(IHashingPasswordService, object):
         hash_service = DefaultHashService()
         hash_service.hash_algorithm_name = self.default_hash_algorithm
         hash_service.hash_iterations = self.default_hash_iterations
-        hash_service.generate_public_salt = True  # always want generated salts
+        # Yosai omitted logic for hash_service.generate_public_salt 
         self.hash_service = hash_service
 
-        self.hash_format = Shiro1CryptFormat()
-        self.hash_format_factory = DefaultHashFormatFactory()
+        # in Yosai, hash formatting is taken care of by passlib
+        # self.hash_format ...
+        # self.hash_format_factory ...
 
     def encrypt_password(self, plaintext):
         hashed = self.hash_password(plaintext)

@@ -93,14 +93,14 @@ class IAuthenticator (metaclass=ABCMeta):
         pass
 
 
-class ICompositeAccountId(IAccountId, metaclass=ABCMeta):
+class ICompositeAccountId(IAccountId):
 
     @abstractmethod
     def get_realm_account_id(self, realm_name):
         pass
 
 
-class ICompositeAccount(IAccount, metaclass=ABCMeta):
+class ICompositeAccount(IAccount):
 
     @property
     @abstractmethod
@@ -123,7 +123,7 @@ class ICredentialsMatcher(metaclass=ABCMeta):
         pass
 
 
-class IHostAuthenticationToken(IAuthenticationToken, metaclass=ABCMeta):
+class IHostAuthenticationToken(IAuthenticationToken):
 
     @property
     @abstractmethod
@@ -149,7 +149,7 @@ class IPasswordService(metaclass=ABCMeta):
         pass
 
 
-class IHashingPasswordService(IPasswordService, metaclass=ABCMeta):
+class IHashingPasswordService(IPasswordService):
 
     @abstractmethod
     def hash_password(self, plaintext_password):
@@ -160,7 +160,7 @@ class IHashingPasswordService(IPasswordService, metaclass=ABCMeta):
         pass
 
 
-class IRememberMeAuthenticationToken(IAuthenticationToken, metaclass=ABCMeta):
+class IRememberMeAuthenticationToken(IAuthenticationToken):
 
     @property
     @abstractmethod
@@ -186,5 +186,4 @@ class IAuthenticationStrategy(metaclass=ABCMeta):
     @abstractmethod
     def execute(self, attempt):
         pass
-
 

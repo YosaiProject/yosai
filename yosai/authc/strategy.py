@@ -1,6 +1,10 @@
 import copy
 import traceback
 
+from yosai import (
+    MultiRealmAuthenticationException,
+    AuthenticationException,
+)
 
 class DefaultAuthenticationAttempt(object):
 
@@ -162,7 +166,7 @@ class FirstRealmSuccessfulStrategy(object):
                 raise AuthenticationException(
                     "Unable to authenticate realm account.", exc)
 
-            #else more than one throwable encountered:
+            #  else more than one throwable encountered:
             else:
                 raise MultiRealmAuthenticationException(realm_errors)
 

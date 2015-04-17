@@ -35,6 +35,10 @@ class MisconfiguredException(YosaiException):
 # ---------------------------------------------------------------------------
 
 
+class AuthenticationConfigException(YosaiException):
+    pass
+
+
 class AuthenticationException(YosaiException):
     """ General exception due to an error during the Authc process. """
     pass
@@ -93,6 +97,10 @@ class MissingCredentialsException(AuthenticationException):
 
 
 class MissingPrivateSaltException(YosaiException):
+    pass
+
+
+class MultiRealmAuthenticationException(AuthenticationException):
     pass
 
 
