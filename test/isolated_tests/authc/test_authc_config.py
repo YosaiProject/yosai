@@ -2,7 +2,7 @@ import pytest
 
 def test_getattr_with_authc(monkeypatch, authc_settings):
     mock_authc = {'test': 1}
-    monkeypatch.setattr(authc_settings, 'authc_config', mock_authc)
+    monkeypatch.setattr(authc_settings, 'default_config', mock_authc)
     assert authc_settings.test == 1 
     
 def test_getattr_without_authc_with_default(monkeypatch, authc_settings):
