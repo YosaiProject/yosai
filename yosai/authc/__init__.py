@@ -1,6 +1,6 @@
 
 from .authc_config import (
-    AuthenticationSettings,
+    DefaultAuthenticationSettings,
 )
 
 from .interfaces import (

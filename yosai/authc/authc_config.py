@@ -3,7 +3,7 @@ from yosai import (
 )
 
 
-class AuthenticationSettings(object):
+class DefaultAuthenticationSettings(object):
     """
     AuthenticationSettings is a settings proxy.  It is new for Yosai.
     """
@@ -27,9 +27,7 @@ class AuthenticationSettings(object):
             return {
                 "default_algorithm": "bcrypt_sha256",
                 "hash_algorithms": {
-                    "bcrypt_sha256": {
-                        "default_rounds": 200000,
-                    },
+                    "bcrypt_sha256": {}, 
                     "sha256_crypt": {
                         "default_rounds": 110000,
                         "max_rounds": 1000000,
