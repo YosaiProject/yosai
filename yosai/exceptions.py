@@ -48,6 +48,10 @@ class AccountException(AuthenticationException):
     pass
 
 
+class AuthenticationSettingsContextException(AuthenticationException):
+    pass
+
+
 class ConcurrentAccessException(AccountException):
     pass
 
@@ -80,7 +84,7 @@ class LockedAccountException(DisabledAccountException):
     pass
 
 
-class MissingDefaultHashAlgorithm(YosaiException):
+class MissingHashAlgorithm(YosaiException):
     pass
 
 

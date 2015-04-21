@@ -1,5 +1,5 @@
 
-from .authc_config import (
+from .context import (
     DefaultAuthenticationSettings,
 )
 
