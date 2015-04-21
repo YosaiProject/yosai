@@ -32,7 +32,6 @@ from . import (
     ABCAuthenticationEvent,
     AuthenticationSettings,
     CryptContextFactory,
-    DefaultHashService,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
     DefaultPasswordService,
@@ -304,9 +303,8 @@ class PasswordMatcher(object):
         return stored
 
 
-class DefaultHashService(object):
-
-    def __init__(self): 
+class DefaultAuthcService(object):
+    def __init__(self):
         authc_settings = AuthenticationSettings()
         # using default algorithm when generating crypt context:
         self.crypt_context = CryptContextFactory(authc_settings).\
@@ -317,16 +315,7 @@ class DefaultHashService(object):
         else:
             self.private_salt = str(self.private_salt)
 
-    def __repr__(self):
-        return "<DefaultHashService(crypt_context={0})>".\
-            format(self.crypt_context)
-
-    def compute_hash(self, source): 
-        """
-        Yosai omits HashRequest overhead
-        :returns: dict
-        """
-
+    def pepper_password(self, source):
         """
           A few differences between Shiro and Yosai regarding salts:
           1) Shiro generates its own public salt whereas Yosai defers salt
@@ -337,18 +326,38 @@ class DefaultHashService(object):
              is salted by passlib according to the cryptcontext settings
              else default passlib settings.
         """
+
         try:
             peppered_pass = str(self.private_salt) + str(source)
         except (AttributeError, TypeError):
             msg = "could not pepper password"
             raise PepperPasswordException(msg)
 
+        return peppered_pass 
+       
+
+class DefaultHashService(DefaultAuthcService):
+
+    def __init__(self): 
+        super().__init__()
+
+    def __repr__(self):
+        return "<{0}(crypt_context={1})>".\
+            format(self.__class__.__name__, self.crypt_context)
+
+    def compute_hash(self, source): 
+        """
+        note that Yosai omits HashRequest overhead
+        :returns: dict
+        """
+
         # Shiro's SimpleHash functionality is replaced by that of passlib's
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
         result = {}
+        peppered_plaintext = self.pepper_password(source)
         result['ciphertext'] = bytearray(
-            self.crypt_context.encrypt(peppered_pass), 'utf-8')
+            self.crypt_context.encrypt(peppered_plaintext), 'utf-8')
         result['config'] = self.crypt_context.to_dict() 
 
         return result  # DG:  this design is unique to Yosai, not Shiro 
@@ -358,29 +367,13 @@ class DefaultHashService(object):
 # DG omitted HashRequest definition
 
 
-class DefaultPasswordService(IHashingPasswordService, object):
+class DefaultPasswordService(IHashingPasswordService, DefaultAuthcService):
 
     def __init__(self):
-
-        # Yosai introduces AuthenticationSettings based config:
-        auth_settings = DefaultAuthenticationSettings()
-        self.default_hash_algorithm = auth_settings.default_algorithm 
-        self.default_hash_iterations = auth_settings.default_rounds 
-
-        hash_service = DefaultHashService()
-        hash_service.hash_algorithm_name = self.default_hash_algorithm
-        hash_service.hash_iterations = self.default_hash_iterations
-        # Yosai omitted logic for hash_service.generate_public_salt 
-        self.hash_service = hash_service
-
-        # in Yosai, hash formatting is taken care of by passlib
+        super().__init__()
+        # in Yosai, hash formatting is taken care of by passlib:
         # self.hash_format ...
         # self.hash_format_factory ...
-
-    def encrypt_password(self, plaintext):
-        # Yosai omits the hash formatting logic and merges with hash_password
-        request = self.create_hash_request(plaintext)  # Yosai refactor to str
-        return self.hash_service.compute_hash(request)
 
     def passwords_match(self, plaintext, saved):
         """
@@ -396,23 +389,11 @@ class DefaultPasswordService(IHashingPasswordService, object):
             - passlib determines the format and compatability
         """
         try:
-
-            return (saved == formatted)
+            peppered_plaintext = self.pepper_password(plaintext)
+            return self.crypt_context.verify(peppered_plaintext, saved) 
 
         except (AttributeError, TypeError):
             raise PasswordMatchException('unrecognized attribute type')
-
-    def create_hash_request(self, plaintext):
-        return HashRequest.Builder().set_source(plaintext).build()
-
-    def build_hash_request(self, plaintext, saved):
-        # keep everything from the saved hash except for the source:
-        # now use the existing saved data:
-        return HashRequest.Builder().set_source(plaintext).\
-                set_algorithm_name(saved.algorithm_name).\
-                set_salt(saved.salt).\
-                set_iterations(saved.iterations).\
-                build()
 
 
 class SimpleCredentialsMatcher(object, ICredentialsMatcher):
