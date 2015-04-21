@@ -1,6 +1,7 @@
 
 from .context import (
-    DefaultAuthenticationSettings,
+    AuthenticationSettings,
+    CryptContextFactory,
 )
 
 from .interfaces import (
@@ -40,4 +41,8 @@ from .authc import (
     PasswordMatcher,
     SuccessfulAuthenticationEvent,
     UsernamePasswordToken,
+)
+
+from .credential import (
+    DefaultPasswordService
 )

@@ -51,8 +51,11 @@ class CryptContextFactory(object):
     New to Yosai.  CryptContextService proxies passlib's CryptContext api.
     """
 
-    def __init__(self):
-        self.authc_settings = AuthenticationSettings()
+    def __init__(self, authc_settings):
+        """
+        :type authc_settings: AuthenticationSettings
+        """
+        self.authc_settings = authc_settings 
 
     def __repr__(self):
         return ("<CryptContextFactory(authc_settings={0})>".
