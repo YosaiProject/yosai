@@ -88,14 +88,6 @@ class MissingHashAlgorithm(YosaiException):
     pass
 
 
-class PasswordMatchException(AuthenticationException):
-    pass
-
-
-class PepperPasswordException(YosaiException):
-    pass
-
-
 class MissingCredentialsException(AuthenticationException):
     pass
 
@@ -105,6 +97,22 @@ class MissingPrivateSaltException(YosaiException):
 
 
 class MultiRealmAuthenticationException(AuthenticationException):
+    pass
+
+
+class PasswordMatchException(AuthenticationException):
+    pass
+
+
+class PasswordMatcherInvalidToken(AuthenticationException):
+    pass
+
+
+class PasswordMatcherInvalidAccount(AuthenticationException):
+    pass
+
+
+class PepperPasswordException(YosaiException):
     pass
 
 

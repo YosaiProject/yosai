@@ -20,6 +20,8 @@ from yosai import (
     MissingCredentialsException,
     MissingPrivateSaltException,
     PasswordMatchException,
+    PasswordMatcherInvalidToken,
+    PasswordMatcherInvalidAccount,
     PepperPasswordException,
     RealmAttributesException,  # new in Yosai
     settings,
@@ -295,12 +297,16 @@ class PasswordMatcher(object):
         return self.password_service
 
     def get_submitted_password(self, authc_token):
-        return authc_token.credentials if authc_token else None
+        try:
+            return authc_token.credentials
+        except AttributeError:
+            raise PasswordMatcherInvalidToken
 
     def get_stored_password(self, account_info): 
-        # should be either bytes or unicode:
-        stored = getattr(account_info, 'credentials', None)
-        return stored
+        try:
+            return account_info.credentials
+        except AttributeError:
+            raise PasswordMatcherInvalidAccount
 
 
 class DefaultAuthcService(object):

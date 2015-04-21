@@ -42,6 +42,8 @@ from .exceptions import (
     MultiRealmAuthenticationException,
     NullPointerException,
     PasswordMatchException,
+    PasswordMatcherInvalidToken,
+    PasswordMatcherInvalidAccount,
     PepperPasswordException,
     PrimaryPrincipalIntegrityException,
     RealmAttributesException,
