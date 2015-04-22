@@ -77,7 +77,7 @@ from .account import (
     # IAccountStore,
 )
 
-from .eventbus import (
+from .event import (
     Event,  # DG:  only temporary!
     EventBus,
     IEventBusAware,

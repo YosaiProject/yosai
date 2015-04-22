@@ -1,4 +1,4 @@
-from .eventbus import (
+from .event import (
     Event,
     EventBus,
 )
