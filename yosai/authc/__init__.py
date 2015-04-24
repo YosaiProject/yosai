@@ -6,19 +6,19 @@ from .context import (
 
 from .interfaces import (
     ABCAuthenticationEvent,
+    IAuthenticationAttempt,
     IAuthenticationListener,
+    IAuthenticationStrategy,
     IAuthenticationToken,
     IAuthenticator,
     ICompositeAccountId,
     ICompositeAccount,
     ICredentialsMatcher,
+    IHashingPasswordService,
     IHostAuthenticationToken,
     ILogoutAware,
     IPasswordService,
-    IHashingPasswordService,
     IRememberMeAuthenticationToken,
-    IAuthenticationAttempt,
-    IAuthenticationStrategy,
 )   
 
 from .strategy import (

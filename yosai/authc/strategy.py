@@ -6,6 +6,10 @@ from yosai import (
     AuthenticationException,
 )
 
+from . import (
+    IAuthenticationStrategy,
+)
+
 class DefaultAuthenticationAttempt(object):
 
     def __init__(self, authc_token, realms):
@@ -134,15 +138,35 @@ class AtLeastOneRealmSuccessfulStrategy(object):
         return None 
 
 
-class FirstRealmSuccessfulStrategy(object):
+class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
 
+    """
+     The FirstRealmSuccessfulStrategy will iterate over the available realms
+     and invoke Realm.authenticate_account(authc_token) on each one. The moment 
+     that a realm returns an Account without raising an Exception, that account
+     is returned immediately and all subsequent realms ignored entirely
+     (iteration 'short circuits').
+
+     If no realms return an Account:
+         * If only one exception was thrown by any consulted Realm, that
+           exception is thrown.
+         * If more than one Realm threw an exception during consultation, those
+           exceptions are bundled together as a
+           MultiRealmAuthenticationException and that exception is thrown.
+         * If no exceptions were thrown, None is returned, indicating to the
+           calling Authenticator that no Account was found.
+    """
     def __init__(self):
         pass
 
     def execute(self, authc_attempt):
-
+        """
+        :type authc_attempt:  AuthenticationAttempt
+        :returns:  Account
+        """
         authc_token = authc_attempt.authentication_token
         realm_errors = {} 
+        account = None
 
         for realm in authc_attempt.realms:
             if (realm.supports(authc_token)):
@@ -151,17 +175,17 @@ class FirstRealmSuccessfulStrategy(object):
                 except Exception as ex:
                     realm_errors[realm.name] = ex
                     # current realm failed - try the next one:
-
-                if (account is not None):
-                    # successfully acquired an account
-                    # -- stop iterating, return immediately:
-                    return account
+                else:
+                    if (account):
+                        # successfully acquired an account
+                        # -- stop iterating, return immediately:
+                        return account
 
         if (realm_errors):
             if (len(realm_errors) == 1):
                 exc = next(iter(realm_errors.values()))
                 if (isinstance(exc, AuthenticationException)):
-                    raise AuthenticationException(exc)  # DG:  not sure.. TBD
+                    raise exc  # DG:  not sure.. TBD
                 
                 raise AuthenticationException(
                     "Unable to authenticate realm account.", exc)
