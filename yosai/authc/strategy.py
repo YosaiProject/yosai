@@ -4,13 +4,15 @@ import traceback
 from yosai import (
     MultiRealmAuthenticationException,
     AuthenticationException,
+    DefaultCompositeAccount,
 )
 
 from . import (
+    IAuthenticationAttempt,
     IAuthenticationStrategy,
 )
 
-class DefaultAuthenticationAttempt(object):
+class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
 
     def __init__(self, authc_token, realms):
         """
@@ -20,23 +22,12 @@ class DefaultAuthenticationAttempt(object):
         :type realms: Set 
         """
         self.authentication_token = authc_token
-        self.realms = frozenset(realms) 
+        self.realms = realms  # DG:  frozenset is another option
 
 
-class AllRealmsSuccessfulStrategy(object):
+class AllRealmsSuccessfulStrategy(IAuthenticationAttempt, object):
     
-    def __init__(self, defaultcompositeaccount):
-        """
-        DG:  Unlike in Shiro, I will inject the d.c.a dependency:
-
-        :param defaultcompositeaccount:  a class object (not instance) by
-            which to instantiate from
-        :type defaultcompositeaccount: DefaultCompositeAccount
-        """
-        self.default_composite_account = defaultcompositeaccount()
-
     def execute(self, authc_attempt):
-
         token = copy.copy(authc_attempt.authentication_token)  # DG:  TBD.
         first_account = None
         composite_account = None
@@ -65,8 +56,7 @@ class AllRealmsSuccessfulStrategy(object):
                             first_account_realm_name = realm.name
                         else:
                             if (not composite_account):
-                                composite_account = \
-                                    self.default_composite_account()
+                                composite_account = DefaultCompositeAccount()
                                 composite_account.append_realm_account(
                                     first_account_realm_name, first_account)
                                 
@@ -81,48 +71,33 @@ class AllRealmsSuccessfulStrategy(object):
         return first_account
 
 
-class AtLeastOneRealmSuccessfulStrategy(object):
-
-    def __init__(self, defaultcompositeaccount):
-        """
-        DG:  Unlike in Shiro, I will inject the d.c.a dependency:
-
-        :param defaultcompositeaccount:  a class object (not instance) by
-            which to instantiate from
-        :type defaultcompositeaccount: DefaultCompositeAccount
-        """
-        self.default_composite_account = defaultcompositeaccount()
+class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
 
     def execute(self, authc_attempt):
-
+        """
+        :rtype:  Account
+        """
         authc_token = copy.copy(authc_attempt.authentication_token)
         realm_errors = {} 
+        account = None
+        first_account = None
+        composite_account = None
 
         for realm in authc_attempt.realms:
-
             if (realm.supports(authc_token)):
-
                 realm_name = realm.name
-
                 try:
-                    account = realm.authenticateAccount(authc_token)
+                    account = realm.authenticate_account(authc_token)
                 except Exception as ex:
                     # noinspection ThrowableResultOfMethodCallIgnored
                     realm_errors[realm_name] = ex
                 
-                first_account = None
-                composite_account = None
-
                 if (account is not None):
                     if (first_account is None): 
                         first_account = account
-                        first_account_realm_name = realm_name
                     else:
                         if (composite_account is None):
-                            composite_account =\
-                                self.default_composite_account()
-                            composite_account.append_realm_account(
-                                first_account_realm_name, first_account)
+                            composite_account = DefaultCompositeAccount()
                         composite_account.append_realm_account(
                             realm_name, account)
 
