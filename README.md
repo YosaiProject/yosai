@@ -6,9 +6,9 @@ Yosai is a pythonic port of Apache Shiro, a popular security framework written i
 
 It provides a comprehensive and flexible security management solution in a 
 developer-friendly fashion, including:
-    * Authentication
-    * Authorization
-    * Session Management
+* Authentication
+* Authorization
+* Session Management
 
 [ ![Build Status] [travis-image] ] [travis]
 [ ![Release] [release-image] ] [releases]
