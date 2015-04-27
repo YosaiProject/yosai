@@ -97,7 +97,16 @@ class MissingPrivateSaltException(YosaiException):
 
 
 class MultiRealmAuthenticationException(AuthenticationException):
-    pass
+
+    def __init__(self, realm_errors):
+        msg = ("Multiple authentication problems across various realms.  " 
+               "Only the first discovered exception will be shown as the cause"
+               "; call get_realm_exceptions() to access all of them.")
+        super(msg, next(iter(realm_errors.values())))
+        self.realm_errors = realm_errors
+    
+    def get_realm_exceptions(self):
+        return self.realm_errors
 
 
 class PasswordMatchException(AuthenticationException):

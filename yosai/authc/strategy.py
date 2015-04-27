@@ -24,6 +24,16 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
         self.authentication_token = authc_token
         self.realms = realms  # DG:  frozenset is another option
 
+    # DG:  these accessor methods, and the attempt interface in general, seem
+    # unecessary so I may remove later.  Presently, they're placeholders.
+    @property
+    def authentication_token(self):
+        return self.authentication_token 
+
+    @property
+    def realms(self):
+        return self.realms
+
 
 class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
     
