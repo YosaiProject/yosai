@@ -25,15 +25,15 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
         self.realms = realms  # DG:  frozenset is another option
 
 
-class AllRealmsSuccessfulStrategy(IAuthenticationAttempt, object):
+class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
     
     def execute(self, authc_attempt):
-        token = copy.copy(authc_attempt.authentication_token)  # DG:  TBD.
+        token = authc_attempt.authentication_token
+        first_account_realm_name = None
         first_account = None
         composite_account = None
 
         for realm in authc_attempt.realms:
-
             if (realm.supports(token)):
 
                 """
@@ -47,24 +47,21 @@ class AllRealmsSuccessfulStrategy(IAuthenticationAttempt, object):
                 additional account stores is likely to incur unnecessary /
                 undesirable I/O for most apps.
                 """
-                try:
-                    account = realm.authenticate_account(token)
+                account = realm.authenticate_account(token)
 
-                    if (account):
-                        if (not first_account):
-                            first_account = account
-                            first_account_realm_name = realm.name
-                        else:
-                            if (not composite_account):
-                                composite_account = DefaultCompositeAccount()
-                                composite_account.append_realm_account(
-                                    first_account_realm_name, first_account)
-                                
+                if (account):
+                    if (not first_account):
+                        first_account = account
+                        first_account_realm_name = realm.name
+                    else:                    
+                        if (not composite_account):
+                            composite_account = DefaultCompositeAccount()
                             composite_account.append_realm_account(
-                                realm.name, account) 
-                except (AttributeError, TypeError):
-                    traceback.print_exc()
-
+                                first_account_realm_name, first_account)
+                            
+                        composite_account.append_realm_account(
+                            realm.name, account) 
+                
         if (composite_account):
             return composite_account
 
