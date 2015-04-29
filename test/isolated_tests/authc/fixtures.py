@@ -5,6 +5,7 @@ from yosai.authc import (
     DefaultHashService,
     HashRequest,
     AuthenticationSettings,
+    settings,
 )
 
 from passlib.context import CryptContext
@@ -26,7 +27,8 @@ def authc_config():
 
 
 @pytest.fixture(scope='function')
-def authc_settings():
+def patched_authc_settings(authc_config, monkeypatch):
+    monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
     return AuthenticationSettings()
 
 

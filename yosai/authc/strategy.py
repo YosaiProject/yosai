@@ -4,10 +4,10 @@ import traceback
 from yosai import (
     MultiRealmAuthenticationException,
     AuthenticationException,
-    DefaultCompositeAccount,
 )
 
 from . import (
+    DefaultCompositeAccount,
     IAuthenticationAttempt,
     IAuthenticationStrategy,
 )

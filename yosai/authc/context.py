@@ -1,16 +1,9 @@
 from yosai import (
-    settings,
-    CryptContextException,
-    MissingPrivateSaltException,
-)
-
-from . import (
     AuthenticationSettingsContextException,
-    DefaultHashService,
-    ICredentialsMatcher,
-    IHashingPasswordService,
-    MissingHashAlgorithm,
-    PepperPasswordException,
+    CryptContextException,
+    MissingHashAlgorithmException,
+    MissingPrivateSaltException,
+    settings,
 )
 
 from passlib.context import CryptContext
@@ -57,10 +50,6 @@ class CryptContextFactory(object):
         """
         self.authc_settings = authc_settings 
 
-    def __repr__(self):
-        return ("<CryptContextFactory(authc_settings={0})>".
-                format(self.authc_settings))
-
     def generate_context(self, algorithm):
 
         authc_config = self.authc_settings.get_config(algorithm) 
@@ -77,13 +66,14 @@ class CryptContextFactory(object):
         
         if (not context['schemes']):
             msg = "hashing algorithm could not be obtained from config"
-            raise MissingHashAlgorithm(msg)
+            raise MissingHashAlgorithmException(msg)
 
             context.update({"{0}__{1}".format(algorithm, key): value 
                            for key, value in authc_config.items()}) 
         return context
 
-    def create_crypt_context(self, algorithm=None):
+    def create_crypt_context(self, 
+                             algorithm=None):
         """
         :type request: HashRequest
         :returns: CryptContext
@@ -100,3 +90,8 @@ class CryptContextFactory(object):
             raise CryptContextException
 
         return myctx
+    
+    def __repr__(self):
+        return ("<CryptContextFactory(authc_settings={0})>".
+                format(self.authc_settings))
+

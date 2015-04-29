@@ -84,7 +84,7 @@ class LockedAccountException(DisabledAccountException):
     pass
 
 
-class MissingHashAlgorithm(YosaiException):
+class MissingHashAlgorithmException(YosaiException):
     pass
 
 

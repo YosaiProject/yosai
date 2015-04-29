@@ -36,7 +36,7 @@ from .exceptions import (
     LockedAccountException,
     MisconfiguredException,
     MissingCredentialsException,
-    MissingHashAlgorithm,
+    MissingHashAlgorithmException,
     MissingMethodException,
     MissingPrivateSaltException,
     MultiRealmAuthenticationException,
@@ -72,8 +72,8 @@ from .logging import (
 )
 
 from .account import (
-    IAccount,
     IAccountId,
+    IAccount,
     # IAccountStore,
 )
 
