@@ -36,7 +36,6 @@ from . import (
     CryptContextFactory,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
-    DefaultPasswordService,
     IAuthenticator,
     ICredentialsMatcher,
     IHashingPasswordService,
@@ -192,21 +191,21 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
             self.event_bus.publish(event)
 
 
-class FailedAuthenticationEvent(ABCAuthenticationEvent):
+class FailedAuthenticationEvent(ABCAuthenticationEvent, object):
 
     def __init__(self, source, authc_token, exception):
         super().__init__(source, authc_token)
         self.exception = exception  # DG:  renamed from throwable to exception
 
 
-class SuccessfulAuthenticationEvent(ABCAuthenticationEvent):
+class SuccessfulAuthenticationEvent(ABCAuthenticationEvent, object):
 
     def __init__(self, source, authc_token, account):
         super().__init__(source, authc_token)
         self.account = account
     
 
-class PasswordMatcher(object):
+class PasswordMatcher(ICredentialsMatcher, object):
     """ DG:  Dramatic changes made here adapting to passlib and python """
 
     def __init__(self):
@@ -334,7 +333,7 @@ class DefaultPasswordService(IHashingPasswordService, DefaultAuthcService):
             raise PasswordMatchException('unrecognized attribute type')
 
 
-class SimpleCredentialsMatcher(object, ICredentialsMatcher):
+class SimpleCredentialsMatcher(ICredentialsMatcher, object):
 
     def __init__(self):
         pass
@@ -375,7 +374,7 @@ class SimpleCredentialsMatcher(object, ICredentialsMatcher):
         return token_credentials == account_credentials
         
 
-class AllowAllCredentialsMatcher(object):
+class AllowAllCredentialsMatcher(ICredentialsMatcher, object):
 
     def credentials_match(self, authc_token, account):
         return True

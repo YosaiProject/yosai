@@ -1,11 +1,14 @@
 import pytest
 from unittest import mock
 
-from yosai.authc import (
-    DefaultHashService,
-    HashRequest,
-    AuthenticationSettings,
+from yosai import (
     settings,
+)
+
+from yosai.authc import (
+    CryptContextFactory,
+    DefaultHashService,
+    AuthenticationSettings,
 )
 
 from passlib.context import CryptContext
@@ -31,6 +34,9 @@ def patched_authc_settings(authc_config, monkeypatch):
     monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
     return AuthenticationSettings()
 
+@pytest.fixture(scope='function')
+def patched_cryptcontext_factory(patched_authc_settings):
+    return CryptContextFactory(patched_authc_settings) 
 
 @pytest.fixture(scope='function')
 def default_context():

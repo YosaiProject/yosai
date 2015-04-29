@@ -16,8 +16,8 @@ class AuthenticationSettings(object):
     """
     def __init__(self):
         self.authc_config = settings.AUTHC_CONFIG
-        self.default_algo = self.authc_config.get('default_algorithm', 
-                                                  'bcrypt_sha256')
+        self.default_algorithm = self.authc_config.get('default_algorithm', 
+                                                       'bcrypt_sha256')
         self.algorithms = self.authc_config.get('hash_algorithms', None)
         # no default private salt because it is too risky (lazy developers)
         self.private_salt = self.authc_config.get('private_salt', None)
@@ -34,14 +34,14 @@ class AuthenticationSettings(object):
         return {}
 
     def __repr__(self):
-        return ("AuthenticationSettings(default_algo={0}, algorithms={1},"
-                "authc_config={2}".format(self.default_algo,
+        return ("AuthenticationSettings(default_algorithm={0}, algorithms={1},"
+                "authc_config={2}".format(self.default_algorithm,
                                           self.algorithms, self.authc_config))
 
 
 class CryptContextFactory(object):
     """
-    New to Yosai.  CryptContextService proxies passlib's CryptContext api.
+    New to Yosai.  CryptContextFactory proxies passlib's CryptContext api.
     """
 
     def __init__(self, authc_settings):
@@ -62,14 +62,14 @@ class CryptContextFactory(object):
         :param authc_config: the dict of a specific algorithm's settings
         :returns: a passlib CryptContext object
         """
-        context = dict(schemes=list(algorithm))
-        
-        if (not context['schemes']):
-            msg = "hashing algorithm could not be obtained from config"
+        if (not algorithm): 
+            msg = "hashing algorithm missing"
             raise MissingHashAlgorithmException(msg)
 
-            context.update({"{0}__{1}".format(algorithm, key): value 
-                           for key, value in authc_config.items()}) 
+        context = dict(schemes=[algorithm])
+        
+        context.update({"{0}__{1}".format(algorithm, key): value 
+                       for key, value in authc_config.items()}) 
         return context
 
     def create_crypt_context(self, 
@@ -78,7 +78,7 @@ class CryptContextFactory(object):
         :type request: HashRequest
         :returns: CryptContext
         """
-        if algorithm is None:
+        if not algorithm:
             algorithm = self.authc_settings.default_algorithm 
 
         context = self.generate_context(algorithm) 

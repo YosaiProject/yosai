@@ -6,5 +6,6 @@ from .fixtures import (
     hash_request,
     patched_default_hash_service,
     patched_authc_settings,
+    patched_cryptcontext_factory,
     private_salt,
 )

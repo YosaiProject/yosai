@@ -38,7 +38,6 @@ from .authc import (
     DefaultHashService,
     DefaultPasswordService,
     FailedAuthenticationEvent,
-    HashRequest,
     PasswordMatcher,
     SuccessfulAuthenticationEvent,
     UsernamePasswordToken,
