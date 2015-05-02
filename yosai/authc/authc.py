@@ -246,11 +246,7 @@ class DefaultAuthcService(object):
         # using default algorithm when generating crypt context:
         self.crypt_context = CryptContextFactory(authc_settings).\
             create_crypt_context() 
-        self.private_salt = authc_settings.private_salt  # pepper
-        if self.private_salt is None:
-            raise MissingPrivateSaltException('must configure a private salt')
-        else:
-            self.private_salt = str(self.private_salt)
+        self.private_salt = authc_settings.private_salt  # it's a string 
 
     def pepper_password(self, source):
         """
@@ -262,13 +258,15 @@ class DefaultAuthcService(object):
              PASSWORD (rather than a public salt).  The peppered password
              is salted by passlib according to the cryptcontext settings
              else default passlib settings.
-        """
 
-        try:
-            peppered_pass = str(self.private_salt) + str(source)
-        except (AttributeError, TypeError):
+        :type source: str
+        """
+        if (isinstance(source, str)):
+            peppered_pass = self.private_salt + source
+
+        else:
             msg = "could not pepper password"
-            raise PepperPasswordException(msg)
+            raise PepperPasswordException(msg) 
 
         return peppered_pass 
        

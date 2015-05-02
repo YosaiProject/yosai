@@ -7,6 +7,7 @@ from yosai import (
 
 from yosai.authc import (
     CryptContextFactory,
+    DefaultAuthcService,
     DefaultHashService,
     AuthenticationSettings,
 )
@@ -33,6 +34,12 @@ def authc_config():
 def patched_authc_settings(authc_config, monkeypatch):
     monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
     return AuthenticationSettings()
+
+@pytest.fixture(scope='function')
+def patched_default_authc_service(patched_authc_settings, monkeypatch):
+    with mock.patch('yosai.authc.AuthenticationSettings') as auth_set:
+        auth_set.return_value = patched_authc_settings
+        return DefaultAuthcService()
 
 @pytest.fixture(scope='function')
 def patched_cryptcontext_factory(patched_authc_settings):

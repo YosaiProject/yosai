@@ -35,6 +35,7 @@ from .strategy import (
 
 from .authc import (
     DefaultAuthenticator,
+    DefaultAuthcService,
     DefaultHashService,
     DefaultPasswordService,
     FailedAuthenticationEvent,
