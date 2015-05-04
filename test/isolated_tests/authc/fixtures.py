@@ -9,6 +9,7 @@ from yosai.authc import (
     CryptContextFactory,
     DefaultAuthcService,
     DefaultHashService,
+    DefaultPasswordService,
     AuthenticationSettings,
 )
 
@@ -35,48 +36,43 @@ def patched_authc_settings(authc_config, monkeypatch):
     monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
     return AuthenticationSettings()
 
-@pytest.fixture(scope='function')
-def patched_default_authc_service(patched_authc_settings, monkeypatch):
-    with mock.patch('yosai.authc.AuthenticationSettings') as auth_set:
-        auth_set.return_value = patched_authc_settings
-        return DefaultAuthcService()
 
 @pytest.fixture(scope='function')
-def patched_cryptcontext_factory(patched_authc_settings):
-    return CryptContextFactory(patched_authc_settings) 
+def default_authc_service():
+    return DefaultAuthcService()
+
+
+@pytest.fixture(scope='function')
+def cryptcontext_factory():
+    authc_settings = AuthenticationSettings()
+    return CryptContextFactory(authc_settings)
+
 
 @pytest.fixture(scope='function')
 def default_context():
     return {'schemes': ['sha256_crypt'],
             'sha256_crypt__default_rounds': 180000}
 
+
 @pytest.fixture(scope='function')
 def crypt_context():
     return CryptContext(schemes=['sha256_crypt'])
 
-@pytest.fixture(scope='function')
-def hash_request():
-    algorithm_name = "bcrypt_sha256"
-    iterations = None 
-    source = "secret"
 
-    return HashRequest(source, iterations, algorithm_name)
+@pytest.fixture(scope='function')
+def private_salt():
+    return 'privatesaltysnack'
+
 
 @pytest.fixture(scope='function')
 def default_hash_service():
     return DefaultHashService()
 
 @pytest.fixture(scope='function')
-def private_salt():
-    return 'privatesaltysnack'
+def default_encrypted_password():
+    # bcrypt hash of 'privatesaltwithcleartext':
+    return '$bcrypt-sha256$2a,12$HXuLhfmy1I1cWb46CC4KtO$hGXldB0fsNTwp6sRQJToAQDeUjPMW36' 
 
 @pytest.fixture(scope='function')
-def patched_default_hash_service(default_context, monkeypatch,
-                                 default_hash_service, private_salt):
-
-    # changes from ['bcrypt_sha256', 'sha256_crypt'] to [sha256_crypt]
-    monkeypatch.setattr(default_hash_service, 'default_context', 
-                        default_context) 
-    monkeypatch.setattr(default_hash_service, 'private_salt', private_salt)
-
-    return default_hash_service 
+def default_password_service():
+    return DefaultPasswordService()

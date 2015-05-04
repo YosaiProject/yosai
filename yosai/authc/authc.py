@@ -282,7 +282,7 @@ class DefaultHashService(DefaultAuthcService):
 
     def compute_hash(self, source): 
         """
-        note that Yosai omits HashRequest overhead
+        note that Yosai omits HashRequest overhead used in Shiro
         :returns: dict
         """
 
@@ -302,13 +302,11 @@ class DefaultHashService(DefaultAuthcService):
 # DG omitted HashRequest definition
 
 
-class DefaultPasswordService(IHashingPasswordService, DefaultAuthcService):
+class DefaultPasswordService(DefaultAuthcService):
 
     def __init__(self):
         super().__init__()
-        # in Yosai, hash formatting is taken care of by passlib:
-        # self.hash_format ...
-        # self.hash_format_factory ...
+        # in Yosai, hash formatting is taken care of by passlib
 
     def passwords_match(self, plaintext, saved):
         """
