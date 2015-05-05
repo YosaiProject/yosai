@@ -80,6 +80,10 @@ class IncorrectCredentialsException(CredentialsException):
     pass
 
 
+class InvalidAuthenticationTokenException(AuthenticationException):
+    pass
+
+
 class LockedAccountException(DisabledAccountException):
     pass
 

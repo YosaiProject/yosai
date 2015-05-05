@@ -64,17 +64,60 @@ class UsernamePasswordToken(IHostAuthenticationToken,
         """
         self.host = host
         self.password = password
-        self.remember_me = remember_me 
+        self.is_remember_me = remember_me 
         self.username = username
-        self.principal = self.username  # used in public api
-        self.credentials = self.password  # used in public api
+        self.principal = username  # used in public api  DG:  TBD - I Dont like
+        self.credentials = password  # used in public apiDG:  TBD - I Dont like
 
-    def __repr__(self):
-        result = "{0} - {1}, remember_me={2}".format(
-            self.__class__.__name__, self.username, self.remember_me)
-        if (self.host):
-            result += "({0})".format(self.host)
-        return result
+    # DG:  these properties are required implementations of the interfaces
+
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, host):
+        self._host = host
+
+    @property
+    def password(self):
+        return self._password
+
+    @password.setter
+    def password(self, password):
+        self._password = password
+
+    @property
+    def is_remember_me(self):
+        return self._is_remember_me
+
+    @is_remember_me.setter
+    def is_remember_me(self, isrememberme):
+        self._is_remember_me = isrememberme
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, username):
+        self._username = username
+
+    @property
+    def principal(self):
+        return self._principal
+
+    @principal.setter
+    def principal(self, principal):
+        self._principal = principal
+
+    @property
+    def credentials(self):
+        return self._credentials
+
+    @credentials.setter
+    def credentials(self, credentials):
+        self._credentials = credentials
 
     def clear(self):
         self.username = None 
@@ -84,6 +127,13 @@ class UsernamePasswordToken(IHostAuthenticationToken,
         if (self.password is not None):
             for element in self.password:
                 self.password[element] = 0  # DG:  this equals 0x00
+    
+    def __repr__(self):
+        result = "{0} - {1}, remember_me={2}".format(
+            self.__class__.__name__, self.username, self.remember_me)
+        if (self.host):
+            result += "({0})".format(self.host)
+        return result
         
 
 class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
@@ -276,10 +326,6 @@ class DefaultHashService(DefaultAuthcService):
     def __init__(self): 
         super().__init__()
 
-    def __repr__(self):
-        return "<{0}(crypt_context={1})>".\
-            format(self.__class__.__name__, self.crypt_context)
-
     def compute_hash(self, source): 
         """
         note that Yosai omits HashRequest overhead used in Shiro
@@ -296,6 +342,10 @@ class DefaultHashService(DefaultAuthcService):
         result['config'] = self.crypt_context.to_dict() 
 
         return result  # DG:  this design is unique to Yosai, not Shiro 
+    
+    def __repr__(self):
+        return "<{0}(crypt_context={1})>".\
+            format(self.__class__.__name__, self.crypt_context)
 
     # DG: removed combine method
 

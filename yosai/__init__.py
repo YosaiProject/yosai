@@ -33,6 +33,7 @@ from .exceptions import (
     IncorrectAttributeException,
     InvalidArgumentException,
     InvalidSessionException,
+    InvalidAuthenticationTokenException,
     LockedAccountException,
     MisconfiguredException,
     MissingCredentialsException,

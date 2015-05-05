@@ -2,37 +2,49 @@ import copy
 import traceback
 
 from yosai import (
-    MultiRealmAuthenticationException,
     AuthenticationException,
+    InvalidAuthenticationTokenException,
+    MultiRealmAuthenticationException,
 )
 
 from . import (
     DefaultCompositeAccount,
     IAuthenticationAttempt,
     IAuthenticationStrategy,
+    IAuthenticationToken,
 )
 
 class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
-
+    """
+    DG:  this deviates slightly from Shiro's implementation in that it 
+         validates the authc_token, justifiying the existence of this class
+         as something more than a simple collection
+    """
     def __init__(self, authc_token, realms):
         """
-        :param authc_token: cannot be None
         :type authc_token:  AuthenticationToken
-        :param realms:  cannot be None or Empty
         :type realms: Set 
         """
         self.authentication_token = authc_token
         self.realms = realms  # DG:  frozenset is another option
 
-    # DG:  these accessor methods, and the attempt interface in general, seem
-    # unecessary so I may remove later.  Presently, they're placeholders.
     @property
     def authentication_token(self):
-        return self.authentication_token 
+        return self._authentication_token
+
+    @authentication_token.setter
+    def authentication_token(self, token):
+        if not isinstance(token, IAuthenticationToken):
+            raise InvalidAuthenticationTokenException
+        self._authentication_token = token
 
     @property
     def realms(self):
-        return self.realms
+        return self._realms
+
+    @realms.setter
+    def realms(self, realms):
+        self._realms = realms
 
 
 class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
