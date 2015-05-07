@@ -45,4 +45,6 @@ If you would like to get involved, please contact me by the email address in my 
 available on FreeNode IRC channels #python and #pyramid under the nickname dowwie.
 
              
-      
+APACHE SHIRO VERSION USED
+-----------------------------------------------------------------------
+Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision 1673475       

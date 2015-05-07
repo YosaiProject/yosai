@@ -1,66 +1,33 @@
-from yosai import IncorrectCredentialsException, LogManager, PasswordMatcher
+from yosai import (
+    AccountStoreRealmAuthenticationException,
+    IllegalArgumentException,
+    IncorrectCredentialsException, 
+    LogManager, 
+    PasswordMatcher,
+    UsernamePasswordToken,
+)
 
+from . import (
+    IRealm,
+)
 
-class AccountStoreRealm(object):
+class AccountStoreRealm(IRealm, object):
 
     def __init__(self):
         # 80/20 rule:  most shiro deployments use passwords:
-        self._credentials_matcher = PasswordMatcher()
+        self.credentials_matcher = PasswordMatcher()
 
-    @property
-    def account_store(self):
-        return self._account_store
-
-    @account_store.setter
-    def account_store(self, accountstore):
-        try:
-            assert accountstore
-        except AssertionError as ex:
-            print('cannot set accountstore with empty value!', ex)
-        self._account_store = accountstore
-
-    @property
-    def credentials_matcher(self):
-        return self._credentials_matcher
-
-    @credentials_matcher.setter
-    def credentials_matcher(self, credentialsmatcher):
-        try:
-            assert credentialsmatcher 
-        except AssertionError as ex:
-            print('cannot set credentialsmatcher with empty value!')
-        self._credentials_matcher = credentialsmatcher
-
-    @property
-    def account_cache_handler(self):
-        return self._account_cache_handler
-
-    @account_cache_handler.setter
-    def account_cache_handler(self, ach):
-        try:
-            assert ach 
-        except AssertionError as ex:
-            print('cannot set ach with empty value!')
-        self._account_cache_handler = ach
-
-    @property
-    def authorization_cache_handler(self):
-        return self._authorization_cache_handler
-
-    @authorization_cache_handler.setter
-    def authorization_cache_handler(self, authz_ch):
-        try:
-            assert authz_ch 
-        except AssertionError as ex:
-            print('cannot set authz_ch with empty value!')
-        self._authorization_cache_handler = authz_ch
-
+    # removed the basic accessor/mutator methods (not pythonic)
     def supports(self, authc_token):
+        # override the following return to False if you do not wish to support 
+        # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
     def authenticate_account(self, authc_token):
-        try:
-            account = self.account_cache_handler.get_cached_account(authc_token)
+        # EAFP replaces the need to verify whether an authc_token is supported
+        try:  
+            ach = self.account_cache_handler
+            account = ach.get_cached_account(authc_token)
             if (account is None):
                 # otherwise not cached, perform the lookup:
                 account = self.account_store.get_account(authc_token)
@@ -69,8 +36,7 @@ class AccountStoreRealm(object):
                     msg = ("Acquired Account [{0}] from account store".format(
                            account))
                     print(msg)
-                    self.account_cache_handler.\
-                        cache_account(authc_token, account)
+                    ach.cache_account(authc_token, account)
                
             else:
                 # log here
@@ -82,6 +48,7 @@ class AccountStoreRealm(object):
                 # log here
                 msg3 = ("No account found for submitted AuthenticationToken "
                         "[{1}].  Returning None.".format(authc_token))
+                print(msg3)
                 return None
 
             self.assert_credentials_match(authc_token, account)
@@ -89,19 +56,33 @@ class AccountStoreRealm(object):
             return account
 
         except:
-            raise
+            raise AccountStoreRealmAuthenticationException
 
     def assert_credentials_match(self, authc_token, account):
-        try:
-            cm = self.credentials_matcher
-            if (not cm.credentials_match(authc_token, account)):
-                # not successful - throw an exception to indicate self:
-                # log here
-                msg = ("Submitted credentials for token [" + authc_token + "] "
-                       "did not match the stored credentials.")
-                raise IncorrectCredentialsException(msg)
-        except IncorrectCredentialsException as ex:
-            print('assert_credentials_match: ', ex)
+        cm = self.credentials_matcher
+        if (not cm.credentials_match(authc_token, account)):
+            # not successful - raise an exception as signal:
+            # log here
+            msg = ("Submitted credentials for token [" + authc_token + "] "
+                   "did not match the stored credentials.")
+            raise IncorrectCredentialsException(msg)
+
+    def __setattr__(self, target, value):
+        """
+        Shiro validates in each mutator method whereas Yosai validates by
+        default through __setattr__
+        """
+        if not value:
+            msg = 'cannot set to empty or None'
+            raise IllegalArgumentException(msg) 
+        else:
+            self.__dict__[target] = value
+
+    def __getattr__(self, target):
+        """
+        This prevents an AttributeError from being raised.  Use with caution.
+        """
+        return self.__dict__.get(target, None)
 
 
 class AbstractCacheHandler(object):

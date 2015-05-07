@@ -23,7 +23,7 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
     def __init__(self, authc_token, realms):
         """
         :type authc_token:  AuthenticationToken
-        :type realms: Set 
+        :type realms: a Set of AccountStoreRealm objects
         """
         self.authentication_token = authc_token
         self.realms = realms  # DG:  frozenset is another option
@@ -55,6 +55,7 @@ class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
         first_account = None
         composite_account = None
 
+        # realm is an AccountStoreRealm:
         for realm in authc_attempt.realms:
             if (realm.supports(token)):
 

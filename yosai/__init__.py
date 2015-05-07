@@ -10,6 +10,7 @@ __status__ = "Development"
 from .exceptions import (
     AbstractMethodException,
     AccountException,
+    AccountStoreRealmAuthenticationException,
     AuthenticationConfigException,
     AuthenticationSettingsContextException,
     AuthenticationException,
@@ -84,24 +85,23 @@ from .event import (
     IEventBusAware,
 )
 
-"""
-from .realm import (
-    # AccountStoreRealm,
-    # AbstractCacheHandler,
-    # DefaultAccountCacheHandler,
-)
-"""
-"""
 from .authc import (
     # DefaultAuthenticator,
     # DefaultCompositeAccount,
     # DefaultCompositeAccountId,
     # FailedAuthenticationEvent,
-    # PasswordMatcher,
+    IAuthenticator,
+    PasswordMatcher,
     # SuccessfulAuthenticationEvent,
-    # UsernamePasswordToken,
+    UsernamePasswordToken,
 )
-"""
+
+from .realm import (
+    AccountStoreRealm,
+    # AbstractCacheHandler,
+    # DefaultAccountCacheHandler,
+)
+
 
 """
 from .authz import (

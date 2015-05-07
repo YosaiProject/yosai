@@ -2,10 +2,12 @@ import pytest
 from unittest import mock
 
 from yosai import (
+    AccountStoreRealm,
     settings,
 )
 
 from yosai.authc import (
+    AllRealmsSuccessfulStrategy,
     AuthenticationSettings,
     CryptContextFactory,
     DefaultAuthcService,
@@ -16,6 +18,11 @@ from yosai.authc import (
 )
 
 from passlib.context import CryptContext
+
+
+@pytest.fixture(scope="function")
+def all_realms_successful_strategy():
+    return AllRealmsSuccessfulStrategy()
 
 @pytest.fixture(scope="function")
 def authc_config():
@@ -51,16 +58,28 @@ def patched_authc_settings(authc_config, monkeypatch):
 def default_authc_service():
     return DefaultAuthcService()
 
+# move this fixture later to a better location
+@pytest.fixture(scope='function')
+def account_store_realm():
+    return AccountStoreRealm() 
 
 @pytest.fixture(scope='function')
-def default_realms():
-    return set('realm1')  # test dummy
+def one_accountstorerealm(account_store_realm):
+    return set(account_store_realm)
 
 @pytest.fixture(scope='function')
-def default_authc_attempt(username_password_token, default_realms):
+def two_accountstorerealms(account_store_realm):
+    return set(account_store_realm, AccountStoreRealm())
+
+@pytest.fixture(scope='function')
+def default_authc_attempt(username_password_token, single_realm):
     return DefaultAuthenticationAttempt(username_password_token, 
-                                        default_realms)
+                                        one_accountstorerealm) 
 
+@pytest.fixture(scope='function')
+def multirealm_authc_attempt(username_password_token, single_realm):
+    return DefaultAuthenticationAttempt(username_password_token, 
+                                        two_accountstorerealms)
 
 @pytest.fixture(scope='function')
 def cryptcontext_factory():

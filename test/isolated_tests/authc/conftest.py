@@ -1,4 +1,5 @@
 from .fixtures import (
+    all_realms_successful_strategy,
     authc_config,
     crypt_context,
     cryptcontext_factory,

@@ -12,6 +12,18 @@ from yosai.authc import (
 )
 
 # AllRealmsSuccessfulStrategy Tests
+def test_allrealmssuccessful_first_success(all_realms_successful_strategy,
+                                           default_authc_attempt):
+
+
+# def test_allrealmssuccessful_composite_success
+
+# def test_allrealmssuccessful_fails_no_realm
+
+# def test_allrealmssuccessful_fails_no_realm_supporting_token
+
+# def test_allrealmssuccessful_fails_no_account_authenticates_from_realm
+
 
 # AtLeastOneRealmSuccessfulStrategy Tests
 

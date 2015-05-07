@@ -1,15 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
-import org.apache.shiro.account.Account
-import org.apache.shiro.account.AccountId
-import org.apache.shiro.authc.AuthenticationToken
-import org.apache.shiro.authz.AuthorizationInfo
-import org.apache.shiro.cache.Cache
-import org.apache.shiro.authz.Permission
-import org.apache.shiro.authc.AuthenticationException
-import org.apache.shiro.authc.AuthenticationInfo
-import org.apache.shiro.authc.Authenticator
-
+from yosai import (
+    IAccount,
+    IAuthenticator,
+)
 
 class IAccountCacheHandler(metaclass=ABCMeta):
 
@@ -37,8 +31,8 @@ class IAccountCacheKeyResolver(metaclass=ABCMeta):
 class IAccountCacheResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_account_cache(self,
-                          authc_token=None, account=None, accountid=None):
+    def get_account_cache(self, authc_token=None, 
+                          account=None, accountid=None):
         pass
 
 
@@ -71,7 +65,7 @@ class IAuthorizationCacheHandler(metaclass=ABCMeta):
         pass
 
 
-class IRealmAccount(Account, metaclass=ABCMeta):
+class IRealmAccount(IAccount):
 
     @property
     @abstractmethod
@@ -87,12 +81,9 @@ class IRealmFactory(metaclass=ABCMeta):
         pass
 
 
-class IRealm(Authenticator, metaclass=ABCMeta): 
+class IRealm(IAuthenticator):
     
-    @property
-    @abstractmethod
-    def name(self):
-        pass
+    # DG:  omitted name accessor method for pythonic reasons
 
     @abstractmethod
     def supports(self, authc_token):

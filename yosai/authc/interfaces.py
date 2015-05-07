@@ -80,7 +80,7 @@ class IAuthenticationToken(metaclass=ABCMeta):
         pass
 
 
-class IAuthenticator (metaclass=ABCMeta):
+class IAuthenticator(metaclass=ABCMeta):
     """
     Authenticates an account based on the submitted AuthenticationToken.
     """

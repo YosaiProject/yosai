@@ -283,9 +283,9 @@ class PasswordMatcher(ICredentialsMatcher, object):
         except AttributeError:
             raise PasswordMatcherInvalidToken
 
-    def get_stored_password(self, account_info): 
+    def get_stored_password(self, account): 
         try:
-            return account_info.credentials
+            return account.credentials
         except AttributeError:
             raise PasswordMatcherInvalidAccount
 

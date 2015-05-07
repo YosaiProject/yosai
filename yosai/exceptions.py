@@ -44,6 +44,10 @@ class AuthenticationException(YosaiException):
     pass
 
 
+class AccountStoreRealmAuthenticationException(AuthenticationException):
+    pass
+
+
 class AccountException(AuthenticationException):
     pass
 
