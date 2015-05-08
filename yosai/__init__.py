@@ -14,6 +14,7 @@ from .exceptions import (
     AuthenticationConfigException,
     AuthenticationSettingsContextException,
     AuthenticationException,
+    AuthenticationStrategyMissingRealmException,
     AuthorizationException,
     CacheException,
     ConcurrentAccessException,

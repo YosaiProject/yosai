@@ -17,6 +17,7 @@ from yosai.authc import (
     DefaultAuthenticationAttempt,
     DefaultHashService,
     DefaultPasswordService,
+    IAuthenticationToken,
     UsernamePasswordToken,
 )
 
@@ -49,6 +50,20 @@ def username_password_token():
                                  password='secret',
                                  remember_me=False, 
                                  host='127.0.0.1') 
+
+
+@pytest.fixture(scope='function')
+def mock_token():
+    class MockToken(IAuthenticationToken, object):
+        @property
+        def principal(self):
+            pass
+
+        @property
+        def credentials(self):
+            pass
+
+    return MockToken()
 
 
 @pytest.fixture(scope='function')
@@ -87,6 +102,14 @@ def two_accountstorerealms(first_accountstorerealm,
 def default_authc_attempt(username_password_token, one_accountstorerealm): 
     return DefaultAuthenticationAttempt(username_password_token, 
                                         one_accountstorerealm) 
+
+@pytest.fixture(scope='function')
+def realmless_authc_attempt(username_password_token):
+    return DefaultAuthenticationAttempt(username_password_token, set()) 
+
+@pytest.fixture(scope='function')
+def mock_token_attempt(mock_token, one_accountstorerealm): 
+    return DefaultAuthenticationAttempt(mock_token, one_accountstorerealm)
 
 @pytest.fixture(scope='function')
 def multirealm_authc_attempt(username_password_token, two_accountstorerealms): 

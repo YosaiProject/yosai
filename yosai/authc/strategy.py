@@ -3,6 +3,7 @@ import traceback
 
 from yosai import (
     AuthenticationException,
+    AuthenticationStrategyMissingRealmException,
     InvalidAuthenticationTokenException,
     MultiRealmAuthenticationException,
 )
@@ -56,35 +57,37 @@ class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
         composite_account = None
 
         # realm is an AccountStoreRealm:
-        for realm in authc_attempt.realms:
-            if (realm.supports(token)):
+        try:
+            for realm in authc_attempt.realms:
+                if (realm.supports(token)):
 
-                """
-                If the realm throws an exception, the loop will short circuit
-                and this method will return.  As an 'all successful' strategy,
-                if there is even a single exception thrown by any of the
-                supported realms, the authentication attempt is unsuccessful.
-                This particular implementation also favors short circuiting
-                immediately (instead of trying all realms and then aggregating
-                all potential exceptions) because continuing to access
-                additional account stores is likely to incur unnecessary /
-                undesirable I/O for most apps.
-                """
-                account = realm.authenticate_account(token)
+                    """
+                    If the realm throws an exception, the loop will short
+                    circuit and this method will return.  As an 'all
+                    successful' strategy, if there is even a single exception
+                    thrown by any of the supported realms, the authentication
+                    attempt is unsuccessful.  This particular implementation
+                    also favors short circuiting immediately (instead of trying
+                    all realms and then aggregating all potential exceptions)
+                    because continuing to access additional account stores is
+                    likely to incur unnecessary / undesirable I/O for most apps
+                    """
+                    account = realm.authenticate_account(token)
 
-                if (account):
-                    if (not first_account):
-                        first_account = account
-                        first_account_realm_name = realm.name
-                    else:                    
-                        if (not composite_account):
-                            composite_account = DefaultCompositeAccount()
+                    if (account):
+                        if (not first_account):
+                            first_account = account
+                            first_account_realm_name = realm.name
+                        else:                    
+                            if (not composite_account):
+                                composite_account = DefaultCompositeAccount()
+                                composite_account.append_realm_account(
+                                    first_account_realm_name, first_account)
+                                
                             composite_account.append_realm_account(
-                                first_account_realm_name, first_account)
-                            
-                        composite_account.append_realm_account(
-                            realm.name, account) 
-                
+                                realm.name, account) 
+        except (TypeError):
+            raise AuthenticationStrategyMissingRealmException
         if (composite_account):
             return composite_account
 
@@ -102,24 +105,26 @@ class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
         account = None
         first_account = None
         composite_account = None
-
-        for realm in authc_attempt.realms:
-            if (realm.supports(authc_token)):
-                realm_name = realm.name
-                try:
-                    account = realm.authenticate_account(authc_token)
-                except Exception as ex:
-                    # noinspection ThrowableResultOfMethodCallIgnored
-                    realm_errors[realm_name] = ex
-                
-                if (account is not None):
-                    if (first_account is None): 
-                        first_account = account
-                    else:
-                        if (composite_account is None):
-                            composite_account = DefaultCompositeAccount()
-                        composite_account.append_realm_account(
-                            realm_name, account)
+        try:
+            for realm in authc_attempt.realms:
+                if (realm.supports(authc_token)):
+                    realm_name = realm.name
+                    try:
+                        account = realm.authenticate_account(authc_token)
+                    except Exception as ex:
+                        # noinspection ThrowableResultOfMethodCallIgnored
+                        realm_errors[realm_name] = ex
+                    
+                    if (account is not None):
+                        if (first_account is None): 
+                            first_account = account
+                        else:
+                            if (composite_account is None):
+                                composite_account = DefaultCompositeAccount()
+                            composite_account.append_realm_account(
+                                realm_name, account)
+        except (TypeError):
+            raise AuthenticationStrategyMissingRealmException
 
         if (composite_account is not None):
             return composite_account
@@ -151,9 +156,6 @@ class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
          * If no exceptions were thrown, None is returned, indicating to the
            calling Authenticator that no Account was found.
     """
-    def __init__(self):
-        pass
-
     def execute(self, authc_attempt):
         """
         :type authc_attempt:  AuthenticationAttempt
@@ -162,19 +164,21 @@ class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
         authc_token = authc_attempt.authentication_token
         realm_errors = {} 
         account = None
-
-        for realm in authc_attempt.realms:
-            if (realm.supports(authc_token)):
-                try:
-                    account = realm.authenticate_account(authc_token)
-                except Exception as ex:
-                    realm_errors[realm.name] = ex
-                    # current realm failed - try the next one:
-                else:
-                    if (account):
-                        # successfully acquired an account
-                        # -- stop iterating, return immediately:
-                        return account
+        try:
+            for realm in authc_attempt.realms:
+                if (realm.supports(authc_token)):
+                    try:
+                        account = realm.authenticate_account(authc_token)
+                    except Exception as ex:
+                        realm_errors[realm.name] = ex
+                        # current realm failed - try the next one:
+                    else:
+                        if (account):
+                            # successfully acquired an account
+                            # -- stop iterating, return immediately:
+                            return account
+        except (TypeError):
+            raise AuthenticationStrategyMissingRealmException
 
         if (realm_errors):
             if (len(realm_errors) == 1):

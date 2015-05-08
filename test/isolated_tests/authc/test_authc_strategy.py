@@ -38,18 +38,25 @@ def test_allrealmssuccessful_composite_success(all_realms_successful_strategy,
     results = all_realms_successful_strategy.execute(multirealm_authc_attempt)
     assert len(results.realm_names) == 2
 
-# def test_allrealmssuccessful_fails_no_realm
+def test_allrealmssuccessful_fails_no_realm(all_realms_successful_strategy,
+                                            realmless_authc_attempt): 
     """
     An authentication_attempt without any realms will cause execute to 
     return None
     """
+    results = all_realms_successful_strategy.execute(realmless_authc_attempt)
+    assert results is None
 
-# def test_allrealmssuccessful_fails_no_realm_supporting_token
+
+def test_allrealmssuccessful_fails_bad_token(mock_token_attempt, 
+                                             all_realms_successful_strategy):
     """
-    An authentication_token that contains an authc_token that is not of 
-    type UserPasswordToken is not supported by the AccountStoreRealm 
-    will result in execute returning None
+    An authentication_token that is not of type UserPasswordToken is not 
+    supported by the AccountStoreRealm, resulting in execute returning None
     """
+    
+    results = all_realms_successful_strategy.execute(mock_token_attempt)
+    assert results is None
 
 # def test_allrealmssuccessful_fails_no_account_authenticates_from_realm
     """
@@ -57,9 +64,14 @@ def test_allrealmssuccessful_composite_success(all_realms_successful_strategy,
     in execute returning None
     """
 
+
+# def test_allrealmssuccessful_fails_no_realms
+
+
 # AtLeastOneRealmSuccessfulStrategy Tests
 
 # DefaultAuthenticationAttempt Tests
+    """ an invalid token raises an exception """
 def test_invalid_authc_token(default_authc_attempt):
     invalid_token = {'username': 'dummy', 'password': 'blaurgh'}
     with pytest.raises(InvalidAuthenticationTokenException):
