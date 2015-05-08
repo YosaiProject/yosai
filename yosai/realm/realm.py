@@ -16,6 +16,7 @@ class AccountStoreRealm(IRealm, object):
     def __init__(self):
         # 80/20 rule:  most shiro deployments use passwords:
         self.credentials_matcher = PasswordMatcher()
+        self.name = 'AccountStoreRealm' + str(id(self))  # DG:  replace later..
 
     # removed the basic accessor/mutator methods (not pythonic)
     def supports(self, authc_token):

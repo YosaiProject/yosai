@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 class IAccountId(metaclass=ABCMeta):
 
     @abstractmethod
-    def __str__(self):
+    def __repr__(self):
         pass
 
 

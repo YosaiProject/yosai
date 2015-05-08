@@ -118,7 +118,7 @@ class SimplePrincipalCollection(object):
         return principals
     
     def get_realm_names(self):
-        return set(self.realm_principals.keys())
+        return {self.realm_principals.keys()}
     
     def is_empty(self):
         return (not self.realm_principals.keys())

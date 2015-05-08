@@ -220,10 +220,10 @@ class ApplicationSecurityManager(object):
             target.event_bus = self.event_bus
 
     def get_dependencies_for_injection(self, ignore):
-        deps = set(self.event_bus, self.cache_manager, self.realms, 
-                   self.authenticator, self.authorizer,
-                   self.session_manager, self.subject_DAO,
-                   self.subject_factory)
+        deps = {self.event_bus, self.cache_manager, self.realms, 
+                self.authenticator, self.authorizer,
+                self.session_manager, self.subject_DAO,
+                self.subject_factory}
         if (ignore is not None):
             deps.remove(ignore)
         

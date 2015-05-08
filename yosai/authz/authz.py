@@ -59,7 +59,7 @@ class WildcardPermission(object):
                 if (not self.case_sensitive):
                     part = part.lower()
 
-                subparts = set(part.split(self.SUBPART_DIVIDER_TOKEN))
+                subparts = set{part.split(self.SUBPART_DIVIDER_TOKEN)}
                 
                 if (not subparts):
                     raise IllegalArgumentException
@@ -137,12 +137,12 @@ class DomainPermission(WildcardPermission):
             self.set_parts(self.domain)
 
         elif isinstance(actions, str):
-                self._actions = set(actions.split(self.SUBPART_DIVIDER_TOKEN))
+                self._actions = set{actions.split(self.SUBPART_DIVIDER_TOKEN)}
 
                 if (isinstance(targets, str)):
                     self.domain = domain
-                    self._targets = set(targets.split(
-                        self.SUBPART_DIVIDER_TOKEN))
+                    self._targets = set{targets.split(
+                        self.SUBPART_DIVIDER_TOKEN)}
        
                 self.encode_parts(domain, actions, targets)
 

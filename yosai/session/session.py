@@ -1515,7 +1515,7 @@ class SimpleSession(object):
             attributes = self.attributes
             if (not attributes):
                 return set() 
-            return set(attributes)  # keys is default
+            return {attributes}  # keys is default
         except:
             raise
 

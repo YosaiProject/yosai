@@ -1,6 +1,9 @@
 import pytest
 from unittest import mock
 
+from .doubles import (
+    MockAccount,
+)
 from yosai import (
     AccountStoreRealm,
     settings,
@@ -53,31 +56,40 @@ def patched_authc_settings(authc_config, monkeypatch):
     monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
     return AuthenticationSettings()
 
-
 @pytest.fixture(scope='function')
 def default_authc_service():
     return DefaultAuthcService()
 
-# move this fixture later to a better location
 @pytest.fixture(scope='function')
-def account_store_realm():
+def first_accountstorerealm(monkeypatch):
+    def mock_return(self, token):
+        return MockAccount(account_id=12345)
+    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
     return AccountStoreRealm() 
 
 @pytest.fixture(scope='function')
-def one_accountstorerealm(account_store_realm):
-    return set(account_store_realm)
+def second_accountstorerealm(monkeypatch):
+    def mock_return(self, token):
+        return MockAccount(account_id=67890)
+    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return) 
+    return AccountStoreRealm() 
 
 @pytest.fixture(scope='function')
-def two_accountstorerealms(account_store_realm):
-    return set(account_store_realm, AccountStoreRealm())
+def one_accountstorerealm(first_accountstorerealm):
+    return {first_accountstorerealm}
 
 @pytest.fixture(scope='function')
-def default_authc_attempt(username_password_token, single_realm):
+def two_accountstorerealms(first_accountstorerealm,
+                           second_accountstorerealm):
+    return {first_accountstorerealm, second_accountstorerealm}
+
+@pytest.fixture(scope='function')
+def default_authc_attempt(username_password_token, one_accountstorerealm): 
     return DefaultAuthenticationAttempt(username_password_token, 
                                         one_accountstorerealm) 
 
 @pytest.fixture(scope='function')
-def multirealm_authc_attempt(username_password_token, single_realm):
+def multirealm_authc_attempt(username_password_token, two_accountstorerealms): 
     return DefaultAuthenticationAttempt(username_password_token, 
                                         two_accountstorerealms)
 
