@@ -4,14 +4,14 @@ from yosai import (
 
 class MockAccount(IAccount):
 
-    def __init__(self, account_id, credentials=None, attributes=None):
-        self._account_id = account_id
+    def __init__(self, account_id, credentials={}, attributes={}):
+        self._id = account_id
         self._credentials = credentials
         self._attributes = attributes
         
     @property 
-    def account_id(self):
-        return self._account_id 
+    def id(self):
+        return self._id 
 
     @property 
     def credentials(self):
@@ -22,4 +22,4 @@ class MockAccount(IAccount):
         return self._attributes 
 
     def __repr__(self):
-        return "<MockAccount(account_id={0})>".format(self.account_id)
+        return "<MockAccount(id={0})>".format(self._id)

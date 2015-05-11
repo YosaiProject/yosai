@@ -34,6 +34,7 @@ from .exceptions import (
     IncorrectCredentialsException,
     IncorrectAttributeException,
     InvalidArgumentException,
+    InvalidAuthcAttemptRealmsArgumentException,
     InvalidSessionException,
     InvalidAuthenticationTokenException,
     LockedAccountException,

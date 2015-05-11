@@ -92,6 +92,10 @@ class InvalidAuthenticationTokenException(AuthenticationException):
     pass
 
 
+class InvalidAuthcAttemptRealmsArgumentException(AuthenticationException):
+    pass
+
+
 class LockedAccountException(DisabledAccountException):
     pass
 
@@ -114,7 +118,7 @@ class MultiRealmAuthenticationException(AuthenticationException):
         msg = ("Multiple authentication problems across various realms.  " 
                "Only the first discovered exception will be shown as the cause"
                "; call get_realm_exceptions() to access all of them.")
-        super(msg, next(iter(realm_errors.values())))
+        super().__init__(msg, next(iter(realm_errors.values())))
         self.realm_errors = realm_errors
     
     def get_realm_exceptions(self):

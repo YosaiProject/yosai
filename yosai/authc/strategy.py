@@ -4,7 +4,9 @@ import traceback
 from yosai import (
     AuthenticationException,
     AuthenticationStrategyMissingRealmException,
+    IncorrectCredentialsException,
     InvalidAuthenticationTokenException,
+    InvalidAuthcAttemptRealmsArgumentException,
     MultiRealmAuthenticationException,
 )
 
@@ -45,6 +47,8 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
 
     @realms.setter
     def realms(self, realms):
+        if not isinstance(realms, set):
+            raise InvalidAuthcAttemptRealmsArgumentException
         self._realms = realms
 
 
@@ -60,20 +64,22 @@ class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
         try:
             for realm in authc_attempt.realms:
                 if (realm.supports(token)):
-
+                    
                     """
-                    If the realm throws an exception, the loop will short
-                    circuit and this method will return.  As an 'all
-                    successful' strategy, if there is even a single exception
-                    thrown by any of the supported realms, the authentication
-                    attempt is unsuccessful.  This particular implementation
-                    also favors short circuiting immediately (instead of trying
+                    If the realm raises an exception, the loop will short
+                    circuit, propagating the IncorrectCredentialsException 
+                    further up the stack.  As an 'all successful' strategy, if
+                    there is even a single exception thrown by any of the
+                    supported realms, the authentication attempt is
+                    unsuccessful.  This particular implementation also favors
+                    short circuiting immediately (instead of trying
                     all realms and then aggregating all potential exceptions)
                     because continuing to access additional account stores is
                     likely to incur unnecessary / undesirable I/O for most apps
                     """
+                    # an IncorrectCredentialsException halts the loop:
                     account = realm.authenticate_account(token)
-
+                    
                     if (account):
                         if (not first_account):
                             first_account = account
@@ -98,29 +104,34 @@ class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
 
     def execute(self, authc_attempt):
         """
-        :rtype:  Account
+        :rtype:  Account or DefaultCompositeAccount
         """
-        authc_token = copy.copy(authc_attempt.authentication_token)
+        authc_token = authc_attempt.authentication_token
         realm_errors = {} 
-        account = None
         first_account = None
         composite_account = None
         try:
             for realm in authc_attempt.realms:
                 if (realm.supports(authc_token)):
                     realm_name = realm.name
+                    account = None  # required 
+
                     try:
                         account = realm.authenticate_account(authc_token)
-                    except Exception as ex:
-                        # noinspection ThrowableResultOfMethodCallIgnored
+                    # failed authentication raises an exception:
+                    except IncorrectCredentialsException as ex:
                         realm_errors[realm_name] = ex
                     
                     if (account is not None):
-                        if (first_account is None): 
+                        if (not first_account): 
                             first_account = account
+                            first_account_realm_name = realm.name
                         else:
-                            if (composite_account is None):
+                            if (not composite_account):
                                 composite_account = DefaultCompositeAccount()
+                                composite_account.append_realm_account(
+                                    first_account_realm_name, first_account)
+                                
                             composite_account.append_realm_account(
                                 realm_name, account)
         except (TypeError):
@@ -132,10 +143,10 @@ class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
         if (first_account is not None): 
             return first_account
 
-        if (self.realm_errors):
+        if (realm_errors):  # if no successful authentications
             raise MultiRealmAuthenticationException(realm_errors)
 
-        return None 
+        return None  # DG:  not sure whether code can reach this.. 
 
 
 class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):

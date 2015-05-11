@@ -6,11 +6,13 @@ from .doubles import (
 )
 from yosai import (
     AccountStoreRealm,
+    IncorrectCredentialsException,
     settings,
 )
 
 from yosai.authc import (
     AllRealmsSuccessfulStrategy,
+    AtLeastOneRealmSuccessfulStrategy,
     AuthenticationSettings,
     CryptContextFactory,
     DefaultAuthcService,
@@ -27,6 +29,10 @@ from passlib.context import CryptContext
 @pytest.fixture(scope="function")
 def all_realms_successful_strategy():
     return AllRealmsSuccessfulStrategy()
+
+@pytest.fixture(scope="function")
+def alo_realms_successful_strategy():
+    return AtLeastOneRealmSuccessfulStrategy()
 
 @pytest.fixture(scope="function")
 def authc_config():
@@ -76,45 +82,61 @@ def default_authc_service():
     return DefaultAuthcService()
 
 @pytest.fixture(scope='function')
-def first_accountstorerealm(monkeypatch):
+def first_accountstorerealm_succeeds(monkeypatch):
     def mock_return(self, token):
         return MockAccount(account_id=12345)
     monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
     return AccountStoreRealm() 
 
 @pytest.fixture(scope='function')
-def second_accountstorerealm(monkeypatch):
+def first_accountstorerealm_fails(monkeypatch):
+    def mock_return(self, token):
+        raise IncorrectCredentialsException
+    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
+    return AccountStoreRealm() 
+
+@pytest.fixture(scope='function')
+def second_accountstorerealm_succeeds(monkeypatch):
     def mock_return(self, token):
         return MockAccount(account_id=67890)
     monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return) 
     return AccountStoreRealm() 
 
 @pytest.fixture(scope='function')
-def one_accountstorerealm(first_accountstorerealm):
-    return {first_accountstorerealm}
+def one_accountstorerealm_succeeds(first_accountstorerealm_succeeds):
+    return {first_accountstorerealm_succeeds}
 
 @pytest.fixture(scope='function')
-def two_accountstorerealms(first_accountstorerealm,
-                           second_accountstorerealm):
-    return {first_accountstorerealm, second_accountstorerealm}
+def one_accountstorerealm_fails(first_accountstorerealm_fails):
+    return {first_accountstorerealm_fails}
 
 @pytest.fixture(scope='function')
-def default_authc_attempt(username_password_token, one_accountstorerealm): 
+def two_accountstorerealms_succeeds(first_accountstorerealm_succeeds,
+                                    second_accountstorerealm_succeeds):
+    return {first_accountstorerealm_succeeds, second_accountstorerealm_succeeds}
+
+@pytest.fixture(scope='function')
+def default_authc_attempt(username_password_token, one_accountstorerealm_succeeds): 
     return DefaultAuthenticationAttempt(username_password_token, 
-                                        one_accountstorerealm) 
+                                        one_accountstorerealm_succeeds) 
+
+@pytest.fixture(scope='function')
+def fail_authc_attempt(username_password_token, one_accountstorerealm_fails): 
+    return DefaultAuthenticationAttempt(username_password_token, 
+                                        one_accountstorerealm_fails) 
 
 @pytest.fixture(scope='function')
 def realmless_authc_attempt(username_password_token):
     return DefaultAuthenticationAttempt(username_password_token, set()) 
 
 @pytest.fixture(scope='function')
-def mock_token_attempt(mock_token, one_accountstorerealm): 
-    return DefaultAuthenticationAttempt(mock_token, one_accountstorerealm)
+def mock_token_attempt(mock_token, one_accountstorerealm_succeeds): 
+    return DefaultAuthenticationAttempt(mock_token, one_accountstorerealm_succeeds)
 
 @pytest.fixture(scope='function')
-def multirealm_authc_attempt(username_password_token, two_accountstorerealms): 
+def multirealm_authc_attempt(username_password_token, two_accountstorerealms_succeeds): 
     return DefaultAuthenticationAttempt(username_password_token, 
-                                        two_accountstorerealms)
+                                        two_accountstorerealms_succeeds)
 
 @pytest.fixture(scope='function')
 def cryptcontext_factory():

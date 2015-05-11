@@ -130,9 +130,9 @@ class UsernamePasswordToken(IHostAuthenticationToken,
     
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(
-            self.__class__.__name__, self.username, self.remember_me)
+            self.__class__.__name__, self.username, self.is_remember_me)
         if (self.host):
-            result += "({0})".format(self.host)
+            result += ", ({0})".format(self.host)
         return result
         
 

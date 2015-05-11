@@ -38,15 +38,15 @@ class DefaultCompositeAccountId(ICompositeAccountId, object):
 class DefaultCompositeAccount(ICompositeAccount, object):
 
     def __init__(self, overwrite=True):
-        self._account_id = DefaultCompositeAccountId()  # DG renamed 
+        self._id = DefaultCompositeAccountId()  # DG renamed 
         self._credentials = None
         self._merged_attrs = {}  # maybe change to OrderedDict() 
         self._overwrite = overwrite
         self._realm_attrs = defaultdict(dict)
 
     @property 
-    def account_id(self):  # DG:  renamed from id
-        return self._account_id 
+    def id(self):  # DG:  not happy about naming it id 
+        return self._id
 
     @property
     def attributes(self):
@@ -63,7 +63,7 @@ class DefaultCompositeAccount(ICompositeAccount, object):
         return self._realm_attrs.keys()
 
     def append_realm_account(self, realm_name, account):
-        self._account_id.set_realm_account_id(realm_name, account.account_id)
+        self._id.set_realm_account_id(realm_name, account.id)
 
         realm_attributes = account.attributes
         if (realm_attributes is None):
@@ -75,14 +75,13 @@ class DefaultCompositeAccount(ICompositeAccount, object):
             msg = 'Could not update realm_attrs using ' + str(realm_attributes)
             raise RealmAttributesException(msg)
 
-        for key, value in realm_attributes.items():
+        # attributes is a dict:
+        for realm, attributes in realm_attributes.items():
             if (self._overwrite):
-                self._merged_attrs[key] = value 
+                self._merged_attrs[realm] = attributes
             else:
-                if (key not in self._merged_attrs):
-                    self._merged_attrs[key] = value 
+                if (realm not in self._merged_attrs):
+                    self._merged_attrs[realm] = attributes 
                 
     def get_realm_attributes(self, realm_name):
         return self._realm_attrs.get(realm_name, dict())  # DG: no frozen dict
-
-
