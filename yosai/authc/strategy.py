@@ -146,7 +146,7 @@ class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
         if (realm_errors):  # if no successful authentications
             raise MultiRealmAuthenticationException(realm_errors)
 
-        return None  # DG:  not sure whether code can reach this.. 
+        return None  # implies account was not found for tokent 
 
 
 class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
@@ -165,7 +165,7 @@ class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
            exceptions are bundled together as a
            MultiRealmAuthenticationException and that exception is thrown.
          * If no exceptions were thrown, None is returned, indicating to the
-           calling Authenticator that no Account was found.
+           calling Authenticator that no Account was found (for that token)
     """
     def execute(self, authc_attempt):
         """
@@ -194,14 +194,14 @@ class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
         if (realm_errors):
             if (len(realm_errors) == 1):
                 exc = next(iter(realm_errors.values()))
-                if (isinstance(exc, AuthenticationException)):
-                    raise exc  # DG:  not sure.. TBD
-                
-                raise AuthenticationException(
-                    "Unable to authenticate realm account.", exc)
+                if (isinstance(exc, IncorrectCredentialsException)):
+                    raise IncorrectCredentialsException(
+                        "Unable to authenticate realm account.", exc)
+                else:
+                    raise exc
 
             #  else more than one throwable encountered:
             else:
                 raise MultiRealmAuthenticationException(realm_errors)
 
-        return None 
+        return None  # implies account was not found for token  

@@ -11,7 +11,9 @@ from .fixtures import (
     default_hash_service,
     default_password_service,
     fail_authc_attempt,
+    fail_multi_authc_attempt,
     first_accountstorerealm_succeeds,
+    first_realm_successful_strategy,
     mock_token,
     mock_token_attempt,
     multirealm_authc_attempt,
@@ -22,6 +24,8 @@ from .fixtures import (
     private_salt,
     realmless_authc_attempt,
     second_accountstorerealm_succeeds,
+    second_accountstorerealm_fails,
     two_accountstorerealms_succeeds,
+    two_accountstorerealms_fails,
     username_password_token,
 )

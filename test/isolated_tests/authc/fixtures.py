@@ -19,6 +19,7 @@ from yosai.authc import (
     DefaultAuthenticationAttempt,
     DefaultHashService,
     DefaultPasswordService,
+    FirstRealmSuccessfulStrategy,
     IAuthenticationToken,
     UsernamePasswordToken,
 )
@@ -30,9 +31,16 @@ from passlib.context import CryptContext
 def all_realms_successful_strategy():
     return AllRealmsSuccessfulStrategy()
 
+
 @pytest.fixture(scope="function")
 def alo_realms_successful_strategy():
     return AtLeastOneRealmSuccessfulStrategy()
+
+
+@pytest.fixture(scope="function")
+def first_realm_successful_strategy():
+    return FirstRealmSuccessfulStrategy()
+
 
 @pytest.fixture(scope="function")
 def authc_config():
@@ -96,6 +104,13 @@ def first_accountstorerealm_fails(monkeypatch):
     return AccountStoreRealm() 
 
 @pytest.fixture(scope='function')
+def second_accountstorerealm_fails(monkeypatch):
+    def mock_return(self, token):
+        raise IncorrectCredentialsException
+    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
+    return AccountStoreRealm() 
+
+@pytest.fixture(scope='function')
 def second_accountstorerealm_succeeds(monkeypatch):
     def mock_return(self, token):
         return MockAccount(account_id=67890)
@@ -111,9 +126,18 @@ def one_accountstorerealm_fails(first_accountstorerealm_fails):
     return {first_accountstorerealm_fails}
 
 @pytest.fixture(scope='function')
+def two_accountstorerealms_fails(first_accountstorerealm_fails):
+    return {first_accountstorerealm_fails, first_accountstorerealm_fails}
+
+@pytest.fixture(scope='function')
 def two_accountstorerealms_succeeds(first_accountstorerealm_succeeds,
                                     second_accountstorerealm_succeeds):
     return {first_accountstorerealm_succeeds, second_accountstorerealm_succeeds}
+
+@pytest.fixture(scope='function')
+def two_accountstorerealms_fails(first_accountstorerealm_fails,
+                                 second_accountstorerealm_fails):
+    return {first_accountstorerealm_fails, second_accountstorerealm_fails}
 
 @pytest.fixture(scope='function')
 def default_authc_attempt(username_password_token, one_accountstorerealm_succeeds): 
@@ -124,6 +148,11 @@ def default_authc_attempt(username_password_token, one_accountstorerealm_succeed
 def fail_authc_attempt(username_password_token, one_accountstorerealm_fails): 
     return DefaultAuthenticationAttempt(username_password_token, 
                                         one_accountstorerealm_fails) 
+
+@pytest.fixture(scope='function')
+def fail_multi_authc_attempt(username_password_token, two_accountstorerealms_fails): 
+    return DefaultAuthenticationAttempt(username_password_token, 
+                                        two_accountstorerealms_fails) 
 
 @pytest.fixture(scope='function')
 def realmless_authc_attempt(username_password_token):

@@ -29,9 +29,60 @@ def test_authc_attempt_invalid_realms(default_authc_attempt, monkeypatch):
     with pytest.raises(InvalidAuthcAttemptRealmsArgumentException):
         monkeypatch.setattr(default_authc_attempt, 'realms', invalid_realm) 
 
+# -----------------------------------------------------------------------
+
 
 # FirstRealmSuccessfulStrategy Tests
+def test_first_realmssuccessful_first_success(first_realm_successful_strategy,
+                                              default_authc_attempt):
+    """ The default_authc_attempt fixture contains a set with only one 
+        AccountStoreRealm.  The attempt's authc_token is of type 
+        UserPasswordToken, which is supported by AccountStoreRealm, and so it 
+        will pass the supports test within the execute method.  Since there
+        is only one realm,  a composite_account variable will not be created
+        within execute, and consequently the first_account will return
+    """
+    result = first_realm_successful_strategy.execute(default_authc_attempt)
+    assert (isinstance(result, IAccount) and (result.id == 12345))
 
+def test_first_realmssuccessful_fails_no_realm(first_realm_successful_strategy,
+                                               realmless_authc_attempt): 
+    """
+    An authentication_attempt without any realms will cause execute to 
+    return None
+    """
+    results = first_realm_successful_strategy.execute(realmless_authc_attempt)
+    assert results is None
+
+def test_first_realmssuccessful_fails_bad_token(mock_token_attempt, 
+                                                first_realm_successful_strategy):
+    """
+    An authentication_token that is not of type UserPasswordToken is not 
+    supported by the AccountStoreRealm, resulting in execute returning None
+    """
+    results = first_realm_successful_strategy.execute(mock_token_attempt)
+    assert results is None
+
+def test_first_realmssuccessful_fails_authenticates_from_realm_single(
+        first_realm_successful_strategy, fail_authc_attempt): 
+    """
+    An authc_token that fails to authenticate with any realm will result
+    in execute raising an exception
+    """
+    with pytest.raises(IncorrectCredentialsException):
+        first_realm_successful_strategy.execute(fail_authc_attempt)
+
+def test_first_realmssuccessful_fails_authenticates_from_realm_multi(
+        first_realm_successful_strategy, fail_multi_authc_attempt): 
+    """
+    An authc_token that fails to authenticate with any realm will result
+    in execute raising an exception
+    """
+    with pytest.raises(MultiRealmAuthenticationException):
+        first_realm_successful_strategy.execute(fail_multi_authc_attempt)
+
+
+# -----------------------------------------------------------------------
 
 # AtLeastOneRealmSuccessfulStrategy Tests
 def test_alo_realmssuccessful_first_success(alo_realms_successful_strategy,
@@ -82,7 +133,7 @@ def test_alorealmssuccessful_fails_authenticates_from_realm(
         alo_realms_successful_strategy, fail_authc_attempt): 
     """
     An authc_token that fails to authenticate with any realm will result
-    in execute returning None
+    in execute raising an exception 
     """
     with pytest.raises(MultiRealmAuthenticationException):
         alo_realms_successful_strategy.execute(fail_authc_attempt)
@@ -141,7 +192,7 @@ def test_allrealmssuccessful_fails_authenticates_from_realm(
         all_realms_successful_strategy, fail_authc_attempt): 
     """
     An authc_token that fails to authenticate with any realm will result
-    in execute returning None
+    in execute raising an exception 
     """
     with pytest.raises(IncorrectCredentialsException):
         all_realms_successful_strategy.execute(fail_authc_attempt)
