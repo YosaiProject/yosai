@@ -11,12 +11,13 @@ from . import (
 
 
 class DefaultCompositeAccountId(ICompositeAccountId, object):
+    # TO-DO:  this class can easily be converted to something more pythonic..
 
     def __init__(self):
         self.realm_accountids = defaultdict(set) 
 
     def get_realm_account_id(self, realm_name=None):
-        return self.realm_accountids.get(realm_name, None)
+        return self.realm_accountids.get(realm_name, None)  # won't create new
 
     def set_realm_account_id(self, realm_name, accountid):
         self.realm_accountids[realm_name].add(accountid)
@@ -41,7 +42,7 @@ class DefaultCompositeAccount(ICompositeAccount, object):
         self._id = DefaultCompositeAccountId()  # DG renamed 
         self._credentials = None
         self._merged_attrs = {}  # maybe change to OrderedDict() 
-        self._overwrite = overwrite
+        self.overwrite = overwrite
         self._realm_attrs = defaultdict(dict)
 
     @property 
@@ -65,7 +66,7 @@ class DefaultCompositeAccount(ICompositeAccount, object):
     def append_realm_account(self, realm_name, account):
         self._id.set_realm_account_id(realm_name, account.id)
 
-        realm_attributes = account.attributes
+        realm_attributes = getattr(account, 'attributes', None)
         if (realm_attributes is None):
             realm_attributes = {} 
 
@@ -76,12 +77,12 @@ class DefaultCompositeAccount(ICompositeAccount, object):
             raise RealmAttributesException(msg)
 
         # attributes is a dict:
-        for realm, attributes in realm_attributes.items():
-            if (self._overwrite):
-                self._merged_attrs[realm] = attributes
-            else:
-                if (realm not in self._merged_attrs):
-                    self._merged_attrs[realm] = attributes 
+        for attribute_key, attribute_value in realm_attributes.items():
+            if (self.overwrite):
+                self._merged_attrs[attribute_key] = attribute_value
+            else:  # write only if attribute doesn't exist yet
+                if (attribute_key not in self._merged_attrs):
+                    self._merged_attrs[attribute_key] = attribute_value
                 
     def get_realm_attributes(self, realm_name):
         return self._realm_attrs.get(realm_name, dict())  # DG: no frozen dict

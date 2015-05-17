@@ -17,6 +17,8 @@ from yosai.authc import (
     CryptContextFactory,
     DefaultAuthcService,
     DefaultAuthenticationAttempt,
+    DefaultCompositeAccountId,
+    DefaultCompositeAccount,
     DefaultHashService,
     DefaultPasswordService,
     FirstRealmSuccessfulStrategy,
@@ -204,3 +206,21 @@ def default_password_service():
 def private_salt():
     return 'privatesaltysnack'
 
+
+@pytest.fixture(scope='function')
+def default_composite_accountid():
+    return DefaultCompositeAccountId()
+
+@pytest.fixture(scope='function')
+def default_composite_account():
+    return DefaultCompositeAccount()
+
+@pytest.fixture(scope='function')
+def default_realm_accountids():
+    return {'realm1': 12345, 'realm2': 67890}
+
+@pytest.fixture(scope='function')
+def full_mock_account():
+    creds = {'cred1': 1, 'cred2': 2}
+    attrs = {'attr1': 1, 'attr2': 2, 'attr3': 3}
+    return MockAccount(account_id=8675309, credentials=creds, attributes=attrs)
