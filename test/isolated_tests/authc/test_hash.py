@@ -15,7 +15,9 @@ from yosai.authc import (
     DefaultPasswordService,
 )
 
+# -----------------------------------------------------------------------------
 # DefaultAuthcService Tests
+# -----------------------------------------------------------------------------
 def test_pepper_password_fails(default_authc_service):
 
     """
@@ -34,8 +36,9 @@ def test_pepper_password_succeeds(default_authc_service):
     das = default_authc_service
     assert das.pepper_password('testing')
 
-
+# -----------------------------------------------------------------------------
 # DefaultHashService Tests
+# -----------------------------------------------------------------------------
 def test_confirm_hash_ciphertext(default_hash_service):
     """
     the result should include a bytearray of the hash

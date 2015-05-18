@@ -15,7 +15,9 @@ from yosai.authc import (
     FirstRealmSuccessfulStrategy,
 )
 
+# -----------------------------------------------------------------------------
 # DefaultAuthenticationAttempt Tests
+# -----------------------------------------------------------------------------
 def test_authc_attempt_invalid_authc_token(default_authc_attempt):
     invalid_token = {'username': 'dummy', 'password': 'blaurgh'}
     with pytest.raises(InvalidAuthenticationTokenException):
@@ -29,10 +31,9 @@ def test_authc_attempt_invalid_realms(default_authc_attempt, monkeypatch):
     with pytest.raises(InvalidAuthcAttemptRealmsArgumentException):
         monkeypatch.setattr(default_authc_attempt, 'realms', invalid_realm) 
 
-# -----------------------------------------------------------------------
-
-
+# -----------------------------------------------------------------------------
 # FirstRealmSuccessfulStrategy Tests
+# -----------------------------------------------------------------------------
 def test_first_realmssuccessful_first_success(first_realm_successful_strategy,
                                               default_authc_attempt):
     """ The default_authc_attempt fixture contains a set with only one 
@@ -82,9 +83,10 @@ def test_first_realmssuccessful_fails_authenticates_from_realm_multi(
         first_realm_successful_strategy.execute(fail_multi_authc_attempt)
 
 
-# -----------------------------------------------------------------------
-
+# -----------------------------------------------------------------------------
 # AtLeastOneRealmSuccessfulStrategy Tests
+# -----------------------------------------------------------------------------
+
 def test_alo_realmssuccessful_first_success(alo_realms_successful_strategy,
                                             default_authc_attempt):
     
@@ -139,9 +141,9 @@ def test_alorealmssuccessful_fails_authenticates_from_realm(
         alo_realms_successful_strategy.execute(fail_authc_attempt)
     
 
-# -----------------------------------------------------------------------
-
+# -----------------------------------------------------------------------------
 # AllRealmsSuccessfulStrategy Tests
+# -----------------------------------------------------------------------------
 def test_allrealmssuccessful_first_success(all_realms_successful_strategy,
                                            default_authc_attempt):
     """ The default_authc_attempt fixture contains a set with only one 

@@ -13,7 +13,9 @@ from yosai.authc import (
     SimpleCredentialsMatcher,
 )
 
+# -----------------------------------------------------------------------------
 # PasswordMatcher Tests
+# -----------------------------------------------------------------------------
 # no need to unit-test credentials_match since its tests are implicit
 def test_dpm_ensure_password_service_succeeds(default_password_matcher):
     """ by default, password_service should be set """
@@ -49,8 +51,9 @@ def test_dpm_get_stored_password_fails(
     with pytest.raises(PasswordMatcherInvalidAccount):
         dpm.get_stored_password(full_mock_account)
 
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # SimpleCredentialsMatcher Tests
+# -----------------------------------------------------------------------------
 
 def test_scm_get_credentials_succeeds(
         default_simple_credentials_matcher, full_mock_account):

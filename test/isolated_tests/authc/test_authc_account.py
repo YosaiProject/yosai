@@ -9,7 +9,9 @@ from yosai.authc import (
     DefaultCompositeAccount,
 )
 
+# ----------------------------------------------------------------------------
 # DefaultCompositeAccountId Tests
+# ----------------------------------------------------------------------------
 def test_dcaid_get_realm_account_exists(default_composite_accountid,
                                         default_realm_accountids,
                                         monkeypatch):

@@ -14,7 +14,9 @@ from yosai.authc import (
     CryptContextFactory,
 )
 
+# -----------------------------------------------------------------------------
 # AuthenticationSettings Tests
+# -----------------------------------------------------------------------------
 def test_settings_missing_private_salt(monkeypatch, authc_config):
     """
     The default security policy requires use of a private salt.  In the event
@@ -37,8 +39,9 @@ def test_get_config_where_algorithms_doesnt_exist(patched_authc_settings,
     monkeypatch.setattr(patched_authc_settings, 'algorithms', None)
     assert not patched_authc_settings.get_config('sha256_crypt') 
 
-
+# -----------------------------------------------------------------------------
 # CryptContextFactory Tests
+# -----------------------------------------------------------------------------
 def test_generate_context_empty_string_algorithm(cryptcontext_factory,
                                                  monkeypatch):
     """
