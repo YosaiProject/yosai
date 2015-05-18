@@ -34,12 +34,14 @@ from .strategy import (
 )
 
 from .authc import (
+    AllowAllCredentialsMatcher,
     DefaultAuthenticator,
     DefaultAuthcService,
     DefaultHashService,
     DefaultPasswordService,
     FailedAuthenticationEvent,
     PasswordMatcher,
+    SimpleCredentialsMatcher,
     SuccessfulAuthenticationEvent,
     UsernamePasswordToken,
 )

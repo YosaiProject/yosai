@@ -256,7 +256,7 @@ class SuccessfulAuthenticationEvent(ABCAuthenticationEvent, object):
     
 
 class PasswordMatcher(ICredentialsMatcher, object):
-    """ DG:  Dramatic changes made here adapting to passlib and python """
+    """ DG:  Dramatic changes made here while adapting to passlib and python"""
 
     def __init__(self):
         self.password_service = DefaultPasswordService()
@@ -272,7 +272,7 @@ class PasswordMatcher(ICredentialsMatcher, object):
                                                      stored_credentials)
 
     def ensure_password_service(self):
-        if (self.password_service is None):
+        if (not self.password_service):
             msg = "Required PasswordService has not been configured."
             raise IllegalStateException(msg)
         return self.password_service
@@ -396,7 +396,7 @@ class SimpleCredentialsMatcher(ICredentialsMatcher, object):
 
     def credentials_match(self, authc_token, account):
         try:
-            return authc_token.credentials == account.credentials
+            return self.equals(authc_token.credentials, account.credentials)
         except (AttributeError, TypeError):
             raise MissingCredentialsException  # new to Yosai 
 

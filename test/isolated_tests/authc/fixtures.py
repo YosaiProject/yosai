@@ -23,6 +23,8 @@ from yosai.authc import (
     DefaultPasswordService,
     FirstRealmSuccessfulStrategy,
     IAuthenticationToken,
+    PasswordMatcher,
+    SimpleCredentialsMatcher,
     UsernamePasswordToken,
 )
 
@@ -224,3 +226,11 @@ def full_mock_account():
     creds = {'cred1': 1, 'cred2': 2}
     attrs = {'attr1': 1, 'attr2': 2, 'attr3': 3}
     return MockAccount(account_id=8675309, credentials=creds, attributes=attrs)
+
+@pytest.fixture(scope='function')
+def default_password_matcher():
+    return PasswordMatcher()
+
+@pytest.fixture(scope='function')
+def default_simple_credentials_matcher():
+    return SimpleCredentialsMatcher()
