@@ -37,6 +37,7 @@ from .exceptions import (
     InvalidAuthcAttemptRealmsArgumentException,
     InvalidSessionException,
     InvalidAuthenticationTokenException,
+    InvalidTokenPasswordException,
     LockedAccountException,
     MisconfiguredException,
     MissingCredentialsException,
@@ -82,7 +83,7 @@ from .account import (
 )
 
 from .event import (
-    Event,  # DG:  only temporary!
+    Event,
     EventBus,
     IEventBusAware,
 )

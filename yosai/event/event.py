@@ -9,6 +9,24 @@ knows HOW).
 
 from pubsub import pub
 from yosai import LogManager
+import calendar
+import time
+
+
+class Event(object):
+    """ 
+    There is a standard structure for events communicated over the eventbus. 
+    Yosai's Event design is a departure from Shiro's use of abstract and 
+    hierarchical concrete Event classes, each of which essentially has
+    the same characteristics and behavior.
+    """
+
+    def __init__(self, event_topic, event_type, source, **eventattrs):
+        self.event_type = event_type  # ex:  AUTHENTICATION
+        self.event_topic = event_topic  # ex:  AUTHENTICATION_FAILED
+        self.source = source  # the object that emitted the event 
+        self.timestamp = calendar.timegm(time.gmtime())  # UNIX timestamp
+        self.__dict__.update(**eventattrs)  # DG:  risky?
 
 
 class EventBus(object):
@@ -59,8 +77,3 @@ class EventBus(object):
             raise
         finally:
             return unsubscribed_listeners
-
-# DG:  this is temporary 
-class Event(object):
-    pass
-

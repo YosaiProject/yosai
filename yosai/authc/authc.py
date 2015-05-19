@@ -15,6 +15,7 @@ from yosai import (
     IEventBusAware,
     IllegalStateException,
     IncorrectCredentialsException,
+    InvalidTokenPasswordException,
     LockedAccountException,
     LogManager,
     MissingCredentialsException,
@@ -31,7 +32,6 @@ from yosai import (
 )
 
 from . import (
-    ABCAuthenticationEvent,
     AuthenticationSettings,
     CryptContextFactory,
     FirstRealmSuccessfulStrategy,
@@ -85,7 +85,12 @@ class UsernamePasswordToken(IHostAuthenticationToken,
 
     @password.setter
     def password(self, password):
-        self._password = password
+        if isinstance(password, bytearray):
+            self._password = password
+        if isinstance(password, str):
+            self._password = bytearray(password, 'utf-8')
+        else:
+            raise InvalidTokenPasswordException
 
     @property
     def is_remember_me(self):
@@ -124,9 +129,10 @@ class UsernamePasswordToken(IHostAuthenticationToken,
         self.host = None 
         self.remember_me = False
       
-        if (self.password is not None):
-            for element in self.password:
-                self.password[element] = 0  # DG:  this equals 0x00
+        if (self.password):
+            for index, value in enumerate(self.password):
+                self.password[index] = 0  # DG:  this equals 0x00
+        return self.password
     
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(
@@ -135,6 +141,8 @@ class UsernamePasswordToken(IHostAuthenticationToken,
             result += ", ({0})".format(self.host)
         return result
         
+# Yosai deprecates FailedAuthenticationEvent
+# Yosai deprecates SuccessfulAuthenticationEvent
 
 class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
 
@@ -240,20 +248,6 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
             event = FailedAuthenticationEvent(self, authc_token, throwable)
             self.event_bus.publish(event)
 
-
-class FailedAuthenticationEvent(ABCAuthenticationEvent, object):
-
-    def __init__(self, source, authc_token, exception):
-        super().__init__(source, authc_token)
-        self.exception = exception  # DG:  renamed from throwable to exception
-
-
-class SuccessfulAuthenticationEvent(ABCAuthenticationEvent, object):
-
-    def __init__(self, source, authc_token, account):
-        super().__init__(source, authc_token)
-        self.account = account
-    
 
 class PasswordMatcher(ICredentialsMatcher, object):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""

@@ -1,19 +1,13 @@
 from yosai import (
     IAccountId,
     IAccount,
-    Event,
 )
 
 from abc import ABCMeta, abstractmethod
 
 
-class ABCAuthenticationEvent(Event, metaclass=ABCMeta):
-
-    def __init__(self, source, authc_token):
-        super().__init__(source)
-        self.authc_token = authc_token
-
-
+# replaced AuthenticationEvents with an event schema:  a) type b) topic
+    
 class IAuthenticationListener(metaclass=ABCMeta):
     """
      An AuthenticationListener listens for notifications while Subjects 

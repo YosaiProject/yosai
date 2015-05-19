@@ -5,7 +5,6 @@ from .context import (
 )
 
 from .interfaces import (
-    ABCAuthenticationEvent,
     IAuthenticationAttempt,
     IAuthenticationListener,
     IAuthenticationStrategy,
@@ -39,9 +38,7 @@ from .authc import (
     DefaultAuthcService,
     DefaultHashService,
     DefaultPasswordService,
-    FailedAuthenticationEvent,
     PasswordMatcher,
     SimpleCredentialsMatcher,
-    SuccessfulAuthenticationEvent,
     UsernamePasswordToken,
 )

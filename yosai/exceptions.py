@@ -96,6 +96,10 @@ class InvalidAuthcAttemptRealmsArgumentException(AuthenticationException):
     pass
 
 
+class InvalidTokenPasswordException(AuthenticationException):
+    pass
+
+
 class LockedAccountException(DisabledAccountException):
     pass
 

@@ -23,3 +23,12 @@ class MockAccount(IAccount):
 
     def __repr__(self):
         return "<MockAccount(id={0})>".format(self._id)
+
+
+class MockEventBus(object):
+
+    def publish(self, event):
+        return True
+
+    def __repr__(self):
+        return "<MockEventBus()>"
