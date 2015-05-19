@@ -4,5 +4,6 @@ from .event import (
 )
 
 from .interfaces import (
+    IEventBus,
     IEventBusAware,
 )
