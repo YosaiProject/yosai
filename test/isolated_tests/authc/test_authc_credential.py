@@ -3,11 +3,11 @@ import pytest
 from yosai import (
     IllegalStateException,
     MissingCredentialsException,
-    PasswordMatcherInvalidAccount,
-    PasswordMatcherInvalidToken,
+    PasswordMatcherInvalidAccountException,
+    PasswordMatcherInvalidTokenException,
 )
 
-from yosai.authc import (
+from yosai.authc.credential import (
     AllowAllCredentialsMatcher,
     PasswordMatcher,
     SimpleCredentialsMatcher,
@@ -36,7 +36,7 @@ def test_dpm_get_submitted_password_fails(
     dpm = default_password_matcher
     token = username_password_token
     monkeypatch.delattr(token, '_credentials')
-    with pytest.raises(PasswordMatcherInvalidToken):
+    with pytest.raises(PasswordMatcherInvalidTokenException):
         dpm.get_submitted_password(username_password_token)
 
 def test_dpm_get_stored_password_succeeds(
@@ -48,7 +48,7 @@ def test_dpm_get_stored_password_fails(
         default_password_matcher, full_mock_account, monkeypatch):
     dpm = default_password_matcher
     monkeypatch.delattr(full_mock_account, '_credentials')
-    with pytest.raises(PasswordMatcherInvalidAccount):
+    with pytest.raises(PasswordMatcherInvalidAccountException):
         dpm.get_stored_password(full_mock_account)
 
 # -----------------------------------------------------------------------------

@@ -2,6 +2,7 @@ from yosai import (
     IAccount,
 )
 
+
 class MockAccount(IAccount):
 
     def __init__(self, account_id, credentials={}, attributes={}):

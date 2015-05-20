@@ -33,12 +33,16 @@ from .strategy import (
 )
 
 from .authc import (
-    AllowAllCredentialsMatcher,
     DefaultAuthenticator,
     DefaultAuthcService,
     DefaultHashService,
     DefaultPasswordService,
-    PasswordMatcher,
-    SimpleCredentialsMatcher,
     UsernamePasswordToken,
 )
+
+from .credential import (
+    PasswordMatcher,
+    AllowAllCredentialsMatcher,
+    SimpleCredentialsMatcher,
+)
+

@@ -133,11 +133,11 @@ class PasswordMatchException(AuthenticationException):
     pass
 
 
-class PasswordMatcherInvalidToken(AuthenticationException):
+class PasswordMatcherInvalidTokenException(AuthenticationException):
     pass
 
 
-class PasswordMatcherInvalidAccount(AuthenticationException):
+class PasswordMatcherInvalidAccountException(AuthenticationException):
     pass
 
 
