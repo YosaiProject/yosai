@@ -27,8 +27,20 @@ class MockAccount(IAccount):
 
 class MockEventBus(object):
 
-    def publish(self, event):
-        return True
+    def if_subscribed(self, listener, topic_name):
+        return True 
+
+    def publish(self, topic_name, **kwargs):
+        pass 
+
+    def subscribe(self, _callable, topic_name):
+        return _callable, True
+
+    def unsubscribe(self, listener, topic_name):
+        pass
+
+    def unsub_all(self):
+        pass
 
     def __repr__(self):
         return "<MockEventBus()>"

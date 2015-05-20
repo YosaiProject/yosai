@@ -2,3 +2,7 @@
 Portions of this software was originally based on the following:
     - Software copyright (c)  Django Software Foundation and individual contributors.
     All rights reserved.
+
+PyPubSub:
+    Copyright 2006-2009 by Oliver Schoenborn, all rights reserved.
+    BSD License
