@@ -63,7 +63,10 @@ class ApplicationSecurityManager(object):
         self._realms = defaultdict(list) 
         self._event_bus = EventBus()  # DG:  shiro creates a default ver
         self.set_cache_manager(DisabledCacheManager())
-        self.set_authenticator(DefaultAuthenticator())
+        
+        # new to Yosai is the injection of the eventbus:
+        self.set_authenticator(DefaultAuthenticator(self._event_bus))
+
         self.set_authorizer(ModularRealmAuthorizer()) 
         self._session_manager = SessionManager()
         self._subject_DAO = SubjectDAO()

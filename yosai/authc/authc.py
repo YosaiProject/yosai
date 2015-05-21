@@ -1,4 +1,5 @@
 from yosai import (
+    AccountException,
     AuthenticationException,
     Event,
     EventBus,
@@ -129,14 +130,19 @@ class UsernamePasswordToken(IHostAuthenticationToken,
 
 class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
 
-    def __init__(self):
+    # Unlike Shiro, Yosai injects the strategy and the eventbus
+    def __init__(self, event_bus, strategy=FirstRealmSuccessfulStrategy()):
         """ Default in Shiro 2.0 is 'first successful'. This is the desired 
         behavior for most Shiro users (80/20 rule).  Before v2.0, was
         'at least one successful', which was often not desired and caused
         unnecessary I/O.  """
-        self.authentication_strategy = FirstRealmSuccessfulStrategy()
-        self.realms = None
-        self.event_bus = EventBus()
+        self.authentication_strategy = strategy
+        self.realms = None  # this gets set by the AppSecurityManager
+        self._event_bus = event_bus
+
+    @property
+    def event_bus(self):
+        return self._event_bus
 
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):
@@ -151,29 +157,33 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
             return realm.authenticate_account(authc_token)
 
     def authenticate_multi_realm_account(self, realms, authc_token):
-        # DG TBD: replace with a strategy factory and init dependency injection
-        attempt = DefaultAuthenticationAttempt(authc_token,
-                                               frozenset(realms))
+        """ 
+        :type realms: Set
+        """
+        attempt = DefaultAuthenticationAttempt(authc_token, realms)
         return self.authentication_strategy.execute(attempt)
 
     def authenticate_account(self, authc_token):
 
             # log here
             msg = ("Authentication submission received for authentication "
-                   "token [" + authc_token + "]")
+                   "token [" + str(authc_token) + "]")
             print(msg)
 
             try:
                 account = self.do_authenticate_account(authc_token)
                 if (account is None):
                     msg2 = ("No account returned by any configured realms for "
-                            "submitted authentication token [" + authc_token +
-                            "].")
+                            "submitted authentication token [{0}]".
+                            format(authc_token))
+
                     raise UnknownAccountException(msg2)
 
             except Exception as ex:
-                ae = ex
-                if (not isinstance(ae, AuthenticationException)):
+                ae = None
+                if isinstance(ex, AuthenticationException):
+                    ae = AuthenticationException()
+                if ae is None: 
                     """
                     Exception thrown was not an expected
                     AuthenticationException.  Therefore it is probably a
@@ -181,7 +191,7 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
                     AuthenticationException, log to warn, and propagate:
                     """
                     msg3 = ("Authentication failed for submitted token [" +
-                            authc_token + "].  Possible unexpected "
+                            str(authc_token) + "].  Possible unexpected "
                             "error? (Typical or expected login exceptions "
                             "should extend from AuthenticationException).")
                     ae = AuthenticationException(msg3, ex)
@@ -238,6 +248,10 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
                           authc_token=authc_token,
                           throwable=throwable)
             self.event_bus.publish(event)
+
+    def __repr__(self):
+        return "<DefaultAuthenticator(event_bus={0}, strategy={0})>".\
+            format(self.event_bus, self.authentication_strategy)
 
 
 class DefaultAuthcService(object):

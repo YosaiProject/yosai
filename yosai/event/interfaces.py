@@ -20,10 +20,10 @@ class IEventBusAware(metaclass=ABCMeta):
     
     @property
     @abstractmethod
-    def eventbus():
+    def event_bus():
         pass
 
-    @eventbus.setter
+    @event_bus.setter
     @abstractmethod
-    def eventbus(self, eventbus):
+    def event_bus(self, eventbus):
         pass

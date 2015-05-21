@@ -26,10 +26,10 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
     def __init__(self, authc_token, realms):
         """
         :type authc_token:  AuthenticationToken
-        :type realms: a Set of AccountStoreRealm objects
+        :type realms: a Set/FrozenSet of realm objects (e.g. AccountStoreRealm) 
         """
         self.authentication_token = authc_token
-        self.realms = realms  # DG:  frozenset is another option
+        self.realms = realms 
 
     @property
     def authentication_token(self):

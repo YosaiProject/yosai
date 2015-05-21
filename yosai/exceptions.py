@@ -34,13 +34,11 @@ class MisconfiguredException(YosaiException):
 # ---- Authentication Exceptions
 # ---------------------------------------------------------------------------
 
-
-class AuthenticationConfigException(YosaiException):
+class AuthenticationException(YosaiException):
     pass
 
 
-class AuthenticationException(YosaiException):
-    """ General exception due to an error during the Authc process. """
+class AuthenticationConfigException(YosaiException):
     pass
 
 
@@ -52,11 +50,11 @@ class AccountStoreRealmAuthenticationException(AuthenticationException):
     pass
 
 
-class AccountException(AuthenticationException):
+class AuthenticationSettingsContextException(AuthenticationException):
     pass
 
 
-class AuthenticationSettingsContextException(AuthenticationException):
+class AccountException(AuthenticationException):
     pass
 
 
@@ -194,10 +192,6 @@ class CacheException(YosaiException):
 # ---------------------------------------------------------------------------
 # ---- Security Management Exceptions
 # ---------------------------------------------------------------------------
-
-
-class AuthenticationException(YosaiException):
-    pass
 
 
 class IncorrectAttributeException(YosaiException):

@@ -1,10 +1,13 @@
 import pytest
+from unittest import mock
 
 from .doubles import (
     MockAccount,
+    MockEventBus,
 )
 from yosai import (
     AccountStoreRealm,
+    EventBus,
     IncorrectCredentialsException,
     settings,
 )
@@ -16,6 +19,7 @@ from yosai.authc import (
     CryptContextFactory,
     DefaultAuthcService,
     DefaultAuthenticationAttempt,
+    DefaultAuthenticator,
     DefaultCompositeAccountId,
     DefaultCompositeAccount,
     DefaultHashService,
@@ -91,6 +95,10 @@ def patched_authc_settings(authc_config, monkeypatch):
 @pytest.fixture(scope='function')
 def default_authc_service():
     return DefaultAuthcService()
+
+@pytest.fixture(scope='function')
+def default_accountstorerealm():
+    return AccountStoreRealm()
 
 @pytest.fixture(scope='function')
 def first_accountstorerealm_succeeds(monkeypatch):
@@ -202,7 +210,6 @@ def default_hash_service():
 def default_password_service():
     return DefaultPasswordService()
 
-
 @pytest.fixture(scope='function')
 def private_salt():
     return 'privatesaltysnack'
@@ -233,3 +240,12 @@ def default_password_matcher():
 @pytest.fixture(scope='function')
 def default_simple_credentials_matcher():
     return SimpleCredentialsMatcher()
+
+@pytest.fixture(scope='function')
+def mocked_event_bus():
+    return MockEventBus()
+
+@pytest.fixture(scope='function')
+def default_authenticator(first_realm_successful_strategy, mocked_event_bus):
+    return DefaultAuthenticator(mocked_event_bus, 
+                                first_realm_successful_strategy)
