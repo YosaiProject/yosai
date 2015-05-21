@@ -2,8 +2,8 @@ import pytest
 from unittest import mock
 
 from yosai import (
+    AuthenticationException,
     MultiRealmAuthenticationException,
-    UnknownAccountException,
     UnsupportedTokenException,
 )
 
@@ -73,11 +73,156 @@ def test_da_authc_acct_authentication_fails(
         raised """
     da = default_authenticator
     token = username_password_token
+
     def do_nothing(self, x=None, y=None):
         return None
+
     monkeypatch.setattr(da, 'do_authenticate_account', do_nothing) 
     monkeypatch.setattr(da, 'notify_failure', do_nothing) 
     monkeypatch.setattr(da, 'notify_success', do_nothing) 
 
-    with pytest.raises(UnknownAccountException):
+    with pytest.raises(AuthenticationException):
         da.authenticate_account(token)
+
+def test_da_authc_acct_authentication_raises_unknown_exception(
+        default_authenticator, username_password_token, monkeypatch): 
+    """ an unexpected exception will be wrapped by an AuthenticationException 
+    """
+    da = default_authenticator
+    token = username_password_token
+
+    def raise_typeerror():
+        raise TypeError
+
+    def do_nothing(self, x=None, y=None):
+        return None
+
+    monkeypatch.setattr(da, 'do_authenticate_account', raise_typeerror) 
+    monkeypatch.setattr(da, 'notify_failure', do_nothing) 
+    monkeypatch.setattr(da, 'notify_success', do_nothing) 
+
+    with pytest.raises(AuthenticationException) as exc_info:
+        da.authenticate_account(token)
+
+    assert 'unexpected' in str(exc_info.value)
+
+
+def test_da_authc_acct_authentication_succeeds(
+        default_authenticator, username_password_token, monkeypatch,
+        full_mock_account): 
+    """ when an Account is returned from do_authenticate_account, it means that
+        authentication succeeded
+    """
+    da = default_authenticator
+    token = username_password_token
+    
+    def get_mock_account(self, x=None):
+        return full_mock_account
+
+    def do_nothing(self, x=None, y=None):
+        return None
+
+    monkeypatch.setattr(da, 'do_authenticate_account', get_mock_account) 
+    monkeypatch.setattr(da, 'notify_failure', do_nothing) 
+    monkeypatch.setattr(da, 'notify_success', do_nothing) 
+
+    result = da.authenticate_account(token)
+
+    assert isinstance(result, full_mock_account.__class__)
+
+def test_da_do_authc_acct_with_realm(
+        default_authenticator, username_password_token,
+        one_accountstorerealm_succeeds, monkeypatch):
+    """ when the DefaultAuthenticator is missing a realms attribute, an 
+        exception will raise in do_authenticate_account 
+    """
+    
+    da = default_authenticator
+    token = username_password_token
+
+    da.realms = one_accountstorerealm_succeeds 
+    
+    def do_nothing(self, x=None, y=None):
+        return 'do_nothing' 
+
+    monkeypatch.setattr(da, 'authenticate_single_realm_account', do_nothing)
+    result = da.do_authenticate_account(token)
+    assert result == 'do_nothing'
+
+def test_da_do_authc_acct_with_realms(
+        default_authenticator, username_password_token,
+        two_accountstorerealms_succeeds, monkeypatch):
+    
+    da = default_authenticator
+    token = username_password_token
+
+    da.realms = two_accountstorerealms_succeeds 
+
+    def do_nothing(self, x=None, y=None):
+        return 'do_nothing' 
+
+    monkeypatch.setattr(da, 'authenticate_multi_realm_account', do_nothing)
+    result = da.do_authenticate_account(token)
+    assert result == 'do_nothing'
+
+
+def test_da_do_authc_acct_without_realm(
+        default_authenticator, username_password_token):
+    """ when the DefaultAuthenticator is missing a realms attribute, an 
+        exception will raise in do_authenticate_account 
+    """
+    
+    da = default_authenticator
+    token = username_password_token
+
+    with pytest.raises(AuthenticationException):
+        da.do_authenticate_account(token)
+
+def test_da_notify_success_with_eventbus(
+        default_authenticator, username_password_token, full_mock_account,
+        mocked_event_bus, monkeypatch):
+    
+    da = default_authenticator
+    token = username_password_token
+    account = full_mock_account
+
+    monkeypatch.setattr(da, '_event_bus', mocked_event_bus)
+
+    assert da.notify_success(token, account) is None
+
+def test_da_notify_success_without_eventbus(
+        default_authenticator, username_password_token, full_mock_account,
+        monkeypatch):
+    
+    da = default_authenticator
+    token = username_password_token
+    account = full_mock_account
+
+    monkeypatch.setattr(da, '_event_bus', None)
+    
+    assert da.notify_success(token, account) is None
+
+
+def test_da_notify_failure_with_eventbus(
+        default_authenticator, username_password_token, full_mock_account,
+        mocked_event_bus, monkeypatch):
+    
+    da = default_authenticator
+    token = username_password_token
+    account = full_mock_account
+
+    monkeypatch.setattr(da, '_event_bus', mocked_event_bus)
+
+    assert da.notify_failure(token, account) is None
+
+def test_da_notify_failure_without_eventbus(
+        default_authenticator, username_password_token, full_mock_account,
+        monkeypatch):
+    
+    da = default_authenticator
+    token = username_password_token
+    account = full_mock_account
+
+    monkeypatch.setattr(da, '_event_bus', None)
+    
+    assert da.notify_failure(token, account) is None

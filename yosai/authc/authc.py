@@ -180,6 +180,7 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
                     raise UnknownAccountException(msg2)
 
             except Exception as ex:
+                print('ex is: ', ex)
                 ae = None
                 if isinstance(ex, AuthenticationException):
                     ae = AuthenticationException()
@@ -199,12 +200,12 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
                 try:
                     self.notify_failure(authc_token, ae)
                 except Exception as ex:
-                    # log here
                     msg4 = ("Unable to send notification for failed "
                             "authentication attempt - listener error?.  "
                             "Please check your EventBus implementation.  "
                             "Logging 'send' exception  and propagating "
                             "original AuthenticationException instead...")
+                    # log warn here
                     print(msg4)
                 raise ae
 
