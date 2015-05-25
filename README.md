@@ -45,4 +45,4 @@ available on FreeNode IRC channels #python and #pyramid under the nickname dowwi
              
 APACHE SHIRO VERSION USED
 -----------------------------------------------------------------------
-Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision 1673475       
+Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx      

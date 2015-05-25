@@ -67,15 +67,15 @@ def test_da_autc_mra_fails(
         da.authenticate_multi_realm_account(realms, token)
 
 def test_da_authc_acct_authentication_fails(
-        default_authenticator, username_password_token, monkeypatch): 
+        default_authenticator, username_password_token, monkeypatch):
     """ when None is returned from do_authenticate_account, it means that
         something other than authentication failed, and so an exception is 
         raised """
     da = default_authenticator
     token = username_password_token
-
-    def do_nothing(self, x=None, y=None):
-        return None
+    
+    def do_nothing(x, y):
+        pass
 
     monkeypatch.setattr(da, 'do_authenticate_account', do_nothing) 
     monkeypatch.setattr(da, 'notify_failure', do_nothing) 
@@ -85,7 +85,7 @@ def test_da_authc_acct_authentication_fails(
         da.authenticate_account(token)
 
 def test_da_authc_acct_authentication_raises_unknown_exception(
-        default_authenticator, username_password_token, monkeypatch): 
+        default_authenticator, username_password_token, monkeypatch):
     """ an unexpected exception will be wrapped by an AuthenticationException 
     """
     da = default_authenticator
@@ -93,9 +93,9 @@ def test_da_authc_acct_authentication_raises_unknown_exception(
 
     def raise_typeerror():
         raise TypeError
-
-    def do_nothing(self, x=None, y=None):
-        return None
+    
+    def do_nothing(x, y):
+        pass
 
     monkeypatch.setattr(da, 'do_authenticate_account', raise_typeerror) 
     monkeypatch.setattr(da, 'notify_failure', do_nothing) 
@@ -109,7 +109,7 @@ def test_da_authc_acct_authentication_raises_unknown_exception(
 
 def test_da_authc_acct_authentication_succeeds(
         default_authenticator, username_password_token, monkeypatch,
-        full_mock_account): 
+        full_mock_account):
     """ when an Account is returned from do_authenticate_account, it means that
         authentication succeeded
     """
@@ -118,9 +118,9 @@ def test_da_authc_acct_authentication_succeeds(
     
     def get_mock_account(self, x=None):
         return full_mock_account
-
-    def do_nothing(self, x=None, y=None):
-        return None
+    
+    def do_nothing(x, y):
+        pass
 
     monkeypatch.setattr(da, 'do_authenticate_account', get_mock_account) 
     monkeypatch.setattr(da, 'notify_failure', do_nothing) 
@@ -141,13 +141,13 @@ def test_da_do_authc_acct_with_realm(
     token = username_password_token
 
     da.realms = one_accountstorerealm_succeeds 
-    
-    def do_nothing(self, x=None, y=None):
-        return 'do_nothing' 
 
-    monkeypatch.setattr(da, 'authenticate_single_realm_account', do_nothing)
+    def say_nothing(x, y):
+        return 'nothing'
+    
+    monkeypatch.setattr(da, 'authenticate_single_realm_account', say_nothing)
     result = da.do_authenticate_account(token)
-    assert result == 'do_nothing'
+    assert result == 'nothing'
 
 def test_da_do_authc_acct_with_realms(
         default_authenticator, username_password_token,
@@ -158,12 +158,12 @@ def test_da_do_authc_acct_with_realms(
 
     da.realms = two_accountstorerealms_succeeds 
 
-    def do_nothing(self, x=None, y=None):
-        return 'do_nothing' 
+    def say_something(self, x=None, y=None):
+        return 'something'
 
-    monkeypatch.setattr(da, 'authenticate_multi_realm_account', do_nothing)
+    monkeypatch.setattr(da, 'authenticate_multi_realm_account', say_something)
     result = da.do_authenticate_account(token)
-    assert result == 'do_nothing'
+    assert result == 'something'
 
 
 def test_da_do_authc_acct_without_realm(

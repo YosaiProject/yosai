@@ -1,5 +1,8 @@
 import pytest
 from unittest import mock
+import imp 
+import os
+import sys
 
 from yosai import (
     LazySettings,
@@ -24,11 +27,12 @@ def config():
 
 @pytest.fixture(scope='function')
 def filepath():
-    return "../../../yosai/conf/yosai_settings.json"
+    path = os.path.dirname(sys.modules[LazySettings.__module__].__file__)
+    return path + "/yosai_settings.json"  # within same directory
 
 @pytest.fixture(scope='function')
 def settings_fixture(filepath):
-    return Settings(filepath)
+    return Settings(filepath)  # COULD mock this instead..
 
 @pytest.fixture(scope='function')
 def empty_settings():

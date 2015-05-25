@@ -1,7 +1,7 @@
 import pytest
 from unittest import mock
 
-from .doubles import (
+from ..doubles import (
     MockAccount,
     MockEventBus,
 )
@@ -64,29 +64,6 @@ def authc_config():
         "private_salt": "privatesalt"
     }
 
-
-@pytest.fixture(scope='function')
-def username_password_token():
-    return UsernamePasswordToken(username='user', 
-                                 password='secret',
-                                 remember_me=False, 
-                                 host='127.0.0.1') 
-
-
-@pytest.fixture(scope='function')
-def mock_token():
-    class MockToken(IAuthenticationToken, object):
-        @property
-        def principal(self):
-            pass
-
-        @property
-        def credentials(self):
-            pass
-
-    return MockToken()
-
-
 @pytest.fixture(scope='function')
 def patched_authc_settings(authc_config, monkeypatch):
     monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
@@ -95,10 +72,6 @@ def patched_authc_settings(authc_config, monkeypatch):
 @pytest.fixture(scope='function')
 def default_authc_service():
     return DefaultAuthcService()
-
-@pytest.fixture(scope='function')
-def default_accountstorerealm():
-    return AccountStoreRealm()
 
 @pytest.fixture(scope='function')
 def first_accountstorerealm_succeeds(monkeypatch):
@@ -232,10 +205,6 @@ def full_mock_account():
     creds = {'cred1': 1, 'cred2': 2}
     attrs = {'attr1': 1, 'attr2': 2, 'attr3': 3}
     return MockAccount(account_id=8675309, credentials=creds, attributes=attrs)
-
-@pytest.fixture(scope='function')
-def default_password_matcher():
-    return PasswordMatcher()
 
 @pytest.fixture(scope='function')
 def default_simple_credentials_matcher():

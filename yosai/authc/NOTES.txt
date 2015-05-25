@@ -1,0 +1,1 @@
+the /authc subpackage is as of shiro 2.0 revision 1673475

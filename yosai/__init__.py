@@ -52,6 +52,7 @@ from .exceptions import (
     PepperPasswordException,
     PrimaryPrincipalIntegrityException,
     RealmAttributesException,
+    RealmMisconfiguredException,
     SessionException,
     UnauthenticatedException,
     UnauthorizedException,
