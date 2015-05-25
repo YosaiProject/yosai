@@ -115,7 +115,7 @@ class AccountStoreRealm(IRealm, object):
         cm = self.credentials_matcher
         if (not cm.credentials_match(authc_token, account)):
             # not successful - raise an exception as signal:
-            msg = ("Submitted credentials for token [" + authc_token + "] "
+            msg = ("Submitted credentials for token [" + str(authc_token) + "] "
                    "did not match the stored credentials.")
             # log here
             raise IncorrectCredentialsException(msg)

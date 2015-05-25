@@ -1,6 +1,8 @@
 import pytest
 from yosai import (
     AccountStoreRealm,
+    IncorrectCredentialsException,
+    PasswordMatcher,
     RealmMisconfiguredException,
 )
 from ..doubles import (
@@ -95,13 +97,39 @@ def test_asr_authc_acct_cannot_locate_account(
     pasr = patched_accountstore_realm 
     pasr.account_cache_handler = MockAccountCacheHandler(account='')
     pasr.account_store = MockAccountStore(account='')
+    
+    def patched_assert_credentials_match(x=None, y=None):
+        return True 
+    monkeypatch.setattr(pasr, 'assert_credentials_match',
+                        patched_assert_credentials_match)
 
     result = pasr.authenticate_account(upt)
 
     assert result is None
 
-#patched_accountstore_realm
+def test_asr_acm_succeeds(
+        username_password_token, patched_accountstore_realm, full_mock_account):
+    
+    upt = username_password_token
+    pasr = patched_accountstore_realm 
+   
+    with mock.patch.object(PasswordMatcher, 'credentials_match') as pm_cm:
+        pm_cm.return_value = True
+        result = pasr.assert_credentials_match(upt, full_mock_account)
+        assert result is None
 
+def test_asr_acm_fails(
+        username_password_token, patched_accountstore_realm, full_mock_account):
+    
+    upt = username_password_token
+    pasr = patched_accountstore_realm 
+  
+    with pytest.raises(IncorrectCredentialsException):
+        with mock.patch.object(PasswordMatcher, 'credentials_match') as pm_cm:
+            pm_cm.return_value = False 
+            pasr.assert_credentials_match(upt, full_mock_account)
+
+    
 # -----------------------------------------------------------------------------
 # AbstractCacheHandler Tests
 # -----------------------------------------------------------------------------
