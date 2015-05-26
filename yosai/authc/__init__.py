@@ -34,7 +34,7 @@ from .strategy import (
 
 from .authc import (
     DefaultAuthenticator,
-    DefaultAuthcService,
+    AbstractAuthcService,
     DefaultHashService,
     DefaultPasswordService,
     UsernamePasswordToken,

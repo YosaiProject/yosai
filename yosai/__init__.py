@@ -10,6 +10,7 @@ __status__ = "Development"
 from .exceptions import (
     AbstractMethodException,
     AccountException,
+    AccountCacheHandlerAttributException,
     AccountStoreRealmAuthenticationException,
     AuthenticationConfigException,
     AuthenticationSettingsContextException,

@@ -1,4 +1,5 @@
 from yosai import (
+    AccountCacheHandlerAttributException,
     AccountStoreRealmAuthenticationException,
     IllegalArgumentException,
     IncorrectCredentialsException, 
@@ -9,6 +10,7 @@ from yosai import (
 )
 
 from . import (
+    IAccountCacheHandler,
     IRealm,
 )
 
@@ -115,15 +117,16 @@ class AccountStoreRealm(IRealm, object):
         cm = self.credentials_matcher
         if (not cm.credentials_match(authc_token, account)):
             # not successful - raise an exception as signal:
-            msg = ("Submitted credentials for token [" + str(authc_token) + "] "
-                   "did not match the stored credentials.")
+            msg = ("Submitted credentials for token [" + str(authc_token) + 
+                   "] did not match the stored credentials.")
             # log here
             raise IncorrectCredentialsException(msg)
 
 class AbstractCacheHandler(object):
 
     def __init__(self):
-        self._cache_manager = DisabledCacheManager.INSTANCE
+        pass
+        # self._cache_manager = DisabledCacheManager.INSTANCE
 
     @property
     def cache_manager(self):
@@ -134,42 +137,44 @@ class AbstractCacheHandler(object):
         self._cache_manager = cachemanager
 
 
-class DefaultAccountCacheHandler(AbstractCacheHandler):
-    """ DG:  will refactor from inheritance to composition later """
+class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
 
-    def __init__(self):
-        pass
+    def __init__(self, cache_resolver, cache_key_resolver):
+        # this init is new to Yosai in that it requires 2 positional arguments
+        self.account_cache_key_resolver = cache_key_resolver 
+        self.account_cache_resolver = cache_resolver 
 
-    @property
-    def account_cache_key_resolver(self):
-        return self._account_cache_key_resolver
+    # omitted accessor / mutator methods for attributes (not pythonic)
 
-    @account_cache_key_resolver.setter
-    def account_cache_key_resolver(self, ack_resolver):
-        self._account_cache_key_resolver = ack_resolver 
-
-    @property
-    def account_cache_resolver(self):
-        return self._account_cache_resolver
-
-    @account_cache_resolver.setter
-    def account_cache_resolver(self, ac_resolver):
-        self._account_cache_resolver = ac_resolver
-    
     def get_cached_account(self, authc_token):
-        cache = self.account_cache_resolver.get_account_cache(authc_token)
+        self.verify_account_cache_handler_configured()
+    
+        cache = self.account_cache_resolver.\
+            get_account_cache(token=authc_token)
         key = self.account_cache_key_resolver.\
-            get_account_cache_key(authc_token)
+            get_account_cache_key(token=authc_token)
         return cache.get(key)
     
     def cache_account(self, authc_token, account):
+        self.verify_account_cache_handler_configured()
         cache = self.account_cache_resolver.\
-            get_account_cache(authc_token, account)
+            get_account_cache(token=authc_token, account=account)
         key = self.account_cache_key_resolver.\
-            get_account_cache_key(authc_token, account)
+            get_account_cache_key(token=authc_token, account=account)
         cache.put(key, account)
 
     def clear_cached_account(self, account_id):
-        cache = self.account_cache_resolver.get_account_cache(account_id)
-        key = self.account_cache_key_resolver.get_account_cache_key(account_id)
+        self.verify_account_cache_handler_configured()
+        cache = self.account_cache_resolver.\
+            get_account_cache(account_id=account_id)
+        key = self.account_cache_key_resolver.\
+            get_account_cache_key(account_id=account_id)
         cache.remove(key)
+
+    # new to Yosai:
+    def verify_account_cache_handler_configured(self):
+        if not (self.account_cache_resolver and 
+                self.account_cache_key_resolver):
+
+            msg = 'Account cache resolvers not set'
+            raise AccountCacheHandlerAttributException(msg)

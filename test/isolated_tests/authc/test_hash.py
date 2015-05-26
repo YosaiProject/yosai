@@ -10,13 +10,13 @@ from yosai import (
 from yosai.authc import (
     AuthenticationSettings,
     CryptContextFactory,
-    DefaultAuthcService,
+    AbstractAuthcService,
     DefaultHashService,
     DefaultPasswordService,
 )
 
 # -----------------------------------------------------------------------------
-# DefaultAuthcService Tests
+# AbstractAuthcService Tests
 # -----------------------------------------------------------------------------
 def test_pepper_password_fails(default_authc_service):
 

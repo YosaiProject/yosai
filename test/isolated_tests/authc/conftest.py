@@ -19,7 +19,6 @@ from .fixtures import (
     fail_multi_authc_attempt,
     first_accountstorerealm_succeeds,
     first_realm_successful_strategy,
-    full_mock_account,
     mocked_event_bus,
     mock_token_attempt,
     multirealm_authc_attempt,

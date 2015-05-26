@@ -188,6 +188,10 @@ class CacheException(YosaiException):
 # ---- Realm Exceptions
 # ---------------------------------------------------------------------------
 
+class AccountCacheHandlerAttributException(YosaiException):
+    pass
+
+
 class RealmMisconfiguredException(YosaiException):
     pass
 

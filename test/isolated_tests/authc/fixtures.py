@@ -17,7 +17,7 @@ from yosai.authc import (
     AtLeastOneRealmSuccessfulStrategy,
     AuthenticationSettings,
     CryptContextFactory,
-    DefaultAuthcService,
+    AbstractAuthcService,
     DefaultAuthenticationAttempt,
     DefaultAuthenticator,
     DefaultCompositeAccountId,
@@ -71,7 +71,7 @@ def patched_authc_settings(authc_config, monkeypatch):
 
 @pytest.fixture(scope='function')
 def default_authc_service():
-    return DefaultAuthcService()
+    return AbstractAuthcService()
 
 @pytest.fixture(scope='function')
 def first_accountstorerealm_succeeds(monkeypatch):

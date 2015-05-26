@@ -255,7 +255,8 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
             format(self.event_bus, self.authentication_strategy)
 
 
-class DefaultAuthcService(object):
+class AbstractAuthcService(object):
+    # this class is new to Yosai
     def __init__(self):
         authc_settings = AuthenticationSettings()
         # using default algorithm when generating crypt context:
@@ -286,7 +287,7 @@ class DefaultAuthcService(object):
         return peppered_pass
 
 
-class DefaultHashService(DefaultAuthcService):
+class DefaultHashService(AbstractAuthcService):
 
     def __init__(self):
         super().__init__()
@@ -317,7 +318,7 @@ class DefaultHashService(DefaultAuthcService):
 # DG omitted HashRequest definition
 
 
-class DefaultPasswordService(DefaultAuthcService):
+class DefaultPasswordService(AbstractAuthcService):
 
     def __init__(self):
         super().__init__()
