@@ -1,4 +1,4 @@
-<h1 align=center>Yosai</h1>
+<h1 align=center>🏯 Yosai</h1>
 
 ![alt text](http://i.imgur.com/QDhDfKN.jpg "🏯 Yosai")
 
