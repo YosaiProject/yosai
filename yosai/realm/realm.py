@@ -1,6 +1,7 @@
 from yosai import (
-    AccountCacheHandlerAttributException,
+    AccountCacheHandlerAttributeException,
     AccountStoreRealmAuthenticationException,
+    GetCachedAccountException,
     IllegalArgumentException,
     IncorrectCredentialsException, 
     LogManager, 
@@ -67,12 +68,15 @@ class AccountStoreRealm(IRealm, object):
         return isinstance(authc_token, UsernamePasswordToken)
 
     def authenticate_account(self, authc_token):
-        """ The default authentication caching policy is for 
-            authenticate_account to cache account information required yet 
-            initially unavailable during authentication, implying that 
-            this is the first time within an acceptable caching timeframe 
-            that an account is authenticated.  Naturally, an
-            AccountCacheHandler must be defined in order to cache.
+        """ The default authentication caching policy is to cache an account
+            queried from an account store, for a specific user, so to 
+            facilitate any subsequent authentication attempts for that userid.
+            Naturally, in order to cache one must have an AccountCacheHandler. 
+            If a user were to fail to authenticate, perhaps due to an 
+            incorrectly entered password, during the the next authentication 
+            attempt (of that user id) the cached account will be readily 
+            available from cache and used to match credentials, boosting 
+            performance.
         """
         account = None
         ach = self.account_cache_handler
@@ -93,6 +97,8 @@ class AccountStoreRealm(IRealm, object):
                        account))
                 # log here (debug)
                 print(msg)
+
+                # DG:  caches pre-authenticated values
                 if ach:
                     ach.cache_account(authc_token, account)
            
@@ -148,12 +154,19 @@ class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
 
     def get_cached_account(self, authc_token):
         self.verify_account_cache_handler_configured()
-    
+
         cache = self.account_cache_resolver.\
             get_account_cache(token=authc_token)
         key = self.account_cache_key_resolver.\
             get_account_cache_key(token=authc_token)
-        return cache.get(key)
+        try:
+            # option A:  result = cache.get(key)
+            return cache.get(key)  # option B:  return result
+        except AttributeError:
+            raise GetCachedAccountException
+
+# CacheAccountException(AccountCacheHandlerException)
+# ClearCacheAccountException(AccountCacheHandlerException)
     
     def cache_account(self, authc_token, account):
         self.verify_account_cache_handler_configured()

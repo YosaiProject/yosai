@@ -1,5 +1,7 @@
 from yosai.realm import (
     IAccountCacheHandler,
+    IAccountCacheResolver,
+    IAccountCacheKeyResolver,
 )
 
 from ..doubles import (
@@ -20,3 +22,16 @@ class MockAccountCacheHandler(IAccountCacheHandler, object):
     def clear_cached_account(self, account_id):
         pass
     
+
+class MockAccountCacheResolver(IAccountCacheResolver, object):
+
+    def get_account_cache_key(self, authc_token=None, account=None, 
+                              accountid=None):
+        pass
+
+
+class MockAccountCacheKeyResolver(IAccountCacheKeyResolver, object):
+
+    def get_account_cache(self, authc_token=None, 
+                          account=None, accountid=None):
+        pass 

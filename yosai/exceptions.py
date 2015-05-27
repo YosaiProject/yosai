@@ -188,13 +188,29 @@ class CacheException(YosaiException):
 # ---- Realm Exceptions
 # ---------------------------------------------------------------------------
 
-class AccountCacheHandlerAttributException(YosaiException):
+
+class AccountCacheHandlerException(YosaiException):
     pass
 
 
-class RealmMisconfiguredException(YosaiException):
+class AccountCacheHandlerAttributeException(AccountCacheHandlerException):
     pass
 
+
+class RealmMisconfiguredException(AccountCacheHandlerException):
+    pass
+
+
+class GetCachedAccountException(AccountCacheHandlerException):
+    pass
+
+
+class CacheAccountException(AccountCacheHandlerException):
+    pass
+
+
+class ClearCacheAccountException(AccountCacheHandlerException):
+    pass
 
 # ---------------------------------------------------------------------------
 # ---- Security Management Exceptions

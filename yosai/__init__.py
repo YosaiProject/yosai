@@ -7,10 +7,12 @@ __maintainer__ = "Darin Gordon"
 __email__ = "dkcdkg@gmail.com"
 __status__ = "Development"
 
+
 from .exceptions import (
     AbstractMethodException,
     AccountException,
-    AccountCacheHandlerAttributException,
+    AccountCacheHandlerException,
+    AccountCacheHandlerAttributeException,
     AccountStoreRealmAuthenticationException,
     AuthenticationConfigException,
     AuthenticationSettingsContextException,
@@ -18,6 +20,8 @@ from .exceptions import (
     AuthenticationStrategyMissingRealmException,
     AuthorizationException,
     CacheException,
+    CacheAccountException,
+    ClearCacheAccountException,
     ConcurrentAccessException,
     CredentialsException,
     CryptContextException,
@@ -29,6 +33,7 @@ from .exceptions import (
     ExpiredSessionException,
     FileNotFoundException,
     GenericException,
+    GetCachedAccountException,
     HostUnauthorizedException,
     IllegalArgumentException,
     IllegalStateException,

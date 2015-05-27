@@ -1,0 +1,11 @@
+The following interfaces have been defined in the Shiro 2.0 alpha yet have no
+corresponding concrete class implementation using them.  I presume this is 
+due to their discretionary nature and that their implementation is subject
+to change among the datastores used.
+
+Required:
+   - Account
+   - AccountStore
+   - AccountCacheResolver
+   - AccountCacheKeyResolver
+

@@ -1,12 +1,32 @@
 import pytest
 
+from yosai import (
+    DefaultAccountCacheHandler,
+)
+
 from ..doubles import (
     MockAccount,
 )
 
 from .doubles import (
     MockAccountCacheHandler,
+    MockAccountCacheResolver,
+    MockAccountCacheKeyResolver,
 )
+
+@pytest.fixture(scope='function')
+def mock_account_cache_resolver():
+    return MockAccountCacheResolver()
+
+@pytest.fixture(scope='function')
+def mock_account_cache_key_resolver():
+    return MockAccountCacheKeyResolver()
+
+@pytest.fixture(scope='function')
+def patched_default_account_cache_handler(
+        mock_cache_resolver, mock_cache_key_resolver):
+    return DefaultAccountCacheHandler(mock_cache_resolver,
+                                      mock_cache_key_resolver)
 
 @pytest.fixture(scope='function')
 def mock_account_cache_handler():

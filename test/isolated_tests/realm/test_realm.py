@@ -138,3 +138,12 @@ def test_asr_acm_fails(
 # -----------------------------------------------------------------------------
 # DefaultAccountCacheHandler Tests
 # -----------------------------------------------------------------------------
+
+def test_dach_gca_fails_to_locate_cache
+def test_dach_gca_fails_to_locate_cache_key
+def test_dach_gca_fails_to_locate_cached_account
+def test_dach_gca_succeeds_in_locating_cached_account
+
+    patched_default_account_cache_handler,
+
+    pdach = patched_default_account_cache_handler
