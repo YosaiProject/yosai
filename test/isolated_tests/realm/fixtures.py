@@ -1,11 +1,12 @@
 import pytest
 
-from yosai import (
+from yosai.realm import (
     DefaultAccountCacheHandler,
 )
 
 from ..doubles import (
     MockAccount,
+    MockCache,
 )
 
 from .doubles import (
@@ -19,14 +20,22 @@ def mock_account_cache_resolver():
     return MockAccountCacheResolver()
 
 @pytest.fixture(scope='function')
+def patched_mock_account_cache_resolver():
+    return MockAccountCacheResolver(MockCache())
+
+@pytest.fixture(scope='function')
+def patched_mock_account_cache_key_resolver():
+    return MockAccountCacheKeyResolver('user123')
+
+@pytest.fixture(scope='function')
 def mock_account_cache_key_resolver():
     return MockAccountCacheKeyResolver()
 
 @pytest.fixture(scope='function')
 def patched_default_account_cache_handler(
-        mock_cache_resolver, mock_cache_key_resolver):
-    return DefaultAccountCacheHandler(mock_cache_resolver,
-                                      mock_cache_key_resolver)
+        mock_account_cache_resolver, mock_account_cache_key_resolver):
+    return DefaultAccountCacheHandler(mock_account_cache_resolver,
+                                      mock_account_cache_key_resolver)
 
 @pytest.fixture(scope='function')
 def mock_account_cache_handler():

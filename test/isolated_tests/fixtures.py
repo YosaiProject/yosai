@@ -31,7 +31,7 @@ def default_accountstorerealm():
 
 @pytest.fixture(scope='function')
 def username_password_token():
-    return UsernamePasswordToken(username='user', 
+    return UsernamePasswordToken(username='user123', 
                                  password='secret',
                                  remember_me=False, 
                                  host='127.0.0.1') 

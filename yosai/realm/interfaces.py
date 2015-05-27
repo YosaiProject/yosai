@@ -24,7 +24,7 @@ class IAccountCacheKeyResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account_cache_key(self, authc_token=None, account=None, 
-                              accountid=None):
+                              account_id=None):
         pass
 
 
@@ -32,7 +32,7 @@ class IAccountCacheResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account_cache(self, authc_token=None, 
-                          account=None, accountid=None):
+                          account=None, account_id=None):
         pass
 
 

@@ -27,7 +27,7 @@ I am porting the [v2.0-alpha source code](http://svn.apache.org/repos/asf/shiro/
 
 WORD ORIGIN:  Yosai
 -----------------------------------------------------------------------
-In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress".  Like the words, the security platforms are similiar in meaning yet not the same.
+In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress"🏯  . Like the words, the security platforms are similiar in meaning yet not the same.
 
 
 

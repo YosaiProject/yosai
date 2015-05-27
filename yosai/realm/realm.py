@@ -1,6 +1,7 @@
 from yosai import (
-    AccountCacheHandlerAttributeException,
     AccountStoreRealmAuthenticationException,
+    CacheAccountException,
+    ClearCacheAccountException,
     GetCachedAccountException,
     IllegalArgumentException,
     IncorrectCredentialsException, 
@@ -153,41 +154,31 @@ class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
     # omitted accessor / mutator methods for attributes (not pythonic)
 
     def get_cached_account(self, authc_token):
-        self.verify_account_cache_handler_configured()
-
-        cache = self.account_cache_resolver.\
-            get_account_cache(token=authc_token)
-        key = self.account_cache_key_resolver.\
-            get_account_cache_key(token=authc_token)
         try:
-            # option A:  result = cache.get(key)
-            return cache.get(key)  # option B:  return result
+            cache = self.account_cache_resolver.\
+                get_account_cache(authc_token=authc_token)
+            key = self.account_cache_key_resolver.\
+                get_account_cache_key(authc_token=authc_token)
+            return cache.get(key)
         except AttributeError:
             raise GetCachedAccountException
-
-# CacheAccountException(AccountCacheHandlerException)
-# ClearCacheAccountException(AccountCacheHandlerException)
     
     def cache_account(self, authc_token, account):
-        self.verify_account_cache_handler_configured()
-        cache = self.account_cache_resolver.\
-            get_account_cache(token=authc_token, account=account)
-        key = self.account_cache_key_resolver.\
-            get_account_cache_key(token=authc_token, account=account)
-        cache.put(key, account)
+        try:
+            cache = self.account_cache_resolver.\
+                get_account_cache(authc_token=authc_token, account=account)
+            key = self.account_cache_key_resolver.\
+                get_account_cache_key(authc_token=authc_token, account=account)
+            cache.put(key, account)
+        except AttributeError:
+            raise CacheAccountException
 
     def clear_cached_account(self, account_id):
-        self.verify_account_cache_handler_configured()
-        cache = self.account_cache_resolver.\
-            get_account_cache(account_id=account_id)
-        key = self.account_cache_key_resolver.\
-            get_account_cache_key(account_id=account_id)
-        cache.remove(key)
-
-    # new to Yosai:
-    def verify_account_cache_handler_configured(self):
-        if not (self.account_cache_resolver and 
-                self.account_cache_key_resolver):
-
-            msg = 'Account cache resolvers not set'
-            raise AccountCacheHandlerAttributException(msg)
+        try:
+            cache = self.account_cache_resolver.\
+                get_account_cache(account_id=account_id)
+            key = self.account_cache_key_resolver.\
+                get_account_cache_key(account_id=account_id)
+            cache.remove(key)
+        except AttributeError:
+            raise ClearCacheAccountException

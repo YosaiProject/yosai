@@ -6,6 +6,7 @@ from yosai.realm import (
 
 from ..doubles import (
     MockAccount,
+    MockCache,
 )
 
 class MockAccountCacheHandler(IAccountCacheHandler, object):
@@ -25,13 +26,19 @@ class MockAccountCacheHandler(IAccountCacheHandler, object):
 
 class MockAccountCacheResolver(IAccountCacheResolver, object):
 
-    def get_account_cache_key(self, authc_token=None, account=None, 
-                              accountid=None):
-        pass
+    def __init__(self, cache=None):
+        self.cache = cache
+
+    def get_account_cache(self, authc_token=None, account=None, 
+                          account_id=None):
+        return self.cache
 
 
 class MockAccountCacheKeyResolver(IAccountCacheKeyResolver, object):
+    
+    def __init__(self, key=None):
+        self.key = key
 
-    def get_account_cache(self, authc_token=None, 
-                          account=None, accountid=None):
-        pass 
+    def get_account_cache_key(self, authc_token=None, 
+                              account=None, account_id=None):
+        return self.key 

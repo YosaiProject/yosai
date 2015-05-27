@@ -1,9 +1,18 @@
+from yosai import (
+    CacheKeyRemovalException,
+)
+
 from yosai.account import (
     IAccount,
 )
 
 from yosai.authc import (
     IAuthenticationToken,
+)
+
+from yosai.cache import (
+    ICache,
+    ICacheManager,
 )
 
 from yosai.realm import (
@@ -15,7 +24,41 @@ from yosai.account import (
 )
 
 
+class MockCache(ICache):
+    
+    def __init__(self, keyvals={}):
+        # keyvals is a dict
+        self.kvstore = keyvals
+    
+    @property
+    def values(self):
+        return self.kvstore.values()
+
+    def get(self, key):
+        return self.kvstore.get(key, None) 
+
+    def put(self, key, value):
+        self.kvstore[key] = value 
+
+    def remove(self, key):
+        try:
+            del self.kvstore[key] 
+        except KeyError:
+            raise CacheKeyRemovalException
+
+
+class MockCacheManager(ICacheManager):
+
+    def __init__(self, cache):
+        self.cache = cache
+   
+    def get_cache(self, name):
+        # regardless of the name, return the stock cache
+        return self.cache
+
+
 class MockToken(IAuthenticationToken, object):
+
     @property
     def principal(self):
         pass

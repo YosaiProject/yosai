@@ -184,16 +184,16 @@ class CacheException(YosaiException):
     pass
 
 
+class CacheKeyRemovalException(CacheException):
+    pass
+
+
 # ---------------------------------------------------------------------------
 # ---- Realm Exceptions
 # ---------------------------------------------------------------------------
 
 
 class AccountCacheHandlerException(YosaiException):
-    pass
-
-
-class AccountCacheHandlerAttributeException(AccountCacheHandlerException):
     pass
 
 
