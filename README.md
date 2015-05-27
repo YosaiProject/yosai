@@ -1,6 +1,6 @@
 <h1 align=center>Yosai</h1>
 
-![alt text](http://i.imgur.com/QDhDfKN.jpg "Yosai")
+![alt text](http://i.imgur.com/QDhDfKN.jpg "🏯 Yosai")
 
 Yosai is a pythonic port of Apache Shiro-- a powerful security management framework written in Java.  
 
