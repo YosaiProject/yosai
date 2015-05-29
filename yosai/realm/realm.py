@@ -129,27 +129,15 @@ class AccountStoreRealm(IRealm, object):
             # log here
             raise IncorrectCredentialsException(msg)
 
-class AbstractCacheHandler(object):
+# omitted AbstractCacheHandler implementation / references
 
-    def __init__(self):
-        pass
-        # self._cache_manager = DisabledCacheManager.INSTANCE
-
-    @property
-    def cache_manager(self):
-        return self._cache_manager
-
-    @cache_manager.setter
-    def cache_manager(self, cachemanager):
-        self._cache_manager = cachemanager
-
-
-class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
+class DefaultAccountCacheHandler(IAccountCacheHandler):
 
     def __init__(self, cache_resolver, cache_key_resolver):
         # this init is new to Yosai in that it requires 2 positional arguments
         self.account_cache_key_resolver = cache_key_resolver 
         self.account_cache_resolver = cache_resolver 
+        self.cache_manager = None  # rather thn AbstractCacheManager dependency
 
     # omitted accessor / mutator methods for attributes (not pythonic)
 

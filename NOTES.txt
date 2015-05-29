@@ -32,3 +32,8 @@ the hash management functionality in passlib library,
 which not only handles hash management (as Shiro's crypto subpackage does)
 but also higher-level functionality such as password matching.
 
+It's not yet clear how/where the cacheManager is used by the DefaultAccountCacheHandler.
+The cacheManager is inherited from the AbstractCacheHandler.
+I get the impression that this is either a relic of legacy pre-2.0 code or
+unfinished work for Shiro 2.0, perhaps related to the resolvers?
+

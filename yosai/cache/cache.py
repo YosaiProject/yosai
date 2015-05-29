@@ -11,54 +11,8 @@ from yosai import (
 )
 
 
-class DisabledCache(ICache):
-
-    def get(self, key):
-        return None 
-
-    def put(self, key, value):
-        return None
-
-    def remove(self, key):
-        return None 
-
-    def clear(self):
-        return
-
-    def size(self):
-        return 0
-
-    def keys(self):
-        return set()
-
-    def values(self):
-        return set()
-
-
-class DisabledCacheManager(ICacheManager):
-    """
-    A CacheManager implementation that does not perform any caching at
-    all.  While at first glance this concept might sound odd, it reflects the
-    <a href="http://en.wikipedia.org/wiki/Null_Object_pattern">Null Object
-    Design Pattern</a>: other parts of Shiro or users' code do not need to
-    perform null checks when interacting with Cache or CacheManager instances,
-    reducing code verbosity, enhancing readability, and reducing probability
-    for certain bugs.
-    """
-    _DISABLED_CACHE = DisabledCache()
-
-    @classmethod
-    def instance(cls):
-        if cls._INSTANCE:
-            return cls._INSTANCE
-        
-        cls._INSTANCE = cls()
-        return cls._INSTANCE
-    
-    @classmethod
-    def get_cache(cls, name):
-        return cls._DISABLED_CACHE
-
+# omitting DisabledCache (see NOTES.txt)
+# omitting DisabledCacheManager (see NOTES.txt)
 
 class MapCache(ICache):
 
