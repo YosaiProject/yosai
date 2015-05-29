@@ -76,7 +76,6 @@ PROJECT STATUS
 | yosai/subject/principal    | 85  | 85  | 0%   |
 | yosai/subject/subject      | 456 | 456 | 0%   |
 | yosai/utils                | 3   | 3   | 0%   |
-|                            |     |     |      | 
 
 
             
