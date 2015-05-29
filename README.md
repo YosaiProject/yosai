@@ -37,7 +37,7 @@ PROJECT STATUS
 
 05/29/2015:  Latest pytest unit testing coverage stats are as follows:
 
-|Name                        |:Stmts:|:Miss:| Cover|
+|Name                        |Stmts|Miss | Cover|
 |----------------------------|-----|-----|------|
 | yosai/__init__             | 16  | 0   | 100% |
 | yosai/account/__init__     | 1   | 0   | 100% |
