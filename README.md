@@ -37,48 +37,46 @@ PROJECT STATUS
 
 05/29/2015:  Latest pytest unit testing coverage stats are as follows:
 
-Name                         Stmts   Miss  Cover
-------------------------------------------------
-yosai/__init__                  16      0   100%
-yosai/account/__init__           1      0   100%
-yosai/account/interfaces        18      5    72%
-yosai/authc/__init__             6      0   100%
-yosai/authc/authc              140     11    92%
-yosai/authc/authc_account       50      4    92%
-yosai/authc/context             38      2    95%
-yosai/authc/credential          49      5    90%
-yosai/authc/interfaces          64     21    67%
-yosai/authc/strategy            99      6    94%
-yosai/authz/__init__             1      1     0%
-yosai/authz/interfaces          46     46     0%
-yosai/cache/__init__             1      0   100%
-yosai/cache/cache               35     35     0%
-yosai/cache/interfaces          48     27    44%
-yosai/concurrency               10     10     0%
-yosai/conf/__init__              1      0   100%
-yosai/conf/yosaisettings        51      2    96%
-yosai/event/__init__             2      0   100%
-yosai/event/event               77     54    30%
-yosai/event/interfaces          15      5    67%
-yosai/exceptions               127      1    99%
-yosai/init_yosai                 5      5     0%
-yosai/logging/__init__           1      0   100%
-yosai/logging/s_logging         77     56    27%
-yosai/logging/test_logging      15     15     0%
-yosai/realm/__init__             2      0   100%
-yosai/realm/interfaces          41     12    71%
-yosai/realm/realm               88      3    97%
-yosai/security/__init__          1      1     0%
-yosai/security/interfaces       22     22     0%
-yosai/security/security        462    462     0%
-yosai/subject/__init__           1      1     0%
-yosai/subject/interfaces       208    208     0%
-yosai/subject/principal         85     85     0%
-yosai/subject/subject          456    456     0%
-yosai/utils                      3      3     0%
-------------------------------------------------
-TOTAL                         2362   1564    34%
- 
+|Name                        |:Stmts:|:Miss:| Cover|
+|----------------------------|-----|-----|------|
+| yosai/__init__             | 16  | 0   | 100% |
+| yosai/account/__init__     | 1   | 0   | 100% |
+| yosai/account/interfaces   | 18  | 5   | 72%  |
+| yosai/authc/__init__       | 6   | 0   | 100% |
+| yosai/authc/authc          | 140 | 11  | 92%  |
+| yosai/authc/authc_account  | 50  | 4   | 92%  |
+| yosai/authc/context        | 38  | 2   | 95%  |
+| yosai/authc/credential     | 49  | 5   | 90%  |
+| yosai/authc/interfaces     | 64  | 21  | 67%  |
+| yosai/authc/strategy       | 99  | 6   | 94%  |
+| yosai/authz/__init__       | 1   | 1   | 0%   |
+| yosai/authz/interfaces     | 46  | 46  | 0%   |
+| yosai/cache/__init__       | 1   | 0   | 100% |
+| yosai/cache/cache          | 35  | 35  | 0%   |
+| yosai/cache/interfaces     | 48  | 27  | 44%  |
+| yosai/concurrency          | 10  | 10  | 0%   |
+| yosai/conf/__init__        | 1   | 0   | 100% |
+| yosai/conf/yosaisettings   | 51  | 2   | 96%  |
+| yosai/event/__init__       | 2   | 0   | 100% |
+| yosai/event/event          | 77  | 54  | 30%  |
+| yosai/event/interfaces     | 15  | 5   | 67%  |
+| yosai/exceptions           | 127 | 1   | 99%  |
+| yosai/init_yosai           | 5   | 5   | 0%   |
+| yosai/logging/__init__     | 1   | 0   | 100% |
+| yosai/logging/s_logging    | 77  | 56  | 27%  |
+| yosai/logging/test_logging | 15  | 15  | 0%   |
+| yosai/realm/__init__       | 2   | 0   | 100% |
+| yosai/realm/interfaces     | 41  | 12  | 71%  |
+| yosai/realm/realm          | 88  | 3   | 97%  |
+| yosai/security/__init__    | 1   | 1   | 0%   |
+| yosai/security/interfaces  | 22  | 22  | 0%   |
+| yosai/security/security    | 462 | 462 | 0%   |
+| yosai/subject/__init__     | 1   | 1   | 0%   |
+| yosai/subject/interfaces   | 208 | 208 | 0%   |
+| yosai/subject/principal    | 85  | 85  | 0%   |
+| yosai/subject/subject      | 456 | 456 | 0%   |
+| yosai/utils                | 3   | 3   | 0%   |
+|                            |     |     |      | 
 
 
             
