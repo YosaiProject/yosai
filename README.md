@@ -39,8 +39,6 @@ PROJECT STATUS
 
 |Name                        |Stmts|Miss | Cover|
 |----------------------------|-----|-----|------|
-| yosai/__init__             | 16  | 0   | 100% |
-|----------------------------|-----|-----|------|
 | yosai/account/__init__     | 1   | 0   | 100% |
 | yosai/account/interfaces   | 18  | 5   | 72%  |
 | yosai/authc/__init__       | 6   | 0   | 100% |
