@@ -40,6 +40,7 @@ PROJECT STATUS
 |Name                        |Stmts|Miss | Cover|
 |----------------------------|-----|-----|------|
 | yosai/__init__             | 16  | 0   | 100% |
+|----------------------------|-----|-----|------|
 | yosai/account/__init__     | 1   | 0   | 100% |
 | yosai/account/interfaces   | 18  | 5   | 72%  |
 | yosai/authc/__init__       | 6   | 0   | 100% |
@@ -57,6 +58,8 @@ PROJECT STATUS
 | yosai/concurrency          | 10  | 10  | 0%   |
 | yosai/conf/__init__        | 1   | 0   | 100% |
 | yosai/conf/yosaisettings   | 51  | 2   | 96%  |
+| yosai/context/__init__     | 0   | 0   | 100% |
+| yosai/context/context      | 18  | 18  | 0%   |
 | yosai/event/__init__       | 2   | 0   | 100% |
 | yosai/event/event          | 77  | 54  | 30%  |
 | yosai/event/interfaces     | 15  | 5   | 67%  |
@@ -71,11 +74,15 @@ PROJECT STATUS
 | yosai/security/__init__    | 1   | 1   | 0%   |
 | yosai/security/interfaces  | 22  | 22  | 0%   |
 | yosai/security/security    | 462 | 462 | 0%   |
+| yosai/session/__init__     | 0   | 0   | 100% |
+| yosai/session/interfaces   | 4   | 4   | 0%   |
 | yosai/subject/__init__     | 1   | 1   | 0%   |
 | yosai/subject/interfaces   | 208 | 208 | 0%   |
 | yosai/subject/principal    | 85  | 85  | 0%   |
 | yosai/subject/subject      | 456 | 456 | 0%   |
 | yosai/utils                | 3   | 3   | 0%   |
+|----------------------------|-----|-----|------|
+| TOTAL                      |2384 |1586 | 33%  |
 
 
             
