@@ -159,6 +159,7 @@ class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
                 get_account_cache(authc_token=authc_token)
             key = self.account_cache_key_resolver.\
                 get_account_cache_key(authc_token=authc_token)
+            # log here
             return cache.get(key)
         except AttributeError:
             raise GetCachedAccountException
@@ -169,6 +170,9 @@ class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
                 get_account_cache(authc_token=authc_token, account=account)
             key = self.account_cache_key_resolver.\
                 get_account_cache_key(authc_token=authc_token, account=account)
+            if not key:  # a key is required to cache, so this is an issue 
+                raise CacheAccountException
+            # log here
             cache.put(key, account)
         except AttributeError:
             raise CacheAccountException
@@ -179,6 +183,17 @@ class DefaultAccountCacheHandler(IAccountCacheHandler, AbstractCacheHandler):
                 get_account_cache(account_id=account_id)
             key = self.account_cache_key_resolver.\
                 get_account_cache_key(account_id=account_id)
-            cache.remove(key)
+
+            # None implies that either it doesn't exist in cache or there's a 
+            # problem in locating it in cache.  The latter is harder to verify
+            # so just log a trail to debug (in case).
+            if (not key):
+                # log here
+                if not cache:
+                    # log here
+                    raise ClearCacheAccountException 
+                return None
+            return cache.remove(key)
         except AttributeError:
             raise ClearCacheAccountException
+

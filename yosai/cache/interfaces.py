@@ -16,6 +16,10 @@ class ICache(metaclass=ABCMeta):
 
     @abstractmethod
     def remove(self, key):
+        """ 
+        invokes an atomic get-and-delete method in cache, returning what 
+        was gotten (and then deleted)
+        """
         pass
 
     @property

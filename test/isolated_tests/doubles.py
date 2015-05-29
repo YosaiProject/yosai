@@ -42,7 +42,7 @@ class MockCache(ICache):
 
     def remove(self, key):
         try:
-            del self.kvstore[key] 
+            return self.kvstore.pop(key)
         except KeyError:
             raise CacheKeyRemovalException
 

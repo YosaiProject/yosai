@@ -6,3 +6,8 @@ from .interfaces import (
     ICacheManagerAware,
     ICacheManager,
 )
+
+from .cache import (
+    DisabledCache,
+    DisabledCacheManager,
+)

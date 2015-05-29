@@ -1,0 +1,12 @@
+
+Null Object Pattern
+-------------------
+Yosai omits the null object pattern applied in Shiro that is used for cache
+management.  There are times when an exception should raise when a None value
+is obtained and there are times when None is sufficient.  The decision as to
+how to proceed is on a per-case basis.  I do not want implicit guarantees afforded
+by the null object pattern so as to minimize boilerplate.  I want the 
+system architecture to minimize the boilerplate instead, without "Disabled" 
+objects (which use the null object pattern).
+
+
