@@ -119,22 +119,22 @@ class MockAccountStore(IAccountStore, object):
         return self.account  # always returns the initialized account
 
 
-class MockEventBus(object):
+class MockPubSub(object):
 
-    def if_subscribed(self, listener, topic_name):
+    def isSubscribed(self, listener, topic_name):
         return True 
 
-    def publish(self, topic_name, **kwargs):
-        pass 
+    def sendMessage(self, topic_name, **kwargs):
+        pass  # True   just for testing, otherwise returns None in production 
 
     def subscribe(self, _callable, topic_name):
         return _callable, True
 
     def unsubscribe(self, listener, topic_name):
-        pass
+        return listener 
 
-    def unsub_all(self):
-        pass
+    def unsubAll(self):
+        return [] 
 
     def __repr__(self):
-        return "<MockEventBus()>"
+        return "<MockPubSub()>"

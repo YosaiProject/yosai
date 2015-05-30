@@ -189,6 +189,26 @@ class CacheKeyRemovalException(CacheException):
 
 
 # ---------------------------------------------------------------------------
+# ----  EventBus Exceptions
+# ---------------------------------------------------------------------------
+
+class EventBusException(YosaiException):
+    pass
+
+
+class EventBusTopicException(EventBusException):
+    pass
+
+
+class EventBusMessageDataException(EventBusException):
+    pass
+
+
+class EventBusSubscriptionException(EventBusException):
+    pass
+
+
+# ---------------------------------------------------------------------------
 # ---- Realm Exceptions
 # ---------------------------------------------------------------------------
 

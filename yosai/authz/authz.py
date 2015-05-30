@@ -229,6 +229,7 @@ class DomainPermission(WildcardPermission):
 
 
 class ModularRealmAuthorizer(object):
+    # DG:  plays the main role of reference monitor (see:  Ferraiolo)
 
     def __init__(self, realms):
         self._realms = realms
