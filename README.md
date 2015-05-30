@@ -2,8 +2,7 @@
 
 ![alt text](http://i.imgur.com/QDhDfKN.jpg "Yosai 🏯 ")
 
-The Yosai Security Management Framework 
-..a pythonic port of Apache Shiro-- a powerful security management framework written in Java  
+Yosai is a security management framework.  It is a pythonic port of Apache Shiro: a powerful security management framework written in Java.
 
 Yosai offers developers separation of concern between security management and other aspects of any complicated system built today.  An intuitive user-developer API allows Yosai to be integrated with a system within minutes.  Yosai is a framework with well-defined interfaces between components and so it can be easily extended.
 
