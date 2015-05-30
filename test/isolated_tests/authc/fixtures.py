@@ -3,11 +3,9 @@ from unittest import mock
 
 from ..doubles import (
     MockAccount,
-    MockEventBus,
 )
 from yosai import (
     AccountStoreRealm,
-    EventBus,
     IncorrectCredentialsException,
     settings,
 )
@@ -205,10 +203,6 @@ def default_simple_credentials_matcher():
     return SimpleCredentialsMatcher()
 
 @pytest.fixture(scope='function')
-def mocked_event_bus():
-    return MockEventBus()
-
-@pytest.fixture(scope='function')
-def default_authenticator(first_realm_successful_strategy, mocked_event_bus):
-    return DefaultAuthenticator(mocked_event_bus, 
+def default_authenticator(first_realm_successful_strategy, patched_event_bus):
+    return DefaultAuthenticator(patched_event_bus, 
                                 first_realm_successful_strategy)

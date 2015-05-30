@@ -55,13 +55,3 @@ def default_event():
     return Event(event_type='default_event_type',
                  event_topic='default_event_topic',
                  source='source_object_here')
-
-@pytest.fixture(scope='function')
-def mock_pubsub():
-    return MockPubSub()
-
-@pytest.fixture(scope='function')
-def patched_event_bus(mock_pubsub, monkeypatch):
-    eb = EventBus()
-    monkeypatch.setattr(eb, '_event_bus', mock_pubsub)
-    return eb

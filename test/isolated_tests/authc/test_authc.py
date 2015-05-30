@@ -180,13 +180,13 @@ def test_da_do_authc_acct_without_realm(
 
 def test_da_notify_success_with_eventbus(
         default_authenticator, username_password_token, full_mock_account,
-        mocked_event_bus, monkeypatch):
+        patched_event_bus, monkeypatch):
     
     da = default_authenticator
     token = username_password_token
     account = full_mock_account
 
-    monkeypatch.setattr(da, '_event_bus', mocked_event_bus)
+    monkeypatch.setattr(da, '_event_bus', patched_event_bus)
 
     assert da.notify_success(token, account) is None
 
@@ -205,13 +205,13 @@ def test_da_notify_success_without_eventbus(
 
 def test_da_notify_failure_with_eventbus(
         default_authenticator, username_password_token, full_mock_account,
-        mocked_event_bus, monkeypatch):
+        patched_event_bus, monkeypatch):
     
     da = default_authenticator
     token = username_password_token
     account = full_mock_account
 
-    monkeypatch.setattr(da, '_event_bus', mocked_event_bus)
+    monkeypatch.setattr(da, '_event_bus', patched_event_bus)
 
     assert da.notify_failure(token, account) is None
 

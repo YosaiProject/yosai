@@ -3,6 +3,7 @@ from unittest import mock
 
 from yosai import (
     AccountStoreRealm,
+    EventBus,
     PasswordMatcher,
     UsernamePasswordToken,
 )
@@ -10,6 +11,7 @@ from yosai import (
 from .doubles import (
     MockAccount,
     MockAccountStore,
+    MockPubSub,
     MockToken,
 )
 
@@ -50,3 +52,14 @@ def mock_token():
 @pytest.fixture(scope='function')
 def default_password_matcher():
     return PasswordMatcher()
+
+@pytest.fixture(scope='function')
+def mock_pubsub():
+    return MockPubSub()
+
+@pytest.fixture(scope='function')
+def patched_event_bus(mock_pubsub, monkeypatch):
+    eb = EventBus()
+    monkeypatch.setattr(eb, '_event_bus', mock_pubsub)
+    return eb
+
