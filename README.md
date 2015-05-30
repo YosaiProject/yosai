@@ -1,8 +1,9 @@
 <h1 align=center>🏯 Yosai</h1>
 
-![alt text](http://i.imgur.com/QDhDfKN.jpg "🏯 Yosai")
+![alt text](http://i.imgur.com/QDhDfKN.jpg "Yosai 🏯 ")
 
-Yosai is a pythonic port of Apache Shiro-- a powerful security management framework written in Java.  
+The Yosai Security Management Framework 
+..a pythonic port of Apache Shiro-- a powerful security management framework written in Java  
 
 Yosai offers developers separation of concern between security management and other aspects of any complicated system built today.  An intuitive user-developer API allows Yosai to be integrated with a system within minutes.  Yosai is a framework with well-defined interfaces between components and so it can be easily extended.
 
@@ -87,7 +88,7 @@ PROJECT STATUS
 CONTACT INFORMATION
 -----------------------------------------------------------------------
 If you would like to get involved, please contact me by the email address in my github profile.  I am often
-available on FreeNode IRC channels #python and #pyramid under the nickname dowwie.
+available on FreeNode IRC under the nickname dowwie.
 
              
 APACHE SHIRO VERSION USED
