@@ -26,6 +26,10 @@ from yosai import(
     UnrecognizedAttributeException,
 )
 
+from . import (
+    ILogoutAware,
+)
+
 
 class SecurityUtils(object):
     def __init__(self):
@@ -469,7 +473,7 @@ class ApplicationSecurityManager(object):
             msg = ("Logging out subject with primary principal {0}".format(
                    principals.primary_principal))
             authc = self.authenticator
-            if (hasattr(authc, 'on_logout')):  # DG:  not pythonic.. 
+            if (isinstance(authc, ILogoutAware)):
                 authc.on_logout(principals)
 
         try:

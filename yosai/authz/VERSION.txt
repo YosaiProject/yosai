@@ -1,0 +1,1 @@
+the /authz subpackage is as of shiro 2.0 revision 1682639

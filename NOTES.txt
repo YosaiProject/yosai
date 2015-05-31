@@ -37,3 +37,7 @@ The cacheManager is inherited from the AbstractCacheHandler.
 I get the impression that this is either a relic of legacy pre-2.0 code or
 unfinished work for Shiro 2.0, perhaps related to the resolvers?
 
+Anywhere shiro performs an "instanceof" check on an object before performing an operation,
+it's checking whether that object implements an interface.  Not sure whether t
+LBYL or EAFP in these circumstances..
+

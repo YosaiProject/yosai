@@ -8,13 +8,21 @@ from yosai import (
     UnauthorizedException,
 )
 
+from . import (
+    IAuthorizer, 
+    IPermissionResolverAware, 
+    IRolePermissionResolverAware, 
+)
+
+import copy
+import collections
 
 class AllPermission(object):
 
     def __init__(self):
         pass
 
-    def implies(self, permission)
+    def implies(self, permission):
         return True 
 
 
@@ -228,38 +236,67 @@ class DomainPermission(WildcardPermission):
         self.set_parts(self.domain, self._actions, self._targets)
 
 
-class ModularRealmAuthorizer(object):
-    # DG:  plays the main role of reference monitor (see:  Ferraiolo)
+class ModularRealmAuthorizer(IAuthorizer,
+                             IPermissionResolverAware,
+                             IRolePermissionResolverAware,
+                             object):
+    """
+    A ModularRealmAuthorizer is an Authorizer implementation that consults 
+    one or more configured Realms during an authorization operation.
 
-    def __init__(self, realms):
-        self._realms = realms
-   
+    """
+    def __init__(self, realms=None):
+        self._realms = set() 
+        self._permission_resolver = None
+        self._role_permission_resolver = None
+
     @property
     def realms(self):
         return self._realms
 
     @realms.setter
     def realms(self, realms):
+        """
+        :type realms: set
+        """
         self._realms = realms
         self.apply_permission_resolver_to_realms()
         self.apply_role_permission_resolver_to_realms()
-    
+   
+    @property
+    def authorizing_realms(self):
+        """ new to Yosai, generator expression filters out non-authz realms """
+        return (realm for realm in self.realms 
+                if isinstance(realm, IAuthorizer))
+
     @property
     def permission_resolver(self):
+        """ 
+        This is the permission resolver that is used on EVERY configured
+        realm wrapped by the ModularRealmAuthorizer.  A permission_resolver 
+        equal to None indicates that each individual realm is accountable for 
+        configuring its permission resolver.
+        """
         return self._permission_resolver
     
     @permission_resolver.setter
     def permission_resolver(self, resolver):
+        """ 
+        the permission resolver set here is applied to EVERY realm that is
+        wrapped by the ModularRealmAuthorizer
+        """
         self._permission_resolver = resolver 
         self.apply_permission_resolver_to_realms()
     
     def apply_permission_resolver_to_realms(self):
         resolver = self._permission_resolver
-        realms = self._realms 
+        realms = copy.copy(self._realms)
         if (resolver and realms):
             for realm in realms: 
-                # DG:  refactored LBYL to EAFP:
-                realm.permission_resolver = resolver
+                # interface contract validation: 
+                if isinstance(realm, IPermissionResolverAware):
+                    realm.permission_resolver = resolver
+            self._realms = realms 
 
     @property
     def role_permission_resolver(self):
@@ -271,66 +308,104 @@ class ModularRealmAuthorizer(object):
         self.apply_role_permission_resolver_to_realms()
 
     def apply_role_permission_resolver_to_realms(self):
+        """
+        This method is called after setting a role_permission_resolver
+        attribute in this ModularRealmAuthorizer.  It is also called after
+        setting the self.realms attribute, giving the newly available realms
+        the role_permission_resolver already in use by self. 
+        """
         role_perm_resolver = self.role_permission_resolver
-        realms = self._realms
+        realms = copy.copy(self._realms)
         if (role_perm_resolver and realms): 
             for realm in realms: 
-                # DG:  refactored LBYL to EAFP:
-                realm.role_permission_resolver = role_perm_resolver
+                if isinstance(realm, IRolePermissionResolverAware):
+                    realm.role_permission_resolver = role_perm_resolver
+            self._realms = realms 
 
     def assert_realms_configured(self):
-        try:
-            realms = self._realms 
-            if (not realms):
-                # log here
-                msg = ("Configuration error:  No realms have been configured! "
-                       "One or more realms must be present to execute an "
-                       "authorization operation.")
-                print(msg)
-                raise IllegalStateException(msg)
-        except IllegalStateException as ex:
-            print('assert_realms_configured IllegalStateException: ', ex)
+        if (not self.realms):
+            msg = ("Configuration error:  No realms have been configured! "
+                   "One or more realms must be present to execute an "
+                   "authorization operation.")
+            print(msg)
+            # log here
+            raise IllegalStateException(msg)
 
-    # DG:  refactored isPermitted, consolidating to a single method
+    # Yosai refactors isPermitted extensively, making use of generators
+    # and so forth so to optimize processing
+    
+    def _is_permitted(principals, permission):
+        for realm in self.authorizing_realms:
+            if realm.is_permitted(principals, permission):
+                return True
+        return False 
+
+    def _permit_collection(principals, permissions):
+        for index, permission in enumerate(permissions):
+            yield (index, self._is_permitted(principals, permission))
+    
     def is_permitted(self, principals, permissions):
         """
-        Input:
-            principals = a Set of Principal objects
-            permissions = a List of Permission objects
+        Yosai differs from Shiro in how it handles String-typed Permission 
+        parameters.  Rather than supporting *args of String-typed Permissions, 
+        Yosai supports a list of Strings.  Yosai remains true to Shiro's API
+        while determining permissions a bit more pythonically.
 
-        Output:
-            a List of Booleans corresponding to the permission elements
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param permissions: a collection of 1..N permissions
+        :type permissions: List of Permission object(s) or String(s)
+
+        :returns: either a single Boolean or a List of Booleans
         """
-        results = []
-        self.assert_realms_configured()
-        for index, permission in enumerate(permissions):
-            for realm in self.realms:
-                # DG:  must LBYL (need an Authorizing realm)
-                if (hasattr(realm, 'is_permitted')):  
-                    try:
-                        results[index] = \
-                            realm.is_permitted(principals, permission)
-                    except:
-                        raise
 
-        return results 
+        self.assert_realms_configured()
+
+        if isinstance(permission, collections.Iterable):
+            return [permit for (index, permit) in 
+                    self._permit_collection(principals, permission)]
+
+        return self._is_permitted(principals, permissions)  # just 1 permission
 
     def is_permitted_all(self, principals, permissions):
         """
-        Input:
-            principals = a Set of Principal objects
-            permissions = a List of Permission objects
+        :param principals: a Set of Principal objects
+        :param permissions:  a List of Permission objects
 
-        Output:
-            a Boolean 
+        :returns: a Boolean
         """
         self.assert_realms_configured()
-        for result in self.is_permitted(principals, permissions):
-            if (result is False):
+
+        # using a generator in order to fail immediately
+        for (i, permitted) in self._permit_collection(principals, permissions):
+            if not permitted:
                 return False
         return True
 
-    # DG:  omitting checkPermission -- seems redundant
+    # yosai consolidates check_permission functionality to one method:
+    def check_permissions(self, principals, permissions):
+        """
+        like Yosai's authentication process, the authorization process will 
+        raise an Exception to halt further authz checking once Yosai determines
+        that a Subject is unauthorized to receive the requested permission
+
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param permissions: a collection of 1..N permissions
+        :type permissions: List of Permission objects or Strings
+
+        :returns: a List of Booleans corresponding to the permission elements
+        """
+        self.assert_realms_configured()
+        permitted = self.is_permitted_all(principals, permissions)
+        if not permitted:
+            msg = "Subject does not have permission"
+            print(msg)
+            # log here
+            raise UnauthorizedException(msg)
+
     
     def has_role(self, principals, role_ids):
         pass  # will implement later
