@@ -244,6 +244,9 @@ class ModularRealmAuthorizer(IAuthorizer,
     A ModularRealmAuthorizer is an Authorizer implementation that consults 
     one or more configured Realms during an authorization operation.
 
+    the funky naming convention where a parameter ends with '_s' denotes 
+    one-or-more; in English, this is expressed as '(s)', eg: duck(s)
+    indicates one or more ducks
     """
     def __init__(self, realms=None):
         self._realms = set() 
@@ -265,7 +268,9 @@ class ModularRealmAuthorizer(IAuthorizer,
    
     @property
     def authorizing_realms(self):
-        """ new to Yosai, generator expression filters out non-authz realms """
+        """ 
+        new to Yosai: a generator expression filters out non-authz realms 
+        """
         return (realm for realm in self.realms 
                 if isinstance(realm, IAuthorizer))
 
@@ -331,20 +336,34 @@ class ModularRealmAuthorizer(IAuthorizer,
             # log here
             raise IllegalStateException(msg)
 
-    # Yosai refactors isPermitted extensively, making use of generators
-    # and so forth so to optimize processing
+    # Yosai refactors isPermitted and hasRole extensively, making use of 
+    # generators so as to optimize processing and improve readability 
+   
+    # new to Yosai:
+    def _has_role(principals, roleid): 
+        for realm in self.authorizing_realms:
+            if realm.has_role(principals, roleid): 
+                return True
+        return False 
     
+    # new to Yosai:
+    def _role_collection(principals, roleids): 
+        for roleid in roleids:
+            yield (roleid, self._has_role(principals, roleid))
+
+    # new to Yosai:
     def _is_permitted(principals, permission):
         for realm in self.authorizing_realms:
             if realm.is_permitted(principals, permission):
                 return True
         return False 
 
+    # new to Yosai:
     def _permit_collection(principals, permissions):
-        for index, permission in enumerate(permissions):
-            yield (index, self._is_permitted(principals, permission))
+        for permission in permissions:
+            yield (permission, self._is_permitted(principals, permission))
     
-    def is_permitted(self, principals, permissions):
+    def is_permitted(self, principals, permission_s):
         """
         Yosai differs from Shiro in how it handles String-typed Permission 
         parameters.  Rather than supporting *args of String-typed Permissions, 
@@ -354,37 +373,44 @@ class ModularRealmAuthorizer(IAuthorizer,
         :param principals: a collection of principals
         :type principals: Set
 
-        :param permissions: a collection of 1..N permissions
-        :type permissions: List of Permission object(s) or String(s)
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: either a single Boolean or a List of Booleans
+        :returns: either a single Boolean or a List of tuples, each containin
+                  the Permission and a Boolean indicating whether the permission
+                  is granted
         """
 
         self.assert_realms_configured()
 
-        if isinstance(permission, collections.Iterable):
-            return [permit for (index, permit) in 
-                    self._permit_collection(principals, permission)]
+        if isinstance(permission_s, collections.Iterable):
+            return [(permission, permit) for (permission, permit) in 
+                    self._permit_collection(principals, permission_s)]
 
-        return self._is_permitted(principals, permissions)  # just 1 permission
+        return self._is_permitted(principals, permission_s)  # just 1 Bool
 
-    def is_permitted_all(self, principals, permissions):
+    def is_permitted_all(self, principals, permission_s):
         """
         :param principals: a Set of Principal objects
-        :param permissions:  a List of Permission objects
+        :param permission_s:  a List of Permission objects
 
         :returns: a Boolean
         """
         self.assert_realms_configured()
 
-        # using a generator in order to fail immediately
-        for (i, permitted) in self._permit_collection(principals, permissions):
-            if not permitted:
-                return False
-        return True
+        if isinstance(permission_s, collections.Iterable):
+            # using a generator in order to fail immediately
+            for (permission, permitted) in self._permit_collection(
+                    principals, permission_s):
+                if not permitted:
+                    return False
+            return True
+
+        # else:    
+        return self._is_permitted(principals, permission_s)  # 1 Bool
 
     # yosai consolidates check_permission functionality to one method:
-    def check_permissions(self, principals, permissions):
+    def check_permission(self, principals, permission_s):
         """
         like Yosai's authentication process, the authorization process will 
         raise an Exception to halt further authz checking once Yosai determines
@@ -393,28 +419,59 @@ class ModularRealmAuthorizer(IAuthorizer,
         :param principals: a collection of principals
         :type principals: Set
 
-        :param permissions: a collection of 1..N permissions
-        :type permissions: List of Permission objects or Strings
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission objects or Strings
 
         :returns: a List of Booleans corresponding to the permission elements
         """
         self.assert_realms_configured()
-        permitted = self.is_permitted_all(principals, permissions)
+        permitted = self.is_permitted_all(principals, permission_s)
         if not permitted:
-            msg = "Subject does not have permission"
+            msg = "Subject does not have permission(s)"
             print(msg)
             # log here
             raise UnauthorizedException(msg)
-
     
-    def has_role(self, principals, role_ids):
-        pass  # will implement later
+    # yosai consolidates has_role functionality to one method:
+    def has_role(self, principals, roleid_s):
+        """
+        
+        :param principals: a collection of principals
+        :type principals: Set
 
-    def has_all_roles(self, principals, role_ids):
-        pass  # will implement later
+        :param roleid_s: 1..N role identifiers
+        :type roleid_s:  a String or List of Strings 
 
-    # DG: omitting checkRole -- seems redundant
+        :returns: a tuple containing the roleid and a boolean indicating 
+                  whether the role is assigned (this is different than Shiro)
+        """
+        self.assert_realms_configured()
 
+        if isinstance(roleid_s, collections.Iterable):
+            return [(roleid, hasrole) for (roleid, hasrole) in 
+                    self._role_collection(principals, roleid_s)]
+
+        return self._has_role(principals, roleid_s)  # just 1 Bool
+
+    def has_all_roles(self, principals, roleid_s):
+
+        self.assert_realms_configured()
+
+        for (roleid, hasrole) in \
+                self._role_collection(principals, roleid_s):
+            if not hasrole: 
+                return False
+        return True
+
+    def check_role(self, principals, role_s):
+        self.assert_realms_configured()
+        has_role_s = self.has_all_roles(principals, role_s) 
+        if not has_role_s: 
+            msg = "Subject does not have role(s)" 
+            print(msg)
+            # log here
+            raise UnauthorizedException(msg)
+    
 
 class SimpleAuthorizationInfo(object):
     # DG:  removed string permission related functionality
