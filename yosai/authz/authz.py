@@ -67,7 +67,7 @@ class WildcardPermission(object):
                 if (not self.case_sensitive):
                     part = part.lower()
 
-                subparts = set{part.split(self.SUBPART_DIVIDER_TOKEN)}
+                subparts = set(part.split(self.SUBPART_DIVIDER_TOKEN))
                 
                 if (not subparts):
                     raise IllegalArgumentException
@@ -145,12 +145,12 @@ class DomainPermission(WildcardPermission):
             self.set_parts(self.domain)
 
         elif isinstance(actions, str):
-                self._actions = set{actions.split(self.SUBPART_DIVIDER_TOKEN)}
+                self._actions = set(actions.split(self.SUBPART_DIVIDER_TOKEN))
 
                 if (isinstance(targets, str)):
                     self.domain = domain
-                    self._targets = set{targets.split(
-                        self.SUBPART_DIVIDER_TOKEN)}
+                    self._targets = set(targets.split(
+                        self.SUBPART_DIVIDER_TOKEN))
        
                 self.encode_parts(domain, actions, targets)
 
@@ -271,7 +271,7 @@ class ModularRealmAuthorizer(IAuthorizer,
         """ 
         new to Yosai: a generator expression filters out non-authz realms 
         """
-        return (realm for realm in self.realms 
+        return (realm for realm in self._realms 
                 if isinstance(realm, IAuthorizer))
 
     @property
@@ -294,7 +294,7 @@ class ModularRealmAuthorizer(IAuthorizer,
         self.apply_permission_resolver_to_realms()
     
     def apply_permission_resolver_to_realms(self):
-        resolver = self._permission_resolver
+        resolver = copy.copy(self._permission_resolver)
         realms = copy.copy(self._realms)
         if (resolver and realms):
             for realm in realms: 
@@ -340,26 +340,26 @@ class ModularRealmAuthorizer(IAuthorizer,
     # generators so as to optimize processing and improve readability 
    
     # new to Yosai:
-    def _has_role(principals, roleid): 
+    def _has_role(self, principals, roleid): 
         for realm in self.authorizing_realms:
             if realm.has_role(principals, roleid): 
                 return True
         return False 
     
     # new to Yosai:
-    def _role_collection(principals, roleids): 
+    def _role_collection(self, principals, roleids): 
         for roleid in roleids:
             yield (roleid, self._has_role(principals, roleid))
 
     # new to Yosai:
-    def _is_permitted(principals, permission):
+    def _is_permitted(self, principals, permission):
         for realm in self.authorizing_realms:
             if realm.is_permitted(principals, permission):
                 return True
         return False 
 
     # new to Yosai:
-    def _permit_collection(principals, permissions):
+    def _permit_collection(self, principals, permissions):
         for permission in permissions:
             yield (permission, self._is_permitted(principals, permission))
     

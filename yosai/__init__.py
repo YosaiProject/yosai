@@ -99,13 +99,11 @@ from .event import (
 )
 
 from .authc import (
-    # DefaultAuthenticator,
-    # DefaultCompositeAccount,
-    # DefaultCompositeAccountId,
-    # FailedAuthenticationEvent,
+    DefaultAuthenticator,
+    DefaultCompositeAccount,
+    DefaultCompositeAccountId,
     IAuthenticator,
     PasswordMatcher,
-    # SuccessfulAuthenticationEvent,
     UsernamePasswordToken,
 )
 
@@ -115,17 +113,15 @@ from .realm import (
 )
 
 
-"""
 from .authz import (
-    AllPermission,
-    DomainPermission,
+    # AllPermission,
+    # DomainPermission,
     ModularRealmAuthorizer,
-    SimpleAuthorizationInfo,
-    SimpleRole,
-    WildcardPermission,
-    WildcardPermissionResolver,
+    # SimpleAuthorizationInfo,
+    # SimpleRole,
+    # WildcardPermission,
+    # WildcardPermissionResolver,
 )
-"""
 
 """
 from .cache import (

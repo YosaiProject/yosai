@@ -37,11 +37,14 @@ def test_asr_supports(patched_accountstore_realm,
 def test_asr_authc_acct_fails_misconfigured(patched_accountstore_realm,
                                             username_password_token,
                                             monkeypatch):
-    """ a misconfigured AccountStoreRealm will raise an exception when 
-        authentication is attempted
+    """ 
+    unit tested:  authenticate_account
 
-        in this test, there is no accountstore attribute, and so the 
-        exception will raise
+    a misconfigured AccountStoreRealm will raise an exception when 
+    authentication is attempted
+
+    in this test, there is no accountstore attribute, and so the 
+    exception will raise
     """
     par = patched_accountstore_realm
     token = username_password_token
@@ -53,7 +56,11 @@ def test_asr_authc_acct_fails_misconfigured(patched_accountstore_realm,
 
 def test_asr_authc_acct_with_cached_acct_succeeds(
         patched_accountstore_realm, monkeypatch, username_password_token):
-    """ MockAccountCacheHandler.get_cached_account returns a MockAccount """
+    """ 
+    unit tested:  authenticate_account
+
+    MockAccountCacheHandler.get_cached_account returns a MockAccount
+    """
 
     par = patched_accountstore_realm
     token = username_password_token
@@ -69,6 +76,8 @@ def test_asr_authc_acct_with_cached_acct_succeeds(
 def test_asr_authc_acct_without_cached_acct_succeeds_and_caches(
         monkeypatch, username_password_token, patched_accountstore_realm):
     """
+    unit tested:  authenticate_account
+
     If the account isn't cached, it should be obtained from the account_store.
     Since an AccountCacheHandler is set, the account is cached.
 
@@ -95,11 +104,14 @@ def test_asr_authc_acct_without_cached_acct_succeeds_and_caches(
 def test_asr_authc_acct_cannot_locate_account(username_password_token, 
                                               patched_accountstore_realm, 
                                               monkeypatch):
-    """ in the event that an account cannot be found (for a token's parameters)
-        from an account_store, None is returned from authenticate_account
+    """ 
+    unit tested:  authenticate_account
     
-        AccountCacheHandler.get_cached_account returns None
-        AccountStore.get_account returns None
+    in the event that an account cannot be found (for a token's parameters)
+    from an account_store, None is returned from authenticate_account
+    
+    AccountCacheHandler.get_cached_account returns None
+    AccountStore.get_account returns None
     """
     token = username_password_token
     pasr = patched_accountstore_realm 
@@ -118,6 +130,9 @@ def test_asr_authc_acct_cannot_locate_account(username_password_token,
 
 def test_asr_acm_succeeds(username_password_token, patched_accountstore_realm, 
                           full_mock_account):
+    """
+    unit tested:  assert_credentials_match 
+    """
     
     token = username_password_token
     pasr = patched_accountstore_realm 
@@ -129,6 +144,9 @@ def test_asr_acm_succeeds(username_password_token, patched_accountstore_realm,
 
 def test_asr_acm_fails(username_password_token, patched_accountstore_realm, 
                        full_mock_account):
+    """
+    unit tested:  assert_credentials_match 
+    """
     
     token = username_password_token
     pasr = patched_accountstore_realm 
@@ -146,6 +164,9 @@ def test_asr_acm_fails(username_password_token, patched_accountstore_realm,
 def test_dach_gca_fails_to_obtain_cache_resolver(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token):
+    """
+    unit tested:  get_cached_account 
+    """
     
     pdach = patched_default_account_cache_handler
     token = username_password_token
@@ -156,6 +177,9 @@ def test_dach_gca_fails_to_obtain_cache_resolver(
         pdach.get_cached_account(token)
 
 def test_dach_gca_fails_to_obtain_cache_key_resolver(
+    """
+    unit tested:  get_cached_account 
+    """
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token):
     
@@ -170,7 +194,12 @@ def test_dach_gca_fails_to_obtain_cache_key_resolver(
 def test_dach_gca_fails_to_locate_cache(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token):
-    """ by default, the MockAccountCacheResolver returns None """
+    """
+    unit tested:  get_cached_account 
+    
+    by default, the MockAccountCacheResolver returns None 
+    
+    """
     
     pdach = patched_default_account_cache_handler
     token = username_password_token
@@ -182,10 +211,13 @@ def test_dach_gca_fails_to_locate_cache(
 def test_dach_gca_fails_to_locate_cache_key(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, patched_mock_account_cache_resolver):
-    """ the default pdach fixture uses empty mocks, therefore both the 
+    """ 
+    unit tested:  get_cached_account 
+    
+    the default pdach fixture uses empty mocks, therefore both the 
         get_account_cache and get_account_cache_key return None
 
-        the patched mock fixtures return values 
+    the patched mock fixtures return values 
     """
     
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
@@ -203,6 +235,9 @@ def test_dach_gca_fails_to_locate_cached_account(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, patched_mock_account_cache_resolver,
         patched_mock_account_cache_key_resolver):
+    """
+    unit tested:  get_cached_account 
+    """
     
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
     token = username_password_token
@@ -220,6 +255,9 @@ def test_dach_gca_fails_to_locate_cached_account(
 def test_dach_gca_succeeds_in_locating_cached_account(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, patched_mock_account_cache_key_resolver):
+    """
+    unit tested:  get_cached_account 
+    """
     
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
     token = username_password_token
@@ -242,6 +280,9 @@ def test_dach_gca_succeeds_in_locating_cached_account(
 def test_dach_ca_fails_to_obtain_cache_resolver(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, full_mock_account):
+    """
+    unit tested:  cache_account 
+    """
     
     pdach = patched_default_account_cache_handler
     account = full_mock_account
@@ -255,7 +296,11 @@ def test_dach_ca_fails_to_obtain_cache_key_resolver(
         patched_default_account_cache_handler, monkeypatch,
         patched_mock_account_cache_resolver,
         username_password_token, full_mock_account):
-    """ the cache is obtained but the key isn't """
+    """
+    unit tested:  cache_account 
+    
+    the cache is obtained but the key isn't
+    """
 
     pdach = patched_default_account_cache_handler
     account = full_mock_account
@@ -271,8 +316,11 @@ def test_dach_ca_fails_to_obtain_cache_key_resolver(
 def test_dach_ca_fails_to_locate_cache( 
         patched_default_account_cache_handler, full_mock_account,
         username_password_token):
+    """ 
+    unit tested:  cache_account 
 
-    """ by default, the MockAccountCacheResolver returns None """
+    by default, the MockAccountCacheResolver returns None
+    """
     
     pdach = patched_default_account_cache_handler
     account = full_mock_account
@@ -286,10 +334,13 @@ def test_dach_ca_fails_to_locate_cache_key(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, patched_mock_account_cache_resolver,
         full_mock_account):
-    """ the default pdach fixture uses empty mocks, therefore both the 
-        get_account_cache and get_account_cache_key return None
+    """ 
+    unit tested:  cache_account 
+ 
+    the default pdach fixture uses empty mocks, therefore both the 
+    get_account_cache and get_account_cache_key return None
 
-        the patched mock fixtures return values 
+    the patched mock fixtures return values 
     """
     
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
@@ -306,7 +357,10 @@ def test_dach_ca_succeeds_in_caching_account(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, patched_mock_account_cache_key_resolver,
         patched_mock_account_cache_resolver, full_mock_account):
-    
+    """
+    unit tested:  cache_account 
+    """
+
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
     token = username_password_token
     account = full_mock_account  # has account_id = 8675309
@@ -327,7 +381,10 @@ def test_dach_ca_succeeds_in_caching_account(
 
 def test_dach_cca_fails_to_obtain_cache_resolver(
         patched_default_account_cache_handler, monkeypatch, full_mock_account):
-    
+    """
+    unit tested:  clear_cached_account 
+    """
+
     pdach = patched_default_account_cache_handler
     account = full_mock_account
     monkeypatch.setattr(pdach, 'account_cache_resolver', None)
@@ -338,6 +395,9 @@ def test_dach_cca_fails_to_obtain_cache_resolver(
 def test_dach_cca_fails_to_obtain_cache_key_resolver(
         patched_default_account_cache_handler, monkeypatch, 
         full_mock_account, patched_mock_account_cache_resolver):
+    """
+    unit tested:  clear_cached_account 
+    """
     
     pdach = patched_default_account_cache_handler
     account = full_mock_account
@@ -352,8 +412,11 @@ def test_dach_cca_fails_to_obtain_cache_key_resolver(
 def test_dach_cca_fails_to_locate_cache(
         patched_default_account_cache_handler, full_mock_account,
         username_password_token):
-
-    """ by default, the MockAccountCacheResolver returns None """
+    """
+    unit tested:  clear_cached_account 
+    
+    by default, the MockAccountCacheResolver returns None
+    """
     
     pdach = patched_default_account_cache_handler
     account = full_mock_account
@@ -364,10 +427,13 @@ def test_dach_cca_fails_to_locate_cache(
 def test_dach_cca_fails_to_locate_cache_key(
         patched_default_account_cache_handler, monkeypatch, 
         patched_mock_account_cache_resolver, full_mock_account):
-    """ the default pdach fixture uses empty mocks, therefore both the 
-        get_account_cache and get_account_cache_key return None
+    """ 
+    unit tested:  clear_cached_account 
+    
+    the default pdach fixture uses empty mocks, therefore both the 
+    get_account_cache and get_account_cache_key return None
 
-        the patched mock fixtures return values 
+    the patched mock fixtures return values 
     """
     
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
@@ -385,7 +451,10 @@ def test_dach_cca_succeeds_in_removing_cached_account(
         patched_default_account_cache_handler, monkeypatch, 
         username_password_token, patched_mock_account_cache_key_resolver,
         patched_mock_account_cache_resolver, full_mock_account):
-    
+    """
+    unit tested:  clear_cached_account 
+    """
+
     pdach = patched_default_account_cache_handler  # doesn't matter if patched
     account = full_mock_account  # has account_id = 8675309
 

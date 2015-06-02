@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-import PrincipalCollection
 
 
 class IAuthorizationInfo(metaclass=ABCMeta):
@@ -56,25 +55,28 @@ class IAuthorizationInfo(metaclass=ABCMeta):
 class IAuthorizer(metaclass=ABCMeta):
 
     @abstractmethod
-    def check_permission(self, principals, permissions):
+    def check_permission(self, principals, permission_s):
         pass
 
     @abstractmethod
-    def is_permitted(self, principals, permissions):
+    def is_permitted(self, principals, permission_s):
         pass
 
     @abstractmethod
-    def is_permitted_all(self, principals, permissions):
+    def is_permitted_all(self, principals, permission_s):
         pass
 
     @abstractmethod
-    def has_role(self, principals, role_identifiers):
+    def has_role(self, principals, roleid_s):
         pass
 
     @abstractmethod
-    def has_all_roles(self, principals, role_identifiers):
+    def has_all_roles(self, principals, roleid_s):
         pass
 
+    @abstractmethod
+    def check_role(self, principals, role_s):
+        pass
 
 class IPermission(metaclass=ABCMeta):
 
@@ -137,6 +139,20 @@ class IPermission(metaclass=ABCMeta):
 
     @abstractmethod
     def implies(self, permission):
+        """
+        Returns True if this current instance implies all of the functionality 
+        and/or resource access described by the specified Permission argument, 
+        returning False otherwise.
+         
+        That is, this current instance must be exactly equal to or a
+        superset of the functionalty and/or resource access described by the
+        given Permission argument.  Yet another way of saying this is:
+           - If permission1 implies permission2, then any Subject granted 
+             permission1 would have ability greater than or equal to that 
+             defined by permission2.
+     
+        :returns: bool
+        """
         pass
 
 

@@ -26,8 +26,11 @@ def test_upt_clear_existing_password(username_password_token):
 # -----------------------------------------------------------------------------
 def test_da_auth_sra_unsupported_token(
         default_authenticator, mock_token, default_accountstorerealm):
-    """ An AuthenticationToken of a type unsupported by the Realm raises an 
-        exception
+    """ 
+    unit tested:  authenticate_single_realm_account
+
+    An AuthenticationToken of a type unsupported by the Realm raises an 
+    exception
     """
     da = default_authenticator
     realm = default_accountstorerealm
@@ -38,7 +41,11 @@ def test_da_auth_sra_unsupported_token(
 def test_da_authc_sra_supported_token(
         default_authenticator, first_accountstorerealm_succeeds, 
         username_password_token):
-    """ a successful authentication returns an account """
+    """ 
+    unit tested:  authenticate_single_realm_account
+
+    a successful authentication returns an account 
+    """
     
     da = default_authenticator
     realm = first_accountstorerealm_succeeds 
@@ -48,6 +55,9 @@ def test_da_authc_sra_supported_token(
 def test_da_autc_mra_succeeds(
         default_authenticator, two_accountstorerealms_succeeds,
         username_password_token):
+    """
+    unit tested:  authenticate_multi_realm_account
+    """
 
     da = default_authenticator
     realms = two_accountstorerealms_succeeds 
@@ -58,6 +68,9 @@ def test_da_autc_mra_succeeds(
 def test_da_autc_mra_fails(
         default_authenticator, two_accountstorerealms_fails,
         username_password_token):
+    """
+    unit tested:  authenticate_multi_realm_account
+    """
 
     da = default_authenticator
     realms = two_accountstorerealms_fails
@@ -68,9 +81,13 @@ def test_da_autc_mra_fails(
 
 def test_da_authc_acct_authentication_fails(
         default_authenticator, username_password_token, monkeypatch):
-    """ when None is returned from do_authenticate_account, it means that
-        something other than authentication failed, and so an exception is 
-        raised """
+    """ 
+    unit tested:  authenticate_account
+
+    when None is returned from do_authenticate_account, it means that
+    something other than authentication failed, and so an exception is 
+    raised
+    """
     da = default_authenticator
     token = username_password_token
     
@@ -86,7 +103,10 @@ def test_da_authc_acct_authentication_fails(
 
 def test_da_authc_acct_authentication_raises_unknown_exception(
         default_authenticator, username_password_token, monkeypatch):
-    """ an unexpected exception will be wrapped by an AuthenticationException 
+    """ 
+    unit tested:  authenticate_account
+
+    an unexpected exception will be wrapped by an AuthenticationException 
     """
     da = default_authenticator
     token = username_password_token
@@ -110,8 +130,11 @@ def test_da_authc_acct_authentication_raises_unknown_exception(
 def test_da_authc_acct_authentication_succeeds(
         default_authenticator, username_password_token, monkeypatch,
         full_mock_account):
-    """ when an Account is returned from do_authenticate_account, it means that
-        authentication succeeded
+    """ 
+    unit tested:  authenticate_account
+    
+    when an Account is returned from do_authenticate_account, it means that
+    authentication succeeded
     """
     da = default_authenticator
     token = username_password_token
@@ -133,8 +156,11 @@ def test_da_authc_acct_authentication_succeeds(
 def test_da_do_authc_acct_with_realm(
         default_authenticator, username_password_token,
         one_accountstorerealm_succeeds, monkeypatch):
-    """ when the DefaultAuthenticator is missing a realms attribute, an 
-        exception will raise in do_authenticate_account 
+    """ 
+    unit tested:  authenticate_account
+
+    when the DefaultAuthenticator is missing a realms attribute, an 
+    exception will raise in do_authenticate_account 
     """
     
     da = default_authenticator
@@ -152,7 +178,9 @@ def test_da_do_authc_acct_with_realm(
 def test_da_do_authc_acct_with_realms(
         default_authenticator, username_password_token,
         two_accountstorerealms_succeeds, monkeypatch):
-    
+    """
+    unit tested:  authenticate_account
+    """    
     da = default_authenticator
     token = username_password_token
 
@@ -168,8 +196,11 @@ def test_da_do_authc_acct_with_realms(
 
 def test_da_do_authc_acct_without_realm(
         default_authenticator, username_password_token):
-    """ when the DefaultAuthenticator is missing a realms attribute, an 
-        exception will raise in do_authenticate_account 
+    """ 
+    unit tested:  authenticate_account
+
+    when the DefaultAuthenticator is missing a realms attribute, an 
+    exception will raise in do_authenticate_account 
     """
     
     da = default_authenticator
@@ -181,6 +212,9 @@ def test_da_do_authc_acct_without_realm(
 def test_da_notify_success_with_eventbus(
         default_authenticator, username_password_token, full_mock_account,
         patched_event_bus, monkeypatch):
+    """
+    unit tested:  notify_success
+    """
     
     da = default_authenticator
     token = username_password_token
@@ -193,6 +227,9 @@ def test_da_notify_success_with_eventbus(
 def test_da_notify_success_without_eventbus(
         default_authenticator, username_password_token, full_mock_account,
         monkeypatch):
+    """
+    unit tested:  notify_success
+    """
     
     da = default_authenticator
     token = username_password_token
@@ -206,6 +243,9 @@ def test_da_notify_success_without_eventbus(
 def test_da_notify_failure_with_eventbus(
         default_authenticator, username_password_token, full_mock_account,
         patched_event_bus, monkeypatch):
+    """
+    unit tested:  notify_failure
+    """
     
     da = default_authenticator
     token = username_password_token
@@ -218,6 +258,9 @@ def test_da_notify_failure_with_eventbus(
 def test_da_notify_failure_without_eventbus(
         default_authenticator, username_password_token, full_mock_account,
         monkeypatch):
+    """
+    unit tested:  notify_failure
+    """
     
     da = default_authenticator
     token = username_password_token
