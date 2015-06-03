@@ -111,11 +111,14 @@ class UsernamePasswordToken(IHostAuthenticationToken,
         self.username = None
         self.host = None
         self.remember_me = False
-
-        if (self.password):
-            for index, value in enumerate(self.password):
-                self.password[index] = 0  # DG:  this equals 0x00
-        return self.password
+        
+        try:
+            if (self._password):
+                for index in range(len(self._password)): 
+                    self._password[index] = 0  # DG:  this equals 0x00
+        except TypeError:
+            msg = 'expected password to be a bytearray'
+            raise InvalidTokenPasswordException(msg) 
 
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(
@@ -262,7 +265,15 @@ class AbstractAuthcService(object):
         # using default algorithm when generating crypt context:
         self.crypt_context = CryptContextFactory(authc_settings).\
             create_crypt_context()
-        self.private_salt = authc_settings.private_salt  # it's a string
+        self.private_salt = bytearray(authc_settings.private_salt, 'utf-8')
+
+    def clear_source(self, source):
+        try:
+            for index in range(len(source)):
+                source[index] = 0  # this becomes 0x00
+        except TypeError:
+            msg = 'Expected a bytearray source' 
+            raise InvalidTokenPasswordException(msg) 
 
     def pepper_password(self, source):
         """
@@ -274,14 +285,21 @@ class AbstractAuthcService(object):
              PASSWORD (rather than a public salt).  The peppered password
              is salted by passlib according to the cryptcontext settings
              else default passlib settings.
+          3) so to minimize copies of the password in memory, 'source' is 
+             cleared from memory the moment it is peppered
 
-        :type source: str
+        :type source: bytearray 
         """
-        if (isinstance(source, str)):
-            peppered_pass = self.private_salt + source
+        
+        if (isinstance(source, bytearray)):
+            peppered_pass = bytes(self.private_salt + source)
+
+            # the moment you pepper a password, clear the password because 
+            # it is a lingering copy in memory -- peppered_pass remains
+            self.clear_source(source)
 
         else:
-            msg = "could not pepper password"
+            msg = "could not pepper password -- must use bytearrays"
             raise PepperPasswordException(msg)
 
         return peppered_pass
@@ -302,9 +320,9 @@ class DefaultHashService(AbstractAuthcService):
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
         result = {}
-        peppered_plaintext = self.pepper_password(source)
+        peppered_bytes = self.pepper_password(source)
         result['ciphertext'] = bytearray(
-            self.crypt_context.encrypt(peppered_plaintext), 'utf-8')
+            self.crypt_context.encrypt(peppered_bytes), 'utf-8')
         result['config'] = self.crypt_context.to_dict()
 
         return result  # DG:  this design is unique to Yosai, not Shiro
@@ -324,9 +342,10 @@ class DefaultPasswordService(AbstractAuthcService):
         super().__init__()
         # in Yosai, hash formatting is taken care of by passlib
 
-    def passwords_match(self, plaintext, saved):
+    def passwords_match(self, password, saved):
         """
-        :param plaintext: the password requiring authentication, passed by user
+        :param password: the password requiring authentication, passed by user
+        :type password: bytearray
         :param saved: the password saved for the corresponding account, in
                       the MCF Format as created by passlib
 
@@ -334,12 +353,11 @@ class DefaultPasswordService(AbstractAuthcService):
 
         Unlike Shiro:
             - Yosai expects saved to be a str and never a binary Hash
-            - passwords remain strings and are not converted to bytearray
             - passlib determines the format and compatability
         """
         try:
-            peppered_plaintext = self.pepper_password(plaintext)
-            return self.crypt_context.verify(peppered_plaintext, saved)
+            peppered_pass = self.pepper_password(password)  # s/b bytes
+            return self.crypt_context.verify(peppered_pass, saved)
 
         except (AttributeError, TypeError):
             raise PasswordMatchException('unrecognized attribute type')

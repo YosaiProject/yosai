@@ -68,7 +68,7 @@ def patched_authc_settings(authc_config, monkeypatch):
     return AuthenticationSettings()
 
 @pytest.fixture(scope='function')
-def default_authc_service():
+def abstract_authc_service():
     return AbstractAuthcService()
 
 @pytest.fixture(scope='function')

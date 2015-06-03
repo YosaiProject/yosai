@@ -1,4 +1,5 @@
 from .fixtures import (
+    abstract_authc_service,
     all_realms_successful_strategy,
     alo_realms_successful_strategy,
     authc_config,
@@ -7,7 +8,6 @@ from .fixtures import (
     default_authenticator,
     default_context,
     default_authc_attempt,
-    default_authc_service,
     default_composite_accountid,
     default_composite_account,
     default_encrypted_password,

@@ -3,6 +3,7 @@ from unittest import mock
 
 from yosai import (
     AuthenticationException,
+    InvalidTokenPasswordException,
     MultiRealmAuthenticationException,
     UnsupportedTokenException,
 )
@@ -13,12 +14,22 @@ from yosai.authc import (
     UsernamePasswordToken,
 )
 
+# -----------------------------------------------------------------------------
 # UsernamePasswordToken Tests
-def test_upt_clear_existing_password(username_password_token):
-    """ clear a password equal to 'secret' """
+# -----------------------------------------------------------------------------
+def test_upt_clear_existing_passwords_succeeds(username_password_token):
+    """ clear a password bytearray equal to 'secret' """
     upt = username_password_token
     upt.clear() 
     assert upt.password == bytearray(b'\x00\x00\x00\x00\x00\x00')  
+
+def test_upt_clear_existing_passwords_fails(
+        username_password_token, monkeypatch):
+    """ clear a password string equal to 'secret' raises an exception """
+    upt = username_password_token
+    monkeypatch.setattr(upt, '_password', 'secret')
+    with pytest.raises(InvalidTokenPasswordException):
+        upt.clear() 
 
 
 # -----------------------------------------------------------------------------
