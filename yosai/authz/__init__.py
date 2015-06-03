@@ -15,7 +15,7 @@ from .authz import (
 #    WildcardPermissionResolver,
 #    DomainPermission,
 #    ModularRealmAuthorizer,
-#    SimpleAuthorizationInfo,
+    SimpleAuthorizationInfo,
 #    SimpleRole,
 )
 

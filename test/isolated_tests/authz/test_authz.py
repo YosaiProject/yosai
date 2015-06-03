@@ -7,6 +7,10 @@ from yosai import (
     UnauthorizedException,
 )
 
+# -----------------------------------------------------------------------------
+# ModularRealmAuthorizer Tests
+# -----------------------------------------------------------------------------
+
 def test_mra_authorizing_realms(modular_realm_authorizer_fff):
     """ 
     unit tested:  authorizing_realms
@@ -443,4 +447,78 @@ def test_check_role_collection_true(modular_realm_authorizer_ftf):
     mra = modular_realm_authorizer_ftf
     result = mra.check_role('arbitrary_principals', ['roleid1', 'roleid2'])
     assert result is None
+
+
+# -----------------------------------------------------------------------------
+# SimpleAuthorizationInfo Tests
+# -----------------------------------------------------------------------------
+def test_add_role_no_init_roles(simple_authz_info):
+    """
+    unit tested:  add_role
+
+    test case:  
+    adding a role when no prior roles have been defined results in the 
+    creation of a new set and an update to the set with the role(s)
+    """
+    saz = simple_authz_info
+    saz.add_role({'role1'})
+    assert {'role1'} <= saz.roles 
+
+def test_add_roles_with_init_roles(simple_authz_info, monkeypatch):
+    """
+    unit tested:  add_role
+
+    test case:  
+    adding roles when prior roles exists results in the 
+    update to the set of roles with the new role(s)
+    """
+    saz = simple_authz_info
+    monkeypatch.setattr(saz, 'roles', {'role1'})
+    saz.add_role({'role2'})
+    assert {'role1', 'role2'} <= saz.roles 
+
+def test_add_string_permission_no_init_string_permission(simple_authz_info):
+    """
+    unit tested:
+
+    test case:
+    """
+    saz = simple_authz_info
+    saz.add_string_permission({'permission1'})
+    assert {'permission1'} <= saz.string_permissions
+
+def test_add_string_permissions_with_init_string_permission(
+        simple_authz_info, monkeypatch):
+    """
+    unit tested:
+
+    test case:
+    """
+    saz = simple_authz_info
+    monkeypatch.setattr(saz, 'string_permissions', {'permission1'})
+    saz.add_string_permission({'permission2'})
+    assert {'permission1', 'permission2'} <= saz.string_permissions
+
+def test_add_object_permission_no_init_object_permission(simple_authz_info):
+    """
+    unit tested:
+
+    test case:
+    """
+    saz = simple_authz_info
+    saz.add_object_permission({'permission1'})
+    assert {'permission1'} <= saz.object_permissions
+
+def test_add_object_permissions_with_init_object_permission(
+        simple_authz_info, monkeypatch):
+    """
+    unit tested:
+
+    test case:
+    """
+    saz = simple_authz_info
+    monkeypatch.setattr(saz, 'object_permissions', {'permission1'})
+    saz.add_object_permission({'permission2'})
+    assert {'permission1', 'permission2'} <= saz.object_permissions
+
 

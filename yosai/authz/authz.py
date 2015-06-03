@@ -474,55 +474,48 @@ class ModularRealmAuthorizer(IAuthorizer,
     
 
 class SimpleAuthorizationInfo(object):
-    # DG:  removed string permission related functionality
+    """ 
+    Simple implementation of the IAuthorizationInfo interface that stores 
+    roles and permissions as internal attributes.
+    """
 
-    def __init__(self, roles):
+    def __init__(self, roles=set()):
         """
-            Input:
-                roles = a Set
+        :param roles: a Set
         """
         self.roles = roles  
+        self.string_permissions = set()
+        self.object_permissions = set()
 
-    def add_role(self, role): 
-        if (self.roles is None):
+    # yosai combines add_role with add_roles
+    def add_role(self, role_s): 
+        """
+        :type role_s: set
+        """
+        if (not self.roles):
             self.roles = set() 
         
-        self.roles.add(role)
+        self.roles.update(role_s)
 
-    def add_roles(self, roles):
+    # yosai combines add_string_permission with add_string_permissions
+    def add_string_permission(self, permission_s):
         """
-            Input:
-                roles = a Set
+        :type permission_s: set of string-based permissions
         """
-        self.roles.update(roles)
-
-    @property
-    def object_permissions(self):
-        return self._object_permissions
-
-    @object_permissions.setter
-    def object_permissions(self, objectpermissions):
-        self._object_permissions = objectpermissions
-
-    def add_object_permission(self, permission):
-        """
-        Input:
-            permission = a Tuple
-        """
-        if (self._object_permissions is None):
-            self._object_permissions = set()
+        if (not self.string_permissions):
+            self.string_permissions = set() 
         
-        self._object_permissions.add(permission)
+        self.string_permissions.update(permission_s)
 
-    def add_object_permissions(self, permissions):
+    # yosai combines add_object_permission with add_object_permissions
+    def add_object_permission(self, permission_s):
         """
-        Input:
-            permissions = a Set of permission Tuples
+        :type permission_s: set of permission objects 
         """
-        if (self._object_permissions is None):
-            self._object_permissions = set()
+        if (self.object_permissions is None):
+            self.object_permissions = set()
         
-        self._object_permissions.update(permissions)
+        self.object_permissions.update(permission_s)
 
 
 class SimpleRole(object):

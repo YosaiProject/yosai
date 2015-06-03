@@ -117,7 +117,7 @@ from .authz import (
     # AllPermission,
     # DomainPermission,
     ModularRealmAuthorizer,
-    # SimpleAuthorizationInfo,
+    SimpleAuthorizationInfo,
     # SimpleRole,
     # WildcardPermission,
     # WildcardPermissionResolver,

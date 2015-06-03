@@ -4,6 +4,7 @@ from unittest.mock import create_autospec
 
 from yosai import (
     ModularRealmAuthorizer,
+    SimpleAuthorizationInfo,
 )
 
 from .doubles import (
@@ -46,3 +47,8 @@ def modular_realm_authorizer_fff(monkeypatch, authz_realms_collection_fff):
     a = ModularRealmAuthorizer()
     monkeypatch.setattr(a, '_realms', authz_realms_collection_fff)
     return a
+
+@pytest.fixture(scope='function')
+def simple_authz_info():
+    return SimpleAuthorizationInfo()
+
