@@ -40,6 +40,7 @@ def test_asr_authc_acct_fails_misconfigured(patched_accountstore_realm,
     """ 
     unit tested:  authenticate_account
 
+    test case:
     a misconfigured AccountStoreRealm will raise an exception when 
     authentication is attempted
 
@@ -59,6 +60,7 @@ def test_asr_authc_acct_with_cached_acct_succeeds(
     """ 
     unit tested:  authenticate_account
 
+    test case:
     MockAccountCacheHandler.get_cached_account returns a MockAccount
     """
 
@@ -78,6 +80,7 @@ def test_asr_authc_acct_without_cached_acct_succeeds_and_caches(
     """
     unit tested:  authenticate_account
 
+    test case:
     If the account isn't cached, it should be obtained from the account_store.
     Since an AccountCacheHandler is set, the account is cached.
 
@@ -107,6 +110,7 @@ def test_asr_authc_acct_cannot_locate_account(username_password_token,
     """ 
     unit tested:  authenticate_account
     
+    test case:
     in the event that an account cannot be found (for a token's parameters)
     from an account_store, None is returned from authenticate_account
     
@@ -177,11 +181,11 @@ def test_dach_gca_fails_to_obtain_cache_resolver(
         pdach.get_cached_account(token)
 
 def test_dach_gca_fails_to_obtain_cache_key_resolver(
+        patched_default_account_cache_handler, monkeypatch, 
+        username_password_token):
     """
     unit tested:  get_cached_account 
     """
-        patched_default_account_cache_handler, monkeypatch, 
-        username_password_token):
     
     pdach = patched_default_account_cache_handler
     token = username_password_token
@@ -197,6 +201,7 @@ def test_dach_gca_fails_to_locate_cache(
     """
     unit tested:  get_cached_account 
     
+    test case:
     by default, the MockAccountCacheResolver returns None 
     
     """
@@ -213,7 +218,8 @@ def test_dach_gca_fails_to_locate_cache_key(
         username_password_token, patched_mock_account_cache_resolver):
     """ 
     unit tested:  get_cached_account 
-    
+   
+    test case:
     the default pdach fixture uses empty mocks, therefore both the 
         get_account_cache and get_account_cache_key return None
 
@@ -299,6 +305,7 @@ def test_dach_ca_fails_to_obtain_cache_key_resolver(
     """
     unit tested:  cache_account 
     
+    test case:
     the cache is obtained but the key isn't
     """
 
@@ -319,6 +326,7 @@ def test_dach_ca_fails_to_locate_cache(
     """ 
     unit tested:  cache_account 
 
+    test case:
     by default, the MockAccountCacheResolver returns None
     """
     
@@ -337,6 +345,7 @@ def test_dach_ca_fails_to_locate_cache_key(
     """ 
     unit tested:  cache_account 
  
+    test case:
     the default pdach fixture uses empty mocks, therefore both the 
     get_account_cache and get_account_cache_key return None
 
@@ -430,6 +439,7 @@ def test_dach_cca_fails_to_locate_cache_key(
     """ 
     unit tested:  clear_cached_account 
     
+    test case:
     the default pdach fixture uses empty mocks, therefore both the 
     get_account_cache and get_account_cache_key return None
 

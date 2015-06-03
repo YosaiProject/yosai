@@ -16,19 +16,19 @@ class MockAuthzAccountStoreRealm(IAuthorizer,
         pass
     
     def check_role(self, principals, role_s):
-        pass
+        return False 
 
     def has_role(self, principals, roleid_s):
-        pass
+        return False 
 
     def has_all_roles(self, principals, roleid_s):
-        pass
+        return False 
 
     def is_permitted(self, principals, permission_s):
-        pass
+        return False 
 
     def is_permitted_all(self, principals, permission_s):
-        pass
+        return False 
 
     @property
     def permission_resolver(self):

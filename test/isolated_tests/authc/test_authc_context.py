@@ -19,6 +19,7 @@ from yosai.authc import (
 # -----------------------------------------------------------------------------
 def test_settings_missing_private_salt(monkeypatch, authc_config):
     """
+    test case: 
     The default security policy requires use of a private salt.  In the event
     that a private salt isn't defined within settings, init raises an 
     exception 
@@ -45,6 +46,7 @@ def test_get_config_where_algorithms_doesnt_exist(patched_authc_settings,
 def test_generate_context_empty_string_algorithm(cryptcontext_factory,
                                                  monkeypatch):
     """
+    test case: 
     the algorithm parameter can't be None, but if its empty an exception
     should raise
     """
@@ -55,6 +57,7 @@ def test_generate_context_empty_string_algorithm(cryptcontext_factory,
 def test_generate_context_without_authc_items(cryptcontext_factory,
                                               monkeypatch):
     """
+    test case: 
     verify that the dictionary comprehension manages an empty dict correctly
     """
     ccf = cryptcontext_factory
@@ -65,6 +68,7 @@ def test_generate_context_without_authc_items(cryptcontext_factory,
 
 def test_generate_context_with_authc_items(cryptcontext_factory):
     """
+    test case: 
     verify that the dictionary comprehension manages a full dict correctly
     """
     ccf = cryptcontext_factory
@@ -73,6 +77,7 @@ def test_generate_context_with_authc_items(cryptcontext_factory):
 
 def test_create_crypt_context_with_algorithm(cryptcontext_factory):
     """
+    test case: 
     calling method with an algorithm argument should succeed
     """
     ccf = cryptcontext_factory
@@ -81,6 +86,7 @@ def test_create_crypt_context_with_algorithm(cryptcontext_factory):
 
 def test_create_crypt_context_without_algorithm(cryptcontext_factory):
     """
+    test case: 
     calling method without an algorithm argument reverts to default algorithm
     """
     ccf = cryptcontext_factory
@@ -89,6 +95,7 @@ def test_create_crypt_context_without_algorithm(cryptcontext_factory):
 
 def test_create_crypt_with_unrec_context_arg(cryptcontext_factory):
     """
+    test case: 
     passing an unrecognized algo context argument to the cryptcontext init
     should raise an exception
     """
@@ -101,6 +108,7 @@ def test_create_crypt_with_unrec_context_arg(cryptcontext_factory):
 
 def test_create_crypt_with_unsup_hash_algorithm(cryptcontext_factory):
     """
+    test case: 
     passlib raises an exception for unsupported hash algo
     """
     ccf = cryptcontext_factory

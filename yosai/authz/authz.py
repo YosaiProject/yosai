@@ -368,7 +368,8 @@ class ModularRealmAuthorizer(IAuthorizer,
         Yosai differs from Shiro in how it handles String-typed Permission 
         parameters.  Rather than supporting *args of String-typed Permissions, 
         Yosai supports a list of Strings.  Yosai remains true to Shiro's API
-        while determining permissions a bit more pythonically.
+        while determining permissions a bit more pythonically.  This may 
+        be refactored later.
 
         :param principals: a collection of principals
         :type principals: Set
@@ -376,9 +377,8 @@ class ModularRealmAuthorizer(IAuthorizer,
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: either a single Boolean or a List of tuples, each containin
-                  the Permission and a Boolean indicating whether the permission
-                  is granted
+        :returns: a List of tuple(s), containing the Permission and a Boolean 
+                  indicating whether the permission is granted
         """
 
         self.assert_realms_configured()
@@ -387,7 +387,7 @@ class ModularRealmAuthorizer(IAuthorizer,
             return [(permission, permit) for (permission, permit) in 
                     self._permit_collection(principals, permission_s)]
 
-        return self._is_permitted(principals, permission_s)  # just 1 Bool
+        return [permission_s, self._is_permitted(principals, permission_s)]
 
     def is_permitted_all(self, principals, permission_s):
         """
@@ -451,7 +451,7 @@ class ModularRealmAuthorizer(IAuthorizer,
             return [(roleid, hasrole) for (roleid, hasrole) in 
                     self._role_collection(principals, roleid_s)]
 
-        return self._has_role(principals, roleid_s)  # just 1 Bool
+        return [(roleid_s, self._has_role(principals, roleid_s))]
 
     def has_all_roles(self, principals, roleid_s):
 
