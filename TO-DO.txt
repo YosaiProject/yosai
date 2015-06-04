@@ -6,6 +6,6 @@ to change among the datastores used.
 Required:
    - Account
    - AccountStore
+   - AuthorizingAccountStoreRealm
    - AccountCacheResolver
    - AccountCacheKeyResolver
-

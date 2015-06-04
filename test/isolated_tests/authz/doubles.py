@@ -1,5 +1,6 @@
 from yosai.authz import (
     IAuthorizer,
+    IPermission,
     IPermissionResolverAware,
     IRolePermissionResolverAware,
 )
@@ -45,3 +46,13 @@ class MockAuthzAccountStoreRealm(IAuthorizer,
     @permission_resolver.setter
     def role_permission_resolver(self, permission_resolver):
         self._role_permission_resolver = permission_resolver 
+
+
+class MockPermission(IPermission):
+   
+    # using init to define whether implies is always True or False
+    def __init__(self, implied):
+        self.implied = implied
+
+    def implies(self, permission):
+        return self.implied

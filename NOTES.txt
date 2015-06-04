@@ -41,3 +41,5 @@ Anywhere shiro performs an "instanceof" check on an object before performing an 
 it's checking whether that object implements an interface.  Not sure whether t
 LBYL or EAFP in these circumstances..
 
+Shiro uses a LinkedHashSet to preserve order!
+

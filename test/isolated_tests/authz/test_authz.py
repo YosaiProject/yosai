@@ -4,7 +4,13 @@ from unittest import mock
 from yosai import (
     IllegalStateException,
     ModularRealmAuthorizer,
+    OrderedSet,
+    SimpleRole,
     UnauthorizedException,
+)
+
+from .doubles import (
+    MockPermission,
 )
 
 # -----------------------------------------------------------------------------
@@ -452,7 +458,7 @@ def test_check_role_collection_true(modular_realm_authorizer_ftf):
 # -----------------------------------------------------------------------------
 # SimpleAuthorizationInfo Tests
 # -----------------------------------------------------------------------------
-def test_add_role_no_init_roles(simple_authz_info):
+def test_sa_add_role_no_init_roles(simple_authz_info):
     """
     unit tested:  add_role
 
@@ -462,9 +468,9 @@ def test_add_role_no_init_roles(simple_authz_info):
     """
     saz = simple_authz_info
     saz.add_role({'role1'})
-    assert {'role1'} <= saz.roles 
+    assert OrderedSet(['role1']) <= saz.roles 
 
-def test_add_roles_with_init_roles(simple_authz_info, monkeypatch):
+def test_sa_add_roles_with_init_roles(simple_authz_info, monkeypatch):
     """
     unit tested:  add_role
 
@@ -475,9 +481,9 @@ def test_add_roles_with_init_roles(simple_authz_info, monkeypatch):
     saz = simple_authz_info
     monkeypatch.setattr(saz, 'roles', {'role1'})
     saz.add_role({'role2'})
-    assert {'role1', 'role2'} <= saz.roles 
+    assert OrderedSet(['role1', 'role2']) <= saz.roles 
 
-def test_add_string_permission_no_init_string_permission(simple_authz_info):
+def test_sa_add_string_permission_no_init_string_permission(simple_authz_info):
     """
     unit tested:
 
@@ -485,9 +491,9 @@ def test_add_string_permission_no_init_string_permission(simple_authz_info):
     """
     saz = simple_authz_info
     saz.add_string_permission({'permission1'})
-    assert {'permission1'} <= saz.string_permissions
+    assert OrderedSet(['permission1']) <= saz.string_permissions
 
-def test_add_string_permissions_with_init_string_permission(
+def test_sa_add_string_permissions_with_init_string_permission(
         simple_authz_info, monkeypatch):
     """
     unit tested:
@@ -497,9 +503,9 @@ def test_add_string_permissions_with_init_string_permission(
     saz = simple_authz_info
     monkeypatch.setattr(saz, 'string_permissions', {'permission1'})
     saz.add_string_permission({'permission2'})
-    assert {'permission1', 'permission2'} <= saz.string_permissions
+    assert OrderedSet(['permission1', 'permission2']) <= saz.string_permissions
 
-def test_add_object_permission_no_init_object_permission(simple_authz_info):
+def test_sa_add_object_permission_no_init_object_permission(simple_authz_info):
     """
     unit tested:
 
@@ -507,9 +513,9 @@ def test_add_object_permission_no_init_object_permission(simple_authz_info):
     """
     saz = simple_authz_info
     saz.add_object_permission({'permission1'})
-    assert {'permission1'} <= saz.object_permissions
+    assert OrderedSet(['permission1']) <= saz.object_permissions
 
-def test_add_object_permissions_with_init_object_permission(
+def test_sa_add_object_permissions_with_init_object_permission(
         simple_authz_info, monkeypatch):
     """
     unit tested:
@@ -519,6 +525,130 @@ def test_add_object_permissions_with_init_object_permission(
     saz = simple_authz_info
     monkeypatch.setattr(saz, 'object_permissions', {'permission1'})
     saz.add_object_permission({'permission2'})
-    assert {'permission1', 'permission2'} <= saz.object_permissions
+    assert OrderedSet(['permission1', 'permission2']) <= saz.object_permissions
 
 
+# -----------------------------------------------------------------------------
+# SimpleRole Tests
+# -----------------------------------------------------------------------------
+def test_simple_role_add_with_existing_permissions(populated_simple_role):
+    """
+    unit tested:  add
+
+    test case:
+    adding to an existing permissions attribute
+    """
+    psr = populated_simple_role
+    psr.add('permissionZ')
+    assert 'permissionZ' in psr.permissions
+
+def test_simple_role_add_without_existing_permissions(
+        populated_simple_role, monkeypatch):
+    """
+    unit tested:  add
+
+    test case:
+    creates a new permissions attribute, adds to it
+    """
+    psr = populated_simple_role
+    monkeypatch.setattr(psr, 'permissions', None)
+    psr.add('permissionX')
+    assert 'permissionX' in psr.permissions
+
+def test_simple_role_add_all_with_existing_permissions(populated_simple_role):
+    """
+    unit tested:  add_all
+
+    test case:
+    adding to an existing permissions attribute
+    """
+    psr = populated_simple_role
+    test_set = OrderedSet(['permission4', 'permission5', 'permission6'])
+    psr.add_all(test_set)
+    assert all(x in psr.permissions for x in test_set)
+
+def test_simple_role_add_all_without_existing_permissions(
+        populated_simple_role, monkeypatch):
+    """
+    unit tested:  add_all
+
+    test case:
+    creates a new permissions attribute, adds to it
+    """
+    psr = populated_simple_role
+    monkeypatch.setattr(psr, 'permissions', None)
+    test_set = OrderedSet(['permission4', 'permission5', 'permission6'])
+    psr.add_all(test_set)
+    assert all(x in psr.permissions for x in test_set)
+
+def test_simple_role_is_permitted_with_existing_permissions(
+        populated_simple_role):
+    """
+    unit tested:  is_permitted
+
+    test case:
+    a Permission that implies another returns True
+
+    there is one permission in the sample set that always returns True
+    """
+    psr = populated_simple_role
+    new_permission = MockPermission(True)
+    assert psr.is_permitted(new_permission)
+
+def test_simple_role_is_NOT_permitted_with_existing_permissions(
+        populated_simple_role, monkeypatch):
+    """
+    unit tested:  is_permitted
+
+    test case:
+    when no permissions assigned to the role imply the permission of interest
+    """
+    psr = populated_simple_role
+    existing_permissions = OrderedSet([MockPermission(False),
+                                       MockPermission(False)])
+    monkeypatch.setattr(psr, 'permissions', existing_permissions)
+    new_permission = MockPermission(True)
+    assert psr.is_permitted(new_permission) is False
+
+def test_simple_role_is_permitted_without_existing_permissions(
+        populated_simple_role, monkeypatch):
+    """
+    unit tested:  is_permitted
+
+    test case:
+    when no permissions reside in the role, returns False 
+    """
+    psr = populated_simple_role
+    monkeypatch.setattr(psr, 'permissions', None)
+    new_permission = MockPermission(True)
+    assert psr.is_permitted(new_permission) is False
+
+def test_simple_role_hash_code_with_name(populated_simple_role):
+    psr = populated_simple_role
+    assert id(psr.name) == psr.hash_code()
+
+def test_simple_role_hash_code_without_name(
+        populated_simple_role, monkeypatch):
+    psr = populated_simple_role
+    monkeypatch.setattr(psr, 'name', None)
+    assert psr.hash_code() == 0
+
+def test_simple_role_equals_other(populated_simple_role):
+    psr = populated_simple_role
+    name = 'SimpleRole123'
+    permissions = OrderedSet([MockPermission(False), 
+                              MockPermission(False),
+                              MockPermission(True)])
+    testrole = SimpleRole(name=name, permissions=permissions)
+
+    assert psr == testrole
+
+def test_simple_role_not_equals_other(populated_simple_role):
+    psr = populated_simple_role
+    name = 'SimpleRole1234567'
+    permissions = OrderedSet([MockPermission(False), 
+                              MockPermission(False),
+                              MockPermission(True)])
+    testrole = SimpleRole(name=name, permissions=permissions)
+
+    assert psr != testrole

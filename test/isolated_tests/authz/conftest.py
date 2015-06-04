@@ -4,4 +4,5 @@ from .fixtures import (
     modular_realm_authorizer_fff,
     modular_realm_authorizer_ftf,
     simple_authz_info,
+    populated_simple_role,
 )

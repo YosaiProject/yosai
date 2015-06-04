@@ -4,6 +4,7 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     LogManager,
+    OrderedSet,
     UnauthenticatedException,
     UnauthorizedException,
 )
@@ -247,11 +248,13 @@ class ModularRealmAuthorizer(IAuthorizer,
     the funky naming convention where a parameter ends with '_s' denotes 
     one-or-more; in English, this is expressed as '(s)', eg: duck(s)
     indicates one or more ducks
+
+    :type realms:  OrderedSet
     """
     def __init__(self, realms=None):
-        self._realms = set() 
-        self._permission_resolver = None
-        self._role_permission_resolver = None
+        self._realms = OrderedSet() 
+        self._permission_resolver = None 
+        self._role_permission_resolver = None 
 
     @property
     def realms(self):
@@ -479,93 +482,95 @@ class SimpleAuthorizationInfo(object):
     roles and permissions as internal attributes.
     """
 
-    def __init__(self, roles=set()):
+    def __init__(self, roles=OrderedSet()):
         """
-        :param roles: a Set
+        :type roles: OrderedSet 
         """
         self.roles = roles  
-        self.string_permissions = set()
-        self.object_permissions = set()
+        self.string_permissions = OrderedSet() 
+        self.object_permissions = OrderedSet()
 
     # yosai combines add_role with add_roles
     def add_role(self, role_s): 
         """
-        :type role_s: set
+        :type role_s: OrderedSet 
         """
-        if (not self.roles):
-            self.roles = set() 
-        
-        self.roles.update(role_s)
+        if (self.roles is None):
+            self.roles = OrderedSet() 
+       
+        for item in role_s:
+            self.roles.add(item)  # adds in order received
 
     # yosai combines add_string_permission with add_string_permissions
     def add_string_permission(self, permission_s):
         """
-        :type permission_s: set of string-based permissions
+        :type permission_s: OrderedSet of string-based permissions 
         """
-        if (not self.string_permissions):
-            self.string_permissions = set() 
+        if (self.string_permissions is None):
+            self.string_permissions = OrderedSet() 
         
-        self.string_permissions.update(permission_s)
+        for item in permission_s:
+            self.string_permissions.add(item)  # adds in order received
 
     # yosai combines add_object_permission with add_object_permissions
     def add_object_permission(self, permission_s):
         """
-        :type permission_s: set of permission objects 
+        :type permission_s: OrderedSet of Permission objects 
         """
         if (self.object_permissions is None):
-            self.object_permissions = set()
+            self.object_permissions = OrderedSet() 
         
-        self.object_permissions.update(permission_s)
+        for item in permission_s:
+            self.object_permissions.add(item)  # adds in order received
 
 
 class SimpleRole(object):
 
-    def __init__(self, name, permissions=None): 
+    def __init__(self, name=None, permissions=OrderedSet()): 
         self.name = name
         self.permissions = permissions 
 
     def add(self, permission):
         """
-        Input:
-            permission = a Tuple
+        :type permission: a Permission object
         """
         permissions = self.permissions
         if (permissions is None): 
-            self.permissions = set()
-        self.permissions.add([permission])
+            self.permissions = OrderedSet() 
+        self.permissions.add(permission)
 
-    def add_all(self, perms):
+    def add_all(self, permissions):
         """
-        Input:
-            perms = a Set of permission Tuples
+        :type permissions: an OrderedSet of Permission objects
         """
-        if (perms):
-            if (self.permissions is None):
-                self.permissions = set()
-            self.permissions.update(perms)
+        if (self.permissions is None):
+            self.permissions = OrderedSet() 
+        
+        for item in permissions:
+            self.permissions.add(item)  # adds in order received
 
     def is_permitted(self, permission):
-        for perm in self.permissions:
-            if (perm.implies(permission)):
-                return True 
+        """
+        :type permission: Permission object
+        """
+        if (self.permissions):
+            for perm in self.permissions:
+                if (perm.implies(permission)):
+                    return True 
         return False
 
-    @property
     def hash_code(self):
-        return id(self) 
+        # TBD:  not sure about this..
+        if self.name:
+            return id(self.name)
+        return 0
 
     def __eq__(self, other):
-        if (self == other):
-            return True
         
         if (isinstance(other, SimpleRole)):
-            # only check name, since role names should be unique across an 
-            # entire application
-            return (self.name == other.name)
+            return self.name == other.name
         
         return False
     
     def __repr__(self):
         return self.name
-
-

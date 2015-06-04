@@ -4,11 +4,14 @@ from unittest.mock import create_autospec
 
 from yosai import (
     ModularRealmAuthorizer,
+    OrderedSet,
     SimpleAuthorizationInfo,
+    SimpleRole,
 )
 
 from .doubles import (
     MockAuthzAccountStoreRealm,
+    MockPermission,
 )
 
 
@@ -51,4 +54,12 @@ def modular_realm_authorizer_fff(monkeypatch, authz_realms_collection_fff):
 @pytest.fixture(scope='function')
 def simple_authz_info():
     return SimpleAuthorizationInfo()
+
+@pytest.fixture(scope='function')
+def populated_simple_role():
+    name = 'SimpleRole123'
+    permissions = OrderedSet([MockPermission(False), 
+                              MockPermission(False),
+                              MockPermission(True)])
+    return SimpleRole(name=name, permissions=permissions)
 

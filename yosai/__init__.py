@@ -86,6 +86,10 @@ from .logging import (
     LogManager,
 )
 
+from .utils import (
+    OrderedSet,
+)
+
 from .account import (
     IAccountId,
     IAccount,
@@ -118,7 +122,7 @@ from .authz import (
     # DomainPermission,
     ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
-    # SimpleRole,
+    SimpleRole,
     # WildcardPermission,
     # WildcardPermissionResolver,
 )
@@ -179,3 +183,4 @@ from .subject import(
     # StoppingAwareProxiedSession,
 )
 """
+

@@ -16,6 +16,6 @@ from .authz import (
 #    DomainPermission,
 #    ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
-#    SimpleRole,
+    SimpleRole,
 )
 
