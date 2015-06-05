@@ -2,11 +2,13 @@ import pytest
 from unittest import mock
 
 from yosai import (
+    IllegalArgumentException,
     IllegalStateException,
     ModularRealmAuthorizer,
     OrderedSet,
     SimpleRole,
     UnauthorizedException,
+    WildcardPermission,
 )
 
 from .doubles import (
@@ -485,7 +487,7 @@ def test_sa_add_roles_with_init_roles(simple_authz_info, monkeypatch):
 
 def test_sa_add_string_permission_no_init_string_permission(simple_authz_info):
     """
-    unit tested:
+    unit tested:  add_string_permission
 
     test case:
     """
@@ -496,7 +498,7 @@ def test_sa_add_string_permission_no_init_string_permission(simple_authz_info):
 def test_sa_add_string_permissions_with_init_string_permission(
         simple_authz_info, monkeypatch):
     """
-    unit tested:
+    unit tested:  add_string_permission
 
     test case:
     """
@@ -507,7 +509,7 @@ def test_sa_add_string_permissions_with_init_string_permission(
 
 def test_sa_add_object_permission_no_init_object_permission(simple_authz_info):
     """
-    unit tested:
+    unit tested:  add_object_permission
 
     test case:
     """
@@ -518,7 +520,7 @@ def test_sa_add_object_permission_no_init_object_permission(simple_authz_info):
 def test_sa_add_object_permissions_with_init_object_permission(
         simple_authz_info, monkeypatch):
     """
-    unit tested:
+    unit tested:  add_object_permission
 
     test case:
     """
@@ -652,3 +654,79 @@ def test_simple_role_not_equals_other(populated_simple_role):
     testrole = SimpleRole(name=name, permissions=permissions)
 
     assert psr != testrole
+
+# -----------------------------------------------------------------------------
+# WildcardPermission Tests
+# -----------------------------------------------------------------------------
+
+def test_wcp_init_with_wildcard_string(monkeypatch):
+    """
+    unit tested:  __init__
+
+    test case:
+    control flow depending on whether a wildcard_string is passed
+    """
+    with mock.patch.object(WildcardPermission, 'set_parts') as wp_sp:
+        wp_sp.return_value = None 
+        wcs = WildcardPermission(wildcard_string='DOMAIN:ACTION:INSTANCE')
+        assert wcs.set_parts.called
+
+def test_wcp_init_without_wildcard_string(monkeypatch):
+    """
+    unit tested:  __init__
+
+    test case:
+    control flow depending on whether a wildcard_string is passed
+    """
+    with mock.patch.object(WildcardPermission, 'set_parts') as wp_sp:
+        wp_sp.return_value = None 
+        wcs = WildcardPermission()
+        assert not wcs.set_parts.called
+
+@pytest.mark.parametrize("wildcardstring", [None, '', ":::", "A:,,:C:D"])
+def test_wcp_set_parts_raises_illegalargumentexception(
+        default_wildcard_permission, wildcardstring):
+    """
+    unit tested:  set_parts
+
+    test case:
+    wilcard_string must be populated with parts, else an exception raises
+    """
+
+    wcp = default_wildcard_permission
+
+    with pytest.raises(IllegalArgumentException):
+        wcp.set_parts(wildcard_string=wildcardstring)
+
+def test_wcp_set_parts_casesensitive(
+        default_wildcard_permission, monkeypatch):
+    """
+    unit tested:  set_parts
+
+    test case:
+    case_sensitive parts remain as-is
+    """
+    wcp = default_wildcard_permission
+    monkeypatch.setattr(wcp, 'case_sensitive', True)
+    wildcardstring = "One,Two,Three:Four,Five,Six:Seven,Eight"
+    wcp.set_parts(wildcard_string=wildcardstring)
+    expected_parts = [OrderedSet(['One', 'Two', 'Three']),
+                      OrderedSet(['Four', 'Five', 'Six']),
+                      OrderedSet(['Seven', 'Eight'])]
+    assert expected_parts == wcp.parts
+
+def test_wcp_set_parts(default_wildcard_permission, monkeypatch):
+    """
+    unit tested:  set_parts
+
+    test case:
+    verify normal, successful activity
+    """
+    wcp = default_wildcard_permission
+    monkeypatch.setattr(wcp, 'case_sensitive', True)
+    wildcardstring = "one,two,three:four,five,six:seven,eight"
+    wcp.set_parts(wildcard_string=wildcardstring)
+    expected_parts = [OrderedSet(['one', 'two', 'three']),
+                      OrderedSet(['four', 'five', 'six']),
+                      OrderedSet(['seven', 'eight'])]
+    assert expected_parts == wcp.parts

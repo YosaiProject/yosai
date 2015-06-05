@@ -123,7 +123,7 @@ from .authz import (
     ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
     SimpleRole,
-    # WildcardPermission,
+    WildcardPermission,
     # WildcardPermissionResolver,
 )
 

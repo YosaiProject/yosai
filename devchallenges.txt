@@ -1,0 +1,12 @@
+Developers who enjoys boosting the performance of a system will love
+the challenging opportunities presented in Yosai.  Take on one of these 
+performance challenges and put another feather in your cap!  
+
+Challenges include:
+
+- Concurrency and parallelism re-architecture
+
+- Optimizing the authorization-based algorithms within:
+    WildcardPermission
+    ModularRealmAuthorizer
+

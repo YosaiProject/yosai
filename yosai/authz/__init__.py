@@ -11,10 +11,9 @@ from .interfaces import (
 from .authz import (
     ModularRealmAuthorizer,
 #    AllPermission,
-#    WildcardPermission,
+    WildcardPermission,
 #    WildcardPermissionResolver,
 #    DomainPermission,
-#    ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
     SimpleRole,
 )

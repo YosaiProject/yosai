@@ -7,6 +7,7 @@ from yosai import (
     OrderedSet,
     SimpleAuthorizationInfo,
     SimpleRole,
+    WildcardPermission,
 )
 
 from .doubles import (
@@ -63,3 +64,6 @@ def populated_simple_role():
                               MockPermission(True)])
     return SimpleRole(name=name, permissions=permissions)
 
+@pytest.fixture(scope='function')
+def default_wildcard_permission():
+    return WildcardPermission()

@@ -59,25 +59,27 @@ class WildcardPermission(object):
 
         wildcardstring = wildcard_string.strip()
 
-        # will be a List of Sets containing Strings:
+        if not any(x != self.PART_DIVIDER_TOKEN for x in wildcardstring):
+            msg = ("Wildcard string cannot contain JUST dividers. Make "
+                   "sure permission strings are properly formatted.")
+            print(msg)
+            raise IllegalArgumentException(msg)
+
+        if (not self.case_sensitive): 
+            wildcardstring = wildcardstring.lower()
+
         parts = wildcardstring.split(self.PART_DIVIDER_TOKEN)
 
         for part in parts:
-            subparts = OrderedSet(part.split(self.SUBPART_DIVIDER_TOKEN))
-            if (not self.case_sensitive):
-                part = part.lower()
-            if (not subparts):
-                msg = ("Wildcard string cannot contain parts with only "
-                       "dividers. Make sure permission strings are properly "
-                       "formatted.")
+            if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part): 
+                msg = ("Wildcard string cannot contain parts consisting JUST "
+                       "of sub-part dividers. Make sure permission strings "
+                       "are properly formatted.")
+                print(msg)
                 raise IllegalArgumentException(msg)
-            self.parts.append(subparts)
+            subparts = part.split(self.SUBPART_DIVIDER_TOKEN)
+            self.parts.append(OrderedSet(subparts))
 
-        if (not self.parts):
-            msg = ("Wildcard string cannot contain only dividers. Make "
-                   "sure permission strings are properly formatted.")
-            raise IllegalArgumentException(msg)
-            
     def implies(self, permission):
         """
         :type permission:  Permission object
