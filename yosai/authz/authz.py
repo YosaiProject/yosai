@@ -29,77 +29,73 @@ class AllPermission(object):
 
 class WildcardPermission(object):
     """
-    standardized permission wildcard syntax is:  domain:action:instance
+    The standardized permission wildcard syntax is:  DOMAIN:ACTION:INSTANCE
+
+    reference:  https://shiro.apache.org/permissions.html
     """
 
-    WILDCARD_TOKEN = "*"
-    PART_DIVIDER_TOKEN = ":"
-    SUBPART_DIVIDER_TOKEN = ","
+    WILDCARD_TOKEN = '*'
+    PART_DIVIDER_TOKEN = ':'
+    SUBPART_DIVIDER_TOKEN = ','
     DEFAULT_CASE_SENSITIVE = False 
 
     def __init__(self, wildcard_string=None, 
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
-        try:
-            if (wildcard_string is None):
-                raise IllegalArgumentException
-        except IllegalArgumentException:
-            print('WildcardPermission: invalid arguments for init!')
 
-        else:
+        self.parts = []
+        self.case_sensitive = case_sensitive
+
+        if wildcard_string:
             self.set_parts(wildcard_string, case_sensitive)
                   
     def set_parts(self, wildcard_string, 
                   case_sensitive=DEFAULT_CASE_SENSITIVE):
-        try: 
-            if (not wildcard_string):
-                raise IllegalArgumentException
-        except IllegalArgumentException:
-            msg = ("Wildcard string cannot be null or empty. Make sure "
+        if (not wildcard_string):
+            msg = ("Wildcard string cannot be None or empty. Make sure "
                    "permission strings are properly formatted.")
             print(msg)
-            return
+            # log here
+            raise IllegalArgumentException(msg)
 
         wildcardstring = wildcard_string.strip()
-        myparts = wildcardstring.split(self.PART_DIVIDER_TOKEN)
 
-        self.parts = []  # will be a List of Sets containing Strings
-        try:
-            for part in myparts:
-                if (not self.case_sensitive):
-                    part = part.lower()
+        # will be a List of Sets containing Strings:
+        parts = wildcardstring.split(self.PART_DIVIDER_TOKEN)
 
-                subparts = set(part.split(self.SUBPART_DIVIDER_TOKEN))
-                
-                if (not subparts):
-                    raise IllegalArgumentException
-                
-                self.parts.append(subparts)
+        for part in parts:
+            subparts = OrderedSet(part.split(self.SUBPART_DIVIDER_TOKEN))
+            if (not self.case_sensitive):
+                part = part.lower()
+            if (not subparts):
+                msg = ("Wildcard string cannot contain parts with only "
+                       "dividers. Make sure permission strings are properly "
+                       "formatted.")
+                raise IllegalArgumentException(msg)
+            self.parts.append(subparts)
 
-            if (not self.parts):
-                raise IllegalArgumentException
+        if (not self.parts):
+            msg = ("Wildcard string cannot contain only dividers. Make "
+                   "sure permission strings are properly formatted.")
+            raise IllegalArgumentException(msg)
             
-        except IllegalArgumentException:
-            msg = ("Wildcard string cannot contain parts with only "
-                   "dividers. Make sure permission strings are properly "
-                   "formatted.")
-
-            print('WildcardPermission.set_parts Exception:', msg)
-
     def implies(self, permission):
+        """
+        :type permission:  Permission object
+        """
         # By default only supports comparisons with other WildcardPermissions
         if (not isinstance(permission, WildcardPermission)):
             return False
         
-        otherparts = permission.parts  # a List of Sets containing Strings
+        otherparts = permission.parts  # a List of OrderedSets of Strings
         index = 0
-        for i, other_part in enumerate(otherparts):
+        for other_part in otherparts:
             # If this permission has less parts than the other permission,
             # everything after the number of parts contained in this 
             # permission is automatically implied, so return true
-            if (len(self.parts) - 1 < i):
+            if (len(self.parts) - 1 < index):
                 return True
             else: 
-                part = self.parts[i]
+                part = self.parts[index]  # each subpart is an OrderedSet
                 if ((self.WILDCARD_TOKEN not in part) and
                    not (other_part <= part)):  # not(part contains otherpart)
                     return False
