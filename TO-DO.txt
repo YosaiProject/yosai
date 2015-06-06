@@ -3,12 +3,13 @@ corresponding concrete class implementation using them.  I presume this is
 due to their discretionary nature and that their implementation is subject
 to change among the datastores used.
 
-Required:
+Required Concrete Implementations:
    - Account
    - AccountStore
    - AuthorizingAccountStoreRealm
    - AccountCacheResolver
    - AccountCacheKeyResolver
+   - CacheManager
 
 Porting annotations to python
 

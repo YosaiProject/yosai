@@ -683,7 +683,7 @@ def test_wcp_init_without_wildcard_string(monkeypatch):
         wcs = WildcardPermission()
         assert not wcs.set_parts.called
 
-@pytest.mark.parametrize("wildcardstring", [None, '', ":::", "A:,,:C:D"])
+@pytest.mark.parametrize("wildcardstring", [None, '', "  ", ":::", "A:,,:C:D"])
 def test_wcp_set_parts_raises_illegalargumentexception(
         default_wildcard_permission, wildcardstring):
     """
@@ -730,3 +730,168 @@ def test_wcp_set_parts(default_wildcard_permission, monkeypatch):
                       OrderedSet(['four', 'five', 'six']),
                       OrderedSet(['seven', 'eight'])]
     assert expected_parts == wcp.parts
+
+def test_wcp_implies_nonwildcardpermission(default_wildcard_permission):
+    """
+    unit tested:  implies
+
+    test case:
+    implies currently only supports instances of WildcardPermission
+    """
+    wcp = default_wildcard_permission
+    otherpermission = type('OtherPermission', (object,), {})
+    result = wcp.implies(otherpermission())
+    assert result is False 
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("something", "SOMETHING"),
+                          ("SOMETHING", "something"),
+                          ("something", "something")]) 
+def test_wcp_implies_caseinsensitive_returns_true(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case insensitive, single-name permission, returns True
+    """
+    p1 = WildcardPermission(wildcardstring1)
+    p2 = WildcardPermission(wildcardstring2)
+    assert p1.implies(p2)
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("something", "SOMETHINGELSEENTIRELY"),
+                          ("SOMETHINGELSE", "somethingAGAIN")])
+def test_wcp_implies_caseinsensitive_returns_false(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case insensitive, single-name permission, returns False 
+    """
+    p1 = WildcardPermission(wildcardstring1)
+    p2 = WildcardPermission(wildcardstring2)
+    assert not p1.implies(p2)
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("something", "something")]) 
+def test_wcp_implies_casesensitive_returns_true(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case sensitive, single-name permission,returns True
+    """
+    p1 = WildcardPermission(wildcard_string=wildcardstring1, 
+                            case_sensitive=True)
+    p2 = WildcardPermission(wildcard_string=wildcardstring2,
+                            case_sensitive=True)
+    assert p1.implies(p2)
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("Something", "someThing"),
+                          ("diFFerent", "reallyDifferent")]) 
+def test_wcp_implies_casesensitive_returns_false(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case sensitive, single-name permission, returns False 
+    """
+    p1 = WildcardPermission(wildcard_string=wildcardstring1, 
+                            case_sensitive=True)
+    p2 = WildcardPermission(wildcard_string=wildcardstring2,
+                            case_sensitive=True)
+    assert not p1.implies(p2)
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("one,two", "one"),
+                          ("one,two,three", "one,three"),
+                          ("one,two:one,two,three", "one:three"),
+                          ("one,two:one,two,three", "one:two,three"),
+                          ("one:two,three", "one:three"),
+                          ("one,two,three:one,two,three:one,two", 
+                           "one:three:two"),
+                          ("one", "one:two,three,four"),
+                          ("one", "one:two,three,four:five:six:seven"),
+                          ("one:two,three,four",
+                           "one:two,three,four:five:six:seven")])
+def test_wcp_implies_caseinsensitive_lists(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case insensitive, list-based permission, retrns True and the opposite False
+    """
+
+    p1 = WildcardPermission(wildcard_string=wildcardstring1) 
+    p2 = WildcardPermission(wildcard_string=wildcardstring2)
+    
+    assert p1.implies(p2) and not p2.implies(p1)
+
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("*", "one"),
+                          ("*", "one:two"),
+                          ("*", "one,two:three,four"),
+                          ("*", "one,two:three,four,five:six:seven,eight"),
+                          ("newsletter:*", "newsletter:read"),
+                          ("newsletter:*", "newsletter:read,write"),
+                          ("newsletter:*", "newsletter:*"),
+                          ("newsletter:*", "newsletter:*:*"),
+                          ("newsletter:*", "newsletter:*:read"),
+                          ("newsletter:*", "newsletter:write:*"),
+                          ("newsletter:*", "newsletter:read,write:*"),
+                          ("newsletter:*:*", "newsletter:read"),
+                          ("newsletter:*:*", "newsletter:read,write"),
+                          ("newsletter:*:*", "newsletter:*"),
+                          ("newsletter:*:*", "newsletter:*:*"),
+                          ("newsletter:*:*", "newsletter:*:read"),
+                          ("newsletter:*:*", "newsletter:write:*"),
+                          ("newsletter:*:*", "newsletter:read,write:*"),
+                          ("newsletter:*:*:*", "newsletter:read"),
+                          ("newsletter:*:*:*", "newsletter:read,write"),
+                          ("newsletter:*:*:*", "newsletter:*"),
+                          ("newsletter:*:*:*", "newsletter:*:*"),
+                          ("newsletter:*:*:*", "newsletter:*:read"),
+                          ("newsletter:*:*:*", "newsletter:write:*"),
+                          ("newsletter:*:*:*", "newsletter:read,write:*"),
+                          ("newsletter:*:read", "newsletter:123:read"),
+                          ("newsletter:*:read", "newsletter:123:read:write"),
+                          ("newsletter:*:read:*", "newsletter:123:read"),
+                          ("newsletter:*:read:*", "newsletter:123:read:write")])
+def test_wcp_implies_caseinsensitive_wildcards_true(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case insensitive, wildcard-based permission, retrns True
+    """
+    p1 = WildcardPermission(wildcard_string=wildcardstring1) 
+    p2 = WildcardPermission(wildcard_string=wildcardstring2)
+    
+    assert p1.implies(p2)
+
+
+@pytest.mark.parametrize("wildcardstring1,wildcardstring2",
+                         [("newsletter:*:read", "newsletter:123,456:read,write"),
+                          ("newsletter:*:read", "newsletter:read"),
+                          ("newsletter:*:read", "newsletter:read,write")])
+def test_wcp_implies_caseinsensitive_wildcards_false(
+        wildcardstring1, wildcardstring2):
+    """
+    unit tested:  implies
+
+    test case:
+    Case insensitive, wildcard-based permission, retrns False 
+    """
+    p1 = WildcardPermission(wildcard_string=wildcardstring1) 
+    p2 = WildcardPermission(wildcard_string=wildcardstring2)
+    
+    assert not p1.implies(p2)
+
