@@ -13,7 +13,7 @@ from .authz import (
     AllPermission,
     WildcardPermission,
     WildcardPermissionResolver,
-#    DomainPermission,
+    DomainPermission,
     SimpleAuthorizationInfo,
     SimpleRole,
 )

@@ -119,7 +119,7 @@ from .realm import (
 
 from .authz import (
     AllPermission,
-    # DomainPermission,
+    DomainPermission,
     ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
     SimpleRole,

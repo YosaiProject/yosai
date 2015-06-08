@@ -58,18 +58,18 @@ class WildcardPermission(object):
             # log here
             raise IllegalArgumentException(msg)
 
-        wildcardstring = wildcard_string.strip()
+        wildcard_string = wildcard_string.strip()
 
-        if not any(x != self.PART_DIVIDER_TOKEN for x in wildcardstring):
+        if not any(x != self.PART_DIVIDER_TOKEN for x in wildcard_string):
             msg = ("Wildcard string cannot contain JUST dividers. Make "
                    "sure permission strings are properly formatted.")
             print(msg)
             raise IllegalArgumentException(msg)
 
         if (not self.case_sensitive): 
-            wildcardstring = wildcardstring.lower()
+            wildcard_string = wildcard_string.lower()
 
-        parts = wildcardstring.split(self.PART_DIVIDER_TOKEN)
+        parts = wildcard_string.split(self.PART_DIVIDER_TOKEN)
 
         for part in parts:
             if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part): 
@@ -143,26 +143,33 @@ class DomainPermission(WildcardPermission):
     """
     def __init__(self, actions=None, targets=None):
         """
-        :type actions: str or set of strings
-        :type targets: str or set of strings
+        :type actions: str or OrderedSet of strings
+        :type targets: str or OrderedSet of strings
         """
-        self.domain = self.__class__  # calls setter
+        super().__init__()
 
-        if ((not actions and not targets) or
-           (isinstance(targets, set) and isinstance(actions, set))):
-            self.set_parts(domain=self.domain, actions=actions, targets=targets)
-            return
-        
+        self._domain = self.get_domain(self.__class__)  # calls property setter
+    
+        if ((isinstance(targets, OrderedSet) and 
+                isinstance(actions, OrderedSet)) or 
+                (not actions and not targets)):
+
+            return self.set_parts(domain=self._domain, 
+                                  actions=actions,
+                                  targets=targets)
+            
         if (not actions):
             raise IllegalArgumentException('missing actions argument')
 
         if isinstance(actions, str):
-            self._actions = set(actions.split(self.SUBPART_DIVIDER_TOKEN))
-
+            self._actions = OrderedSet(actions.split(self.SUBPART_DIVIDER_TOKEN))
+        
         if isinstance(targets, str):
-            self._targets = set(targets.split(self.SUBPART_DIVIDER_TOKEN))
+            self._targets = OrderedSet(targets.split(self.SUBPART_DIVIDER_TOKEN))
 
-        self.encode_parts(self.domain, actions, targets)
+        self.encode_parts(domain=self._domain,
+                          actions=self._actions,
+                          targets=self._targets)
 
     def encode_parts(self, domain, actions=None, targets=None):
     
@@ -175,26 +182,29 @@ class DomainPermission(WildcardPermission):
         self.set_parts(wildcard_string=permission)  # WildCard permission style
 
     def set_parts(self, domain=None, actions=None, targets=None, 
-                  wildcardstring=None):
+                  wildcard_string=None):
         """
         Shiro uses method overloading to determine as to whether to call 
         either this set_parts or that of the parent WildcardPermission.  The
         closest that I will accomodate that design is with default parameter
         values and the first condition below.
 
-        :type actions:  a Set of Strings
-        :type targets:  a Set of Strings
+        :type actions:  an OrderedSet of Strings
+        :type targets:  an OrderedSet of Strings
         """
-        if (wildcardstring):
-            return super().set_parts(wildcardstring=wildcardstring)
-
+        if (wildcard_string):
+            return super().set_parts(wildcard_string=wildcard_string)
+        
         actions_string = self.SUBPART_DIVIDER_TOKEN.\
-            join([str(token) for token in actions])
-        targets_string = self.SUBPART_DIVIDER_TOKEN.\
-            join([str(token) for token in targets])
+            join([token for token in actions])
 
-        self.encode_parts(domain, actions_string, targets_string)
-        self.domain = domain
+        targets_string = self.SUBPART_DIVIDER_TOKEN.\
+            join([token for token in targets])
+
+        self.encode_parts(domain=domain,
+                          actions=actions_string,
+                          targets=targets_string)
+
         self._actions = actions
         self._targets = targets
    
@@ -205,7 +215,7 @@ class DomainPermission(WildcardPermission):
         describes the domain that is managed.
         """
         if clazz is None:
-            return self.domain
+            return self._domain
 
         domain = clazz.__name__.lower()
         # strip any trailing 'permission' text from the name (as all subclasses
@@ -222,10 +232,10 @@ class DomainPermission(WildcardPermission):
 
     @domain.setter
     def domain(self, domain):
-        self._domain = self.get_domain(domain)
-        self.set_parts(domain=self.domain, 
-                       actions=self.actions, 
-                       targets=self.targets)
+        self._domain = self.get_domain(domain.__class__)
+        self.set_parts(domain=self._domain, 
+                       actions=getattr(self, '_actions', None),
+                       targets=getattr(self, '_targets', None))
    
     @property
     def actions(self):
@@ -234,9 +244,9 @@ class DomainPermission(WildcardPermission):
     @actions.setter
     def actions(self, actions):
         self._actions = actions
-        self.set_parts(domain=self.domain, 
-                       actions=self.actions, 
-                       targets=self.targets)
+        self.set_parts(domain=self._domain, 
+                       actions=actions, 
+                       targets=getattr(self, '_targets', None))
 
     @property
     def targets(self):
@@ -245,9 +255,9 @@ class DomainPermission(WildcardPermission):
     @targets.setter
     def targets(self, targets):
         self._targets = targets
-        self.set_parts(domain=self.domain, 
-                       actions=self.actions, 
-                       targets=self.targets)
+        self.set_parts(domain=self._domain, 
+                       actions=getattr(self, '_actions', None),
+                       targets=targets)
 
 
 class ModularRealmAuthorizer(IAuthorizer,
