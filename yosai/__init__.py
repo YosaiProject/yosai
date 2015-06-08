@@ -118,13 +118,13 @@ from .realm import (
 
 
 from .authz import (
-    # AllPermission,
+    AllPermission,
     # DomainPermission,
     ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
     SimpleRole,
     WildcardPermission,
-    # WildcardPermissionResolver,
+    WildcardPermissionResolver,
 )
 
 """

@@ -10,9 +10,9 @@ from .interfaces import (
 
 from .authz import (
     ModularRealmAuthorizer,
-#    AllPermission,
+    AllPermission,
     WildcardPermission,
-#    WildcardPermissionResolver,
+    WildcardPermissionResolver,
 #    DomainPermission,
     SimpleAuthorizationInfo,
     SimpleRole,

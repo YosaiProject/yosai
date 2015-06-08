@@ -18,6 +18,7 @@ from . import (
 import copy
 import collections
 
+
 class AllPermission(object):
 
     def __init__(self):
@@ -126,61 +127,67 @@ class WildcardPermission(object):
 
 class WildcardPermissionResolver(object):
 
-    def __init__(self):
-        pass
-
+    # new to yosai is the use of classmethod, and no need for instantiation
+    @classmethod
     def resolve_permission(self, permission_string):
         return WildcardPermission(permission_string)
 
 
 class DomainPermission(WildcardPermission):
-
+    """
+    Provides a base Permission class from which domain-specific subclasses 
+    may extend.  Can be used as a base class for ORM-persisted (SQLAlchemy)
+    permission model(s).  The ORM model maps the parts of a permission 
+    string to separate table columns (e.g. 'domain', 'actions' and 'targets' 
+    columns) and is subsequently used in querying strategies.
+    """
     def __init__(self, actions=None, targets=None):
-
-        domain = self.get_domain(self.__class__)
-
-        if (actions is None and targets is None):
-            self.domain = domain
-            self.set_parts(self.domain)
-
-        elif isinstance(actions, str):
-                self._actions = set(actions.split(self.SUBPART_DIVIDER_TOKEN))
-
-                if (isinstance(targets, str)):
-                    self.domain = domain
-                    self._targets = set(targets.split(
-                        self.SUBPART_DIVIDER_TOKEN))
-       
-                self.encode_parts(domain, actions, targets)
-
-        elif (isinstance(targets, set) and isinstance(actions, set)):
-            self.domain = domain
-            self.set_parts(domain, actions, targets)
-
-        else:
-            self.set_parts(domain)
-            
-    def encode_parts(self, domain, actions, targets):
-        try:
-            if (not domain):
-                msg = "domain argument cannot be null or empty."
-                raise IllegalArgumentException(msg)
-        except IllegalArgumentException as ex:
-            print('DomainPermission.encode_parts: ', ex)
-
-        else:
-            permission = self.PART_DIVIDER_TOKEN.join(
-                x if x is not None else self.WILDCARD_TOKEN
-                for x in [domain, actions, targets])
-
-            self.set_parts(permission)
-
-    def set_parts(self, domain, actions, targets):
         """
-            Input:
-                actions = a Set of Strings
-                targets = a Set of Strings
+        :type actions: str or set of strings
+        :type targets: str or set of strings
         """
+        self.domain = self.__class__  # calls setter
+
+        if ((not actions and not targets) or
+           (isinstance(targets, set) and isinstance(actions, set))):
+            self.set_parts(domain=self.domain, actions=actions, targets=targets)
+            return
+        
+        if (not actions):
+            raise IllegalArgumentException('missing actions argument')
+
+        if isinstance(actions, str):
+            self._actions = set(actions.split(self.SUBPART_DIVIDER_TOKEN))
+
+        if isinstance(targets, str):
+            self._targets = set(targets.split(self.SUBPART_DIVIDER_TOKEN))
+
+        self.encode_parts(self.domain, actions, targets)
+
+    def encode_parts(self, domain, actions=None, targets=None):
+    
+        # unlike Shiro, which omits targets if none, yosai makes targets 
+        # a wildcard:
+        permission = self.PART_DIVIDER_TOKEN.join(
+            x if x is not None else self.WILDCARD_TOKEN
+            for x in [domain, actions, targets])
+
+        self.set_parts(wildcard_string=permission)  # WildCard permission style
+
+    def set_parts(self, domain=None, actions=None, targets=None, 
+                  wildcardstring=None):
+        """
+        Shiro uses method overloading to determine as to whether to call 
+        either this set_parts or that of the parent WildcardPermission.  The
+        closest that I will accomodate that design is with default parameter
+        values and the first condition below.
+
+        :type actions:  a Set of Strings
+        :type targets:  a Set of Strings
+        """
+        if (wildcardstring):
+            return super().set_parts(wildcardstring=wildcardstring)
+
         actions_string = self.SUBPART_DIVIDER_TOKEN.\
             join([str(token) for token in actions])
         targets_string = self.SUBPART_DIVIDER_TOKEN.\
@@ -190,8 +197,13 @@ class DomainPermission(WildcardPermission):
         self.domain = domain
         self._actions = actions
         self._targets = targets
-    
+   
     def get_domain(self, clazz=None):
+        """
+        Permission classes are named using a 'Domain' prefix and 
+        'Permission' suffix convention. The class name, consequently,
+        describes the domain that is managed.
+        """
         if clazz is None:
             return self.domain
 
@@ -200,16 +212,20 @@ class DomainPermission(WildcardPermission):
         # should have been named):
         suffix = 'permission'
         if domain.endswith(suffix): 
-            domain = domain[:-len(suffix)] 
+            domain = domain[:-len(suffix)]   # e.g.: SomePermission -> some
 
         return domain
 
-    def set_domain(self, domain):
-        if (self.domain and self.domain == domain):
-            return
-        
-        self.domain = domain
-        self.set_parts(self.domain, self._actions, self._targets)
+    @property
+    def domain(self):
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain):
+        self._domain = self.get_domain(domain)
+        self.set_parts(domain=self.domain, 
+                       actions=self.actions, 
+                       targets=self.targets)
    
     @property
     def actions(self):
@@ -217,11 +233,10 @@ class DomainPermission(WildcardPermission):
 
     @actions.setter
     def actions(self, actions):
-        if (self._actions is not None and self._actions == actions):
-            return
-        
         self._actions = actions
-        self.set_parts(self.domain, self._actions, self._targets)
+        self.set_parts(domain=self.domain, 
+                       actions=self.actions, 
+                       targets=self.targets)
 
     @property
     def targets(self):
@@ -229,10 +244,10 @@ class DomainPermission(WildcardPermission):
 
     @targets.setter
     def targets(self, targets):
-        if (self._targets is not None and self._targets == targets):
-            return
         self._targets = targets
-        self.set_parts(self.domain, self._actions, self._targets)
+        self.set_parts(domain=self.domain, 
+                       actions=self.actions, 
+                       targets=self.targets)
 
 
 class ModularRealmAuthorizer(IAuthorizer,

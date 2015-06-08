@@ -9,6 +9,7 @@ from yosai import (
     SimpleRole,
     UnauthorizedException,
     WildcardPermission,
+    WildcardPermissionResolver,
 )
 
 from .doubles import (
@@ -173,7 +174,7 @@ def test_mra_assert_realms_configured_fail(
     with pytest.raises(IllegalStateException): 
         mra.assert_realms_configured()
 
-def test_private_has_role_true(modular_realm_authorizer_ftf):
+def test_mra_private_has_role_true(modular_realm_authorizer_ftf):
     """
     unit tested:  _has_role
 
@@ -184,7 +185,7 @@ def test_private_has_role_true(modular_realm_authorizer_ftf):
     result = mra._has_role('arbitrary_principals', 'arbitrary_roleid')
     assert result is True
 
-def test_private_has_role_false(modular_realm_authorizer_fff):
+def test_mra_private_has_role_false(modular_realm_authorizer_fff):
     """
     unit tested:  _has_role
 
@@ -195,7 +196,7 @@ def test_private_has_role_false(modular_realm_authorizer_fff):
     result = mra._has_role('arbitrary_principals', 'arbitrary_roleid')
     assert result is False 
 
-def test_private_role_collection_yields(modular_realm_authorizer_ftf):
+def test_mra_private_role_collection_yields(modular_realm_authorizer_ftf):
     """
     unit tested:  _role_collection
 
@@ -209,7 +210,7 @@ def test_private_role_collection_yields(modular_realm_authorizer_ftf):
                                    ['roleid1', 'roleid2'])]
     assert all(x in result for x in [('roleid1', True), ('roleid2', True)])
 
-def test_private_is_permitted_true(modular_realm_authorizer_ftf):
+def test_mra_private_is_permitted_true(modular_realm_authorizer_ftf):
     """
     unit tested:  _is_permitted
 
@@ -220,7 +221,7 @@ def test_private_is_permitted_true(modular_realm_authorizer_ftf):
     result = mra._is_permitted('arbitrary_principals', 'permission')
     assert result is True
 
-def test_private_is_permitted_false(modular_realm_authorizer_fff):
+def test_mra_private_is_permitted_false(modular_realm_authorizer_fff):
     """
     unit tested:  _is_permitted
 
@@ -231,7 +232,7 @@ def test_private_is_permitted_false(modular_realm_authorizer_fff):
     result = mra._is_permitted('arbitrary_principals', 'permission')
     assert result is False 
 
-def test_private_permit_collection_yields(modular_realm_authorizer_fff):
+def test_mra_private_permit_collection_yields(modular_realm_authorizer_fff):
     """
     unit tested:  _permit_collection
 
@@ -245,7 +246,7 @@ def test_private_permit_collection_yields(modular_realm_authorizer_fff):
                                      ['perm1', 'perm2'])]
     assert all(x in result for x in [('perm1', False), ('perm2', False)])
 
-def test_is_permitted_collection_returns_falsefalsefalse(
+def test_mra_is_permitted_collection_returns_falsefalsefalse(
         modular_realm_authorizer_fff):
     """
     unit tested:  is_permitted
@@ -257,7 +258,7 @@ def test_is_permitted_collection_returns_falsefalsefalse(
     assert all(x in result for x in [('perm1', False), ('perm2', False),
                                      ('perm3', False)])
     
-def test_is_permitted_single_permission_returns_true(
+def test_mra_is_permitted_single_permission_returns_true(
         modular_realm_authorizer_ftf):
     """
     unit tested:  is_permitted
@@ -269,7 +270,7 @@ def test_is_permitted_single_permission_returns_true(
     result = mra.is_permitted('arbitrary_principals', 'permission')
     assert result[0][1] == True
 
-def test_is_permitted_single_permission_returns_false(
+def test_mra_is_permitted_single_permission_returns_false(
         modular_realm_authorizer_fff):
     """
     unit tested:  is_permitted
@@ -281,7 +282,7 @@ def test_is_permitted_single_permission_returns_false(
     result = mra.is_permitted('arbitrary_principals', 'permission')
     assert result[0][1] == False 
 
-def test_is_permitted_all_collection_false(modular_realm_authorizer_fff):
+def test_mra_is_permitted_all_collection_false(modular_realm_authorizer_fff):
     """
     unit tested:  is_permitted_all
     
@@ -293,7 +294,7 @@ def test_is_permitted_all_collection_false(modular_realm_authorizer_fff):
                                   ['perm1', 'perm2', 'perm3'])
     assert result is False 
 
-def test_is_permitted_all_collection_true(
+def test_mra_is_permitted_all_collection_true(
         modular_realm_authorizer_ftf):
     """
     unit tested:  is_permitted_all
@@ -306,7 +307,7 @@ def test_is_permitted_all_collection_true(
                                   ['perm1', 'perm2', 'perm3'])
     assert result is True 
 
-def test_is_permitted_all_single_true(modular_realm_authorizer_ftf):
+def test_mra_is_permitted_all_single_true(modular_realm_authorizer_ftf):
     """
     unit tested:  is_permitted_all
 
@@ -317,7 +318,7 @@ def test_is_permitted_all_single_true(modular_realm_authorizer_ftf):
     result = mra.is_permitted_all('arbitrary_principals', 'perm1')
     assert result is True 
 
-def test_is_permitted_all_single_false(modular_realm_authorizer_fff):
+def test_mra_is_permitted_all_single_false(modular_realm_authorizer_fff):
     """
     unit tested:  is_permitted_all
 
@@ -328,7 +329,7 @@ def test_is_permitted_all_single_false(modular_realm_authorizer_fff):
     result = mra.is_permitted_all('arbitrary_principals', 'perm1')
     assert result is False 
 
-def test_check_permission_collection_raises(modular_realm_authorizer_fff):
+def test_mra_check_permission_collection_raises(modular_realm_authorizer_fff):
     """
     unit tested:  check_permission
 
@@ -339,7 +340,7 @@ def test_check_permission_collection_raises(modular_realm_authorizer_fff):
     with pytest.raises(UnauthorizedException):
         mra.check_permission('arbitrary_principals', ['perm1', 'perm2'])
 
-def test_check_permission_collection_succeeds(modular_realm_authorizer_ftf):
+def test_mra_check_permission_collection_succeeds(modular_realm_authorizer_ftf):
     """
     unit tested:  check_permission
 
@@ -351,7 +352,7 @@ def test_check_permission_collection_succeeds(modular_realm_authorizer_ftf):
     result = mra.check_permission('arbitrary_principals', ['perm1', 'perm2'])
     assert result is None
 
-def test_has_role_collection_returns_truetruetrue(
+def test_mra_has_role_collection_returns_truetruetrue(
         modular_realm_authorizer_ftf):
     """
     unit tested:  has_role 
@@ -363,7 +364,7 @@ def test_has_role_collection_returns_truetruetrue(
     assert all(x in result for x in [('roleid1', True), ('roleid2', True),
                                      ('roleid3', True)])
     
-def test_has_role_single_role_returns_true(modular_realm_authorizer_ftf):
+def test_mra_has_role_single_role_returns_true(modular_realm_authorizer_ftf):
     """
     unit tested:  has_role 
 
@@ -374,7 +375,7 @@ def test_has_role_single_role_returns_true(modular_realm_authorizer_ftf):
     result = mra.has_role('arbitrary_principals', 'roleid1')
     assert result[0][1] == True
 
-def test_has_role_single_role_returns_false(modular_realm_authorizer_fff):
+def test_mra_has_role_single_role_returns_false(modular_realm_authorizer_fff):
     """
     unit tested:  has_role 
 
@@ -385,7 +386,7 @@ def test_has_role_single_role_returns_false(modular_realm_authorizer_fff):
     result = mra.has_role('arbitrary_principals', 'roleid1')
     assert result[0][1] == False 
 
-def test_has_all_roles_collection_false(
+def test_mra_has_all_roles_collection_false(
         modular_realm_authorizer_fff):
     """
     unit tested:  has_all_roles
@@ -398,7 +399,7 @@ def test_has_all_roles_collection_false(
                                ['roleid1', 'roleid2', 'roleid3'])
     assert result is False 
 
-def test_has_all_roles_collection_true(modular_realm_authorizer_ftf):
+def test_mra_has_all_roles_collection_true(modular_realm_authorizer_ftf):
     """
     unit tested:  has_all_roles
 
@@ -410,7 +411,7 @@ def test_has_all_roles_collection_true(modular_realm_authorizer_ftf):
                                ['roleid1', 'roleid2', 'roleid3'])
     assert result is True 
 
-def test_has_all_roles_single_true(modular_realm_authorizer_ftf):
+def test_mra_has_all_roles_single_true(modular_realm_authorizer_ftf):
     """
     unit tested:  has_all_roles
 
@@ -421,7 +422,7 @@ def test_has_all_roles_single_true(modular_realm_authorizer_ftf):
     result = mra.is_permitted_all('arbitrary_principals', 'roleid1')
     assert result is True 
 
-def test_has_all_roles_single_false(modular_realm_authorizer_fff):
+def test_mra_has_all_roles_single_false(modular_realm_authorizer_fff):
     """
     unit tested:  has_all_roles
     
@@ -432,7 +433,7 @@ def test_has_all_roles_single_false(modular_realm_authorizer_fff):
     result = mra.has_all_roles('arbitrary_principals', 'roleid1')
     assert result is False 
 
-def test_check_role_collection_false(modular_realm_authorizer_fff):
+def test_mra_check_role_collection_false(modular_realm_authorizer_fff):
     """
     unit tested:  check_role 
 
@@ -444,7 +445,7 @@ def test_check_role_collection_false(modular_realm_authorizer_fff):
     with pytest.raises(UnauthorizedException):
         mra.check_role('arbitrary_principals', ['roleid1', 'roleid2'])
 
-def test_check_role_collection_true(modular_realm_authorizer_ftf):
+def test_mra_check_role_collection_true(modular_realm_authorizer_ftf):
     """
     unit tested:  check_role 
 
@@ -894,4 +895,27 @@ def test_wcp_implies_caseinsensitive_wildcards_false(
     p2 = WildcardPermission(wildcard_string=wildcardstring2)
     
     assert not p1.implies(p2)
+
+def test_wcp_equals():
+    wildcard_string = 'somestring'
+    p1 = WildcardPermission(wildcard_string)
+    p2 = WildcardPermission(wildcard_string)
+
+    assert p1 == p2
+
+def test_wcp_not_equals_bad_type():
+    wildcard_string = 'somestring'
+    p1 = WildcardPermission(wildcard_string)
+    othertype = type('OtherPermissionType', (object,), {})
+    p2 = othertype()
+
+    assert not p1 == p2
+
+
+# -----------------------------------------------------------------------------
+# WildcardPermissionResolver Tests
+# -----------------------------------------------------------------------------
+def test_wcpr_returns_wcp():
+    wcp = WildcardPermissionResolver.resolve_permission('testing123')
+    assert isinstance(wcp, WildcardPermission)
 
