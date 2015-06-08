@@ -43,7 +43,6 @@ class WildcardPermission(object):
     def __init__(self, wildcard_string=None, 
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
 
-        self.parts = []
         self.case_sensitive = case_sensitive
 
         if wildcard_string:
@@ -70,7 +69,7 @@ class WildcardPermission(object):
             wildcard_string = wildcard_string.lower()
 
         parts = wildcard_string.split(self.PART_DIVIDER_TOKEN)
-
+        self.parts = []
         for part in parts:
             if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part): 
                 msg = ("Wildcard string cannot contain parts consisting JUST "
@@ -172,7 +171,10 @@ class DomainPermission(WildcardPermission):
                           targets=self._targets)
 
     def encode_parts(self, domain, actions=None, targets=None):
-    
+        """
+        :type actions: a subpart-delimeted str
+        :type targets: a subpart-delimeted str
+        """
         # unlike Shiro, which omits targets if none, yosai makes targets 
         # a wildcard:
         permission = self.PART_DIVIDER_TOKEN.join(
@@ -194,12 +196,17 @@ class DomainPermission(WildcardPermission):
         """
         if (wildcard_string):
             return super().set_parts(wildcard_string=wildcard_string)
-        
-        actions_string = self.SUBPART_DIVIDER_TOKEN.\
-            join([token for token in actions])
 
-        targets_string = self.SUBPART_DIVIDER_TOKEN.\
-            join([token for token in targets])
+        actions_string = None
+        targets_string = None
+
+        if actions: 
+            actions_string = self.SUBPART_DIVIDER_TOKEN.\
+                join([token for token in actions])
+
+        if targets:
+            targets_string = self.SUBPART_DIVIDER_TOKEN.\
+                join([token for token in targets])
 
         self.encode_parts(domain=domain,
                           actions=actions_string,

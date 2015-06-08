@@ -3,6 +3,7 @@ import copy
 from unittest.mock import create_autospec
 
 from yosai import (
+    DomainPermission,
     ModularRealmAuthorizer,
     OrderedSet,
     SimpleAuthorizationInfo,
@@ -67,3 +68,8 @@ def populated_simple_role():
 @pytest.fixture(scope='function')
 def default_wildcard_permission():
     return WildcardPermission()
+
+@pytest.fixture(scope='function')
+def default_domain_permission():
+    return DomainPermission()
+
