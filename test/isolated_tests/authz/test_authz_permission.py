@@ -284,67 +284,8 @@ def test_wcpr_returns_wcp():
 # -----------------------------------------------------------------------------
 # DomainPermission Tests
 # -----------------------------------------------------------------------------
-def test_dp_init_no_actions_no_targets(monkeypatch):
-    """
-    unit tested:  __init__
 
-    test case:
-    when neither actions nor targets are passed as arguments, set_parts is 
-    called
-    """
-    with mock.patch.object(DomainPermission, 'set_parts') as sp:
-        sp.return_value = None
-        DomainPermission()
-        assert sp.assert_called_once_with(domain='domain', actions=None, 
-                                          targets=None) is None
 
-def test_dp_init_setactions_settargets(monkeypatch):
-    """
-    unit tested:  __init__
-
-    test case:
-    when actions and targets are passed as sets, set_parts is called
-    """
-    with mock.patch.object(DomainPermission, 'set_parts') as sp:
-        sp.return_value = None
-
-        actions = OrderedSet(['action1', 'action2'])
-        targets = OrderedSet(['target1', 'target2'])
-        DomainPermission(actions=actions, targets=targets)
-        assert sp.assert_called_once_with(domain='domain',
-                                          actions=actions,
-                                          targets=targets) is None
-
-def test_dp_init_no_actions_default_targets(monkeypatch):
-    """
-    unit tested:  __init__
-
-    test case:
-    initializing without actions but with a targets raises an exception
-    """
-    targets = OrderedSet(['target1', 'target2'])
-    with pytest.raises(IllegalArgumentException):
-        DomainPermission(targets=targets)
-
-def test_dp_init_stractions_strtargets(monkeypatch):
-    """
-    unit tested:  __init__
-
-    test case:
-    passing a string-typed actions or a string-typed targets converts 
-    to set(s) and calls encode_parts
-    """
-    actions = 'action1,action2'
-    actionset = OrderedSet(['action1', 'action2'])
-    targets = 'target1,target2'
-    targetset = OrderedSet(['target1', 'target2'])
-
-    with mock.patch.object(DomainPermission, 'encode_parts') as ep:
-        ep.return_value = None
-        DomainPermission(actions=actions, targets=targets)
-        assert ep.assert_called_once_with(domain='domain',
-                                          actions=actionset,
-                                          targets=targetset) is None
 
 @pytest.mark.parametrize(
     "domain,actions,targets,wildcard_string",
@@ -382,15 +323,25 @@ def test_dp_set_parts_with_wildcard_string(default_domain_permission):
 
 
 @pytest.mark.parametrize(
-    "domain,actions,targets,wildcard_string",
-    [('domain', OrderedSet('action1','action2'), OrderedSet('target1','target2')),
-     ('domain', OrderedSet('action1','action2'), None), 
-     ('domain', None, OrderedSet('target1','target2')),
-
-def test_dp_set_parts_nowildcard_confirm_strings(default_domain_permission):
+    "domain,actionset,targetset,actionstring,targetstring",
+    [('domain', OrderedSet('action1', 'action2'), OrderedSet('target1', 'target2'),
+      'action1,action2', 'target1,target2'),
+     ('domain', None, OrderedSet('target1', 'target2'), None, 'target1,target2'),
+     ('domain', OrderedSet('action1', 'action2'), None, 'action1,action2', None)]) 
+def test_dp_set_parts_nowildcard_confirm_strings(
+        default_domain_permission, domain, actionset, targetset,
+        actionstring, targetstring):
     """
     unit tested:  set_parts
 
     test case:
     confirm that the parameters are string-encoded and passed to encode_parts
     """
+    ddp = default_domain_permission
+    with mock.patch.object(DomainPermission, 'encode_parts') as ep:
+        ep.return_value = None
+        ddp.set_parts(domain, actionset, targetset)
+
+        assert ep.assert_called_once_with(domain='domain',
+                                          actions=actionset,
+                                          targets=targetset) is None

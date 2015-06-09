@@ -33,8 +33,6 @@ class WildcardPermission(object):
     The standardized permission wildcard syntax is:  DOMAIN:ACTION:INSTANCE
 
     reference:  https://shiro.apache.org/permissions.html
-
-    Note:  Yosai changed self.parts to a dict
     """
 
     WILDCARD_TOKEN = '*'
@@ -45,8 +43,9 @@ class WildcardPermission(object):
     def __init__(self, wildcard_string=None, 
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
 
+        self.parts = []
         self.case_sensitive = case_sensitive
-        self.parts = collections.OrderedDict() 
+
         if wildcard_string:
             self.set_parts(wildcard_string, case_sensitive)
                   
@@ -59,22 +58,20 @@ class WildcardPermission(object):
             # log here
             raise IllegalArgumentException(msg)
 
-        wildcard_string = wildcard_string.strip()
+        wildcardstring = wildcard_string.strip()
 
-        if not any(x != self.PART_DIVIDER_TOKEN for x in wildcard_string):
+        if not any(x != self.PART_DIVIDER_TOKEN for x in wildcardstring):
             msg = ("Wildcard string cannot contain JUST dividers. Make "
                    "sure permission strings are properly formatted.")
             print(msg)
             raise IllegalArgumentException(msg)
 
         if (not self.case_sensitive): 
-            wildcard_string = wildcard_string.lower()
+            wildcardstring = wildcardstring.lower()
 
-        parts = wildcard_string.split(self.PART_DIVIDER_TOKEN)
-       
-        part_indices = {0: 'domain', 1: 'actions', 2: 'targets'}
+        parts = wildcardstring.split(self.PART_DIVIDER_TOKEN)
 
-        for index, part in enumerate(parts):
+        for part in parts:
             if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part): 
                 msg = ("Wildcard string cannot contain parts consisting JUST "
                        "of sub-part dividers. Make sure permission strings "
@@ -82,9 +79,7 @@ class WildcardPermission(object):
                 print(msg)
                 raise IllegalArgumentException(msg)
             subparts = part.split(self.SUBPART_DIVIDER_TOKEN)
-            # default key is the index value -- this should NOT set under
-            # normal, expected behavior
-            self.parts[part_indices.get(index, index)] = OrderedSet(subparts)
+            self.parts.append(OrderedSet(subparts))
 
     def implies(self, permission):
         """
@@ -93,27 +88,17 @@ class WildcardPermission(object):
         # By default only supports comparisons with other WildcardPermissions
         if (not isinstance(permission, WildcardPermission)):
             return False
-       
-        myparts = [token for token in 
-                   [self.parts.get('domain', None),
-                    self.parts.get('actions', None),
-                    self.parts.get('targets', None)] if token] 
-
-        otherparts = [token for token in 
-                      [permission.parts.get('domain', None),
-                       permission.parts.get('actions', None),
-                       permission.parts.get('targets', None)] if token] 
-
+        
+        otherparts = permission.parts  # a List of OrderedSets of Strings
         index = 0
-
         for other_part in otherparts:
             # If this permission has less parts than the other permission,
             # everything after the number of parts contained in this 
             # permission is automatically implied, so return true
-            if (len(myparts) - 1 < index):
+            if (len(self.parts) - 1 < index):
                 return True
             else: 
-                part = myparts[index]  # each subpart is an OrderedSet
+                part = self.parts[index]  # each subpart is an OrderedSet
                 if ((self.WILDCARD_TOKEN not in part) and
                    not (other_part <= part)):  # not(part contains otherpart)
                     return False
@@ -121,14 +106,14 @@ class WildcardPermission(object):
                 
         # If this permission has more parts than the other parts, 
         # only imply it if all of the other parts are wildcards
-        for i in range(index, len(myparts)):
-            if (self.WILDCARD_TOKEN not in myparts[i]): 
+        for i in range(index, len(self.parts)):
+            if (self.WILDCARD_TOKEN not in self.parts[i]): 
                 return False
 
         return True
 
     def __repr__(self): 
-        return ':'.join([str(value) for key, value in self.parts.items()])
+        return ':'.join([str(token) for token in self.parts])
 
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
@@ -150,8 +135,6 @@ class WildcardPermissionResolver(object):
 
 class DomainPermission(WildcardPermission):
     """
-    note:  Yosai significantly refactored DomainPermission
-
     Provides a base Permission class from which domain-specific subclasses 
     may extend.  Can be used as a base class for ORM-persisted (SQLAlchemy)
     permission model(s).  The ORM model maps the parts of a permission 
@@ -160,104 +143,61 @@ class DomainPermission(WildcardPermission):
     """
     def __init__(self, actions=None, targets=None):
         """
-        :type actions: str or OrderedSet of strings
-        :type targets: str or OrderedSet of strings
-
-        After initializing, the state of a DomainPermission object includes:
-            self.results = a list populated by WildcardPermission.set_results
-            self._actions = an OrderedSet, or None
-            self._targets = an OrderedSet, or None
+        :type actions: str or set of strings
+        :type targets: str or set of strings
         """
-        super().__init__()
+        self.domain = self.__class__  # calls setter
 
-        self._domain = self.get_domain(self.__class__)
-        self.set_parts(domain=self._domain, actions=actions, targets=targets)
-        self._actions = self.parts.get('actions', None)
-        self._targets = self.parts.get('targets', None)
+        if ((not actions and not targets) or
+           (isinstance(targets, set) and isinstance(actions, set))):
+            self.set_parts(domain=self.domain, actions=actions, targets=targets)
+            return
+        
+        if (not actions):
+            raise IllegalArgumentException('missing actions argument')
 
-    @property
-    def domain(self):
-        return self._domain
+        if isinstance(actions, str):
+            self._actions = set(actions.split(self.SUBPART_DIVIDER_TOKEN))
 
-    @domain.setter
-    def domain(self, domain):
-        self._domain = self.get_domain(domain.__class__)
-        self.set_parts(domain=self._domain, 
-                       actions=getattr(self, '_actions', None),
-                       targets=getattr(self, '_targets', None))
-   
-    @property
-    def actions(self):
-        return self._actions
+        if isinstance(targets, str):
+            self._targets = set(targets.split(self.SUBPART_DIVIDER_TOKEN))
 
-    @actions.setter
-    def actions(self, actions):
-        self.set_parts(domain=self._domain, 
-                       actions=actions, 
-                       targets=getattr(self, '_targets', None))
-        self._actions = self.parts.get('actions', None)
+        self.encode_parts(self.domain, actions, targets)
 
-    @property
-    def targets(self):
-        return self._targets
-
-    @targets.setter
-    def targets(self, targets):
-        self.set_parts(domain=self._domain, 
-                       actions=getattr(self, '_actions', None),
-                       targets=targets)
-        self._targets = self.parts.get('targets', None)
-
-    def encode_parts(self, domain, actions, targets):
-        """
-        Yosai redesigned encode_parts to return permission, rather than
-        pass it to set_parts as a wildcard
-
-        :type domain:  str
-        :type actions: a subpart-delimeted str
-        :type targets: a subpart-delimeted str
-        """
+    def encode_parts(self, domain, actions=None, targets=None):
+    
         # unlike Shiro, which omits targets if none, yosai makes targets 
         # a wildcard:
         permission = self.PART_DIVIDER_TOKEN.join(
             x if x is not None else self.WILDCARD_TOKEN
             for x in [domain, actions, targets])
 
-        return permission 
-    
-    def set_parts(self, domain, actions, targets):
+        self.set_parts(wildcard_string=permission)  # WildCard permission style
+
+    def set_parts(self, domain=None, actions=None, targets=None, 
+                  wildcardstring=None):
         """
         Shiro uses method overloading to determine as to whether to call 
         either this set_parts or that of the parent WildcardPermission.  The
         closest that I will accomodate that design is with default parameter
-        values and the first condition below.  
+        values and the first condition below.
 
-        The control flow is as follow:
-            If wildcard_string is passed, call super's set_parts
-            Else process the orderedsets
-
-        :type actions:  either an OrderedSet of strings or a subpart-delimeted string
-        :type targets:  an OrderedSet of Strings or a subpart-delimeted string
+        :type actions:  a Set of Strings
+        :type targets:  a Set of Strings
         """
-            
-        # default values
-        actions_string = actions 
-        targets_string = targets 
+        if (wildcardstring):
+            return super().set_parts(wildcardstring=wildcardstring)
 
-        if isinstance(actions, OrderedSet): 
-            actions_string = self.SUBPART_DIVIDER_TOKEN.\
-                join([token for token in actions])
+        actions_string = self.SUBPART_DIVIDER_TOKEN.\
+            join([str(token) for token in actions])
+        targets_string = self.SUBPART_DIVIDER_TOKEN.\
+            join([str(token) for token in targets])
 
-        if isinstance(targets, OrderedSet):
-            targets_string = self.SUBPART_DIVIDER_TOKEN.\
-                join([token for token in targets])
-
-        permission = self.encode_parts(domain=domain,
-                                       actions=actions_string,
-                                       targets=targets_string)
-        
-        super().set_parts(wildcard_string=permission)
-
+        self.encode_parts(domain, actions_string, targets_string)
+        self.domain = domain
+        self._actions = actions
+        self._targets = targets
+   
     def get_domain(self, clazz=None):
         """
         Permission classes are named using a 'Domain' prefix and 
@@ -265,7 +205,7 @@ class DomainPermission(WildcardPermission):
         describes the domain that is managed.
         """
         if clazz is None:
-            return self._domain
+            return self.domain
 
         domain = clazz.__name__.lower()
         # strip any trailing 'permission' text from the name (as all subclasses
@@ -275,6 +215,40 @@ class DomainPermission(WildcardPermission):
             domain = domain[:-len(suffix)]   # e.g.: SomePermission -> some
 
         return domain
+
+    @property
+    def domain(self):
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain):
+        self._domain = self.get_domain(domain)
+        self.set_parts(domain=self.domain, 
+                       actions=self.actions, 
+                       targets=self.targets)
+   
+    @property
+    def actions(self):
+        return self._actions
+
+    @actions.setter
+    def actions(self, actions):
+        self._actions = actions
+        self.set_parts(domain=self.domain, 
+                       actions=self.actions, 
+                       targets=self.targets)
+
+    @property
+    def targets(self):
+        return self._targets
+
+    @targets.setter
+    def targets(self, targets):
+        self._targets = targets
+        self.set_parts(domain=self.domain, 
+                       actions=self.actions, 
+                       targets=self.targets)
+
 
 class ModularRealmAuthorizer(IAuthorizer,
                              IPermissionResolverAware,

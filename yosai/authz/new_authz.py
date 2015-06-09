@@ -46,7 +46,7 @@ class WildcardPermission(object):
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
 
         self.case_sensitive = case_sensitive
-        self.parts = collections.OrderedDict() 
+        self.parts = collections.OrderedDict 
         if wildcard_string:
             self.set_parts(wildcard_string, case_sensitive)
                   
@@ -170,10 +170,11 @@ class DomainPermission(WildcardPermission):
         """
         super().__init__()
 
-        self._domain = self.get_domain(self.__class__)
+        self.domain = self
+        self.actions = actions
+        self.targets = targets
+       
         self.set_parts(domain=self._domain, actions=actions, targets=targets)
-        self._actions = self.parts.get('actions', None)
-        self._targets = self.parts.get('targets', None)
 
     @property
     def domain(self):
