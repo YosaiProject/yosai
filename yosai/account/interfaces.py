@@ -12,7 +12,7 @@ class IAccount(metaclass=ABCMeta):
 
     @property 
     @abstractmethod
-    def id(self):  # DG:  not happy with this naming convention.. 
+    def account_id(self):  # DG:  renamed 
         pass
 
     @property 

@@ -64,7 +64,8 @@ def test_append_realm_account_verify_dcaid(
     """ 
     dca = default_composite_account
     dca.append_realm_account('realm1', full_mock_account)
-    assert dca.id.get_realm_account_id('realm1') == {full_mock_account.id}
+    assert dca.account_id.get_realm_account_id('realm1') ==\
+        {full_mock_account.account_id}
 
 
 def test_append_realm_account_with_attributes_no_overwrite_realmattrs_success(

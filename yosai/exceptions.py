@@ -30,6 +30,14 @@ class MisconfiguredException(YosaiException):
     pass
 
 
+class AbstractMethodException(YosaiException):
+    pass
+
+
+class MissingMethodException(YosaiException):
+    pass
+
+
 # ---------------------------------------------------------------------------
 # ---- Authentication Exceptions
 # ---------------------------------------------------------------------------
@@ -254,20 +262,21 @@ class UnrecognizedAttributeException(YosaiException):
 # ---------------------------------------------------------------------------
 
 
-class AbstractMethodException(YosaiException):
+class SessionException(YosaiException):
     pass
 
 
-class ExpiredSessionException(YosaiException):
+class ExpiredSessionException(SessionException):
     pass
 
 
-class MissingMethodException(YosaiException):
+class StoppedSessionException(SessionException):
     pass
 
 
-class UnknownSessionException(YosaiException):
+class UnknownSessionException(SessionException):
     pass
+
 
 
 # ---------------------------------------------------------------------------
@@ -288,10 +297,6 @@ class NullPointerException(YosaiException):
 
 
 class PrimaryPrincipalIntegrityException(YosaiException):
-    pass
-
-
-class SessionException(YosaiException):
     pass
 
 

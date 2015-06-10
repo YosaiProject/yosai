@@ -101,7 +101,7 @@ def test_asr_authc_acct_without_cached_acct_succeeds_and_caches(
     
     result = pasr.authenticate_account(token)
     ach = pasr.account_cache_handler  # it updated
-    assert ((result.id == 'MAS123') and 
+    assert ((result.account_id == 'MAS123') and 
             ach.account == MockAccount(account_id='MAS123'))
 
 def test_asr_authc_acct_cannot_locate_account(username_password_token, 
@@ -281,7 +281,7 @@ def test_dach_gca_succeeds_in_locating_cached_account(
 
     result = pdach.get_cached_account(token)  # token is ignored by mock
 
-    assert result.id == 'CachedAccount12345'
+    assert result.account_id == 'CachedAccount12345'
 
 def test_dach_ca_fails_to_obtain_cache_resolver(
         patched_default_account_cache_handler, monkeypatch, 
@@ -385,7 +385,7 @@ def test_dach_ca_succeeds_in_caching_account(
 
     # returns a full MockAccount:
     result = pdach.account_cache_resolver.cache.get('user123')
-    assert result.id == 8675309
+    assert result.account_id == 8675309
 
 
 def test_dach_cca_fails_to_obtain_cache_resolver(
@@ -399,7 +399,7 @@ def test_dach_cca_fails_to_obtain_cache_resolver(
     monkeypatch.setattr(pdach, 'account_cache_resolver', None)
 
     with pytest.raises(ClearCacheAccountException):
-        pdach.clear_cached_account(account_id=account.id)
+        pdach.clear_cached_account(account_id=account.account_id)
 
 def test_dach_cca_fails_to_obtain_cache_key_resolver(
         patched_default_account_cache_handler, monkeypatch, 
@@ -416,7 +416,7 @@ def test_dach_cca_fails_to_obtain_cache_key_resolver(
     monkeypatch.setattr(pdach, 'account_cache_key_resolver', None)
     
     with pytest.raises(ClearCacheAccountException):
-        pdach.clear_cached_account(account_id=account.id)
+        pdach.clear_cached_account(account_id=account.account_id)
 
 def test_dach_cca_fails_to_locate_cache(
         patched_default_account_cache_handler, full_mock_account,
@@ -431,7 +431,7 @@ def test_dach_cca_fails_to_locate_cache(
     account = full_mock_account
 
     with pytest.raises(ClearCacheAccountException):
-        pdach.clear_cached_account(account_id=account.id)
+        pdach.clear_cached_account(account_id=account.account_id)
 
 def test_dach_cca_fails_to_locate_cache_key(
         patched_default_account_cache_handler, monkeypatch, 
@@ -452,7 +452,7 @@ def test_dach_cca_fails_to_locate_cache_key(
 
     monkeypatch.setattr(pdach, 'account_cache_resolver', pmacr)
 
-    result = pdach.clear_cached_account(account_id=account.id)
+    result = pdach.clear_cached_account(account_id=account.account_id)
 
     assert result is None
 
@@ -477,7 +477,7 @@ def test_dach_cca_succeeds_in_removing_cached_account(
     monkeypatch.setattr(pdach, 'account_cache_resolver', pmacr)
     
     # returns a full MockAccount:
-    result = pdach.clear_cached_account(account_id=account.id)
+    result = pdach.clear_cached_account(account_id=account.account_id)
 
-    assert result.id == 8675309
+    assert result.account_id == 8675309
 

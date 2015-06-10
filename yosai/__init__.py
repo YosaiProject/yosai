@@ -63,6 +63,7 @@ from .exceptions import (
     RealmAttributesException,
     RealmMisconfiguredException,
     SessionException,
+    StoppedSessionException,
     UnauthenticatedException,
     UnauthorizedException,
     UnavailableSecurityManagerException,
@@ -147,9 +148,8 @@ from .security import (
     # DefaultSecurityManager,
     # SecurityUtils,
 )
+"""
 
-"""
-"""
 from .session import (
     # AbstractSessionDAO,
     # AbstractNativeSessionManager,
@@ -163,7 +163,7 @@ from .session import (
     # ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionDAO,
     # MemorySessionDAO,
-    # ProxiedSession,
+    ProxiedSession,
     # RandomSessionIDGenerator,
     # Session,
     # SessionManager,
@@ -172,7 +172,6 @@ from .session import (
     # SimpleSessionFactory,
     # UUIDSessionGenerator,
 )
-"""
 
 """
 from .subject import(

@@ -39,15 +39,15 @@ class DefaultCompositeAccountId(ICompositeAccountId, object):
 class DefaultCompositeAccount(ICompositeAccount, object):
 
     def __init__(self, overwrite=True):
-        self._id = DefaultCompositeAccountId()  # DG renamed 
+        self._account_id = DefaultCompositeAccountId()  # DG renamed 
         self._credentials = None
         self._merged_attrs = {}  # maybe change to OrderedDict() 
         self.overwrite = overwrite
         self._realm_attrs = defaultdict(dict)
 
     @property 
-    def id(self):  # DG:  not happy about naming it id 
-        return self._id
+    def account_id(self):  # DG:  not happy about naming it id 
+        return self._account_id
 
     @property
     def attributes(self):
@@ -64,7 +64,7 @@ class DefaultCompositeAccount(ICompositeAccount, object):
         return self._realm_attrs.keys()
 
     def append_realm_account(self, realm_name, account):
-        self._id.set_realm_account_id(realm_name, account.id)
+        self._account_id.set_realm_account_id(realm_name, account.account_id)
 
         realm_attributes = getattr(account, 'attributes', None)
         if (realm_attributes is None):

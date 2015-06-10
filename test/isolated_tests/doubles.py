@@ -80,13 +80,13 @@ class MockAccountCacheHandler(IAccountCacheHandler, object):
 class MockAccount(IAccount):
 
     def __init__(self, account_id, credentials={}, attributes={}):
-        self._id = account_id
+        self._account_id = account_id
         self._credentials = credentials
         self._attributes = attributes
         
     @property 
-    def id(self):
-        return self._id 
+    def account_id(self):
+        return self._account_id 
 
     @property 
     def credentials(self):
@@ -98,7 +98,7 @@ class MockAccount(IAccount):
 
     def __eq__(self, other):
         try:
-            result = (self._id == other._id and 
+            result = (self._account_id == other._account_id and 
                       self.credentials == other.credentials and
                       self.attributes == other.attributes)
         except Exception:
@@ -107,7 +107,7 @@ class MockAccount(IAccount):
 
     def __repr__(self):
         return "<MockAccount(id={0}, credentials={1}, attributes={2})>".\
-            format(self.id, self.credentials, self.attributes)
+            format(self.account_id, self.credentials, self.attributes)
 
 
 class MockAccountStore(IAccountStore, object):

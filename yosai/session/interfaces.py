@@ -23,7 +23,7 @@ class ISession(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def id(self):
+    def session_id(self):
         """
         The unique identifier assigned by the system upon session creation.
         """
@@ -121,6 +121,7 @@ class ISession(metaclass=ABCMeta):
         the key name, that existing object will be replaced by the new 
         value.  
         """
+        pass
 
     @abstractmethod
     def remove_attribute(self, key):
@@ -128,4 +129,4 @@ class ISession(metaclass=ABCMeta):
         Removes (unbinds) the object bound to this session under the specified
         key name.  
         """
-
+        pass
