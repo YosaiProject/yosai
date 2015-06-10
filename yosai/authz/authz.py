@@ -84,7 +84,10 @@ class WildcardPermission(object):
             subparts = part.split(self.SUBPART_DIVIDER_TOKEN)
             # default key is the index value -- this should NOT set under
             # normal, expected behavior
-            self.parts[part_indices.get(index, index)] = OrderedSet(subparts)
+            myindex = part_indices.get(index, index)
+            self.parts[myindex] = OrderedSet()
+            for sp in subparts:
+                self.parts[myindex].add(sp)
 
     def implies(self, permission):
         """
@@ -180,8 +183,8 @@ class DomainPermission(WildcardPermission):
         return self._domain
 
     @domain.setter
-    def domain(self, domain):
-        self._domain = self.get_domain(domain.__class__)
+    def domain(self, inst):
+        self._domain = self.get_domain(inst.__class__)
         self.set_parts(domain=self._domain, 
                        actions=getattr(self, '_actions', None),
                        targets=getattr(self, '_targets', None))
@@ -217,8 +220,8 @@ class DomainPermission(WildcardPermission):
         :type actions: a subpart-delimeted str
         :type targets: a subpart-delimeted str
         """
-        # unlike Shiro, which omits targets if none, yosai makes targets 
-        # a wildcard:
+
+        # Yosai sets None to Wildcard 
         permission = self.PART_DIVIDER_TOKEN.join(
             x if x is not None else self.WILDCARD_TOKEN
             for x in [domain, actions, targets])
@@ -243,7 +246,6 @@ class DomainPermission(WildcardPermission):
         # default values
         actions_string = actions 
         targets_string = targets 
-
         if isinstance(actions, OrderedSet): 
             actions_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in actions])
@@ -251,7 +253,7 @@ class DomainPermission(WildcardPermission):
         if isinstance(targets, OrderedSet):
             targets_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in targets])
-
+        
         permission = self.encode_parts(domain=domain,
                                        actions=actions_string,
                                        targets=targets_string)
