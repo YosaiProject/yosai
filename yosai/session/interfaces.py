@@ -7,3 +7,125 @@ class ISessionStorageEvaluator(metaclass=ABCMeta):
     def is_session_storage_enabled(self, subject):
         pass
 
+
+class ISession(metaclass=ABCMeta):
+    """
+    A Session is a stateful data context associated with a single 
+    Subject's (user, daemon process, etc) interaction with a software system 
+    over a period of time.
+
+    A Session is intended to be managed by the business tier and accessible via
+    other tiers without being tied to any given client technology.  This is a
+    great benefit to Python systems, since until now the only viable session 
+    mechanisms were those highly-coupled and deeply embedded in web application 
+    frameworks.
+    """
+
+    @property
+    @abstractmethod
+    def id(self):
+        """
+        The unique identifier assigned by the system upon session creation.
+        """
+        pass
+    
+    @property
+    @abstractmethod
+    def start_timestamp(self):
+        """ 
+        The time that the session started (the time that the system created 
+        the instance )
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def last_access_time(self):
+        """ 
+        Returns the last time the application received a request or method 
+        invocation from THE USER associated with this session.  Application 
+        calls to this method do not affect this access time.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def timeout(self):
+        """ 
+        Returns the time, in milliseconds, that the session may 
+        remain idle before it expires
+        """    
+        pass
+
+    @timeout.setter
+    @abstractmethod
+    def timeout(self, max_idle_time_in_millis):
+        """ 
+        Sets the time in milliseconds that the session may remain idle 
+        before expiring.
+
+        - A negative value means the session will never expire
+        - A non-negative value (0 or greater) means the session expiration will
+          occur if idle for that length of time.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def host(self):
+        """
+        Returns the host name or IP string of the host that originated this
+        session, or None if the host is unknown.
+        """
+        pass
+
+    @abstractmethod
+    def touch(self):
+        """
+        Explicitly updates the last_access_time of this session to the
+        current time when this method is invoked.  This method can be used to
+        ensure a session does not time out.
+        """
+        pass
+
+    @abstractmethod
+    def stop(self):
+        """
+        Explicitly stops (invalidates) this session and releases all associated
+        resources.  
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def attribute_keys(self):
+        """
+        Returns the keys of all the attributes stored under this session.  If
+        there are no attributes, this returns an empty collection.
+        """
+        pass
+
+    @abstractmethod
+    def get_attribute(self, key):
+        """
+        Returns the object bound to this session identified by the specified
+        key.  If there is no object bound under the key, None is returned.
+        """
+        pass
+
+    @abstractmethod
+    def set_attribute(self, key, value):
+        """
+        Binds the specified value to this session, uniquely identified by the
+        specifed key name.  If there is already an object bound under
+        the key name, that existing object will be replaced by the new 
+        value.  
+        """
+
+    @abstractmethod
+    def remove_attribute(self, key):
+        """
+        Removes (unbinds) the object bound to this session under the specified
+        key name.  
+        """
+
