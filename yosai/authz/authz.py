@@ -275,8 +275,8 @@ class DomainPermission(WildcardPermission):
         suffix = 'permission'
         if domain.endswith(suffix): 
             domain = domain[:-len(suffix)]   # e.g.: SomePermission -> some
-
-        return domain
+            return domain
+        return self._domain  # shouldn't be returned unless using the wrong clazz
 
 class ModularRealmAuthorizer(IAuthorizer,
                              IPermissionResolverAware,

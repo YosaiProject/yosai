@@ -259,13 +259,14 @@ def test_wcp_implies_caseinsensitive_wildcards_false(
     assert not p1.implies(p2)
 
 def test_wcp_equals():
-   """
-   unit tested:
+    """
+    unit tested:
 
-   test case:
+    test case:
 
-   """
-   wildcard_string = 'somestring'
+    """
+    
+    wildcard_string = 'somestring'
     p1 = WildcardPermission(wildcard_string)
     p2 = WildcardPermission(wildcard_string)
 
@@ -290,12 +291,12 @@ def test_wcp_not_equals_bad_type():
 # WildcardPermissionResolver Tests
 # -----------------------------------------------------------------------------
 def test_wcpr_returns_wcp():
-   """
-   unit tested:
+    """
+    unit tested:
 
-   test case:
+    test case:
 
-   """
+    """
     wcp = WildcardPermissionResolver.resolve_permission('testing123')
     assert isinstance(wcp, WildcardPermission)
 
@@ -380,19 +381,32 @@ def test_dp_encode_parts_creates_permission(
     assert encoded_permission == permission
     
 @pytest.mark.parametrize(
-    "actions,targets,permission",
-    [(OrderedSet(['*']), OrderedSet(['*']), 'domain:*:*'), 
+    "actions,targets,actions_string,targets_string",
+    [(OrderedSet(['*']), OrderedSet(['*']), '*', '*'), 
      (OrderedSet(['action1', 'action2']), OrderedSet(['target1', 'target2']),
-     'domain:action1,action2:target1,target2'),
-     (None, None, 'domain:*:*'),
+     'action1,action2', 'target1,target2'),
+     (None, None, None, None),
      ('action1,action2', 'target1,target2', 
-      'domain:action1,action2:target1,target2')])
+      'action1,action2', 'target1,target2')])
 def test_set_parts_creates_parts(
-        default_domain_permission, actions, targets, permission): 
+        default_domain_permission, actions, targets, 
+        actions_string, targets_string):
 
     ddp = default_domain_permission
-    with mock.patch.object(WildcardPermission, 'set_parts') as sp:
-        sp.return_value = None
-        ddp.set_parts('domain', actions, targets)
-        assert sp.called_once_with(wildcard_string=permission) is None
+    with mock.patch.object(DomainPermission, 'encode_parts') as ep:
+        ep.return_value = None
+        with mock.patch.object(WildcardPermission, 'set_parts') as wc_sp:
+            wc_sp.return_value = None
+            ddp.set_parts('domain', actions, targets)
+            assert ep.assert_called_with(domain='domain',
+                                         actions=actions_string,
+                                         targets=targets_string) is None
+
+@pytest.mark.parametrize(
+    "clazz, result", [(None, 'domain'), 
+                      (type('DumbPermission', (object,), {}), 'dumb'),
+                      (type('Anything', (object,), {}), 'domain')]) 
+def test_dp_get_domain(default_domain_permission, clazz, result):
+    ddp = default_domain_permission
+    assert ddp.get_domain(clazz) == result
 
