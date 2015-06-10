@@ -33,23 +33,33 @@ In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortre
 
 PROJECT STATUS
 -----------------------------------------------------------------------
-05/20/2015:  Testing is well under way.  
 
-05/29/2015:  Latest pytest unit testing coverage stats are as follows:
+06/10/2015 Status
+=================
+Finished Unit Testing:
+    - conf
+    - authc
+    - authz
+    - event
+    - realm
+
+Pytest unit testing coverage stats are as follows:
 
 |Name                        |Stmts|Miss | Cover|
 |----------------------------|-----|-----|------|
+| yosai/__init__             | 18  | 0   | 100% |
 | yosai/account/__init__     | 1   | 0   | 100% |
 | yosai/account/interfaces   | 18  | 5   | 72%  |
 | yosai/authc/__init__       | 6   | 0   | 100% |
-| yosai/authc/authc          | 140 | 11  | 92%  |
+| yosai/authc/authc          | 151 | 11  | 93%  |
 | yosai/authc/authc_account  | 50  | 4   | 92%  |
 | yosai/authc/context        | 38  | 2   | 95%  |
 | yosai/authc/credential     | 49  | 5   | 90%  |
 | yosai/authc/interfaces     | 64  | 21  | 67%  |
 | yosai/authc/strategy       | 99  | 6   | 94%  |
-| yosai/authz/__init__       | 1   | 1   | 0%   |
-| yosai/authz/interfaces     | 46  | 46  | 0%   |
+| yosai/authz/__init__       | 2   | 0   | 100% |
+| yosai/authz/authz          | 262 | 16  | 94%  |
+| yosai/authz/interfaces     | 47  | 16  | 66%  |
 | yosai/cache/__init__       | 1   | 0   | 100% |
 | yosai/cache/cache          | 35  | 35  | 0%   |
 | yosai/cache/interfaces     | 48  | 27  | 44%  |
@@ -59,9 +69,9 @@ PROJECT STATUS
 | yosai/context/__init__     | 0   | 0   | 100% |
 | yosai/context/context      | 18  | 18  | 0%   |
 | yosai/event/__init__       | 2   | 0   | 100% |
-| yosai/event/event          | 77  | 54  | 30%  |
+| yosai/event/event          | 80  | 4   | 95%  |
 | yosai/event/interfaces     | 15  | 5   | 67%  |
-| yosai/exceptions           | 127 | 1   | 99%  |
+| yosai/exceptions           | 135 | 1   | 99%  |
 | yosai/init_yosai           | 5   | 5   | 0%   |
 | yosai/logging/__init__     | 1   | 0   | 100% |
 | yosai/logging/s_logging    | 77  | 56  | 27%  |
@@ -71,16 +81,17 @@ PROJECT STATUS
 | yosai/realm/realm          | 88  | 3   | 97%  |
 | yosai/security/__init__    | 1   | 1   | 0%   |
 | yosai/security/interfaces  | 22  | 22  | 0%   |
-| yosai/security/security    | 462 | 462 | 0%   |
+| yosai/security/security    | 463 | 463 | 0%   |
 | yosai/session/__init__     | 0   | 0   | 100% |
 | yosai/session/interfaces   | 4   | 4   | 0%   |
 | yosai/subject/__init__     | 1   | 1   | 0%   |
 | yosai/subject/interfaces   | 208 | 208 | 0%   |
 | yosai/subject/principal    | 85  | 85  | 0%   |
 | yosai/subject/subject      | 456 | 456 | 0%   |
-| yosai/utils                | 3   | 3   | 0%   |
+| yosai/utils/__init__       | 1   | 0   | 100% |
+| yosai/utils/utils          | 51  | 19  | 63%  |
 |----------------------------|-----|-----|------|
-| TOTAL                      |2384 |1586 | 33%  |
+| TOTAL                      |2722 |1538 | 43%  |
 
 
             
