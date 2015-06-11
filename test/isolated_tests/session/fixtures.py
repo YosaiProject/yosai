@@ -12,7 +12,6 @@ from .doubles import (
 def mock_session():
     return MockSession()
 
-
 @pytest.fixture(scope='function')
-def default_proxied_session():
+def default_proxied_session(mock_session):
     return ProxiedSession(mock_session)
