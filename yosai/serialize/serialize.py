@@ -7,7 +7,7 @@ import abcs
 import msgpack
 
 
-class Serializer():
+class SerializationManager:
     """
     Serializer proxies serialization requests.  It is designed so to support
     multiple serialization methods.

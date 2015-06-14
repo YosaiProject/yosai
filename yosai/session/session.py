@@ -109,7 +109,7 @@ class ProxiedSession(abcs.Session):
         self._delegate.remove_attribute(key)
 
 
-class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serialize):
+class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     
     # Serialization reminder:
     # ------------------------------------------------------------------

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class ISerialize(metaclass=ABCMeta):
+class Serializable(metaclass=ABCMeta):
 
     @classmethod 
     def materialize(cls, deserialized):
@@ -36,7 +36,7 @@ class ISerialize(metaclass=ABCMeta):
         pass
 
 
-class ISerializer(metaclass=ABCMeta):
+class Serializer(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
