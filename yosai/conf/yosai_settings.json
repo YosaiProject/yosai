@@ -67,5 +67,17 @@
             "level" : "INFO",
             "handlers" : ["console", "info_file_handler", "error_file_handler"]
             }
+    },
+
+    "SESSION_CONFIG": {
+        "session_timeout": {
+            "absolute_timeout": 1800000,
+            "idle_timeout": 300000
+        },
+
+        "session_validation": {
+            "scheduler_enabled": true,  
+            "time_interval": 3600000
+        },
     }
 }

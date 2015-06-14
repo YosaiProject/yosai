@@ -104,3 +104,4 @@ available on FreeNode IRC under the nickname dowwie.
 APACHE SHIRO VERSION USED
 -----------------------------------------------------------------------
 Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx      
+

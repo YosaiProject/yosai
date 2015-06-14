@@ -9,7 +9,7 @@ from yosai import (
 from passlib.context import CryptContext
 
 
-class AuthenticationSettings(object):
+class AuthenticationSettings():
     """
     AuthenticationSettings is a settings proxy.  It is new for Yosai.
     It obtains the authc configuration from Yosai's global settings.
@@ -39,7 +39,7 @@ class AuthenticationSettings(object):
                                           self.algorithms, self.authc_config))
 
 
-class CryptContextFactory(object):
+class CryptContextFactory():
     """
     New to Yosai.  CryptContextFactory proxies passlib's CryptContext api.
     """

@@ -14,7 +14,7 @@ s_logging as in STRUCTURED LOGGING
 """
 
 
-class LogManager(object):
+class LogManager():
 
     def __init__(self):
         log = logging.getLogger()

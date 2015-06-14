@@ -3,7 +3,7 @@ corresponding concrete class implementation using them.  I presume this is
 due to their discretionary nature and that their implementation is subject
 to change among the datastores used.
 
-Required Concrete Implementations:
+Requiring Concrete Implementations:
    - Account
    - AccountStore
    - AuthorizingAccountStoreRealm
@@ -12,5 +12,3 @@ Required Concrete Implementations:
    - CacheManager
 
 Porting annotations to python
-
-Refactoring authz's WildcardPermission class to something that is even more performant

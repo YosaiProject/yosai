@@ -18,7 +18,7 @@ from . import (
     ISession,
 )
 
-class AbstractSessionDAO(object):
+class AbstractSessionDAO():
 
     def __init__(self):
         self._session_id_generator = UUIDSessionIdGenerator()
@@ -525,7 +525,7 @@ class AbstractValidatingSessionManager(AbstractNativeSessionManager):
         raise AbstractMethodException(msg + 'get_active_sessions')
 
 
-class DefaultSessionContext(object):  
+class DefaultSessionContext():  
     """
     DG:  shiro extends from MapContext but I just use composition instead,
          just as with SubjectContext
@@ -558,7 +558,7 @@ class DefaultSessionContext(object):
         setattr(self._session_context, self.sessionid_name, sessionid)
 
 
-class DefaultSessionKey(object):
+class DefaultSessionKey():
 
     def __init__(self, sessionid):
         self._session_id = sessionid
@@ -574,140 +574,6 @@ class DefaultSessionKey(object):
     @session_id.setter
     def session_id(self, sessionid):
         self._session_id = sessionid
-
-
-class DefaultSessionManager(AbstractValidatingSessionManager):
-
-    def __init__(self): 
-        self._cache_manager = CacheManager()
-        self._delete_invalid_sessions = True
-        self._session_factory = SimpleSessionFactory()
-        self._session_DAO = MemorySessionDAO()
-
-    @property
-    def session_DAO(self):
-        return self._session_DAO
-
-    @session_DAO.setter
-    def session_DAO(self, sessiondao):
-        self._session_DAO = sessiondao
-        self.apply_cache_manager_to_session_DAO()
-
-    @property
-    def session_factory(self):
-        return self._session_factory
-
-    @session_factory.setter
-    def session_factory(self, sessionfactory):
-        self._session_factory = sessionfactory
-
-    @property 
-    def delete_invalid_sessions(self):
-        return self._delete_invalid_sessions
-
-    @delete_invalid_sessions.setter
-    def delete_invalid_sessions(self, dis):
-        # Expecting a bool
-        self.delete_invalid_sessions = dis
-
-    @property
-    def cache_manager(self):
-        return self._cache_manager
-
-    @cache_manager.setter
-    def cache_manager(self, cachemanager):
-        self._cache_manager = cachemanager
-        self.apply_cache_manager_to_session_DAO()
-
-    def apply_cache_manager_to_session_DAO(self):
-        if (bool(self.cache_manager) and bool(self.sessionDAO) and 
-                (getattr(self.session_DAO, 'set_cache_manager', None))):
-            self.session_DAO.set_cache_manager(self.cache_manager)
-
-    def do_create_session(self, session_context):
-        session = self.new_session_instance(session_context)
-        # log here
-        msg = "Creating session for host " + session.host
-        print(msg)
-        self.create_session(session)
-        return session
-
-    def new_session_instance(self, session_context):
-        return self.get_session_factory().create_session(session_context)
-
-    def create(self, session):
-        # log here
-        msg = ("Creating new EIS record for new session instance [{0}]".
-               format(session)) 
-        self.session_DAO.create_session(session)
-
-    def on_stop(self, session):
-        if (isinstance(session, SimpleSession)):
-            simple_session = SimpleSession(session)  # DG:  TBD!!  shiro casts 
-            stop_timestamp = simple_session.stop_timestamp
-            simple_session.last_access_time = stop_timestamp
-
-        self.on_change(session)
-
-    def after_stopped(self, session):
-        if (self.delete_invalid_sessions):
-            self.delete(session)
-
-    def on_expiration(self, session):
-        if (isinstance(session, SimpleSession)):
-            session = SimpleSession(session)  # DG:  TBD.  shiro casts instead
-            session.expired = True
-        
-        self.on_change(session)
-
-    def after_expired(self, session):
-        if (self.delete_invalid_sessions):
-            self.delete(session)
-
-    def on_change(self, session):
-        self._session_DAO.update_session(session)
-
-    def retrieve_session(self, session_key):
-        try:
-            session_id = self.get_session_id(session_key)
-            if (session_id is None):
-                # log here
-                msg = ("Unable to resolve session ID from SessionKey [{0}]."
-                       "Returning null to indicate a session could not be "
-                       "found.".format(session_key))
-                print(msg)
-                return None 
-            
-            session = self.retrieve_session_from_data_source(session_id)
-            if (session is None): 
-                # session ID was provided, meaning one is expected to be found,
-                # but we couldn't find one:
-                msg2 = "Could not find session with ID [" + session_id + "]"
-                raise UnknownSessionException(msg)
-            
-        except UnknownSessionException as ex:
-            print(ex)
-        except:
-            raise
-
-        else:
-            return session
-
-    def get_session_id(self, session_key):
-        return session_key.session_id
-    
-    def retrieve_session_from_data_source(self, session_id):
-        return self.session_DAO.read_session(session_id)
-
-    def delete(self, session):
-        self.session_DAO.delete_session(session)
-
-    def get_active_sessions(self):
-        active_sessions = self.session_DAO.get_active_sessions()
-        if (active_sessions is not None):
-            return active_sessions
-        else:
-            return set()  # DG: shiro returns an emptySet... TBD
 
 
 class EnterpriseCacheSessionDAO(CachingSessionDAO):
@@ -731,114 +597,11 @@ class EnterpriseCacheSessionDAO(CachingSessionDAO):
         return sessionid
     
 
-class MemorySessionDAO(AbstractSessionDAO):
-
-    def __init__(self):
-        self.sessions = {} 
-    
-    def do_create(self, session):
-        sessionid = self.generate_session_id(session)
-        self.assign_session_id(session, sessionid)
-        self.store_session(sessionid, session)
-        return sessionid
-
-    def store_Session(self, sessionid, session):
-        try:
-            if (sessionid is None):
-                raise IllegalArgumentException("id argument cannot be null.")
-        except IllegalArgumentException as ex:
-            print('MemorySessionDAO.store_session Null param passed', ex)
-        else:
-            self.sessions[sessionid] = session
-            return self.sessions.get(session_id, None)
-
-    def do_read_session(self, sessionid):
-        return self.sessions.get(sessionid, None)
-    
-    def update(self, session):
-        try:
-            self.store_session(session.id, session)
-        except:
-            raise
-
-    def delete(self, session):
-        try:
-            if (session is None):
-                msg = "session argument cannot be null."
-                raise IllegalArgumentException(msg)
-        except IllegalArgumentException as ex:
-            print('MemorySessionDAO.delete Null param passed', ex)
-        else:
-            sessionid = session.id
-            if (sessionid is not None):
-                self.sessions.pop(id)
-
-    def get_active_sessions(self):
-        values = self.sessions.values()
-        if (not values()):
-            return set() 
-        else:
-            return tuple(values)
-
-
-class ProxiedSession(ISession, object):
-   
-    def __init__(self, target_session):
-        # the proxied instance:
-        self._delegate = target_session
-
-    @property
-    def session_id(self):
-        return self._delegate.id
-
-    @property
-    def start_timestamp(self):
-        return self._delegate.start_timestamp
-
-    @property
-    def last_access_time(self):
-        return self._delegate.last_access_time
-
-    @property
-    def timeout(self):
-        return self._delegate.timeout
-
-    @timeout.setter
-    def timeout(self, max_idle_time):
-        """ 
-        max_idle_time should be expressed in milliseconds 
-        """
-        self._delegate.timeout = max_idle_time
-
-    @property
-    def host(self):
-        return self._delegate.host
-
-    def touch(self):
-        self._delegate.touch()
-
-    def stop(self):
-        self._delegate.stop()
-
-    @property
-    def attribute_keys(self):
-        return self._delegate.attribute_keys
-
-    def get_attribute(self, key):
-        return self._delegate.get_attribute(key)
-
-    def set_attribute(self, key, value):
-        self._delegate.set_attribute(key, value)
-
-    def remove_attribute(self, key):
-        self._delegate.remove_attribute(key)
-
-
-class SessionTokenGenerator(object):
+class SessionTokenGenerator():
     pass
 
 
-class SessionManager(object):
+class SessionManager():
     """
     A SessionManager manages the creation, maintenance, and clean-up of all 
     application Sessions.  A SessionManager will only return a VALID Session
@@ -877,7 +640,7 @@ class SessionManager(object):
         pass
 
 
-class Session(object):
+class Session():
     
     def __init__(self, scheduler, session_cfg, origin_ip): 
         self._abs_timeout = session_cfg.abs_timeout_threshold_minutes
@@ -1082,7 +845,7 @@ class CachingSessionDAO(AbstractSessionDAO):
             return set()
 
 
-class DelegatingSession(object):
+class DelegatingSession():
 
     def __init__(self, session_manager, session_key):
         """
@@ -1193,7 +956,7 @@ class DelegatingSession(object):
         return result
 
 
-class DefaultSessionStorageEvaluator(object):
+class DefaultSessionStorageEvaluator():
 
     """ 
      * Global policy determining if Subject sessions may be used to persist
@@ -1218,7 +981,7 @@ class DefaultSessionStorageEvaluator(object):
         self._session_storage_enabled = sse
 
 
-class ExecutorServiceSessionValidationScheduler(object):
+class ExecutorServiceSessionValidationScheduler():
 
     def __init__(self, sessionmanager):
         self._session_manager = sessionmanager
@@ -1287,7 +1050,7 @@ class ExecutorServiceSessionValidationScheduler(object):
         self.enabled = False
 
 
-class RandomSessionIDGenerator(object):
+class RandomSessionIDGenerator():
 
     public RandomSessionIdGenerator(self):
         # DG:  simplified this for v1 release by defaulting to sha256
@@ -1306,265 +1069,7 @@ class RandomSessionIDGenerator(object):
         return sha256(sha256(rand).digest()).hexdigest()
     
 
-class SimpleSession(object):
-
-    def __init__(self, host=None):
-        self._millis_per_second = 1000
-        self._millis_per_minute = 60 * self.millis_per_second
-        self._millis_per_hour = 60 * self.millis_per_minute
-        # DG:  removed serialization bitmask fields and transient attributes
-        #      until it's clear whether self issue carries over to python and 
-        #      jsonpickle 
-
-        # DG: todo - remove concrete reference to DefaultSessionManager:
-        self._timeout = DefaultSessionManager.DEFAULTGLOBALSESSIONTIMEOUT
-        self._start_timestamp = datetime.now() 
-        self._last_access_time = self._start_timestamp
-        self._host = host
-    
-    def __eq__(self, other):
-        if (self == other): 
-            return True
-        
-        if (isinstance(other, SimpleSession)):
-            self_id = self.session_id
-            other_id = other.session_id
-            if (self_id and other_id):
-                return (self_id == other_id)
-            else:
-                # fall back to an attribute based comparison:
-                return self.on_equals(other)
-        return False 
-
-    # DG:  renamed id to session_id because of reserved word conflict
-    @property
-    def session_id(self):
-        return self._session_id
-    
-    @session_id.setter
-    def session_id(self, identity):
-        self._session_id = identity
-
-    @property
-    def start_timestamp(self):
-        return self._start_timestamp
-
-    @start_timestamp.setter
-    def start_timestamp(self, start_ts):
-        self._start_timestamp = start_ts
-
-    @property
-    def stop_timestamp(self):
-        return self._stop_timestamp
-
-    @stop_timestamp.setter
-    def stop_timestamp(self, stop_ts):
-        self._stop_timestamp = stop_ts
-    
-    @property
-    def last_access_time(self):
-        return self._last_access_time
-    
-    @last_access_time.setter
-    def last_access_time(self, last_access_time):
-        self._last_access_time = last_access_time
-
-    @property
-    def expired(self):
-        return self._expired
-
-    @expired.setter
-    def expired(self, expired):
-        self.expired = expired
-
-    @property
-    def timeout(self):
-        return self._timeout
-
-    @timeout.setter
-    def timeout(self, timeout):
-        """ timeout = expressed in milliseconds """
-        self._timeout = timeout
-
-    @property
-    def host(self):
-        return self._host
-
-    @host.setter
-    def host(self, host):
-        self._host = host
-
-    @property
-    def attributes(self):
-        return self._attributes
-
-    @attributes.setter
-    def attributes(self, attrs):
-        self._attributes = attrs
-
-    def touch(self):
-        self._last_access_time = datetime.now() 
-
-    def stop(self):
-        if (not self.stop_timestamp):
-            self.stop_timestamp = datetime.now() 
-
-    def stopped(self):
-        return bool(self.stop_timestamp)
-
-    def expire(self):
-        self.stop()
-        self.expired = True
-
-    def is_valid(self):
-        return (not self.stopped and not self.expired)
-
-    def is_timed_out(self):
-        if (self.expired):
-            return True
-
-        timeout = self.timeout
-
-        if (timeout):
-            try:
-                last_access_time = self.last_access_time
-
-                if (not last_access_time):
-                    msg = ("session.lastAccessTime for session with id [" + 
-                           self.session_id + "] is null. This value must be"
-                           "set at least once, preferably at least upon "
-                           "instantiation. Please check the " 
-                           + self.__class__.__name__ +
-                           " implementation and ensure self value will be set "
-                           "(perhaps in the constructor?)")
-                    raise IllegalStateException(msg)
-            except IllegalStateException as ex:
-                print('is_time_out IllegalStateException:', ex)
-            """
-             Calculate at what time a session would have been last accessed
-             for it to be expired at self point.  In other words, subtract
-             from the current time the amount of time that a session can
-             be inactive before expiring.  If the session was last accessed
-             before self time, it is expired.
-            """
-            current_millis = int(round(time.time() * 1000)) 
-            expiretimemillis = current_millis - timeout
-            return last_access_time < expiretimemillis 
-        else:
-            # log here
-            msg2 = ("No timeout for session with id [" + self.session_id + 
-                    "]. Session is not considered expired.")
-            print(msg2) 
-        
-        return False
-
-    def validate(self):
-        try:
-            # check for stopped:
-            if (self.stopped):
-                # timestamp is set, so the session is considered stopped:
-                msg = ("Session with id [" + self.session_id + "] has been "
-                       "explicitly stopped.  No further interaction under "
-                       "this session is allowed.")
-                raise StoppedSessionException(msg)
-            
-            # check for expiration
-            if (self.is_timed_out()):
-                self.expire()
-
-                # throw an exception explaining details of why it expired:
-                lastaccesstime = str(datetime.fromtimestamp(
-                    self.last_access_time))
-                timeout_sec = str(datetime.fromtimestamp(
-                    self.timeout//self.millis_per_second))
-                timeout_min = str(datetime.fromtimestamp(
-                    self.timeout//self.millis_per_minute))
-
-                currenttime = str(datetime.now()) 
-                session_id = self.session_id 
-
-                msg2 = ("Session with id [" + session_id + "] has expired. " 
-                        "Last access time: " + lastaccesstime + 
-                        ".  Current time: " + currenttime +
-                        ".  Session timeout is set to " + timeout_sec + 
-                        " seconds (" + timeout_min + " minutes)")
-                # log here
-                print(msg2)
-                raise ExpiredSessionException(msg2)
-            
-        except StoppedSessionException as ex:
-            print('SimpleSession.validate StoppedSessionException:', ex)
-            raise
-
-        except ExpiredSessionException as ex:
-            print('SimpleSession.validate ExpiredSessionException:', ex)
-            raise
-
-    def get_attributes_lazy(self):
-        attributes = self.attributes
-        if (not attributes):
-            attributes = {}
-            self.attributes = attributes
-        return self.attributes
-
-    def get_attribute_keys(self):
-        try:
-            attributes = self.attributes
-            if (not attributes):
-                return set() 
-            return {attributes}  # keys is default
-        except:
-            raise
-
-    def get_attribute(self, key):
-        attributes = self.attributes  # should be a Dict
-        if (not attributes):
-            return None 
-        
-        return attributes.get(key, None)
-
-    def set_attribute(self, key, value):
-        if (not value):
-            self.remove_attribute(key)
-        else:
-            self.get_attributes_lazy()[key] = value
-        
-    def remove_attribute(self, key):
-        attributes = self.attributes
-        if (not attributes):
-            return None 
-        else:
-            return attributes.pop(key)
-
-    def on_equals(self, ss):
-        return (((self.start_timestamp == ss.start_timestamp) if (self.start_timestamp) else (not ss.start_timestamp)) and 
-                ((self.stop_timestamp == ss.stop_timestamp) if (self.stop_timestamp) else (not ss.stop_timestamp)) and
-                ((self.last_access_time == ss.last_access_time) if (self.last_access_time) else (not ss.last_accessTime)) and
-                (self.timeout == ss.timeout) and
-                (self.expired == ss.expired) and
-                ((self.host == ss.host) if (self.host) else (not ss.host)) and
-                ((self.attributes == ss.attributes) if (self.attributes) else (not ss.attributes)))
-    
-    # DG:  deleted hashcode, string builder, writeobject, readObject, 
-    #      getalteredfieldsbitmask, isFieldPresent
-
-
-class SimpleSessionFactory(object):
-   
-    def __init__(self):
-        pass
-
-    @classmethod
-    def create_session(self, session_context=None):
-        if (session_context):
-            host = session_context.host
-            if (host):
-                return SimpleSession(host)
-            
-        return SimpleSession()
-
-
-class UUIDSessionGenerator(object):
+class UUIDSessionGenerator():
     
     def __init__(self):
         pass

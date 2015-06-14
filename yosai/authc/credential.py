@@ -11,7 +11,7 @@ from . import (
 )
 
 
-class PasswordMatcher(ICredentialsMatcher, object):
+class PasswordMatcher(ICredentialsMatcher):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""
 
     def __init__(self):
@@ -46,7 +46,7 @@ class PasswordMatcher(ICredentialsMatcher, object):
             raise PasswordMatcherInvalidAccountException
 
 
-class SimpleCredentialsMatcher(ICredentialsMatcher, object):
+class SimpleCredentialsMatcher(ICredentialsMatcher):
 
     def __init__(self):
         pass
@@ -87,7 +87,7 @@ class SimpleCredentialsMatcher(ICredentialsMatcher, object):
         return token_credentials == account_credentials
         
 
-class AllowAllCredentialsMatcher(ICredentialsMatcher, object):
+class AllowAllCredentialsMatcher(ICredentialsMatcher):
 
     def credentials_match(self, authc_token, account):
         return True

@@ -19,7 +19,7 @@ import copy
 import collections
 
 
-class AllPermission(object):
+class AllPermission():
 
     def __init__(self):
         pass
@@ -28,7 +28,7 @@ class AllPermission(object):
         return True 
 
 
-class WildcardPermission(object):
+class WildcardPermission():
     """
     The standardized permission wildcard syntax is:  DOMAIN:ACTION:INSTANCE
 
@@ -143,7 +143,7 @@ class WildcardPermission(object):
         return id(self.parts)
 
 
-class WildcardPermissionResolver(object):
+class WildcardPermissionResolver():
 
     # new to yosai is the use of classmethod, and no need for instantiation
     @classmethod
@@ -280,8 +280,8 @@ class DomainPermission(WildcardPermission):
 
 class ModularRealmAuthorizer(IAuthorizer,
                              IPermissionResolverAware,
-                             IRolePermissionResolverAware,
-                             object):
+                             IRolePermissionResolverAware):
+                             
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults 
     one or more configured Realms during an authorization operation.
@@ -517,7 +517,7 @@ class ModularRealmAuthorizer(IAuthorizer,
             raise UnauthorizedException(msg)
     
 
-class SimpleAuthorizationInfo(object):
+class SimpleAuthorizationInfo():
     """ 
     Simple implementation of the IAuthorizationInfo interface that stores 
     roles and permissions as internal attributes.
@@ -565,7 +565,7 @@ class SimpleAuthorizationInfo(object):
             self.object_permissions.add(item)  # adds in order received
 
 
-class SimpleRole(object):
+class SimpleRole():
 
     def __init__(self, name=None, permissions=OrderedSet()): 
         self.name = name

@@ -17,7 +17,7 @@ from . import (
     IAuthenticationToken,
 )
 
-class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
+class DefaultAuthenticationAttempt(IAuthenticationAttempt):
     """
     DG:  this deviates slightly from Shiro's implementation in that it 
          validates the authc_token, justifiying the existence of this class
@@ -52,7 +52,7 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt, object):
         self._realms = realms
 
 
-class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
+class AllRealmsSuccessfulStrategy(IAuthenticationStrategy):
     
     def execute(self, authc_attempt):
         token = authc_attempt.authentication_token
@@ -100,7 +100,7 @@ class AllRealmsSuccessfulStrategy(IAuthenticationStrategy, object):
         return first_account
 
 
-class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
+class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy):
 
     def execute(self, authc_attempt):
         """
@@ -149,7 +149,7 @@ class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy, object):
         return None  # implies account was not found for tokent 
 
 
-class FirstRealmSuccessfulStrategy(IAuthenticationStrategy, object):
+class FirstRealmSuccessfulStrategy(IAuthenticationStrategy):
 
     """
      The FirstRealmSuccessfulStrategy will iterate over the available realms

@@ -32,7 +32,7 @@ import calendar
 import time
 
 
-class Event(object):
+class Event():
     """ 
     There is a standard structure for events communicated over the eventbus. 
     Yosai's Event design is a departure from Shiro's use of abstract and 
@@ -171,7 +171,7 @@ class EventBus(IEventBus, object):
         return unsubscribed_listeners
 
 
-class EventLogger(object):
+class EventLogger():
     """ monitors and logs all event traffic over pypubsub """
 
     def __init__(self):

@@ -10,7 +10,7 @@ from . import (
 )
 
 
-class DefaultCompositeAccountId(ICompositeAccountId, object):
+class DefaultCompositeAccountId(ICompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..
 
     def __init__(self):
@@ -36,7 +36,7 @@ class DefaultCompositeAccountId(ICompositeAccountId, object):
                          in self.realm_accountids.items()])
 
 
-class DefaultCompositeAccount(ICompositeAccount, object):
+class DefaultCompositeAccount(ICompositeAccount):
 
     def __init__(self, overwrite=True):
         self._account_id = DefaultCompositeAccountId()  # DG renamed 

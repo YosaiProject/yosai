@@ -16,7 +16,7 @@ from . import (
     IRealm,
 )
 
-class AccountStoreRealm(IRealm, object):
+class AccountStoreRealm(IRealm):
     """ as of Shiro rev1681068 , authorization implementation is TBD """
     
     def __init__(self):

@@ -1,13 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
 
-class ISessionStorageEvaluator(metaclass=ABCMeta):
-
-    @abstractmethod
-    def is_session_storage_enabled(self, subject):
-        pass
-
-
 class ISession(metaclass=ABCMeta):
     """
     A Session is a stateful data context associated with a single 
@@ -130,3 +123,60 @@ class ISession(metaclass=ABCMeta):
         key name.  
         """
         pass
+
+class ISessionListener(metaclass=ABCMeta):
+    """
+    Interface to be implemented by components that wish to be notified of
+    events that occur during a Session's life cycle.
+    """
+
+    @abstractmethod
+    def on_start(self, session):
+        """
+        Notification callback that occurs when the corresponding Session has
+        started.  
+        
+        :param session: the session that has started
+        """
+        pass
+
+    @abstractmethod
+    def on_stop(self, session):
+        """ 
+        Notification callback that occurs when the corresponding Session has
+        stopped, either programmatically via {@link Session#stop} or
+        automatically upon a subject logging out.
+
+        :param session: the session that has stopped
+        """ 
+        pass
+
+    @abstractmethod
+    def on_expiration(self, session):
+        """
+        Notification callback that occurs when the corresponding Session has
+        expired.
+ 
+        Note: this method is almost never called at the exact instant that the
+        Session expires.  Almost all session management systems, including
+        Shiro's implementations, lazily validate sessions - either when they
+        are accessed or during a regular validation interval.  It would be too
+        resource intensive to monitor every single session instance to know the
+        exact instant it expires.
+
+        If you need to perform time-based logic when a session expires, it
+        is best to write it based on the session's last_access_time and
+        NOT the time when this method is called.
+     
+        :param session: the session that has expired
+        """
+        pass
+
+
+class ISessionStorageEvaluator(metaclass=ABCMeta):
+
+    @abstractmethod
+    def is_session_storage_enabled(self, subject):
+        pass
+
+

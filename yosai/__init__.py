@@ -62,6 +62,7 @@ from .exceptions import (
     PrimaryPrincipalIntegrityException,
     RealmAttributesException,
     RealmMisconfiguredException,
+    SerializationException,
     SessionException,
     StoppedSessionException,
     UnauthenticatedException,
@@ -150,6 +151,11 @@ from .security import (
 )
 """
 
+from .serialize import (
+    ISerialize,
+    serializer_factory,
+)
+
 from .session import (
     # AbstractSessionDAO,
     # AbstractNativeSessionManager,
@@ -160,6 +166,7 @@ from .session import (
     # DefaultSessionManager,
     # DelegatingSession,
     # DefaultSessionStorageEvaluator,
+    DefaultSessionSettings,
     # ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionDAO,
     # MemorySessionDAO,

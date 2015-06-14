@@ -2,7 +2,11 @@ import pytest
 from unittest import mock
 
 from .doubles import MockSession
-from yosai import ProxiedSession
+
+from yosai import (
+    DefaultSessionSettings,
+    ProxiedSession,
+)
 
 @pytest.mark.parametrize(
     'field', ['session_id', 'start_timestamp', 'last_access_time', 'timeout', 
@@ -56,3 +60,11 @@ def test_ps_remove_attribute(default_proxied_session):
         ms_ra.return_value = None
         dps.remove_attribute('attr1')
         assert ms_ra.assert_called_once_with('attr1') is None
+
+@pytest.mark.parametrize(
+    'attr', ['absolute_timeout', 'idle_timeout', 'validation_scheduler_enable',
+             'validation_time_interval'])
+def test_default_session_settings(attr):
+    dss = DefaultSessionSettings()
+    assert getattr(dss, attr) is not None
+

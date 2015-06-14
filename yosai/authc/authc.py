@@ -28,8 +28,7 @@ from . import (
 
 
 class UsernamePasswordToken(IHostAuthenticationToken,
-                            IRememberMeAuthenticationToken,
-                            object):
+                            IRememberMeAuthenticationToken):
 
     def __init__(self, username=None, password=None, remember_me=False,
                  host=None):
@@ -131,7 +130,7 @@ class UsernamePasswordToken(IHostAuthenticationToken,
 # Yosai deprecates SuccessfulAuthenticationEvent
 
 
-class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
+class DefaultAuthenticator(IAuthenticator, IEventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
     def __init__(self, event_bus, strategy=FirstRealmSuccessfulStrategy()):
@@ -258,7 +257,7 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware, object):
             format(self.event_bus, self.authentication_strategy)
 
 
-class AbstractAuthcService(object):
+class AbstractAuthcService():
     # this class is new to Yosai
     def __init__(self):
         authc_settings = AuthenticationSettings()

@@ -1,6 +1,7 @@
 
 from .interfaces import (
     ISession,
+    ISessionListener,
     ISessionStorageEvaluator,
 )
 
@@ -11,6 +12,7 @@ from .session import (
 #    DefaultSessionContext,  
 #    DefaultSessionKey,
 #    DefaultSessionManager,
+    DefaultSessionSettings,
 #    EnterpriseCacheSessionDAO,
 #    MemorySessionDAO,
     ProxiedSession,
