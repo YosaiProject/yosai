@@ -78,6 +78,6 @@
         "session_validation": {
             "scheduler_enabled": true,  
             "time_interval": 3600000
-        },
+        }
     }
 }

@@ -26,7 +26,7 @@ from yosai import(
     UnrecognizedAttributeException,
 )
 
-import abcs
+from yosai.security import abcs
 
 
 class SecurityUtils:

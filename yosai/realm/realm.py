@@ -11,7 +11,7 @@ from yosai import (
     UsernamePasswordToken,
 )
 
-import abcs
+from yosai.realm import abcs
 
 class AccountStoreRealm(abcs.Realm):
     """ as of Shiro rev1681068 , authorization implementation is TBD """

@@ -23,7 +23,6 @@ from yosai.authc import (
     DefaultHashService,
     DefaultPasswordService,
     FirstRealmSuccessfulStrategy,
-    IAuthenticationToken,
     PasswordMatcher,
     SimpleCredentialsMatcher,
     UsernamePasswordToken,

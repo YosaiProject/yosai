@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class IAuthorizationInfo(metaclass=ABCMeta):
+class AuthorizationInfo(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -52,7 +52,7 @@ class IAuthorizationInfo(metaclass=ABCMeta):
         pass
 
 
-class IAuthorizer(metaclass=ABCMeta):
+class Authorizer(metaclass=ABCMeta):
 
     @abstractmethod
     def check_permission(self, principals, permission_s):
@@ -78,7 +78,7 @@ class IAuthorizer(metaclass=ABCMeta):
     def check_role(self, principals, role_s):
         pass
 
-class IPermission(metaclass=ABCMeta):
+class Permission(metaclass=ABCMeta):
 
     """
     From Shiro documentation, replacing 'Yosai', respectively:
@@ -156,7 +156,7 @@ class IPermission(metaclass=ABCMeta):
         pass
 
 
-class IPermissionResolverAware(metaclass=ABCMeta):
+class PermissionResolverAware(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -169,21 +169,21 @@ class IPermissionResolverAware(metaclass=ABCMeta):
         pass
 
 
-class IPermissionResolver(metaclass=ABCMeta):
+class PermissionResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def resolve_permission(self, permission_string):
         pass
 
 
-class IRolePermissionResolver(metaclass=ABCMeta):
+class RolePermissionResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def resolve_permissions_in_role(self, role_string):
         pass
 
 
-class IRolePermissionResolverAware(metaclass=ABCMeta):
+class RolePermissionResolverAware(metaclass=ABCMeta):
 
     @property
     @abstractmethod

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
-import yosai.account.abcs as account_abcs
-import yosai.authz.abcs as authc_abcs
+from yosai.account import abcs as account_abcs
+from yosai.authc import abcs as authc_abcs
 
 class AccountCacheHandler(metaclass=ABCMeta):
 

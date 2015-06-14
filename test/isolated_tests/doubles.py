@@ -2,10 +2,10 @@ from yosai import (
     CacheKeyRemovalException,
 )
 
-import yosai.account.abcs as acct_abcs
-import yosai.authc.abcs as authc_abcs
-import yosai.cache.abcs as cache_abcs
-import yosai.realm.abcs as realm_abcs
+from yosai.account import abcs as acct_abcs
+from yosai.authc import abcs as authc_abcs
+from yosai.cache import abcs as cache_abcs
+from yosai.realm import abcs as realm_abcs
 
 class MockCache(cache_abcs.Cache):
     
@@ -51,7 +51,7 @@ class MockToken(authc_abcs.AuthenticationToken):
         pass
 
 
-class MockAccountCacheHandler(cache_abcs.AccountCacheHandler):
+class MockAccountCacheHandler(realm_abcs.AccountCacheHandler):
 
     def __init__(self, account):
         self.account = account

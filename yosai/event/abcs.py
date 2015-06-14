@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class IEventBus(metaclass=ABCMeta):
+class EventBus(metaclass=ABCMeta):
 
     @abstractmethod
     def publish(self, event):
@@ -16,7 +16,7 @@ class IEventBus(metaclass=ABCMeta):
         pass
 
 
-class IEventBusAware(metaclass=ABCMeta):
+class EventBusAware(metaclass=ABCMeta):
     
     @property
     @abstractmethod

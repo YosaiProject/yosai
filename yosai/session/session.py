@@ -14,8 +14,8 @@ from yosai import (
     UnknownSessionException,
     settings,
 )
-import yosai.serialize.abcs as serialize_abcs
-import abcs
+from yosai.serialize import abcs as serialize_abcs
+from yosai.session import abcs
 
 
 class DefaultSessionSettings:

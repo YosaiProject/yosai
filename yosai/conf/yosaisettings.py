@@ -17,7 +17,7 @@ ENV_VAR = "YOSAI_SETTINGS_MODULE"
 empty = object()
 
 
-class LazySettings():
+class LazySettings:
     """
     LazyConfig proxies the custom-else-default settings configuration process.
     Required settings that are not user-defined (custom) will default to those
@@ -70,7 +70,7 @@ class LazySettings():
         self._wrapped = Settings(settings_file)
 
 
-class Settings():
+class Settings:
 
     def __init__(self, settings_filepath='yosai_settings.json'):
         self.load_config(settings_filepath)

@@ -9,7 +9,7 @@ from . import (
     DefaultPasswordService,
 )
 
-import abcs
+from yosai.authc import abcs
 
 
 class PasswordMatcher(abcs.CredentialsMatcher):

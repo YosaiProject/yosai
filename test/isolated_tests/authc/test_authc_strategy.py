@@ -1,7 +1,8 @@
 import pytest
 
+from yosai.account import abcs as acct_abcs
+
 from yosai import (
-    IAccount,
     IncorrectCredentialsException,
     InvalidAuthenticationTokenException,
     InvalidAuthcAttemptRealmsArgumentException,
@@ -44,7 +45,7 @@ def test_first_realmssuccessful_first_success(first_realm_successful_strategy,
         within execute, and consequently the first_account will return
     """
     result = first_realm_successful_strategy.execute(default_authc_attempt)
-    assert (isinstance(result, IAccount) and (result.account_id == 12345))
+    assert (isinstance(result, acct_abcs.Account) and (result.account_id == 12345))
 
 def test_first_realmssuccessful_fails_no_realm(first_realm_successful_strategy,
                                                realmless_authc_attempt): 
@@ -98,7 +99,7 @@ def test_alo_realmssuccessful_first_success(alo_realms_successful_strategy,
         within execute, and consequently the first_account will return
     """
     result = alo_realms_successful_strategy.execute(default_authc_attempt)
-    assert (isinstance(result, IAccount) and (result.account_id == 12345))
+    assert (isinstance(result, acct_abcs.Account) and (result.account_id == 12345))
 
 def test_alo_realmssuccessful_composite_success(alo_realms_successful_strategy,
                                                 multirealm_authc_attempt):
@@ -154,7 +155,7 @@ def test_allrealmssuccessful_first_success(all_realms_successful_strategy,
         within execute, and consequently the first_account will return
     """
     result = all_realms_successful_strategy.execute(default_authc_attempt)
-    assert (isinstance(result, IAccount) and (result.account_id == 12345))
+    assert (isinstance(result, acct_abcs.Account) and (result.account_id == 12345))
 
 def test_allrealmssuccessful_composite_success(all_realms_successful_strategy,
                                                multirealm_authc_attempt):

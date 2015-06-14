@@ -25,7 +25,7 @@ from yosai import (
 )
 
 
-class DefaultSubjectContext(object):
+class DefaultSubjectContext:
 
     # DG:  using composition rather than inheritance..
 
@@ -252,7 +252,7 @@ class DefaultSubjectContext(object):
         return security_manager
 
 
-class DefaultSubjectDAO(object):
+class DefaultSubjectDAO:
 
     def __init__(self):
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
@@ -355,7 +355,7 @@ class DefaultSubjectDAO(object):
         self.remove_from_session(subject)
 
 
-class DefaultSubjectFactory(object):
+class DefaultSubjectFactory:
     
     def __init__(self):
         pass
@@ -372,7 +372,7 @@ class DefaultSubjectFactory(object):
                                  session_creation_enabled, security_manager)
 
 
-class DelegatingSubject(object):
+class DelegatingSubject:
     """
     DelegatingSubject is a facade between a Subject and the underlying
     SecurityManager
@@ -788,7 +788,7 @@ class DelegatingSubject(object):
         else:
             return StoppingAwareProxiedSession(session, self)
 
-    class SubjectBuilder(object):
+    class SubjectBuilder:
         
         def __init__(self,
                      securitymanager=SecurityUtils.get_security_manager()):
@@ -852,7 +852,7 @@ class DelegatingSubject(object):
             return self._security_manager.create_subject(self.subject_context)
 
 
-class StoppingAwareProxiedSession(object):
+class StoppingAwareProxiedSession:
 
     def __init__(self, target_session, owning_subject): 
         self._proxied_session = ProxiedSession(target_session)

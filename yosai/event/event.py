@@ -24,7 +24,7 @@ from yosai import (
     LogManager,
 )
 
-import abcs
+from yosai.event import abcs
 import calendar
 import time
 

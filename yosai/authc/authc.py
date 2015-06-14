@@ -15,7 +15,8 @@ from yosai import (
     YosaiException,
 )
 
-import yosai.event.abcs as event_abcs
+from yosai.event import abcs as event_abcs
+from yosai.authc import abcs
 
 from . import (
     AuthenticationSettings,
@@ -24,7 +25,6 @@ from . import (
     DefaultAuthenticationAttempt,
 )
 
-import abcs
 
 class UsernamePasswordToken(abcs.HostAuthenticationToken,
                             abcs.RememberMeAuthenticationToken):

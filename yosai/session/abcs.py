@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class ISession(metaclass=ABCMeta):
+class Session(metaclass=ABCMeta):
     """
     A Session is a stateful data context associated with a single 
     Subject's (user, daemon process, etc) interaction with a software system 
@@ -124,7 +124,7 @@ class ISession(metaclass=ABCMeta):
         """
         pass
 
-class ISessionListener(metaclass=ABCMeta):
+class SessionListener(metaclass=ABCMeta):
     """
     Interface to be implemented by components that wish to be notified of
     events that occur during a Session's life cycle.
@@ -173,10 +173,19 @@ class ISessionListener(metaclass=ABCMeta):
         pass
 
 
-class ISessionStorageEvaluator(metaclass=ABCMeta):
+class SessionStorageEvaluator(metaclass=ABCMeta):
 
     @abstractmethod
     def is_session_storage_enabled(self, subject):
         pass
 
 
+class ValidatingSession(Session):
+
+    @abstractmethod
+    def is_valid(self):
+        pass
+
+    @abstractmethod
+    def validate(self):
+        pass

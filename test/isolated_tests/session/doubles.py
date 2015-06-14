@@ -1,8 +1,6 @@
-from yosai.session import (
-    ISession,
-)
+import yosai.session.abcs as session_abcs
 
-class MockSession(ISession, object):
+class MockSession(session_abcs.Session, object):
 
     def __init__(self):
         self.session = {'attr1': 1, 'attr2': 2, 'attr3': 3}

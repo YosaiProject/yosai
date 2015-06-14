@@ -1,4 +1,4 @@
-from yosai.account import abc as account_abc
+from yosai.account import abcs as account_abcs
 
 from abc import ABCMeta, abstractmethod
 
@@ -84,14 +84,14 @@ class Authenticator(metaclass=ABCMeta):
         pass
 
 
-class CompositeAccountId(account_abc.AccountId):
+class CompositeAccountId(account_abcs.AccountId):
 
     @abstractmethod
     def get_realm_account_id(self, realm_name):
         pass
 
 
-class CompositeAccount(account_abc.Account):
+class CompositeAccount(account_abcs.Account):
 
     @property
     @abstractmethod

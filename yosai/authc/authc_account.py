@@ -4,7 +4,7 @@ from yosai import (
     RealmAttributesException,
 )
 
-import abcs
+from yosai.authc import abcs
 
 class DefaultCompositeAccountId(abcs.CompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..

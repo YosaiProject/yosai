@@ -9,7 +9,7 @@ from yosai import (
     UnauthorizedException,
 )
 
-import abcs
+from yosai.authz import abcs
 import copy
 import collections
 

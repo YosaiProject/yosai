@@ -1,15 +1,12 @@
-from yosai.realm import (
-    IAccountCacheHandler,
-    IAccountCacheResolver,
-    IAccountCacheKeyResolver,
-)
+
+from yosai.realm import abcs as realm_abcs
 
 from ..doubles import (
     MockAccount,
     MockCache,
 )
 
-class MockAccountCacheHandler(IAccountCacheHandler, object):
+class MockAccountCacheHandler(realm_abcs.AccountCacheHandler, object):
 
     def __init__(self, account):
         self.account = account
@@ -24,7 +21,7 @@ class MockAccountCacheHandler(IAccountCacheHandler, object):
         pass
     
 
-class MockAccountCacheResolver(IAccountCacheResolver, object):
+class MockAccountCacheResolver(realm_abcs.AccountCacheResolver, object):
 
     def __init__(self, cache=None):
         self.cache = cache
@@ -34,7 +31,7 @@ class MockAccountCacheResolver(IAccountCacheResolver, object):
         return self.cache
 
 
-class MockAccountCacheKeyResolver(IAccountCacheKeyResolver, object):
+class MockAccountCacheKeyResolver(realm_abcs.AccountCacheKeyResolver, object):
     
     def __init__(self, key=None):
         self.key = key

@@ -1,13 +1,8 @@
-from yosai.authz import (
-    IAuthorizer,
-    IPermission,
-    IPermissionResolverAware,
-    IRolePermissionResolverAware,
-)
+from yosai.authz import abcs as authz_abcs
 
-class MockAuthzAccountStoreRealm(IAuthorizer,
-                                 IPermissionResolverAware,
-                                 IRolePermissionResolverAware):
+class MockAuthzAccountStoreRealm(authz_abcs.Authorizer,
+                                 authz_abcs.PermissionResolverAware,
+                                 authz_abcs.RolePermissionResolverAware):
 
     def __init__(self):
         self.id = id(self)  # required for uniqueness among set members
@@ -48,7 +43,7 @@ class MockAuthzAccountStoreRealm(IAuthorizer,
         self._role_permission_resolver = permission_resolver 
 
 
-class MockPermission(IPermission):
+class MockPermission(authz_abcs.Permission):
    
     # using init to define whether implies is always True or False
     def __init__(self, implied):

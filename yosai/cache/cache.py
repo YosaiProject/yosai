@@ -1,4 +1,4 @@
-import abcs
+from yosai.cache import abcs
 
 from yosai import (
     CacheException, 

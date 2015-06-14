@@ -14,7 +14,7 @@ from . import (
     DefaultCompositeAccount,
 )
 
-import abcs
+from yosai.authc import abcs
 
 class DefaultAuthenticationAttempt(abcs.AuthenticationAttempt):
     """
