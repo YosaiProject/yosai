@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
-from authc.interfaces import IAuthenticator
-from authz.interfaces import IAuthorizer
-from session.interfaces import ISessionManager
+import yosai.authc.abcs as authc_abcs
+import yosai.authz.abcs as authz_abcs
+import yosai.session.abcs as session_abcs
 
 
-class IRememberMeManager(metaclass=ABCMeta):
+class RememberMeManager(metaclass=ABCMeta):
 
     @abstractmethod
     def get_remembered_principals(self, subject_context):
@@ -27,15 +27,18 @@ class IRememberMeManager(metaclass=ABCMeta):
         pass
 
 
-class ISecurityManager(IAuthenticator, IAuthorizer, ISessionManager,
-                       metaclass=ABCMeta):
+class SecurityManager(authc_abcs.Authenticator, authz_abcs.Authorizer, 
+                      session_abcs.SessionManager):
 
+    @abstractmethod
     def login(self, subject, authc_token): 
         pass
 
+    @abstractmethod
     def logout(self, subject):
         pass
 
+    @abstractmethod
     def create_subject(self, subject_context):
         pass
 

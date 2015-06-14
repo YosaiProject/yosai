@@ -2,7 +2,7 @@ from collections import defaultdict
 from yosai import UnrecognizedPrincipalException
 
 
-class SimplePrincipalCollection(object):
+class SimplePrincipalCollection:
     """
     DG:
     I excluded:

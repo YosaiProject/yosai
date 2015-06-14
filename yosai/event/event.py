@@ -24,15 +24,12 @@ from yosai import (
     LogManager,
 )
 
-from .interfaces import (
-    IEventBus,
-)
-
+import abcs
 import calendar
 import time
 
 
-class Event():
+class Event:
     """ 
     There is a standard structure for events communicated over the eventbus. 
     Yosai's Event design is a departure from Shiro's use of abstract and 
@@ -48,7 +45,7 @@ class Event():
         self.__dict__.update(**eventattrs)  # DG:  risky?
 
 
-class EventBus(IEventBus, object):
+class EventBus(abcs.EventBus):
     """
     Yosai's EventBus is a proxy to pypubsub.  Its API is unique to Yosai,
     having little in common with the EventBus implementation in Shiro.
@@ -171,7 +168,7 @@ class EventBus(IEventBus, object):
         return unsubscribed_listeners
 
 
-class EventLogger():
+class EventLogger:
     """ monitors and logs all event traffic over pypubsub """
 
     def __init__(self):

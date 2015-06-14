@@ -1,11 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
-from yosai import (
-    IAccount,
-    IAuthenticator,
-)
+import yosai.account.abcs as account_abcs
+import yosai.authz.abcs as authc_abcs
 
-class IAccountCacheHandler(metaclass=ABCMeta):
+class AccountCacheHandler(metaclass=ABCMeta):
 
     @abstractmethod
     def get_cached_account(self, authc_token):
@@ -20,7 +18,7 @@ class IAccountCacheHandler(metaclass=ABCMeta):
         pass
 
 
-class IAccountCacheKeyResolver(metaclass=ABCMeta):
+class AccountCacheKeyResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account_cache_key(self, authc_token=None, account=None, 
@@ -28,7 +26,7 @@ class IAccountCacheKeyResolver(metaclass=ABCMeta):
         pass
 
 
-class IAccountCacheResolver(metaclass=ABCMeta):
+class AccountCacheResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account_cache(self, authc_token=None, 
@@ -36,25 +34,25 @@ class IAccountCacheResolver(metaclass=ABCMeta):
         pass
 
 
-class IAccountPermissionResolver(metaclass=ABCMeta):
+class AccountPermissionResolver(metaclass=ABCMeta):
     pass
 
 
-class IAccountRolePermissionResolver(metaclass=ABCMeta):
+class AccountRolePermissionResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account_role_permissions(self, account, role_name):
         pass
 
 
-class IAccountRoleResolver(metaclass=ABCMeta):
+class AccountRoleResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account_role_names(self, account):
         pass
 
 
-class IAuthorizationCacheHandler(metaclass=ABCMeta):
+class AuthorizationCacheHandler(metaclass=ABCMeta):
 
     @abstractmethod
     def get_cached_authorization_info(self, account_id):
@@ -65,7 +63,7 @@ class IAuthorizationCacheHandler(metaclass=ABCMeta):
         pass
 
 
-class IRealmAccount(IAccount):
+class RealmAccount(account_abcs.Account):
 
     @property
     @abstractmethod
@@ -73,7 +71,7 @@ class IRealmAccount(IAccount):
         pass
 
 
-class IRealmFactory(metaclass=ABCMeta):
+class RealmFactory(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -81,7 +79,7 @@ class IRealmFactory(metaclass=ABCMeta):
         pass
 
 
-class IRealm(IAuthenticator):
+class Realm(authc_abcs.Authenticator):
     
     # DG:  omitted name accessor method for pythonic reasons
 

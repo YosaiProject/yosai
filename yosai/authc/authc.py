@@ -3,7 +3,6 @@ from yosai import (
     AuthenticationException,
     Event,
     EventBus,
-    IEventBusAware,
     InvalidTokenPasswordException,
     LogManager,
     MissingPrivateSaltException,
@@ -16,19 +15,19 @@ from yosai import (
     YosaiException,
 )
 
+import yosai.event.abcs as event_abcs
+
 from . import (
     AuthenticationSettings,
     CryptContextFactory,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
-    IAuthenticator,
-    IHostAuthenticationToken,
-    IRememberMeAuthenticationToken,
 )
 
+import abcs
 
-class UsernamePasswordToken(IHostAuthenticationToken,
-                            IRememberMeAuthenticationToken):
+class UsernamePasswordToken(abcs.HostAuthenticationToken,
+                            abcs.RememberMeAuthenticationToken):
 
     def __init__(self, username=None, password=None, remember_me=False,
                  host=None):
@@ -51,7 +50,7 @@ class UsernamePasswordToken(IHostAuthenticationToken,
         self.principal = username  # used in public api  DG:  TBD - I Dont like
         self.credentials = password  # used in public apiDG:  TBD - I Dont like
 
-    # DG:  these properties are required implementations of the interfaces
+    # DG:  these properties are required implementations of the abcs
 
     @property
     def host(self):
@@ -130,7 +129,7 @@ class UsernamePasswordToken(IHostAuthenticationToken,
 # Yosai deprecates SuccessfulAuthenticationEvent
 
 
-class DefaultAuthenticator(IAuthenticator, IEventBusAware):
+class DefaultAuthenticator(abcs.Authenticator, event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
     def __init__(self, event_bus, strategy=FirstRealmSuccessfulStrategy()):
@@ -257,7 +256,7 @@ class DefaultAuthenticator(IAuthenticator, IEventBusAware):
             format(self.event_bus, self.authentication_strategy)
 
 
-class AbstractAuthcService():
+class AbstractAuthcService:
     # this class is new to Yosai
     def __init__(self):
         authc_settings = AuthenticationSettings()

@@ -1,14 +1,11 @@
-from yosai import (
-    IAccountId,
-    IAccount,
-)
+from yosai.account import abc as account_abc
 
 from abc import ABCMeta, abstractmethod
 
 
 # replaced AuthenticationEvents with an event schema:  a) type b) topic
     
-class IAuthenticationListener(metaclass=ABCMeta):
+class AuthenticationListener(metaclass=ABCMeta):
     """
      An AuthenticationListener listens for notifications while Subjects 
      authenticate with the system.
@@ -53,7 +50,7 @@ class IAuthenticationListener(metaclass=ABCMeta):
         pass
 
 
-class IAuthenticationToken(metaclass=ABCMeta):
+class AuthenticationToken(metaclass=ABCMeta):
    
     @property
     @abstractmethod
@@ -74,7 +71,7 @@ class IAuthenticationToken(metaclass=ABCMeta):
         pass
 
 
-class IAuthenticator(metaclass=ABCMeta):
+class Authenticator(metaclass=ABCMeta):
     """
     Authenticates an account based on the submitted AuthenticationToken.
     """
@@ -87,14 +84,14 @@ class IAuthenticator(metaclass=ABCMeta):
         pass
 
 
-class ICompositeAccountId(IAccountId):
+class CompositeAccountId(account_abc.AccountId):
 
     @abstractmethod
     def get_realm_account_id(self, realm_name):
         pass
 
 
-class ICompositeAccount(IAccount):
+class CompositeAccount(account_abc.Account):
 
     @property
     @abstractmethod
@@ -110,14 +107,14 @@ class ICompositeAccount(IAccount):
         pass
 
 
-class ICredentialsMatcher(metaclass=ABCMeta):
+class CredentialsMatcher(metaclass=ABCMeta):
 
     @abstractmethod
     def credentials_match(authc_token, account):
         pass
 
 
-class IHostAuthenticationToken(IAuthenticationToken):
+class HostAuthenticationToken(AuthenticationToken):
 
     @property
     @abstractmethod
@@ -125,14 +122,14 @@ class IHostAuthenticationToken(IAuthenticationToken):
         pass
         
 
-class ILogoutAware(metaclass=ABCMeta):
+class LogoutAware(metaclass=ABCMeta):
 
     @abstractmethod
     def on_logout(self, principals):
         pass
 
 
-class IPasswordService(metaclass=ABCMeta):
+class PasswordService(metaclass=ABCMeta):
 
     @abstractmethod
     def encrypt_password(self, plaintext_password):
@@ -143,7 +140,7 @@ class IPasswordService(metaclass=ABCMeta):
         pass
 
 
-class IHashingPasswordService(IPasswordService):
+class HashingPasswordService(PasswordService):
 
     @abstractmethod
     def hash_password(self, plaintext_password):
@@ -154,7 +151,7 @@ class IHashingPasswordService(IPasswordService):
         pass
 
 
-class IRememberMeAuthenticationToken(IAuthenticationToken):
+class RememberMeAuthenticationToken(AuthenticationToken):
 
     @property
     @abstractmethod
@@ -162,7 +159,7 @@ class IRememberMeAuthenticationToken(IAuthenticationToken):
         pass
 
 
-class IAuthenticationAttempt(metaclass=ABCMeta):
+class AuthenticationAttempt(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -175,7 +172,7 @@ class IAuthenticationAttempt(metaclass=ABCMeta):
         pass
 
 
-class IAuthenticationStrategy(metaclass=ABCMeta):
+class AuthenticationStrategy(metaclass=ABCMeta):
 
     @abstractmethod
     def execute(self, attempt):

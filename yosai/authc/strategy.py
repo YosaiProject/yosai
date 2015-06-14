@@ -12,12 +12,11 @@ from yosai import (
 
 from . import (
     DefaultCompositeAccount,
-    IAuthenticationAttempt,
-    IAuthenticationStrategy,
-    IAuthenticationToken,
 )
 
-class DefaultAuthenticationAttempt(IAuthenticationAttempt):
+import abcs
+
+class DefaultAuthenticationAttempt(abcs.AuthenticationAttempt):
     """
     DG:  this deviates slightly from Shiro's implementation in that it 
          validates the authc_token, justifiying the existence of this class
@@ -37,7 +36,7 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt):
 
     @authentication_token.setter
     def authentication_token(self, token):
-        if not isinstance(token, IAuthenticationToken):
+        if not isinstance(token, abcs.AuthenticationToken):
             raise InvalidAuthenticationTokenException
         self._authentication_token = token
 
@@ -52,7 +51,7 @@ class DefaultAuthenticationAttempt(IAuthenticationAttempt):
         self._realms = realms
 
 
-class AllRealmsSuccessfulStrategy(IAuthenticationStrategy):
+class AllRealmsSuccessfulStrategy(abcs.AuthenticationStrategy):
     
     def execute(self, authc_attempt):
         token = authc_attempt.authentication_token
@@ -100,7 +99,7 @@ class AllRealmsSuccessfulStrategy(IAuthenticationStrategy):
         return first_account
 
 
-class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy):
+class AtLeastOneRealmSuccessfulStrategy(abcs.AuthenticationStrategy):
 
     def execute(self, authc_attempt):
         """
@@ -149,7 +148,7 @@ class AtLeastOneRealmSuccessfulStrategy(IAuthenticationStrategy):
         return None  # implies account was not found for tokent 
 
 
-class FirstRealmSuccessfulStrategy(IAuthenticationStrategy):
+class FirstRealmSuccessfulStrategy(abcs.AuthenticationStrategy):
 
     """
      The FirstRealmSuccessfulStrategy will iterate over the available realms

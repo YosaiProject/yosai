@@ -9,17 +9,12 @@ from yosai import (
     UnauthorizedException,
 )
 
-from . import (
-    IAuthorizer, 
-    IPermissionResolverAware, 
-    IRolePermissionResolverAware, 
-)
-
+import abcs
 import copy
 import collections
 
 
-class AllPermission():
+class AllPermission:
 
     def __init__(self):
         pass
@@ -28,7 +23,7 @@ class AllPermission():
         return True 
 
 
-class WildcardPermission():
+class WildcardPermission:
     """
     The standardized permission wildcard syntax is:  DOMAIN:ACTION:INSTANCE
 
@@ -143,7 +138,7 @@ class WildcardPermission():
         return id(self.parts)
 
 
-class WildcardPermissionResolver():
+class WildcardPermissionResolver:
 
     # new to yosai is the use of classmethod, and no need for instantiation
     @classmethod
@@ -278,9 +273,9 @@ class DomainPermission(WildcardPermission):
             return domain
         return self._domain  # shouldn't be returned unless using the wrong clazz
 
-class ModularRealmAuthorizer(IAuthorizer,
-                             IPermissionResolverAware,
-                             IRolePermissionResolverAware):
+class ModularRealmAuthorizer(abcs.Authorizer,
+                             abcs.PermissionResolverAware,
+                             abcs.RolePermissionResolverAware):
                              
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults 
@@ -316,7 +311,7 @@ class ModularRealmAuthorizer(IAuthorizer,
         new to Yosai: a generator expression filters out non-authz realms 
         """
         return (realm for realm in self._realms 
-                if isinstance(realm, IAuthorizer))
+                if isinstance(realm, abcs.Authorizer))
 
     @property
     def permission_resolver(self):
@@ -343,7 +338,7 @@ class ModularRealmAuthorizer(IAuthorizer,
         if (resolver and realms):
             for realm in realms: 
                 # interface contract validation: 
-                if isinstance(realm, IPermissionResolverAware):
+                if isinstance(realm, abcs.PermissionResolverAware):
                     realm.permission_resolver = resolver
             self._realms = realms 
 
@@ -367,7 +362,7 @@ class ModularRealmAuthorizer(IAuthorizer,
         realms = copy.copy(self._realms)
         if (role_perm_resolver and realms): 
             for realm in realms: 
-                if isinstance(realm, IRolePermissionResolverAware):
+                if isinstance(realm, abcs.RolePermissionResolverAware):
                     realm.role_permission_resolver = role_perm_resolver
             self._realms = realms 
 
@@ -517,9 +512,9 @@ class ModularRealmAuthorizer(IAuthorizer,
             raise UnauthorizedException(msg)
     
 
-class SimpleAuthorizationInfo():
+class SimpleAuthorizationInfo:
     """ 
-    Simple implementation of the IAuthorizationInfo interface that stores 
+    Simple implementation of the abcs.AuthorizationInfo interface that stores 
     roles and permissions as internal attributes.
     """
 
@@ -565,7 +560,7 @@ class SimpleAuthorizationInfo():
             self.object_permissions.add(item)  # adds in order received
 
 
-class SimpleRole():
+class SimpleRole:
 
     def __init__(self, name=None, permissions=OrderedSet()): 
         self.name = name

@@ -14,11 +14,7 @@ from yosai import (
     UnknownSessionException,
 )
 
-from . import (
-    ISession,
-)
-
-class AbstractSessionDAO():
+class AbstractSessionDAO:
 
     def __init__(self):
         self._session_id_generator = UUIDSessionIdGenerator()
@@ -558,7 +554,7 @@ class DefaultSessionContext():
         setattr(self._session_context, self.sessionid_name, sessionid)
 
 
-class DefaultSessionKey():
+class DefaultSessionKey:
 
     def __init__(self, sessionid):
         self._session_id = sessionid
@@ -597,11 +593,11 @@ class EnterpriseCacheSessionDAO(CachingSessionDAO):
         return sessionid
     
 
-class SessionTokenGenerator():
+class SessionTokenGenerator:
     pass
 
 
-class SessionManager():
+class SessionManager:
     """
     A SessionManager manages the creation, maintenance, and clean-up of all 
     application Sessions.  A SessionManager will only return a VALID Session
@@ -640,7 +636,7 @@ class SessionManager():
         pass
 
 
-class Session():
+class Session:
     
     def __init__(self, scheduler, session_cfg, origin_ip): 
         self._abs_timeout = session_cfg.abs_timeout_threshold_minutes
@@ -845,7 +841,7 @@ class CachingSessionDAO(AbstractSessionDAO):
             return set()
 
 
-class DelegatingSession():
+class DelegatingSession:
 
     def __init__(self, session_manager, session_key):
         """
@@ -956,7 +952,7 @@ class DelegatingSession():
         return result
 
 
-class DefaultSessionStorageEvaluator():
+class DefaultSessionStorageEvaluator:
 
     """ 
      * Global policy determining if Subject sessions may be used to persist
@@ -981,7 +977,7 @@ class DefaultSessionStorageEvaluator():
         self._session_storage_enabled = sse
 
 
-class ExecutorServiceSessionValidationScheduler():
+class ExecutorServiceSessionValidationScheduler:
 
     def __init__(self, sessionmanager):
         self._session_manager = sessionmanager
@@ -1050,7 +1046,7 @@ class ExecutorServiceSessionValidationScheduler():
         self.enabled = False
 
 
-class RandomSessionIDGenerator():
+class RandomSessionIDGenerator:
 
     public RandomSessionIdGenerator(self):
         # DG:  simplified this for v1 release by defaulting to sha256
@@ -1069,7 +1065,7 @@ class RandomSessionIDGenerator():
         return sha256(sha256(rand).digest()).hexdigest()
     
 
-class UUIDSessionGenerator():
+class UUIDSessionGenerator:
     
     def __init__(self):
         pass

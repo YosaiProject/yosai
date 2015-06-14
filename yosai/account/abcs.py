@@ -1,14 +1,14 @@
 from abc import ABCMeta, abstractmethod
 
 
-class IAccountId(metaclass=ABCMeta):
+class AccountId(metaclass=ABCMeta):
 
     @abstractmethod
     def __repr__(self):
         pass
 
 
-class IAccount(metaclass=ABCMeta):
+class Account(metaclass=ABCMeta):
 
     @property 
     @abstractmethod
@@ -26,7 +26,7 @@ class IAccount(metaclass=ABCMeta):
         pass
 
 
-class IAccountStore(metaclass=ABCMeta):
+class AccountStore(metaclass=ABCMeta):
 
     @abstractmethod
     def get_account(self, authc_token=None, account_id=None):

@@ -9,20 +9,16 @@ from yosai import (
     AbstractMethodException,
     # Context,
     ExpiredSessionException,
-    ISerialize,
     LogManager,
     MissingMethodException,
     UnknownSessionException,
     settings,
 )
-
-from . import (
-    ISession,
-    IValidatingSession,
-)
+import yosai.serialize.abcs as serialize_abcs
+import abcs
 
 
-class DefaultSessionSettings():
+class DefaultSessionSettings:
     """
     DefaultSessionSettings is a settings proxy.  It is new for Yosai.
     It obtains the session configuration from Yosai's global settings
@@ -60,7 +56,7 @@ class DefaultSessionSettings():
 
 # Yosai omits the SessionListenerAdapter class as a valid use case is unclear
 
-class ProxiedSession(ISession):
+class ProxiedSession(abcs.Session):
    
     def __init__(self, target_session):
         # the proxied instance:
@@ -113,7 +109,7 @@ class ProxiedSession(ISession):
         self._delegate.remove_attribute(key)
 
 
-class SimpleSession(IValidatingSession, ISerialize):
+class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serialize):
     
     # Serialization reminder:
     # ------------------------------------------------------------------
@@ -399,7 +395,7 @@ class SimpleSession(IValidatingSession, ISerialize):
                  'attributes': self.attributes}.items() if value}
 
 
-class SimpleSessionFactory():
+class SimpleSessionFactory:
    
     def __init__(self):
         pass

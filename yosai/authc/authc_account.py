@@ -4,13 +4,9 @@ from yosai import (
     RealmAttributesException,
 )
 
-from . import (
-    ICompositeAccountId,
-    ICompositeAccount,
-)
+import abcs
 
-
-class DefaultCompositeAccountId(ICompositeAccountId):
+class DefaultCompositeAccountId(abcs.CompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..
 
     def __init__(self):
@@ -36,7 +32,7 @@ class DefaultCompositeAccountId(ICompositeAccountId):
                          in self.realm_accountids.items()])
 
 
-class DefaultCompositeAccount(ICompositeAccount):
+class DefaultCompositeAccount(abcs.CompositeAccount):
 
     def __init__(self, overwrite=True):
         self._account_id = DefaultCompositeAccountId()  # DG renamed 

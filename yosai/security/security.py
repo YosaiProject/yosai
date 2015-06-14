@@ -11,7 +11,7 @@ from yosai import(
     DefaultSessionContext,
     DefaultSessionKey,
     DefaultSubjectContext,
-    Eventbus,
+    EventBus,
     IllegalArgumentException,
     IncorrectAttributeException,
     InvalidSessionException,
@@ -26,12 +26,10 @@ from yosai import(
     UnrecognizedAttributeException,
 )
 
-from . import (
-    ILogoutAware,
-)
+import abcs
 
 
-class SecurityUtils(object):
+class SecurityUtils:
     def __init__(self):
         self._security_manager = SecurityManager()
 
@@ -59,7 +57,7 @@ class SecurityUtils(object):
         self._security_manager = security_manager
 
 
-class ApplicationSecurityManager(object):
+class ApplicationSecurityManager:
     """
     excluded:  any RememberMeManager functionality
     """

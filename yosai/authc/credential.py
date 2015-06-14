@@ -7,11 +7,12 @@ from yosai import (
 
 from . import (
     DefaultPasswordService,
-    ICredentialsMatcher,
 )
 
+import abcs
 
-class PasswordMatcher(ICredentialsMatcher):
+
+class PasswordMatcher(abcs.CredentialsMatcher):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""
 
     def __init__(self):
@@ -46,7 +47,7 @@ class PasswordMatcher(ICredentialsMatcher):
             raise PasswordMatcherInvalidAccountException
 
 
-class SimpleCredentialsMatcher(ICredentialsMatcher):
+class SimpleCredentialsMatcher(abcs.CredentialsMatcher):
 
     def __init__(self):
         pass
@@ -87,7 +88,7 @@ class SimpleCredentialsMatcher(ICredentialsMatcher):
         return token_credentials == account_credentials
         
 
-class AllowAllCredentialsMatcher(ICredentialsMatcher):
+class AllowAllCredentialsMatcher(abcs.CredentialsMatcher):
 
     def credentials_match(self, authc_token, account):
         return True

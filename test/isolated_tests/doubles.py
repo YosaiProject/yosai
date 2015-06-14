@@ -2,29 +2,12 @@ from yosai import (
     CacheKeyRemovalException,
 )
 
-from yosai.account import (
-    IAccount,
-)
+import yosai.account.abcs as acct_abcs
+import yosai.authc.abcs as authc_abcs
+import yosai.cache.abcs as cache_abcs
+import yosai.realm.abcs as realm_abcs
 
-from yosai.authc import (
-    IAuthenticationToken,
-)
-
-from yosai.cache import (
-    ICache,
-    ICacheManager,
-)
-
-from yosai.realm import (
-    IAccountCacheHandler,
-)
-
-from yosai.account import (
-    IAccountStore,
-)
-
-
-class MockCache(ICache):
+class MockCache(cache_abcs.Cache):
     
     def __init__(self, keyvals={}):
         # keyvals is a dict
@@ -47,7 +30,7 @@ class MockCache(ICache):
             raise CacheKeyRemovalException
 
 
-class MockCacheManager(ICacheManager):
+class MockCacheManager(cache_abcs.CacheManager):
 
     def __init__(self, cache):
         self.cache = cache
@@ -57,7 +40,7 @@ class MockCacheManager(ICacheManager):
         return self.cache
 
 
-class MockToken(IAuthenticationToken, object):
+class MockToken(authc_abcs.AuthenticationToken):
 
     @property
     def principal(self):
@@ -68,7 +51,7 @@ class MockToken(IAuthenticationToken, object):
         pass
 
 
-class MockAccountCacheHandler(IAccountCacheHandler, object):
+class MockAccountCacheHandler(cache_abcs.AccountCacheHandler):
 
     def __init__(self, account):
         self.account = account
@@ -77,7 +60,7 @@ class MockAccountCacheHandler(IAccountCacheHandler, object):
         return self.account  # always returns the initialized account 
 
 
-class MockAccount(IAccount):
+class MockAccount(acct_abcs.Account):
 
     def __init__(self, account_id, credentials={}, attributes={}):
         self._account_id = account_id
@@ -110,7 +93,7 @@ class MockAccount(IAccount):
             format(self.account_id, self.credentials, self.attributes)
 
 
-class MockAccountStore(IAccountStore, object):
+class MockAccountStore(acct_abcs.AccountStore):
     
     def __init__(self, account=MockAccount(account_id='MAS123')):
         self.account = account
@@ -119,7 +102,7 @@ class MockAccountStore(IAccountStore, object):
         return self.account  # always returns the initialized account
 
 
-class MockPubSub(object):
+class MockPubSub:
 
     def isSubscribed(self, listener, topic_name):
         return True 

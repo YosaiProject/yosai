@@ -9,7 +9,7 @@ from yosai import (
 from .subject import DefaultSubjectContext
 
 
-class IPrincipalCollection(metaclass=ABCMeta):
+class PrincipalCollection(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -39,7 +39,7 @@ class IPrincipalCollection(metaclass=ABCMeta):
         pass
 
 
-class IMutablePrincipalCollection(IPrincipalCollection, metaclass=ABCMeta):
+class MutablePrincipalCollection(PrincipalCollection):
 
     @abstractmethod
     def add(self, principal, realm_name):
@@ -54,7 +54,7 @@ class IMutablePrincipalCollection(IPrincipalCollection, metaclass=ABCMeta):
         pass
 
 
-class IPrincipalMap(IPrincipalCollection, metaclass=ABCMeta):
+class PrincipalMap(PrincipalCollection):
 
     @abstractmethod
     def get_realm_principals(self, realm_name):
@@ -77,7 +77,7 @@ class IPrincipalMap(IPrincipalCollection, metaclass=ABCMeta):
         pass
 
 
-class ISubjectContext(metaclass=ABCMeta):
+class SubjectContext(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -200,7 +200,7 @@ class ISubjectContext(metaclass=ABCMeta):
         pass
 
 
-class ISubject(metaclass=ABCMeta):
+class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -346,7 +346,7 @@ class ISubject(metaclass=ABCMeta):
             return self._security_manager.create_subject(self.subject_context)
 
 
-class ISubjectDAO(metaclass=ABCMeta):
+class SubjectDAO(metaclass=ABCMeta):
 
     @abstractmethod
     def save(self, subject):
@@ -357,7 +357,7 @@ class ISubjectDAO(metaclass=ABCMeta):
         pass
 
 
-class ISubjectFactory(metaclass=ABCMeta):
+class SubjectFactory(metaclass=ABCMeta):
 
     def create_subject(self, context):
         pass

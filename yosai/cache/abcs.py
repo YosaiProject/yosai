@@ -4,7 +4,7 @@ from yosai import (
     IllegalArgumentException,
 )
 
-class ICache(metaclass=ABCMeta):
+class Cache(metaclass=ABCMeta):
 
     @abstractmethod
     def get(self, key):
@@ -28,7 +28,7 @@ class ICache(metaclass=ABCMeta):
         pass
 
 
-class ICacheManagerAware (metaclass=ABCMeta):
+class CacheManagerAware(metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -41,14 +41,14 @@ class ICacheManagerAware (metaclass=ABCMeta):
         pass
 
 
-class ICacheManager(metaclass=ABCMeta):
+class CacheManager(metaclass=ABCMeta):
 
     @abstractmethod
     def get_cache(self, name):
         pass
 
 
-class ABCAbstractCacheManager(ICacheManager, metaclass=ABCMeta):
+class AbstractCacheManager(CacheManager, metaclass=ABCMeta):
 
     def __init__(self):
         self.caches = {}

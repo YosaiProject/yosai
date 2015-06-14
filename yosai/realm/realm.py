@@ -11,12 +11,9 @@ from yosai import (
     UsernamePasswordToken,
 )
 
-from . import (
-    IAccountCacheHandler,
-    IRealm,
-)
+import abcs
 
-class AccountStoreRealm(IRealm):
+class AccountStoreRealm(abcs.Realm):
     """ as of Shiro rev1681068 , authorization implementation is TBD """
     
     def __init__(self):
@@ -131,7 +128,7 @@ class AccountStoreRealm(IRealm):
 
 # omitted AbstractCacheHandler implementation / references
 
-class DefaultAccountCacheHandler(IAccountCacheHandler):
+class DefaultAccountCacheHandler(abcs.AccountCacheHandler):
 
     def __init__(self, cache_resolver, cache_key_resolver):
         # this init is new to Yosai in that it requires 2 positional arguments

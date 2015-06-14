@@ -3,11 +3,7 @@ from yosai import (
     settings,
 )
 
-from . import (
-    ISerialize,
-    ISerializer,
-)
-
+import abcs
 import msgpack
 
 
@@ -22,7 +18,7 @@ class Serializer():
         self.serializer = self.serializers.get(self.format, None)
     
     def serialize(self, obj, *args, **kwargs):
-        if isinstance(obj, ISerialize):
+        if isinstance(obj, abcs.Serialize):
             return self.serializer.serialize(obj.__serialize__(), 
                                              *args, **kwargs)
         else:
@@ -32,7 +28,7 @@ class Serializer():
         return self.serializer.deserialize(message, *args, **kwargs)
 
 
-class MSGPackSerializer(ISerializer):
+class MSGPackSerializer(abcs.Serializer):
     
     @classmethod
     def serialize(self, obj, *args, **kwargs):

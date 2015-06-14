@@ -1,8 +1,4 @@
-from . import (
-    ABCAbstractCacheManager, 
-    ICacheManager, 
-    ICache,
-)
+import abcs
 
 from yosai import (
     CacheException, 
@@ -14,7 +10,7 @@ from yosai import (
 # omitting DisabledCache (see NOTES.txt)
 # omitting DisabledCacheManager (see NOTES.txt)
 
-class MapCache(ICache):
+class MapCache(abcs.Cache):
 
     def __init__(self, name=None, backing_map=None):
         if (name is None):
@@ -60,7 +56,7 @@ class MapCache(ICache):
         return set()
 
 
-class MemoryConstrainedCacheManager(ABCAbstractCacheManager):
+class MemoryConstrainedCacheManager(abcs.AbstractCacheManager):
 
     def create_cache(self, name):
         return MapCache(name, {})  # DG:  was a SoftHashMap...
