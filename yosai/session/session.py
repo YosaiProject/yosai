@@ -9,10 +9,13 @@ from yosai import (
     AbstractMethodException,
     # Context,
     ExpiredSessionException,
+    IllegalStateException,
     LogManager,
     MissingMethodException,
+    StoppedSessionException,
     UnknownSessionException,
     settings,
+    unix_epoch_time,
 )
 from yosai.serialize import abcs as serialize_abcs
 from yosai.session import abcs
@@ -25,24 +28,25 @@ class DefaultSessionSettings:
     and default values if there aren't any.
     """
     def __init__(self):
-        self.millis_per_second = 1000
-        self.millis_per_minute = 60 * self.millis_per_second
-        self.millis_per_hour = 60 * self.millis_per_minute
+
+        # omitted millisecond conversions
 
         session_config = settings.SESSION_CONFIG
         timeout_config = session_config.get('session_timeout', None)
         validation_config = session_config.get('session_validation', None)
 
-        self.absolute_timeout = timeout_config.get('absolute_timeout',
-                                                   45 * self.millis_per_minute)
-        self.idle_timeout = timeout_config.get('idle_timeout',
-                                               15 * self.millis_per_minute)
+        abstimeout = timeout_config.get('absolute_timeout', 1800)  # def:30min
+        self.absolute_timeout = datetime.timedelta(seconds=abstimeout) 
+
+        idletimeout = timeout_config.get('idle_timeout', 450) # def:15min
+        self.idle_timeout = datetime.timedelta(seconds=idletimeout)
+
         self.validation_scheduler_enable =\
             validation_config.get('scheduler_enabled', True)
 
-        self.validation_time_interval = validation_config.get('time_interval',
-                                                              self.millis_per_hour)
-    
+        interval = validation_config.get('time_interval', 3600) # def:1hr 
+        self.validation_time_interval = interval
+
     def __repr__(self):
         return ("SessionSettings(absolute_timeout={0}, idle_timeout={1}, "
                 "validation_scheduler_enable={2}, "
@@ -111,53 +115,28 @@ class ProxiedSession(abcs.Session):
 
 class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     
-    # Serialization reminder:
-    # ------------------------------------------------------------------
-    # Messagepack is schemaless, and so to trace possible version 
-    # compatability issues between deserialized objects and this class, 
-    # a version UUID is used 
-    #
-    # You _MUST_ change the following UUID if you introduce a change to this 
-    # class that is NOT serialization backwards compatible.  
-    # Serialization-compatible  changes do not require a change to this 
-    # number.  If you need to generate a new ID in this case, use the 
-    # stdlib uuid module:  
-    #    >>> import uuid
-    #    >>> uuid.uuid4()
-    #       UUID('1677d236-b814-406b-94dc-28a879791cfc')
-    # 
-    # this is essentially a serialVersionUID without any autovalidation
-    VERSION_UUID = "1677d236-b814-406b-94dc-28a879791cfc"
+    # Yosai omits:
+    #    - the manual class version control process (too policy-reliant)
+    #    - the bit-flagging technique (will cross this bridge later, if needed)
 
     def __init__(self, session_config, host=None):
         # Yosai includes a session_config parameter to enable dynamic settings
-        self._timeout = session_config.absolute_timeout
-        self._start_timestamp = self.unix_epoch_time 
+        self._attributes = None
+        self._expired = None
+
+        self._stop_timestamp = None
+        self._start_timestamp = datetime.datetime.utcnow() 
         self._last_access_time = self._start_timestamp
+        
+        # Yosai introduces an absolute timeout parameter (shiro only has idle)
+        self.absolute_timeout = session_config.absolute_timeout  # timedelta 
+        self.absolute_expiration = self.start_timestamp + self.absolute_timeout
+
+        self._idle_timeout = session_config.idle_timeout 
+
         self._host = host
-        self.millis_per_second = session_config.millis_per_second
-        self.millis_per_minute = session_config.millis_per_minute
         self.serialization_method = session_config.serialization_method
     
-    def __eq__(self, other):
-        if (self == other): 
-            return True
-        
-        if (isinstance(other, SimpleSession)):
-            self_id = self.session_id
-            other_id = other.session_id
-            if (self_id and other_id):
-                return (self_id == other_id)
-            else:
-                # fall back to an attribute based comparison:
-                return self.on_equals(other)
-        return False 
-    
-    @property
-    def unix_epoch_time(self): 
-        # expressed in milliseconds:
-        return int(time.mktime(datetime.datetime.now().timetuple())) * 1000
-
     # DG:  renamed id to session_id because of reserved word conflict
     @property
     def session_id(self):
@@ -174,7 +153,8 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     @start_timestamp.setter
     def start_timestamp(self, start_ts):
         """
-        :param  : expressed as unix epoch timestamp in milliseconds
+        :param  start_ts: the time that the Session is started, in utc 
+        :type start_ts: datetime
         """
         self._start_timestamp = start_ts
 
@@ -185,7 +165,8 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     @stop_timestamp.setter
     def stop_timestamp(self, stop_ts):
         """
-        :param  : expressed as unix epoch timestamp in milliseconds
+        :param  stop_ts: the time that the Session is stopped, in utc 
+        :type stop_ts: datetime
         """
         self._stop_timestamp = stop_ts
     
@@ -196,26 +177,40 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     @last_access_time.setter
     def last_access_time(self, last_access_time):
         """
-        :param  : expressed as unix epoch timestamp in milliseconds
+        :param  last_access_time: time that the Session was last used, in utc 
+        :type last_access_time: datetime
         """
         self._last_access_time = last_access_time
 
     @property
-    def expired(self):
+    def is_expired(self):
         return self._expired
 
-    @expired.setter
-    def expired(self, expired):
-        self.expired = expired
+    @is_expired.setter
+    def is_expired(self, expired):
+        self._expired = expired
 
     @property
-    def timeout(self):
-        return self._timeout
+    def idle_timeout(self):
+        return self._idle_timeout
 
-    @timeout.setter
-    def timeout(self, timeout):
-        """ timeout = expressed in milliseconds in milliseconds """
-        self._timeout = timeout
+    @idle_timeout.setter
+    def idle_timeout(self, idle_timeout):
+        """
+        :type idle_timeout: timedelta
+        """
+        self._idle_timeout = idle_timeout
+    
+    @property
+    def absolute_timeout(self):
+        return self._absolute_timeout
+
+    @absolute_timeout.setter
+    def absolute_timeout(self, abs_timeout):
+        """
+        :type abs_timeout: timedelta
+        """
+        self._absolute_timeout = abs_timeout
 
     @property
     def host(self):
@@ -223,6 +218,9 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
 
     @host.setter
     def host(self, host):
+        """
+        :type host:  string 
+        """
         self._host = host
 
     @property
@@ -234,13 +232,13 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         self._attributes = attrs
 
     def touch(self):
-        self._last_access_time = self.unix_epoch_time 
+        self.last_access_time = datetime.datetime.utcnow() 
 
     def stop(self):
         if (not self.stop_timestamp):
-            self.stop_timestamp = self.unix_epoch_time 
+            self.stop_timestamp = datetime.datetime.utcnow()  
 
-    def stopped(self):
+    def is_stopped(self):
         return bool(self.stop_timestamp)
 
     def expire(self):
@@ -251,87 +249,85 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         return (not self.stopped and not self.expired)
 
     def is_timed_out(self):
+        """
+        determines whether a Session has been inactive/idle for too long a time
+        OR exceeds the absolute time that a Session may exist
+        """
         if (self.expired):
             return True
 
-        timeout = self.timeout
+        if (self.absolute_timeout and self.idle_timeout):
+            if (not self.last_access_time):
+                msg = ("session.last_access_time for session with id [" + 
+                       str(self.session_id) + "] is null. This value must be"
+                       "set at least once, preferably at least upon "
+                       "instantiation. Please check the " + 
+                       self.__class__.__name__ +
+                       " implementation and ensure self value will be set "
+                       "(perhaps in the constructor?)")
+                raise IllegalStateException(msg)
 
-        if (timeout):
-            try:
-                last_access_time = self.last_access_time
-
-                if (not last_access_time):
-                    msg = ("session.lastAccessTime for session with id [" + 
-                           self.session_id + "] is null. This value must be"
-                           "set at least once, preferably at least upon "
-                           "instantiation. Please check the " 
-                           + self.__class__.__name__ +
-                           " implementation and ensure self value will be set "
-                           "(perhaps in the constructor?)")
-                    raise IllegalStateException(msg)
-            except IllegalStateException as ex:
-                print('is_time_out IllegalStateException:', ex)
             """
              Calculate at what time a session would have been last accessed
-             for it to be expired at self point.  In other words, subtract
+             for it to be expired at this point.  In other words, subtract
              from the current time the amount of time that a session can
              be inactive before expiring.  If the session was last accessed
-             before self time, it is expired.
+             before this time, it is expired.
             """
-            current_millis = self.unix_epoch_time 
-            expiretimemillis = current_millis - timeout
-            return last_access_time < expiretimemillis 
+            current_time = datetime.datetime.utcnow() 
+
+            # Check 1:  Absolute Timeout
+            if (current_time > self.absolute_expiration):
+                return True
+
+            # Check 2:  Inactivity Timeout
+            idle_threshold = self.last_access_time + self.idle_timeout
+            if (self.current_time > idle_threshold):
+                return True
+
         else:
-            # log here
-            msg2 = ("No timeout for session with id [" + self.session_id + 
-                    "]. Session is not considered expired.")
+            msg2 = ("Timeouts not properly set for session with id [" + 
+                    str(self.session_id) + "]. Session is not considered "
+                    "expired.")
             print(msg2) 
+            # log here
         
         return False
 
     def validate(self):
-        try:
-            # check for stopped:
-            if (self.stopped):
-                # timestamp is set, so the session is considered stopped:
-                msg = ("Session with id [" + self.session_id + "] has been "
-                       "explicitly stopped.  No further interaction under "
-                       "this session is allowed.")
-                raise StoppedSessionException(msg)
+        # check for stopped:
+        if (self.is_stopped):
+            # timestamp is set, so the session is considered stopped:
+            msg = ("Session with id [" + str(self.session_id) + "] has been "
+                   "explicitly stopped.  No further interaction under "
+                   "this session is allowed.")
+            raise StoppedSessionException(msg)
+        
+        # check for expiration
+        if (self.is_timed_out()):
+            self.expire()
+
+            # throw an exception explaining details of why it expired:
+            lastaccesstime = datetime.fromtimestamp(
+                self.last_access_time).strftime('%Y-%m-%d %H:%M:%S')
+
+            timeout_sec = datetime.fromtimestamp(
+                self.timeout//self.millis_per_second)
+            timeout_min = str(datetime.fromtimestamp(
+                self.timeout//self.millis_per_minute))
+
+            currenttime = str(datetime.now()) 
+            session_id = str(self.session_id)
+
+            msg2 = ("Session with id [" + session_id + "] has expired. " 
+                    "Last access time: " + lastaccesstime + 
+                    ".  Current time: " + currenttime +
+                    ".  Session timeout is set to " + timeout_sec + 
+                    " seconds (" + timeout_min + " minutes)")
+            # log here
+            print(msg2)
+            raise ExpiredSessionException(msg2)
             
-            # check for expiration
-            if (self.is_timed_out()):
-                self.expire()
-
-                # throw an exception explaining details of why it expired:
-                lastaccesstime = datetime.fromtimestamp(
-                    self.last_access_time).strftime('%Y-%m-%d %H:%M:%S')
-
-                timeout_sec = datetime.fromtimestamp(
-                    self.timeout//self.millis_per_second)
-                timeout_min = str(datetime.fromtimestamp(
-                    self.timeout//self.millis_per_minute))
-
-                currenttime = str(datetime.now()) 
-                session_id = str(self.session_id)
-
-                msg2 = ("Session with id [" + session_id + "] has expired. " 
-                        "Last access time: " + lastaccesstime + 
-                        ".  Current time: " + currenttime +
-                        ".  Session timeout is set to " + timeout_sec + 
-                        " seconds (" + timeout_min + " minutes)")
-                # log here
-                print(msg2)
-                raise ExpiredSessionException(msg2)
-            
-        except StoppedSessionException as ex:
-            print('SimpleSession.validate StoppedSessionException:', ex)
-            raise
-
-        except ExpiredSessionException as ex:
-            print('SimpleSession.validate ExpiredSessionException:', ex)
-            raise
-
     def get_attributes_lazy(self):
         attributes = self.attributes
         if (not attributes):
@@ -379,13 +375,25 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     
     # DG:  deleted hashcode, string builder, writeobject, readObject, 
     #      getalteredfieldsbitmask, isFieldPresent
+    
+    def __eq__(self, other):
+        if (self == other): 
+            return True
+        
+        if (isinstance(other, SimpleSession)):
+            self_id = self.session_id
+            other_id = other.session_id
+            if (self_id and other_id):
+                return (self_id == other_id)
+            else:
+                # fall back to an attribute based comparison:
+                return self.on_equals(other)
+        return False 
 
     def __serialize__(self):
         """ follows similar role as __json__ does """
         return {key: value for key, value in 
-                {'class': self.__class__.__name__,
-                 'version': self.__class___.VERSION_UUID,
-                 'session_id': self.session_id,
+                {'session_id': self.session_id,
                  'start_timestamp': self.start_timestamp,
                  'stop_timestamp': self.stop_timestamp,
                  'last_access_time': self.last_access_time,

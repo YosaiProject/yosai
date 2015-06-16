@@ -1,6 +1,6 @@
 from yosai import (
     SerializationException,
-    settings,
+    unix_epoch_time,
 )
 
 from yosai.serialize import abcs
@@ -18,11 +18,14 @@ class SerializationManager:
         self.serializer = self.serializers.get(self.format, None)
     
     def serialize(self, obj, *args, **kwargs):
-        if isinstance(obj, abcs.Serialize):
-            return self.serializer.serialize(obj.__serialize__(), 
-                                             *args, **kwargs)
+        if isinstance(obj, abcs.Serializable):
+            newdict = {}
+            newdict.update({'class': obj.__class__.__name__,
+                            'record_dt': unix_epoch_time()})
+            newdict.update(obj.__serialize__()) 
+            return self.serializer.serialize(newdict, *args, **kwargs)
         else:
-            raise SerializationException('Must implement ISerialize')
+            raise SerializationException('Must implement ISerializable')
 
     def deserialize(self, message, *args, **kwargs):
         return self.serializer.deserialize(message, *args, **kwargs)

@@ -1,9 +1,11 @@
 import collections
 import inspect
+import datetime
+import time
 
 
-def who_am_i(self):
-    return inspect.stack()[1][3]
+def unix_epoch_time():
+    return int(time.mktime(datetime.datetime.now().timetuple()))
 
 
 class OrderedSet(collections.MutableSet):

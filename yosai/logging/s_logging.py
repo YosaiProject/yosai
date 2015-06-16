@@ -90,7 +90,6 @@ class JSONFormatter(logging.Formatter):
             return obj.isoformat()
         else:
             return str(obj)
-
     
     def format_exception(self, ei, strip_newlines=True):
         lines = tb.format_exception(*ei)

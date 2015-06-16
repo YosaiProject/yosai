@@ -22,6 +22,7 @@ from yosai import (
     EventBusMessageDataException,
     EventBusSubscriptionException,
     LogManager,
+    unix_epoch_time,
 )
 
 from yosai.event import abcs
@@ -41,7 +42,7 @@ class Event:
         self.event_type = event_type  # ex:  AUTHENTICATION
         self.event_topic = event_topic  # ex:  AUTHENTICATION_FAILED
         self.source = source  # the object that emitted the event 
-        self.timestamp = calendar.timegm(time.gmtime())  # UNIX timestamp
+        self.timestamp = unix_epoch_time() 
         self.__dict__.update(**eventattrs)  # DG:  risky?
 
 

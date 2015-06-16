@@ -71,13 +71,13 @@
 
     "SESSION_CONFIG": {
         "session_timeout": {
-            "absolute_timeout": 1800000,
-            "idle_timeout": 300000
+            "absolute_timeout": 1800,
+            "idle_timeout": 300
         },
 
         "session_validation": {
             "scheduler_enabled": true,  
-            "time_interval": 3600000
+            "time_interval": 3600
         }
     }
 }
