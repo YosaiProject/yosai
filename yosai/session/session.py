@@ -15,7 +15,6 @@ from yosai import (
     StoppedSessionException,
     UnknownSessionException,
     settings,
-    unix_epoch_time,
 )
 from yosai.serialize import abcs as serialize_abcs
 from yosai.session import abcs
@@ -111,6 +110,9 @@ class ProxiedSession(abcs.Session):
 
     def remove_attribute(self, key):
         self._delegate.remove_attribute(key)
+
+    def __repr__(self):
+        return "ProxiedSession(session_id={0})".format(self.session_id)
 
 
 class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
@@ -308,48 +310,43 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
             self.expire()
 
             # throw an exception explaining details of why it expired:
-            lastaccesstime = datetime.fromtimestamp(
-                self.last_access_time).strftime('%Y-%m-%d %H:%M:%S')
+            lastaccesstime = self.last_access_time.isoformat()
 
-            timeout_sec = datetime.fromtimestamp(
-                self.timeout//self.millis_per_second)
-            timeout_min = str(datetime.fromtimestamp(
-                self.timeout//self.millis_per_minute))
+            idle_timeout = self.idle_timeout.seconds
+            idle_timeout_min = str(idle_timeout // 60)
 
-            currenttime = str(datetime.now()) 
+            absolute_timeout = self.absolute_timeout.seconds
+            absolute_timeout_min = str(absolute_timeout // 60)
+
+            currenttime = datetime.datetime.utcnow().isoformat() 
             session_id = str(self.session_id)
 
             msg2 = ("Session with id [" + session_id + "] has expired. " 
                     "Last access time: " + lastaccesstime + 
                     ".  Current time: " + currenttime +
-                    ".  Session timeout is set to " + timeout_sec + 
-                    " seconds (" + timeout_min + " minutes)")
-            # log here
+                    ".  Session idle timeout is set to " + str(idle_timeout) + 
+                    " seconds (" + idle_timeout_min + " minutes) and "
+                    " absolute timeout is set to " + str(absolute_timeout) +
+                    " seconds (" + absolute_timeout_min + "minutes)")
             print(msg2)
+            # log here
             raise ExpiredSessionException(msg2)
             
     def get_attributes_lazy(self):
-        attributes = self.attributes
-        if (not attributes):
-            attributes = {}
-            self.attributes = attributes
-        return self.attributes
+        if (self.attributes is None):
+            self.attributes = {}
+        return self.attributes 
 
     def get_attribute_keys(self):
-        try:
-            attributes = self.attributes
-            if (not attributes):
-                return set() 
-            return {attributes}  # keys is default
-        except:
-            raise
+        if (self.attributes is None):
+            return None 
+        return set(self.attributes)  # a set of keys 
 
     def get_attribute(self, key):
-        attributes = self.attributes  # should be a Dict
-        if (not attributes):
+        if (not self.attributes):
             return None 
         
-        return attributes.get(key, None)
+        return self.attributes.get(key, None)
 
     def set_attribute(self, key, value):
         if (not value):
@@ -358,49 +355,53 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
             self.get_attributes_lazy()[key] = value
         
     def remove_attribute(self, key):
-        attributes = self.attributes
-        if (not attributes):
+        if (not self.attributes):
             return None 
         else:
-            return attributes.pop(key)
+            return self.attributes.pop(key, None)
 
-    def on_equals(self, ss):
-        return (((self.start_timestamp == ss.start_timestamp) if (self.start_timestamp) else (not ss.start_timestamp)) and 
-                ((self.stop_timestamp == ss.stop_timestamp) if (self.stop_timestamp) else (not ss.stop_timestamp)) and
-                ((self.last_access_time == ss.last_access_time) if (self.last_access_time) else (not ss.last_accessTime)) and
-                (self.timeout == ss.timeout) and
-                (self.expired == ss.expired) and
-                ((self.host == ss.host) if (self.host) else (not ss.host)) and
-                ((self.attributes == ss.attributes) if (self.attributes) else (not ss.attributes)))
-    
-    # DG:  deleted hashcode, string builder, writeobject, readObject, 
-    #      getalteredfieldsbitmask, isFieldPresent
+    def on_equals(self, other):
+        try:
+            return ((self.start_timestamp == other.start_timestamp) and 
+                    (self.stop_timestamp == other.stop_timestamp) and
+                    (self.last_access.time == other.last_access_time) and
+                    (self.timeout == other.timeout) and
+                    (self.expired == other.expired) and
+                    (self.host == other.host) and
+                    (self.attributes == other.attributes))
+        except AttributeError:
+            return False
+
+    # deleted hashcode method as python's __hash__ is fine
+
+    # omitting the bit-flagging methods:
+    #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
     
     def __eq__(self, other):
+
         if (self == other): 
             return True
-        
-        if (isinstance(other, SimpleSession)):
-            self_id = self.session_id
-            other_id = other.session_id
-            if (self_id and other_id):
-                return (self_id == other_id)
-            else:
-                # fall back to an attribute based comparison:
-                return self.on_equals(other)
-        return False 
 
+        if (isinstance(other, SimpleSession)):
+            if (self.session_id and other.session_id):
+                return (self.session_id == other.session_id)
+            else:
+                return self.on_equals(other)
+        else:
+            return False
+
+    def __repr__(self):
+        return "SimpleSession(session_id={0})".format(self.session_id)
+       
     def __serialize__(self):
-        """ follows similar role as __json__ does """
-        return {key: value for key, value in 
-                {'session_id': self.session_id,
-                 'start_timestamp': self.start_timestamp,
-                 'stop_timestamp': self.stop_timestamp,
-                 'last_access_time': self.last_access_time,
-                 'timeout': self.timeout,
-                 'expired': self.expired,
-                 'host': self.host,
-                 'attributes': self.attributes}.items() if value}
+        return {'session_id': self.session_id,
+                'start_timestamp': self.start_timestamp,
+                'stop_timestamp': self.stop_timestamp,
+                'last_access_time': self.last_access_time,
+                'timeout': self.timeout,
+                'expired': self.expired,
+                'host': self.host,
+                'attributes': self.attributes}
 
 
 class SimpleSessionFactory:
