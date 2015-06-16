@@ -1,10 +1,10 @@
 from yosai import (
     SerializationException,
-    unix_epoch_time,
 )
 
 from yosai.serialize import abcs
 import msgpack
+import datetime
 
 
 class SerializationManager:
@@ -21,7 +21,7 @@ class SerializationManager:
         if isinstance(obj, abcs.Serializable):
             newdict = {}
             newdict.update({'class': obj.__class__.__name__,
-                            'record_dt': unix_epoch_time()})
+                            'record_dt': datetime.datetime.utcnow().isoformat()})
             newdict.update(obj.__serialize__()) 
             return self.serializer.serialize(newdict, *args, **kwargs)
         else:
