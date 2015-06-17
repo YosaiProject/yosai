@@ -1,4 +1,5 @@
 from yosai import (
+    InvalidSerializationFormatException,
     SerializationException,
 )
 
@@ -15,7 +16,11 @@ class SerializationManager:
     def __init__(self, format='msgpack'):
         self.format = format
         self.serializers = {'msgpack': MSGPackSerializer}
-        self.serializer = self.serializers.get(self.format, None)
+        try:
+            self.serializer = self.serializers[self.format]
+        except KeyError:
+            msg = ('Could not locate serialization format: ', format)
+            raise InvalidSerializationFormatException(msg)
     
     def serialize(self, obj, *args, **kwargs):
         if isinstance(obj, abcs.Serializable):

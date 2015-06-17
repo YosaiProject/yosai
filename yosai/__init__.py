@@ -46,6 +46,7 @@ from .exceptions import (
     InvalidAuthcAttemptRealmsArgumentException,
     InvalidSessionException,
     InvalidAuthenticationTokenException,
+    InvalidSerializationFormatException,
     InvalidTokenPasswordException,
     LockedAccountException,
     MisconfiguredException,

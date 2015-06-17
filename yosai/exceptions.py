@@ -265,6 +265,9 @@ class SerializationException(YosaiException):
     pass
 
 
+class InvalidSerializationFormatException(SerializationException):
+    pass
+
 # ---------------------------------------------------------------------------
 # ---- Session Management Exceptions
 # ---------------------------------------------------------------------------
