@@ -275,7 +275,7 @@ def test_ss_validate_is_timedout(simple_session, monkeypatch):
 
 @pytest.mark.parametrize('attributes,expected', 
                          [(None, {}), ({'attr1': 1}, {'attr1': 1})])
-def test_get_attributes_lazy(simple_session, attributes, expected, monkeypatch):
+def test_ss_get_attributes_lazy(simple_session, attributes, expected, monkeypatch):
     """
     unit tested:  get_attributes_lazy
 
@@ -290,7 +290,7 @@ def test_get_attributes_lazy(simple_session, attributes, expected, monkeypatch):
 @pytest.mark.parametrize('attributes,key,expected', 
                          [(None, 'attr1', None), 
                           ({'attr1': 'number1'}, 'attr1', 'number1')])
-def test_get_attribute(simple_session, attributes, key, expected, monkeypatch):
+def test_ss_get_attribute(simple_session, attributes, key, expected, monkeypatch):
     """
     unit tested:  get_attribute
 
@@ -301,7 +301,7 @@ def test_get_attribute(simple_session, attributes, key, expected, monkeypatch):
     monkeypatch.setattr(ss, '_attributes', attributes)
     assert ss.get_attribute(key) == expected
 
-def test_set_attribute_removes(simple_session, monkeypatch):
+def test_ss_set_attribute_removes(simple_session, monkeypatch):
     """
     unit tested:  set_attribute
 
@@ -314,7 +314,7 @@ def test_set_attribute_removes(simple_session, monkeypatch):
     ss.set_attribute('attr1')
     assert ss.attributes.get('attr1', 'nope') == 'nope' 
 
-def test_set_attribute_adds(simple_session, monkeypatch):
+def test_ss_set_attribute_adds(simple_session, monkeypatch):
     """
     unit tested:  set_attribute
 
@@ -326,3 +326,104 @@ def test_set_attribute_adds(simple_session, monkeypatch):
     monkeypatch.setattr(ss, '_attributes', attributes)
     ss.set_attribute('attr1')
     assert ss.attributes.get('attr1', 'nope') == 'nope' 
+
+
+@pytest.mark.parametrize('attributes,key,expected', 
+                         [(None, 'attr2', None),
+                          ({'attr1': 100, 'attr2': 200}, 'attr2', 200)])
+def test_ss_remove_attribute(simple_session, monkeypatch, attributes, 
+                             key, expected): 
+    """
+    unit tested: remove_attribute
+    
+    test case:
+    remove an attribute, if attributes exists, else None
+    """
+    ss = simple_session
+    monkeypatch.setattr(ss, '_attributes', attributes)
+    assert ss.remove_attribute(key) == expected 
+
+
+def test_ss_eq_clone():
+    """
+    unit tested: 
+    
+    test case:
+      other is a clone of self
+   """
+    s1 = SimpleSession(DefaultSessionSettings())
+    s1._is_expired = False
+    s1.session_id = 'sessionid123'
+    s1._absolute_timeout = datetime.timedelta(minutes=60)
+    s1._idle_timeout = datetime.timedelta(minutes=15)
+    s1._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011) 
+    s1._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011) 
+    s1._host = '127.0.0.1'
+    s1._attributes = {'attr1': 100, 'attr2': 200}
+   
+    s2 = SimpleSession(DefaultSessionSettings())
+    s2.session_id = 'sessionid123'
+    s2._is_expired = False
+    s2._absolute_timeout = datetime.timedelta(minutes=60)
+    s2._idle_timeout = datetime.timedelta(minutes=15)
+    s2._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011) 
+    s2._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011) 
+    s2._host = '127.0.0.1'
+    s2._attributes = {'attr1': 100, 'attr2': 200}
+  
+    assert s1 == s2
+
+
+def test_ss_eq_different_values():
+    """
+    unit tested: 
+    
+    test case:
+    other has different attribute values than self
+   """
+    s1 = SimpleSession(DefaultSessionSettings())
+    s1.session_id = 'sessionid123'
+    s1._is_expired = False
+    s1._absolute_timeout = datetime.timedelta(minutes=60)
+    s1._idle_timeout = datetime.timedelta(minutes=25)
+    s1._last_access_time = datetime.datetime(2014, 4, 1, 11, 17, 10, 101011) 
+    s1._start_timestamp = datetime.datetime(2014, 4, 1, 11, 11, 11, 101011) 
+    s1._host = '192.168.1.1'
+    s1._attributes = {'attr3': 100, 'attr4': 200}
+   
+    s2 = SimpleSession(DefaultSessionSettings())
+    s2.session_id = 'sessionid345'
+    s2._is_expired = False
+    s2._absolute_timeout = datetime.timedelta(minutes=60)
+    s2._idle_timeout = datetime.timedelta(minutes=15)
+    s2._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011) 
+    s2._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011) 
+    s2._host = '127.0.0.1'
+    s2._attributes = {'attr1': 100, 'attr2': 200}
+  
+    assert not s1 == s2
+
+def test_ss_eq_different_attributes():
+    """
+    unit tested: 
+    
+    test case:
+    other does not have same attributes as self
+   """
+    s1 = SimpleSession(DefaultSessionSettings())
+    s1.session_id = 'session242'
+    s1._is_expired = False
+    s1._absolute_timeout = datetime.timedelta(minutes=60)
+    s1._idle_timeout = datetime.timedelta(minutes=15)
+    s1._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011) 
+    s1._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011) 
+    s1._host = '127.0.0.1'
+    s1._attributes = {'attr1': 100, 'attr2': 200}
+   
+    s2 = SimpleSession(DefaultSessionSettings())
+    s2._is_expired = False
+    s2._absolute_timeout = datetime.timedelta(minutes=60)
+    s2._idle_timeout = datetime.timedelta(minutes=15)
+    s2._attributes = {'attr1': 100, 'attr2': 200}
+  
+    assert not s1 == s2

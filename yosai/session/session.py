@@ -4,6 +4,7 @@ from os import urandom
 from hashlib import sha256
 import time
 import uuid
+import traceback as tb
 
 from yosai import (
     AbstractMethodException,
@@ -377,35 +378,18 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         else:
             return self.attributes.pop(key, None)
 
-    def on_equals(self, other):
-        try:
-            return ((self.start_timestamp == other.start_timestamp) and 
-                    (self.stop_timestamp == other.stop_timestamp) and
-                    (self.last_access.time == other.last_access_time) and
-                    (self.timeout == other.timeout) and
-                    (self.is_expired == other.is_expired) and
-                    (self.host == other.host) and
-                    (self.attributes == other.attributes))
-        except AttributeError:
-            return False
-
+    # deleted on_equals as it is unecessary in python
     # deleted hashcode method as python's __hash__ is fine
 
     # omitting the bit-flagging methods:
     #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
     
     def __eq__(self, other):
-
-        if (self == other): 
-            return True
-
-        if (isinstance(other, SimpleSession)):
-            if (self.session_id and other.session_id):
-                return (self.session_id == other.session_id)
-            else:
-                return self.on_equals(other)
-        else:
-            return False
+        try:
+            result = (self.session_id == other.session_id)
+        except AttributeError:
+            return (self.__dict__ == other.__dict__)
+        return result 
 
     def __repr__(self):
         return "SimpleSession(session_id={0})".format(self.session_id)
