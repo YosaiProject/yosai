@@ -18,7 +18,7 @@ from .session import (
 #    DefaultSessionStorageEvaluator,
 #    ExecutorServiceSessionValidationScheduler,
 #    RandomSessionIDGenerator,
-#    SimpleSession,
+    SimpleSession,
 #    SimpleSessionFactory,
 #    UUIDSessionGenerator,
 )

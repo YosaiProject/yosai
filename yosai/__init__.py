@@ -168,7 +168,7 @@ from .session import (
     # Session,
     # SessionManager,
     # SessionTokenGenerator,
-    # SimpleSession,
+    SimpleSession,
     # SimpleSessionFactory,
     # UUIDSessionGenerator,
 )

@@ -1,4 +1,5 @@
 import yosai.session.abcs as session_abcs
+import datetime
 
 class MockSession(session_abcs.Session, object):
 
@@ -19,18 +20,26 @@ class MockSession(session_abcs.Session, object):
     
     @property
     def last_access_time(self):
-        return 1433961196
+        return datetime.datetime(2015, 6, 17, 19, 45, 51, 818810) 
 
     @property
     def start_timestamp(self):
-        return 1433961176  # guess when I created this mock? 
+        return datetime.datetime(2015, 6, 17, 19, 43, 51, 818810) 
 
     @property
-    def timeout(self):
-        return 1433962096  # 15 minutes from last_access_time 
+    def idle_timeout(self):
+        return datetime.timedelta(minutes=15)
+ 
+    @idle_timeout.setter
+    def idle_timeout(self, idle_timeout):
+        pass
+   
+    @property
+    def absolute_timeout(self):
+        return datetime.timedelta(minutes=60) 
 
-    @timeout.setter
-    def timeout(self, max_idle_time_in_millis):
+    @absolute_timeout.setter
+    def absolute_timeout(self, absolute_timeout):
         pass
 
     def get_attribute(self, key):

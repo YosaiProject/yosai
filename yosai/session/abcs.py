@@ -43,16 +43,38 @@ class Session(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def timeout(self):
+    def absolute_timeout(self):
+        """ 
+        Returns the time, in milliseconds, that the session may 
+        exist before it expires
+        """    
+        pass
+
+    @absolute_timeout.setter
+    @abstractmethod
+    def absolute_timeout(self, abs_timeout): 
+        """ 
+        Sets the time in milliseconds that the session may exist 
+        before expiring.
+
+        - A negative value means the session will never expire
+        - A non-negative value (0 or greater) means the session expiration will
+          occur if idle for that length of time.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def idle_timeout(self):
         """ 
         Returns the time, in milliseconds, that the session may 
         remain idle before it expires
         """    
         pass
 
-    @timeout.setter
+    @idle_timeout.setter
     @abstractmethod
-    def timeout(self, max_idle_time_in_millis):
+    def idle_timeout(self, idle_timeout): 
         """ 
         Sets the time in milliseconds that the session may remain idle 
         before expiring.

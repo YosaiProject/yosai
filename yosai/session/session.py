@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from os import urandom
 from hashlib import sha256
@@ -56,8 +56,7 @@ class DefaultSessionSettings:
                     self.validation_scheduler_enable,
                     self.validation_time_interval))
 
-
-# Yosai omits the SessionListenerAdapter class as a valid use case is unclear
+# Yosai omits the SessionListenerAdapter class
 
 class ProxiedSession(abcs.Session):
    
@@ -78,15 +77,20 @@ class ProxiedSession(abcs.Session):
         return self._delegate.last_access_time
 
     @property
-    def timeout(self):
-        return self._delegate.timeout
+    def idle_timeout(self):
+        return self._delegate.idle_timeout
 
-    @timeout.setter
-    def timeout(self, max_idle_time):
-        """ 
-        max_idle_time should be expressed in milliseconds 
-        """
-        self._delegate.timeout = max_idle_time
+    @idle_timeout.setter
+    def idle_timeout(self, max_idle_time):
+        self._delegate.idle_timeout = max_idle_time
+    
+    @property
+    def absolute_timeout(self):
+        return self._delegate.absolute_timeout
+
+    @absolute_timeout.setter
+    def absolute_timeout(self, abs_time):
+        self._delegate.absolute_timeout = abs_time
 
     @property
     def host(self):
@@ -124,21 +128,90 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     def __init__(self, session_config, host=None):
         # Yosai includes a session_config parameter to enable dynamic settings
         self._attributes = None
-        self._expired = None
+        self._is_expired = None
+        self._session_id = None
 
         self._stop_timestamp = None
         self._start_timestamp = datetime.datetime.utcnow() 
         self._last_access_time = self._start_timestamp
         
         # Yosai introduces an absolute timeout parameter (shiro only has idle)
-        self.absolute_timeout = session_config.absolute_timeout  # timedelta 
-        self.absolute_expiration = self.start_timestamp + self.absolute_timeout
+        self._absolute_timeout = session_config.absolute_timeout  # timedelta 
 
         self._idle_timeout = session_config.idle_timeout 
-
         self._host = host
-        self.serialization_method = session_config.serialization_method
     
+    @property
+    def absolute_timeout(self):
+        return self._absolute_timeout
+
+    @absolute_timeout.setter
+    def absolute_timeout(self, abs_timeout):
+        """
+        :type abs_timeout: timedelta
+        """
+        self._absolute_timeout = abs_timeout
+
+    @property
+    def attributes(self):
+        return self._attributes
+
+    @attributes.setter
+    def attributes(self, attrs):
+        self._attributes = attrs
+
+    @property
+    def attribute_keys(self):
+        if (self.attributes is None):
+            return None 
+        return set(self.attributes)  # a set of keys 
+    
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, host):
+        """
+        :type host:  string 
+        """
+        self._host = host
+
+    @property
+    def idle_timeout(self):
+        return self._idle_timeout
+
+    @idle_timeout.setter
+    def idle_timeout(self, idle_timeout):
+        """
+        :type idle_timeout: timedelta
+        """
+        self._idle_timeout = idle_timeout
+    
+    @property
+    def is_expired(self):
+        return self._is_expired
+
+    @is_expired.setter
+    def is_expired(self, expired):
+        self._is_expired = expired
+
+    @property
+    def is_stopped(self):
+        return bool(self.stop_timestamp)
+
+    @property
+    def last_access_time(self):
+        return self._last_access_time
+    
+    @last_access_time.setter
+    def last_access_time(self, last_access_time):
+        """
+        :param  last_access_time: time that the Session was last used, in utc 
+        :type last_access_time: datetime
+        """
+        self._last_access_time = last_access_time
+
     # DG:  renamed id to session_id because of reserved word conflict
     @property
     def session_id(self):
@@ -171,67 +244,18 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         :type stop_ts: datetime
         """
         self._stop_timestamp = stop_ts
-    
-    @property
-    def last_access_time(self):
-        return self._last_access_time
-    
-    @last_access_time.setter
-    def last_access_time(self, last_access_time):
-        """
-        :param  last_access_time: time that the Session was last used, in utc 
-        :type last_access_time: datetime
-        """
-        self._last_access_time = last_access_time
 
     @property
-    def is_expired(self):
-        return self._expired
-
-    @is_expired.setter
-    def is_expired(self, expired):
-        self._expired = expired
+    def absolute_expiration(self):
+        if self.absolute_timeout:
+            return self.start_timestamp + self.absolute_timeout
+        return None
 
     @property
-    def idle_timeout(self):
-        return self._idle_timeout
-
-    @idle_timeout.setter
-    def idle_timeout(self, idle_timeout):
-        """
-        :type idle_timeout: timedelta
-        """
-        self._idle_timeout = idle_timeout
-    
-    @property
-    def absolute_timeout(self):
-        return self._absolute_timeout
-
-    @absolute_timeout.setter
-    def absolute_timeout(self, abs_timeout):
-        """
-        :type abs_timeout: timedelta
-        """
-        self._absolute_timeout = abs_timeout
-
-    @property
-    def host(self):
-        return self._host
-
-    @host.setter
-    def host(self, host):
-        """
-        :type host:  string 
-        """
-        self._host = host
-
-    @property
-    def attributes(self):
-        return self._attributes
-
-    @attributes.setter
-    def attributes(self, attrs):
-        self._attributes = attrs
+    def idle_expiration(self):
+        if self.idle_timeout:
+            return self.last_access_time + self.idle_timeout
+        return None
 
     def touch(self):
         self.last_access_time = datetime.datetime.utcnow() 
@@ -240,25 +264,22 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         if (not self.stop_timestamp):
             self.stop_timestamp = datetime.datetime.utcnow()  
 
-    def is_stopped(self):
-        return bool(self.stop_timestamp)
-
     def expire(self):
         self.stop()
-        self.expired = True
+        self.is_expired = True
 
     def is_valid(self):
-        return (not self.stopped and not self.expired)
+        return (not self.is_stopped and not self.is_expired)
 
     def is_timed_out(self):
         """
         determines whether a Session has been inactive/idle for too long a time
         OR exceeds the absolute time that a Session may exist
         """
-        if (self.expired):
+        if (self.is_expired):
             return True
 
-        if (self.absolute_timeout and self.idle_timeout):
+        if (self.absolute_timeout or self.idle_timeout):
             if (not self.last_access_time):
                 msg = ("session.last_access_time for session with id [" + 
                        str(self.session_id) + "] is null. This value must be"
@@ -279,16 +300,17 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
             current_time = datetime.datetime.utcnow() 
 
             # Check 1:  Absolute Timeout
-            if (current_time > self.absolute_expiration):
-                return True
+            if self.absolute_expiration:
+                if (current_time > self.absolute_expiration):
+                    return True
 
             # Check 2:  Inactivity Timeout
-            idle_threshold = self.last_access_time + self.idle_timeout
-            if (self.current_time > idle_threshold):
-                return True
+            if self.idle_expiration:
+                if (current_time > self.idle_expiration): 
+                    return True
 
         else:
-            msg2 = ("Timeouts not properly set for session with id [" + 
+            msg2 = ("Timeouts not set for session with id [" + 
                     str(self.session_id) + "]. Session is not considered "
                     "expired.")
             print(msg2) 
@@ -337,18 +359,13 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
             self.attributes = {}
         return self.attributes 
 
-    def get_attribute_keys(self):
-        if (self.attributes is None):
-            return None 
-        return set(self.attributes)  # a set of keys 
-
     def get_attribute(self, key):
         if (not self.attributes):
             return None 
         
         return self.attributes.get(key, None)
 
-    def set_attribute(self, key, value):
+    def set_attribute(self, key, value=None):
         if (not value):
             self.remove_attribute(key)
         else:
@@ -366,7 +383,7 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
                     (self.stop_timestamp == other.stop_timestamp) and
                     (self.last_access.time == other.last_access_time) and
                     (self.timeout == other.timeout) and
-                    (self.expired == other.expired) and
+                    (self.is_expired == other.is_expired) and
                     (self.host == other.host) and
                     (self.attributes == other.attributes))
         except AttributeError:
@@ -399,7 +416,7 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
                 'stop_timestamp': self.stop_timestamp,
                 'last_access_time': self.last_access_time,
                 'timeout': self.timeout,
-                'expired': self.expired,
+                'is_expired': self.is_expired,
                 'host': self.host,
                 'attributes': self.attributes}
 

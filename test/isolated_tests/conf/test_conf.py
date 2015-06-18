@@ -39,7 +39,7 @@ def test_del_attr_from_empty_wrapped():
         try:
             del lazy_settings.blabla
         except AttributeError:
-            assert setup.assert_called_once_with() is None
+            setup.assert_called_once_with()
         
 def test_del_attr_from_existing_wrapped(lazy_settings):
     lazy_settings.anything = 'anything'
