@@ -392,7 +392,8 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         return result 
 
     def __repr__(self):
-        return "SimpleSession(session_id={0})".format(self.session_id)
+        return "SimpleSession(start_timestamp={0}, last_access_time={1})".\
+            format(self.start_timestamp, self.last_access_time)
        
     def __serialize__(self):
         return {'session_id': self.session_id,
@@ -407,18 +408,12 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
 
 class SimpleSessionFactory:
    
-    def __init__(self):
-        pass
-
     @classmethod
-    def create_session(self, session_context=None):
-        if (session_context):
-            host = session_context.host
-            if (host):
-                return SimpleSession(host)
-            
-        return SimpleSession()
+    def create_session(cls, session_context=None):
+        return SimpleSession(DefaultSessionSettings(), 
+                             host=getattr(session_context, 'host', None))
 
+            
 """
 class MemorySessionDAO(AbstractSessionDAO):
 

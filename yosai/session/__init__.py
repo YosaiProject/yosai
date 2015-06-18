@@ -19,7 +19,7 @@ from .session import (
 #    ExecutorServiceSessionValidationScheduler,
 #    RandomSessionIDGenerator,
     SimpleSession,
-#    SimpleSessionFactory,
+    SimpleSessionFactory,
 #    UUIDSessionGenerator,
 )
 

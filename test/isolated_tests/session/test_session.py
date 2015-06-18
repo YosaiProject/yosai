@@ -10,6 +10,7 @@ from yosai import (
     IllegalStateException,
     ProxiedSession,
     SimpleSession,
+    SimpleSessionFactory,
     StoppedSessionException,
 )
 
@@ -427,3 +428,24 @@ def test_ss_eq_different_attributes():
     s2._attributes = {'attr1': 100, 'attr2': 200}
   
     assert not s1 == s2
+
+# ----------------------------------------------------------------------------
+# SimpleSessionFactory 
+# ----------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    'context,expected',
+    [(type('SessionContext', (object,), {'host': '123.456.789.10'})(),
+      '123.456.789.10'),
+     (type('SessionContext', (object,), {})(), None), (None, None)])
+def test_ssf_create_session(context, expected):
+    """
+    unit tested:  create_session
+
+    test case:
+      I) a context with a host 
+     II) a context without a host
+    III) no context
+    """
+    session = SimpleSessionFactory.create_session(session_context=context)
+    assert session.host == expected 
