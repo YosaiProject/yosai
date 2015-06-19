@@ -224,3 +224,27 @@ class SessionIDGenerator(metaclass=ABCMeta):
     def generate_id(self, session):
         pass
 
+
+class SessionManager(metaclass=ABCMeta):
+    """ 
+    A SessionManager manages the creation, maintenance, and clean-up of all
+    application Sessions
+    """
+    
+    @abstractmethod
+    def start(self, session_context):
+        pass
+        """
+        Starts a new session based on the specified contextual initialization
+        data, which can be used by the underlying implementation to determine
+        how exactly to create the internal Session instance.
+        """
+     
+        def get_session(self, session_key):
+            """
+            Retrieves the session corresponding to the specified contextual
+            data (such as a session ID if applicable), or None if no
+            Session could be found.  If a session is found but invalid (stopped
+            or expired), an exception will raise
+            """
+            pass

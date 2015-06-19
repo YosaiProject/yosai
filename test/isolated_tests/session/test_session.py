@@ -354,7 +354,7 @@ def test_ss_eq_clone():
     test case:
       other is a clone of self
    """
-    s1 = SimpleSession(DefaultSessionSettings())
+    s1 = SimpleSession()
     s1._is_expired = False
     s1.session_id = 'sessionid123'
     s1._absolute_timeout = datetime.timedelta(minutes=60)
@@ -364,7 +364,7 @@ def test_ss_eq_clone():
     s1._host = '127.0.0.1'
     s1._attributes = {'attr1': 100, 'attr2': 200}
    
-    s2 = SimpleSession(DefaultSessionSettings())
+    s2 = SimpleSession()
     s2.session_id = 'sessionid123'
     s2._is_expired = False
     s2._absolute_timeout = datetime.timedelta(minutes=60)
@@ -384,7 +384,7 @@ def test_ss_eq_different_values():
     test case:
     other has different attribute values than self
    """
-    s1 = SimpleSession(DefaultSessionSettings())
+    s1 = SimpleSession()
     s1.session_id = 'sessionid123'
     s1._is_expired = False
     s1._absolute_timeout = datetime.timedelta(minutes=60)
@@ -394,7 +394,7 @@ def test_ss_eq_different_values():
     s1._host = '192.168.1.1'
     s1._attributes = {'attr3': 100, 'attr4': 200}
    
-    s2 = SimpleSession(DefaultSessionSettings())
+    s2 = SimpleSession()
     s2.session_id = 'sessionid345'
     s2._is_expired = False
     s2._absolute_timeout = datetime.timedelta(minutes=60)
@@ -413,7 +413,7 @@ def test_ss_eq_different_attributes():
     test case:
     other does not have same attributes as self
    """
-    s1 = SimpleSession(DefaultSessionSettings())
+    s1 = SimpleSession()
     s1.session_id = 'session242'
     s1._is_expired = False
     s1._absolute_timeout = datetime.timedelta(minutes=60)
@@ -423,7 +423,7 @@ def test_ss_eq_different_attributes():
     s1._host = '127.0.0.1'
     s1._attributes = {'attr1': 100, 'attr2': 200}
    
-    s2 = SimpleSession(DefaultSessionSettings())
+    s2 = SimpleSession()
     s2._is_expired = False
     s2._absolute_timeout = datetime.timedelta(minutes=60)
     s2._idle_timeout = datetime.timedelta(minutes=15)
@@ -486,5 +486,4 @@ def test_random_sig_generates():
 # ----------------------------------------------------------------------------
 # 
 # ----------------------------------------------------------------------------
-
 

@@ -1,3 +1,18 @@
+from . import (
+    RandomSessionIDGenerator,
+    SimpleSession,
+)
+
+from yosai import (
+    AbstractMethodException,
+    IllegalArgumentException,
+    IllegalStateException,
+    UnknownSessionException,
+)
+
+import yosai.session.abcs as abcs
+
+
 class AbstractSessionDAO:
 
     def __init__(self):
@@ -52,7 +67,7 @@ class AbstractSessionDAO:
         msg = 'Failed to Implement Abstract Method: '
         raise AbstractMethodException(msg + 'do_read_session')
 
-
+"""
 class MemorySessionDAO(AbstractSessionDAO):
 
     def __init__(self):
@@ -64,14 +79,14 @@ class MemorySessionDAO(AbstractSessionDAO):
         self.store_session(sessionid, session)
         return sessionid
 
-    def store_Session(self, sessionid, session):
+    def store_Session(self, session_id, session):
         try:
-            if (sessionid is None):
+            if (session_id is None):
                 raise IllegalArgumentException("id argument cannot be null.")
         except IllegalArgumentException as ex:
             print('MemorySessionDAO.store_session Null param passed', ex)
         else:
-            self.sessions[sessionid] = session
+            self.sessions[session_id] = session
             return self.sessions.get(session_id, None)
 
     def do_read_session(self, sessionid):
@@ -101,8 +116,9 @@ class MemorySessionDAO(AbstractSessionDAO):
             return set() 
         else:
             return tuple(values)
+"""
 
-
+"""
 class CachingSessionDAO(AbstractSessionDAO):
 
     def __init__(self):
@@ -186,7 +202,7 @@ class CachingSessionDAO(AbstractSessionDAO):
     def update(self, session):
         try:
             self.do_update(session)
-            if (isinstance(session, ValidatingSession)):
+            if (isinstance(session, abcs.ValidatingSession)):
                 if (session.is_valid):
                     self.cache(session, session.id)
                 else: 
@@ -230,13 +246,13 @@ class CachingSessionDAO(AbstractSessionDAO):
             return cache.values()
         else: 
             return set()
+"""
 
-
+"""
 class EnterpriseCacheSessionDAO(CachingSessionDAO):
 
     def __init__(self): 
         
-        """
         DG:  not sure how to refactor this:
         public EnterpriseCacheSessionDAO() {
         setCacheManager(new AbstractCacheManager() {
@@ -245,11 +261,11 @@ class EnterpriseCacheSessionDAO(CachingSessionDAO):
                 return new MapCache<Serializable, Session>(name, new ConcurrentHashMap<Serializable, Session>());
             }
         });
-        """
 
     def do_create(self, session):
         sessionid = self.generate_session_id(session)
         self.assign_session_id(session, sessionid)
         return sessionid
 
+"""
 

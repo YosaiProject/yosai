@@ -57,6 +57,10 @@ class DefaultSessionSettings:
                     self.validation_scheduler_enable,
                     self.validation_time_interval))
 
+# initalize module-level settings:
+session_settings = DefaultSessionSettings()
+
+
 # Yosai omits the SessionListenerAdapter class
 
 class ProxiedSession(abcs.Session):
@@ -126,8 +130,7 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
     #    - the manual class version control process (too policy-reliant)
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
-    def __init__(self, session_config, host=None):
-        # Yosai includes a session_config parameter to enable dynamic settings
+    def __init__(self, host=None):
         self._attributes = None
         self._is_expired = None
         self._session_id = None
@@ -137,9 +140,9 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         self._last_access_time = self._start_timestamp
         
         # Yosai introduces an absolute timeout parameter (shiro only has idle)
-        self._absolute_timeout = session_config.absolute_timeout  # timedelta 
+        self._absolute_timeout = session_settings.absolute_timeout  # timedelta 
 
-        self._idle_timeout = session_config.idle_timeout 
+        self._idle_timeout = session_settings.idle_timeout 
         self._host = host
     
     @property
@@ -410,8 +413,7 @@ class SimpleSessionFactory:
    
     @classmethod
     def create_session(cls, session_context=None):
-        return SimpleSession(DefaultSessionSettings(), 
-                             host=getattr(session_context, 'host', None))
+        return SimpleSession(host=getattr(session_context, 'host', None))
 
 
 class UUIDSessionIDGenerator(abcs.SessionIDGenerator):
@@ -432,201 +434,8 @@ class RandomSessionIDGenerator(abcs.SessionIDGenerator):
         return sha256(sha512(urandom(20)).digest()).hexdigest()
 
 
-class AbstractSessionDAO:
-
-    def __init__(self):
-        self._session_id_generator = RandomSessionIDGenerator()
-        
-    @property
-    def session_id_generator(self):
-        return self._session_id_generator
-    
-    @session_id_generator.setter
-    def session_id_generator(self, sid_generator):
-        self._session_id_generator = sid_generator
-
-    def generate_session_id(self, session):
-        return self.session_id_generator.generate_id(session)
-    
-    def create_session_id(self, session):  # DG renamed
-        session_id = self.do_create(session)
-        self.verify_session_id(session_id)
-        return session_id
-
-    def verify_session_id(self, session_id):
-        try:
-            if (session_id is None):
-                msg = ("sessionId returned from doCreate implementation "
-                       "is null. Please verify the implementation.")
-                raise IllegalStateException(msg)
-        except IllegalStateException as ex:
-            print('verify_session_id: ', ex)
-    
-    def assign_session_id(self, session, session_id):
-        session = SimpleSession(session)  # DG:  shiro casts instead
-        session.set_id(session_id)
-    
-    # abstract method, to be implemented by subclass
-    def do_create(self, session):
-        msg = 'Failed to Implement Abstract Method: '
-        raise AbstractMethodException(msg + 'do_create')
-
-    def read_session(self, session_id):
-        try:
-            session = self.do_read_session(session_id)
-            if (session is None):
-                msg = "There is no session with id [" + session_id + "]"
-                raise UnknownSessionException(msg)
-            return session
-        except UnknownSessionException as ex:
-            print('read_session: ', ex)
-
-    # abstract method, to be implemented by subclass
-    def do_read_session(self, session_id):
-        msg = 'Failed to Implement Abstract Method: '
-        raise AbstractMethodException(msg + 'do_read_session')
-
-
-class DefaultSessionManager(AbstractValidatingSessionManager):
-
-    def __init__(self): 
-        self._cache_manager = CacheManager()
-        self._delete_invalid_sessions = True
-        self._session_factory = SimpleSessionFactory()
-        self._session_DAO = MemorySessionDAO()
-
-    @property
-    def session_DAO(self):
-        return self._session_DAO
-
-    @session_DAO.setter
-    def session_DAO(self, sessiondao):
-        self._session_DAO = sessiondao
-        self.apply_cache_manager_to_session_DAO()
-
-    @property
-    def session_factory(self):
-        return self._session_factory
-
-    @session_factory.setter
-    def session_factory(self, sessionfactory):
-        self._session_factory = sessionfactory
-
-    @property 
-    def delete_invalid_sessions(self):
-        return self._delete_invalid_sessions
-
-    @delete_invalid_sessions.setter
-    def delete_invalid_sessions(self, dis):
-        # Expecting a bool
-        self.delete_invalid_sessions = dis
-
-    @property
-    def cache_manager(self):
-        return self._cache_manager
-
-    @cache_manager.setter
-    def cache_manager(self, cachemanager):
-        self._cache_manager = cachemanager
-        self.apply_cache_manager_to_session_DAO()
-
-    def apply_cache_manager_to_session_DAO(self):
-        if (bool(self.cache_manager) and bool(self.sessionDAO) and 
-                (getattr(self.session_DAO, 'set_cache_manager', None))):
-            self.session_DAO.set_cache_manager(self.cache_manager)
-
-    def do_create_session(self, session_context):
-        session = self.new_session_instance(session_context)
-        # log here
-        msg = "Creating session for host " + session.host
-        print(msg)
-        self.create_session(session)
-        return session
-
-    def new_session_instance(self, session_context):
-        return self.get_session_factory().create_session(session_context)
-
-    def create(self, session):
-        # log here
-        msg = ("Creating new EIS record for new session instance [{0}]".
-               format(session)) 
-        self.session_DAO.create_session(session)
-
-    def on_stop(self, session):
-        if (isinstance(session, SimpleSession)):
-            simple_session = SimpleSession(session)  # DG:  TBD!!  shiro casts 
-            stop_timestamp = simple_session.stop_timestamp
-            simple_session.last_access_time = stop_timestamp
-
-        self.on_change(session)
-
-    def after_stopped(self, session):
-        if (self.delete_invalid_sessions):
-            self.delete(session)
-
-    def on_expiration(self, session):
-        if (isinstance(session, SimpleSession)):
-            session = SimpleSession(session)  # DG:  TBD.  shiro casts instead
-            session.expired = True
-        
-        self.on_change(session)
-
-    def after_expired(self, session):
-        if (self.delete_invalid_sessions):
-            self.delete(session)
-
-    def on_change(self, session):
-        self._session_DAO.update_session(session)
-
-    def retrieve_session(self, session_key):
-        try:
-            session_id = self.get_session_id(session_key)
-            if (session_id is None):
-                # log here
-                msg = ("Unable to resolve session ID from SessionKey [{0}]."
-                       "Returning null to indicate a session could not be "
-                       "found.".format(session_key))
-                print(msg)
-                return None 
-            
-            session = self.retrieve_session_from_data_source(session_id)
-            if (session is None): 
-                # session ID was provided, meaning one is expected to be found,
-                # but we couldn't find one:
-                msg2 = "Could not find session with ID [" + session_id + "]"
-                raise UnknownSessionException(msg)
-            
-        except UnknownSessionException as ex:
-            print(ex)
-        except:
-            raise
-
-        else:
-            return session
-
-    def get_session_id(self, session_key):
-        return session_key.session_id
-    
-    def retrieve_session_from_data_source(self, session_id):
-        return self.session_DAO.read_session(session_id)
-
-    def delete(self, session):
-        self.session_DAO.delete_session(session)
-
-    def get_active_sessions(self):
-        active_sessions = self.session_DAO.get_active_sessions()
-        if (active_sessions is not None):
-            return active_sessions
-        else:
-            return set()  # DG: shiro returns an emptySet... TBD
-
-class AbstractNativeSessionManager(AbstractSessionManager):
-    """ DG:  includes  AbstractSessionManager """
-
-    MILLIS_PER_SECOND = 1000
-    MILLIS_PER_MINUTE = 60 * MILLIS_PER_SECOND
-    MILLIS_PER_HOUR = 60 * MILLIS_PER_MINUTE
-    DEFAULT_GLOBAL_SESSION_TIMEOUT = 30 * MILLIS_PER_MINUTE
+"""
+class AbstractNativeSessionManager:
 
     def __init__(self): 
         self._listeners = []  # session listeners
@@ -816,8 +625,11 @@ class AbstractNativeSessionManager(AbstractSessionManager):
 
     def on_change(self, session):
         pass
+"""
 
 
+
+"""
 class AbstractValidatingSessionManager(AbstractNativeSessionManager):
     
     DEFAULT_SESSION_VALIDATION_INTERVAL = MILLIS_PER_HOUR
@@ -898,10 +710,8 @@ class AbstractValidatingSessionManager(AbstractNativeSessionManager):
             self.on_invalidation(session, ise, session_key)
       
     def on_expiration(self, **kwargs):
-        """
         self.method can be used either with a single session parameter or
         with session, ese, and session_key passed altogether
-        """
 
         acceptable_args = ['session', 'ese', 'session_key']
         try:
@@ -1064,11 +874,143 @@ class AbstractValidatingSessionManager(AbstractNativeSessionManager):
         raise AbstractMethodException(msg + 'get_active_sessions')
 
 
+class DefaultSessionManager(AbstractValidatingSessionManager):
+
+    def __init__(self): 
+        self._cache_manager = CacheManager()
+        self._delete_invalid_sessions = True
+        self._session_factory = SimpleSessionFactory()
+        self._session_DAO = MemorySessionDAO()
+
+    @property
+    def session_DAO(self):
+        return self._session_DAO
+
+    @session_DAO.setter
+    def session_DAO(self, sessiondao):
+        self._session_DAO = sessiondao
+        self.apply_cache_manager_to_session_DAO()
+
+    @property
+    def session_factory(self):
+        return self._session_factory
+
+    @session_factory.setter
+    def session_factory(self, sessionfactory):
+        self._session_factory = sessionfactory
+
+    @property 
+    def delete_invalid_sessions(self):
+        return self._delete_invalid_sessions
+
+    @delete_invalid_sessions.setter
+    def delete_invalid_sessions(self, dis):
+        # Expecting a bool
+        self.delete_invalid_sessions = dis
+
+    @property
+    def cache_manager(self):
+        return self._cache_manager
+
+    @cache_manager.setter
+    def cache_manager(self, cachemanager):
+        self._cache_manager = cachemanager
+        self.apply_cache_manager_to_session_DAO()
+
+    def apply_cache_manager_to_session_DAO(self):
+        if (bool(self.cache_manager) and bool(self.sessionDAO) and 
+                (getattr(self.session_DAO, 'set_cache_manager', None))):
+            self.session_DAO.set_cache_manager(self.cache_manager)
+
+    def do_create_session(self, session_context):
+        session = self.new_session_instance(session_context)
+        # log here
+        msg = "Creating session for host " + session.host
+        print(msg)
+        self.create_session(session)
+        return session
+
+    def new_session_instance(self, session_context):
+        return self.get_session_factory().create_session(session_context)
+
+    def create(self, session):
+        # log here
+        msg = ("Creating new EIS record for new session instance [{0}]".
+               format(session)) 
+        self.session_DAO.create_session(session)
+
+    def on_stop(self, session):
+        if (isinstance(session, SimpleSession)):
+            simple_session = SimpleSession(session)  # DG:  TBD!!  shiro casts 
+            stop_timestamp = simple_session.stop_timestamp
+            simple_session.last_access_time = stop_timestamp
+
+        self.on_change(session)
+
+    def after_stopped(self, session):
+        if (self.delete_invalid_sessions):
+            self.delete(session)
+
+    def on_expiration(self, session):
+        if (isinstance(session, SimpleSession)):
+            session = SimpleSession(session)  # DG:  TBD.  shiro casts instead
+            session.expired = True
+        
+        self.on_change(session)
+
+    def after_expired(self, session):
+        if (self.delete_invalid_sessions):
+            self.delete(session)
+
+    def on_change(self, session):
+        self._session_DAO.update_session(session)
+
+    def retrieve_session(self, session_key):
+        try:
+            session_id = self.get_session_id(session_key)
+            if (session_id is None):
+                # log here
+                msg = ("Unable to resolve session ID from SessionKey [{0}]."
+                       "Returning null to indicate a session could not be "
+                       "found.".format(session_key))
+                print(msg)
+                return None 
+            
+            session = self.retrieve_session_from_data_source(session_id)
+            if (session is None): 
+                # session ID was provided, meaning one is expected to be found,
+                # but we couldn't find one:
+                msg2 = "Could not find session with ID [" + session_id + "]"
+                raise UnknownSessionException(msg)
+            
+        except UnknownSessionException as ex:
+            print(ex)
+        except:
+            raise
+
+        else:
+            return session
+
+    def get_session_id(self, session_key):
+        return session_key.session_id
+    
+    def retrieve_session_from_data_source(self, session_id):
+        return self.session_DAO.read_session(session_id)
+
+    def delete(self, session):
+        self.session_DAO.delete_session(session)
+
+    def get_active_sessions(self):
+        active_sessions = self.session_DAO.get_active_sessions()
+        if (active_sessions is not None):
+            return active_sessions
+        else:
+            return set()  # DG: shiro returns an emptySet... TBD
+
 class DefaultSessionContext():  
-    """
     DG:  shiro extends from MapContext but I just use composition instead,
          just as with SubjectContext
-    """
+    
     def __init__(self, context_map=None):
         dsc_name = self.__class__.__name__
         self.host_name = dsc_name + ".HOST"
@@ -1120,14 +1062,12 @@ class SessionTokenGenerator:
 
 
 class SessionManager:
-    """
     A SessionManager manages the creation, maintenance, and clean-up of all 
     application Sessions.  A SessionManager will only return a VALID Session
     object to serve a request.
 
     Sessions are 'the time-based data contexts in which a Subject interacts 
     with an application'.
-    """
 
     def __init__(self, cache_manager):
         self._cache_manager = cache_manager
@@ -1219,13 +1159,12 @@ class Session:
             self._idle_timeout_job.remove()
     
     def schedule_timeout(self, timeout_type, duration):
-        """ Uses the Advanced Python Scheduler (APScheduler) to schedule
+        Uses the Advanced Python Scheduler (APScheduler) to schedule
             one-off delayed executions of commit_timeout for
             idle and absolute time thresholds.  Idle timeouts reset
             as a session is re-engaged/used.
         
         timeout_type = a String of either 'IDLE' or 'ABSOLUTE'
-        """
         return self._scheduler.add_job(self.set_invalid(timeout_type), 
                                        'interval', minutes=duration)
 
@@ -1237,9 +1176,7 @@ class Session:
 class DelegatingSession:
 
     def __init__(self, session_manager, session_key):
-        """
-        session_manager = a NativeSessionManager instance
-        """
+        #session_manager = a NativeSessionManager instance
         try:
             if (not session_manager):
                 msg1 = "session_manager argument cannot be null."
@@ -1347,10 +1284,9 @@ class DelegatingSession:
 
 class DefaultSessionStorageEvaluator:
 
-    """ 
-     * Global policy determining if Subject sessions may be used to persist
-     * Subject state if the Subject's Session does not yet exist.
-    """
+     # Global policy determining if Subject sessions may be used to persist
+     # Subject state if the Subject's Session does not yet exist.
+    
     def __init__(self):
         self._session_storage_enabled = True
 
@@ -1399,13 +1335,12 @@ class ExecutorServiceSessionValidationScheduler:
     @property
     def enabled(self):
         return self._enabled
-    
+    """    
     # DG: URGENT todo -- requires analysis:
-    """
-     Creates a ScheduledExecutorService to validate sessions at fixed intervals 
-     and enables this scheduler. The executor is created as a daemon thread to allow JVM to shut down
+    # Creates a ScheduledExecutorService to validate sessions at fixed intervals 
+    # and enables this scheduler. The executor is created as a daemon thread to allow JVM to shut down
 
-    """
+"""
     # TODO Implement an integration test to test for jvm exit as part of the standalone example
     # (so we don't have to change the unit test execution model for the core module)
     public void enableSessionValidation() {
@@ -1421,7 +1356,8 @@ class ExecutorServiceSessionValidationScheduler:
             this.enabled = true;
         }
     }
-
+"""
+"""
     def run(self):
         # log here
         msg = "Executing session validation..."
@@ -1437,3 +1373,5 @@ class ExecutorServiceSessionValidationScheduler:
     def disable_session_validation(self):
         self.service.shutdown_now()
         self.enabled = False
+
+"""
