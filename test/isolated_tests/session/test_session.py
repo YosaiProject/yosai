@@ -7,11 +7,13 @@ from .doubles import MockSession
 from yosai import (
     DefaultSessionSettings,
     ExpiredSessionException,
+    StoppedSessionException,
     IllegalStateException,
     ProxiedSession,
     SimpleSession,
+    RandomSessionIDGenerator,
+    UUIDSessionIDGenerator,
     SimpleSessionFactory,
-    StoppedSessionException,
 )
 
 # ----------------------------------------------------------------------------
@@ -449,3 +451,40 @@ def test_ssf_create_session(context, expected):
     """
     session = SimpleSessionFactory.create_session(session_context=context)
     assert session.host == expected 
+
+# ----------------------------------------------------------------------------
+# UUIDSessionIdGenerator 
+# ----------------------------------------------------------------------------
+
+def test_uuid_sig_generates():
+    """
+    unit tested: generate_id
+
+    test case:
+    calling generate_id returns a string
+    """
+    sid_gen = UUIDSessionIDGenerator
+    result = sid_gen.generate_id('arbitraryvalue')
+    assert isinstance(result, str)
+
+# ----------------------------------------------------------------------------
+# RandomSessionIdGenerator 
+# ----------------------------------------------------------------------------
+
+def test_random_sig_generates():
+    """
+    unit tested: generate_id
+
+    test case:
+    calling generate_id returns a string
+    """
+    sid_gen = RandomSessionIDGenerator
+    result = sid_gen.generate_id('arbitraryvalue')
+    assert isinstance(result, str)
+
+
+# ----------------------------------------------------------------------------
+# 
+# ----------------------------------------------------------------------------
+
+

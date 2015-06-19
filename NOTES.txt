@@ -5,20 +5,6 @@ there are several methods that make local copies of a mutable parameter and
 I think I haven't accounted for their mutability by making a copy.copy of 
 them
 
-replace 'Input' docstrings with real syntax:
-        :param arg1: the first value
-        :type arg1: int, float,...
-        :param arg2: the first value
-        :type arg2: int, float,...
-        :param arg3: the first value
-        :type arg3: int, float,...
-        :returns: arg1/arg2 +arg3
-        :rtype: int, float
-
-move towards duck-typing and away from type checking
-
-for each module, create corresponding interfaces.py and abstracts.py module
-
 authc
   | 
   `--- authc.py

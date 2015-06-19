@@ -164,13 +164,13 @@ from .session import (
     # EnterpriseCacheSessionDAO,
     # MemorySessionDAO,
     ProxiedSession,
-    # RandomSessionIDGenerator,
+    RandomSessionIDGenerator,
     # Session,
     # SessionManager,
     # SessionTokenGenerator,
     SimpleSession,
     SimpleSessionFactory,
-    # UUIDSessionGenerator,
+    UUIDSessionIDGenerator,
 )
 
 """

@@ -1,5 +1,9 @@
 from abc import ABCMeta, abstractmethod
-
+from yosai import (
+    IllegalStateException,
+    UnknownSessionException,
+)
+import uuid
 
 class Session(metaclass=ABCMeta):
     """
@@ -211,3 +215,12 @@ class ValidatingSession(Session):
     @abstractmethod
     def validate(self):
         pass
+
+
+class SessionIDGenerator(metaclass=ABCMeta):
+
+    @classmethod
+    @abstractmethod
+    def generate_id(self, session):
+        pass
+
