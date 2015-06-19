@@ -11,11 +11,13 @@ from yosai import (
     AbstractMethodException,
     # Context,
     ExpiredSessionException,
+    IllegalArgumentException,
     IllegalStateException,
     LogManager,
     MissingMethodException,
     StoppedSessionException,
     UnknownSessionException,
+    UnrecognizedAttributeException,
     settings,
 )
 from yosai.serialize import abcs as serialize_abcs
@@ -139,12 +141,14 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         self._start_timestamp = datetime.datetime.utcnow() 
         self._last_access_time = self._start_timestamp
         
-        # Yosai introduces an absolute timeout parameter (shiro only has idle)
+        # yosai renames global_session_timeout to idle_timeout and added
+        # the absolute_timeout feature
         self._absolute_timeout = session_settings.absolute_timeout  # timedelta 
+        self._idle_timeout = session_settings.idle_timeout  # timedelta
 
-        self._idle_timeout = session_settings.idle_timeout 
         self._host = host
-    
+
+    # the properties are required to enforce the Session abc-interface.. 
     @property
     def absolute_timeout(self):
         return self._absolute_timeout
@@ -169,7 +173,7 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         if (self.attributes is None):
             return None 
         return set(self.attributes)  # a set of keys 
-    
+
     @property
     def host(self):
         return self._host
@@ -434,20 +438,120 @@ class RandomSessionIDGenerator(abcs.SessionIDGenerator):
         return sha256(sha512(urandom(20)).digest()).hexdigest()
 
 
-"""
+class DelegatingSession:
+
+    def __init__(self, session_manager, key):
+        # omitting None-type checking
+        self.session_manager = session_manager
+        self.key = key
+
+    @property
+    def session_id(self):
+        return self.key.session_id
+
+    @property
+    def start_timestamp(self):
+        if (not self.start_timestamp):
+            self._start_timestamp = self.session_manager.get_start_timestamp(
+                self.key)
+        return self._start_timestamp
+
+    @property
+    def last_access_time(self):
+        return self.session_manager.get_last_access_time(self.key)
+
+    @property
+    def timeout(self):
+        return self.session_manager.get_timeout(self.key)
+
+    @timeout.setter
+    def timeout(self, max_idle_time_in_millis):
+        try:
+            self.session_manager.set_timeout(self.key, 
+                                             self.max_idle_time_in_millis)
+        except:
+            raise
+
+    @property
+    def host(self):
+        if (not self.host):
+            self._host = self.session_manager.get_host(self.key)
+        
+        return self._host
+
+    def touch(self): 
+        self.session_manager.touch(self.key)
+    
+    def stop(self):
+        try:
+            self.session_manager.stop(self.key)
+        except:
+            raise
+
+    def get_attribute_keys(self):
+        try:
+            result = self.session_manager.get_attribute_keys(self.key)
+        except:
+            raise
+        return result
+
+    def get_attribute(self, attribute_key):
+        try:
+            result = sessionManager.getAttribute(self.key, attribute_key)
+        except:
+            raise
+        return result
+    
+    def set_attribute(self, attribute_key, value):
+        try:
+            if (not value):
+                self.remove_attribute(attribute_key)
+            else:
+                self.session_manager.set_attribute(self.key, attribute_key,
+                                                   value)
+        except:
+            raise
+
+    def remove_attribute(self, attribute_key):
+        try:
+            result = self.session_manager.remove_attribute(self.key,
+                                                           attribute_key)
+        except:
+            raise
+        return result
+
+
+
 class AbstractNativeSessionManager:
 
     def __init__(self): 
         self._listeners = []  # session listeners
-        self._global_session_timeout = DEFAULT_GLOBAL_SESSION_TIMEOUT
+        # yosai renames global_session_timeout to idle_timeout and added
+        # the absolute_timeout feature
+        self._absolute_timeout = session_settings.absolute_timeout  # timedelta 
+        self._idle_timeout = session_settings.idle_timeout   # timedelta 
     
     @property
-    def global_session_timeout(self):
-        return self._global_session_timeout
+    def absolute_timeout(self):
+        return self._absolute_timeout
 
-    @global_session_timeout.setter
-    def global_session_timeout(self, timeout):
-        self._global_session_timeout = timeout 
+    @absolute_timeout.setter
+    def absolute_timeout(self, abs_timeout):
+        """
+        :type abs_timeout: timedelta
+        """
+        self._absolute_timeout = abs_timeout
+
+    @property
+    def idle_timeout(self):
+        return self._idle_timeout
+
+    @idle_timeout.setter
+    def idle_timeout(self, idle_timeout):
+        """
+        :type idle_timeout: timedelta
+        """
+        self._idle_timeout = idle_timeout
 
     @property
     def session_listeners(self):
@@ -475,24 +579,14 @@ class AbstractNativeSessionManager:
         pass
 
     def get_session(self, key):
-        try:
-            session = self.lookup_session(key)
-        except:
-            raise
-        
+        session = self.lookup_session(key)
         if (session):
             return self.create_exposed_session(session, key)
         else:
             return None
 
     def lookup_session(self, key):
-        try:
-            if (key is None): 
-                msg = "session_key argument cannot be null."
-                raise NullPointerException(msg)
-            return self.do_get_session(key)
-        except NullPointerException as ex:
-            print('lookup_session : ', ex)
+        return self.do_get_session(key)
 
     def lookup_required_session(self, key):
         try:
@@ -625,7 +719,6 @@ class AbstractNativeSessionManager:
 
     def on_change(self, session):
         pass
-"""
 
 
 
@@ -1171,115 +1264,6 @@ class Session:
     def touch(self):
         self.reset_idle_timeout()
         self._last_access_dt = datetime.utcnow()
-
-
-class DelegatingSession:
-
-    def __init__(self, session_manager, session_key):
-        #session_manager = a NativeSessionManager instance
-        try:
-            if (not session_manager):
-                msg1 = "session_manager argument cannot be null."
-                raise IllegalArgumentException(msg1)
-            
-            if (not key):
-                msg2 = "sessionKey argument cannot be null."
-                raise IllegalArgumentException(msg2)
-            
-            if (not key.session_id):
-                msg3 = ("The " + self.__class__.__name__ + 
-                        "implementation requires that the SessionKey argument "
-                        "returns a non-null sessionId to support the " 
-                        "Session.getId() invocations.")
-                raise IllegalArgumentException(msg3)
-        except IllegalArgumentException as ex:
-            print('DelegatingSession __init__ Exception: ', ex)
-
-        self._session_manager = session_manager
-        self._key = key
-
-    @property
-    def session_id(self):
-        return self.key.session_id
-
-    @property
-    def key(self):
-        return self._key
-
-    @property
-    def session_manager(self):
-        return self._session_manager
-   
-    @property
-    def start_timestamp(self):
-        if (not self._start_timestamp):
-            self._start_timestamp = self.session_manager.get_start_timestamp(
-                self.key)
-        return self._start_timestamp
-
-    @property
-    def last_access_time(self):
-        return self.session_manager.get_last_access_time(self.key)
-
-    @property
-    def timeout(self):
-        return self.session_manager.get_timeout(self.key)
-
-    @timeout.setter
-    def timeout(self, max_idle_time_in_millis):
-        try:
-            self.session_manager.set_timeout(self.key, 
-                                             self.max_idle_time_in_millis)
-        except:
-            raise
-
-    @property
-    def host(self):
-        if (not self.host):
-            self._host = self.session_manager.get_host(self.key)
-        
-        return self._host
-
-    def touch(self): 
-        self.session_manager.touch(self.key)
-    
-    def stop(self):
-        try:
-            self.session_manager.stop(self.key)
-        except:
-            raise
-
-    def get_attribute_keys(self):
-        try:
-            result = self.session_manager.get_attribute_keys(self.key)
-        except:
-            raise
-        return result
-
-    def get_attribute(self, attribute_key):
-        try:
-            result = sessionManager.getAttribute(self.key, attribute_key)
-        except:
-            raise
-        return result
-    
-    def set_attribute(self, attribute_key, value):
-        try:
-            if (not value):
-                self.remove_attribute(attribute_key)
-            else:
-                self.session_manager.set_attribute(self.key, attribute_key,
-                                                   value)
-        except:
-            raise
-
-    def remove_attribute(self, attribute_key):
-        try:
-            result = self.session_manager.remove_attribute(self.key,
-                                                           attribute_key)
-        except:
-            raise
-        return result
 
 
 class DefaultSessionStorageEvaluator:
