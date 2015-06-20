@@ -57,3 +57,45 @@ class MockSession(session_abcs.Session, object):
     def touch(self):
         pass 
 
+
+class MockSessionManager:
+
+    def get_start_timestamp():
+        return datetime.datetime(2015, 1, 2, 12, 34, 56, 123456)
+
+    def get_last_access_time(self, key):
+        return datetime.datetime(2015, 1, 2, 12, 34, 59, 111111)
+
+    def get_idle_timeout(self, key):
+        return datetime.timedelta(minutes=15)
+
+    def set_idle_timeout(self, key, timeout):
+        pass
+
+    def get_absolute_timeout(self, key):
+        return datetime.timedelta(minutes=60)
+
+    def set_absolute_timeout(self, key, timeout):
+        pass
+
+    def get_host(self, key):
+        pass
+
+    def touch(self, key):
+        pass
+
+    def stop(self, key):
+        pass
+
+    def get_attribute_keys(self, key):
+        pass
+
+    def get_attribute(self, key, attr_key):
+        pass
+
+    def set_attribute(self, key, attr_key, value):
+        pass
+
+    def remove_attribute(self, key, attr_key):
+        pass
+

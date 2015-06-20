@@ -14,7 +14,7 @@ from .session import (
 #    SessionManager,
 #    Session,
 #    CachingSessionDAO,
-#    DelegatingSession,
+    DelegatingSession,
 #    DefaultSessionStorageEvaluator,
 #    ExecutorServiceSessionValidationScheduler,
     SimpleSession,

@@ -2,10 +2,14 @@ import pytest
 from unittest import mock
 import datetime
 
-from .doubles import MockSession
+from .doubles import (
+    MockSession,
+    MockSessionManager,
+)
 
 from yosai import (
     DefaultSessionSettings,
+    DelegatingSession,
     ExpiredSessionException,
     StoppedSessionException,
     IllegalStateException,
@@ -484,6 +488,217 @@ def test_random_sig_generates():
 
 
 # ----------------------------------------------------------------------------
-# 
+# DelegatingSession 
 # ----------------------------------------------------------------------------
+
+def test_ds_start_timestamp_not_exists(patched_delegating_session):
+    """
+    unit tested:  start_timestamp
+
+    test case:  since there is no start_timestamp set, it delegates to the sm
+    """
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'get_start_timestamp') as msm:
+        msm.return_value = None
+        pds.start_timestamp 
+        msm.assert_called_once_with(pds.key)
+
+def test_ds_start_timestamp_exists(
+        patched_delegating_session, monkeypatch):
+    """
+    unit tested:  start_timestamp
+
+    test case:
+    since the start_timestamp is set for the pds, it is used
+    """
+    pds = patched_delegating_session
+
+    dumbdate = datetime.datetime(2013, 3, 3, 3, 33, 33, 333333)
+    monkeypatch.setattr(pds, '_start_timestamp', dumbdate)
+    assert pds.start_timestamp == dumbdate 
+
+def test_ds_last_access_time(patched_delegating_session):
+    """
+    unit tested:  last_access_time
+
+    test case:  delegates the request to the MockSessionManager 
+    """
+    pds = patched_delegating_session
+    result = pds.last_access_time
+
+    # verifeis a pre-defined result from the mock
+    assert result == datetime.datetime(2015, 1, 2, 12, 34, 59, 111111) 
+
+
+def test_ds_get_idle_timeout(patched_delegating_session):
+    """
+    unit tested: idle_timeout
+
+    test case: delegates the request to the MockSessionManager 
+    """
+    pds = patched_delegating_session
+    result = pds.idle_timeout
+    assert result == datetime.timedelta(minutes=15)
+
+def test_ds_set_idle_timeout(patched_delegating_session):
+    """
+    unit tested: idle_timeout
+
+    test case: delegates the request to the MockSessionManager 
+    """
+
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'set_idle_timeout') as msm_sit:
+        msm_sit.return_value = None
+        now = datetime.datetime.utcnow()
+        pds.idle_timeout = now 
+        msm_sit.assert_called_once_with(pds.key, now)
+
+def test_ds_get_absolute_timeout(patched_delegating_session):
+    """
+    unit tested: absolute_timeout
+
+    test case: delegates the request to the MockSessionManager 
+    """
+    pds = patched_delegating_session
+    result = pds.absolute_timeout
+    assert result == datetime.timedelta(minutes=60)
+
+def test_ds_set_absolute_timeout(patched_delegating_session):
+    """
+    unit tested: absolute_timeout
+
+    test case: delegates the request to the MockSessionManager 
+    """
+
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'set_absolute_timeout') as msm_sit:
+        msm_sit.return_value = None
+        now = datetime.datetime.utcnow()
+        pds.absolute_timeout = now 
+        msm_sit.assert_called_once_with(pds.key, now)
+
+def test_ds_host_not_exists(patched_delegating_session):
+    """
+    unit tested:  host 
+
+    test case:  there is no host set, so delegates to the sm
+    """
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'get_host') as msm_gh:
+        msm_gh.return_value = None
+        pds.host
+        msm_gh.assert_called_once_with(pds.key)
+
+def test_ds_host_exists(
+        patched_delegating_session, monkeypatch):
+    """
+    unit tested:  host 
+
+    test case:
+    host is monkeypatch-set for the pds, and so it gets used
+    """
+    pds = patched_delegating_session
+
+    dumbhost = '127.0.0.1'
+    monkeypatch.setattr(pds, '_host', dumbhost)
+    assert pds.host == dumbhost 
+
+def test_ds_touch(patched_delegating_session):
+    """
+    unit tested: touch 
+
+    test case: delegates the request to the MockSessionManager 
+    """
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'touch') as msm_touch:
+        msm_touch.return_value = None
+        pds.touch()
+        msm_touch.assert_called_once_with(pds.key)
+
+def test_ds_stop(patched_delegating_session):
+    """
+    unit tested:  stop 
+
+    test case: 
+    delegates the request to the MockSessionManager 
+    """
+    pds = patched_delegating_session
+
+    with mock.patch.object(MockSessionManager, 'stop') as msm_stop:
+        msm_stop.return_value = None
+        pds.stop()
+        msm_stop.assert_called_once_with(pds.key)
+
+def test_ds_attribute_keys(patched_delegating_session):
+    """
+    unit tested:  attribute_keys
+
+    test case:
+    delegates the request to the MockSessionManager 
+    """
+
+    pds = patched_delegating_session
+
+    with mock.patch.object(MockSessionManager, 'get_attribute_keys') as gak: 
+        gak.return_value = None
+        pds.attribute_keys
+        gak.assert_called_once_with(pds.key)
+
+def test_ds_get_attribute(patched_delegating_session):
+    """
+    unit tested:  get_attribute 
+
+    test case:
+    delegates the request to the MockSessionManager 
+    """
+
+    pds = patched_delegating_session
+
+    with mock.patch.object(MockSessionManager, 'get_attribute') as ga:
+        ga.return_value = None
+        pds.get_attribute('attributekey')
+        ga.assert_called_once_with(pds.key, 'attributekey')
+
+def test_ds_set_attribute_removes(patched_delegating_session):
+    """
+    unit tested:  set_attribute 
+
+    test case:
+    value is None, and so remove_attribute is called 
+    """
+    pds = patched_delegating_session
+
+    with mock.patch.object(DelegatingSession, 'remove_attribute') as ds_ra:
+        ds_ra.return_value = None
+        pds.set_attribute('attributekey')
+        ds_ra.assert_called_once_with('attributekey')
+
+def test_ds_set_attribute_delegates(patched_delegating_session):
+    """
+    unit tested:  set_attribute 
+
+    test case:
+    delegates to the MockSessionManager 
+    """
+
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'set_attribute') as msm_sa: 
+        msm_sa.return_value = None
+        pds.set_attribute('attributekey', 'value')
+        msm_sa.assert_called_once_with(pds.key, 'attributekey', 'value')
+
+def test_ds_remove_attribute_delegates(patched_delegating_session):
+    """
+    unit tested:  remove_attribute 
+
+    test case:
+    delegates to the MockSessionManager 
+    """
+
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'remove_attribute') as msm_ra: 
+        msm_ra.return_value = None
+        pds.remove_attribute('attributekey')
+        msm_ra.assert_called_once_with(pds.key, 'attributekey')
 

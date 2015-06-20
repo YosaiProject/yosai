@@ -157,7 +157,7 @@ from .session import (
     # DefaultSessionContext,  
     # DefaultSessionKey,
     # DefaultSessionManager,
-    # DelegatingSession,
+    DelegatingSession,
     # DefaultSessionStorageEvaluator,
     DefaultSessionSettings,
     # ExecutorServiceSessionValidationScheduler,
