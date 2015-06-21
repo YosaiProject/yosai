@@ -3,6 +3,7 @@ import pytest
 from yosai import (
     DefaultSessionSettings,
     DelegatingSession,
+    ImmutableProxiedSession,
     ProxiedSession,
     SimpleSession,
 )
@@ -27,3 +28,7 @@ def simple_session():
 @pytest.fixture(scope='function')
 def patched_delegating_session():
     return DelegatingSession(MockSessionManager(), 'dumbkey')
+
+@pytest.fixture(scope='module')
+def immutable_proxied_session():
+    return ImmutableProxiedSession(MockSession())

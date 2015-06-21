@@ -164,6 +164,7 @@ from .session import (
     # ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionDAO,
     # MemorySessionDAO,
+    ImmutableProxiedSession,
     ProxiedSession,
     RandomSessionIDGenerator,
     # Session,

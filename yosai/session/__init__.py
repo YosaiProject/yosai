@@ -7,6 +7,7 @@ from .session import (
 #    DefaultSessionKey,
 #    DefaultSessionManager,
     DefaultSessionSettings,
+    ImmutableProxiedSession,
 #    EnterpriseCacheSessionDAO,
 #    MemorySessionDAO,
     ProxiedSession,

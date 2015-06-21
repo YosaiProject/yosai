@@ -13,6 +13,7 @@ from yosai import (
     ExpiredSessionException,
     StoppedSessionException,
     IllegalStateException,
+    InvalidSessionException,
     ProxiedSession,
     SimpleSession,
     RandomSessionIDGenerator,
@@ -701,4 +702,87 @@ def test_ds_remove_attribute_delegates(patched_delegating_session):
         msm_ra.return_value = None
         pds.remove_attribute('attributekey')
         msm_ra.assert_called_once_with(pds.key, 'attributekey')
+
+
+# ----------------------------------------------------------------------------
+# ImmutableProxiedSession 
+# ----------------------------------------------------------------------------
+
+def test_ips_set_idle_timeout(immutable_proxied_session):
+    """
+    unit tested:  set_idle_timeout 
+
+    test case:
+    method call raises exception
+    """
+    ips = immutable_proxied_session 
+    with pytest.raises(InvalidSessionException):
+        ips.set_idle_timeout('anything')
+
+def test_ips_set_absolute_timeout(immutable_proxied_session):
+    """
+    unit tested:  set_absolute_timeout 
+
+    test case:
+    method call raises exception
+    """
+    ips = immutable_proxied_session 
+    with pytest.raises(InvalidSessionException):
+        ips.set_absolute_timeout('anything')
+
+def test_ips_touch(immutable_proxied_session):
+    """
+    unit tested:  touch 
+
+    test case:
+    method call raises exception
+    """
+    ips = immutable_proxied_session 
+    with pytest.raises(InvalidSessionException):
+        ips.touch()
+
+def test_ips_stop(immutable_proxied_session):
+    """
+    unit tested:  stop 
+
+    test case:
+    method call raises exception
+    """
+    ips = immutable_proxied_session 
+    with pytest.raises(InvalidSessionException):
+        ips.stop()
+
+def test_ips_set_attribute(immutable_proxied_session):
+    """
+    unit tested:  set_attribute 
+
+    test case:
+    method call raises exception
+    """
+    ips = immutable_proxied_session 
+    with pytest.raises(InvalidSessionException):
+        ips.set_attribute('key', 'value')
+
+def test_ips_remove_attribute(immutable_proxied_session):
+    """
+    unit tested:  remove_attribute 
+
+    test case:
+    method call raises exception
+    """
+    ips = immutable_proxied_session 
+    with pytest.raises(InvalidSessionException):
+        ips.remove_attribute('key')
+
+                         
+
+# ----------------------------------------------------------------------------
+# DefaultSessionKey 
+# ----------------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------------
+# AbstractNativeSessionManager 
+# ----------------------------------------------------------------------------
+
 

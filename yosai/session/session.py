@@ -73,6 +73,7 @@ class ProxiedSession(abcs.Session):
     def __init__(self, target_session):
         # the proxied instance:
         self._delegate = target_session
+        self._session_id = None
 
     @property
     def session_id(self):
@@ -153,11 +154,9 @@ class ImmutableProxiedSession(ProxiedSession):
                             "cannot be altered.  This is usually because "
                             "the session has been stopped or expired.")
     
-    @property
     def set_idle_timeout(self, idle_timeout):
         raise InvalidSessionException(self.exc_message)
 
-    @property
     def set_absolute_timeout(self, absolute_timeout):
         raise InvalidSessionException(self.exc_message)
 
