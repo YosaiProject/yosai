@@ -25,6 +25,9 @@ from . import (
     DefaultAuthenticationAttempt,
 )
 
+# module-level settings, defined at initialization:
+authc_settings = AuthenticationSettings()
+
 
 class UsernamePasswordToken(abcs.HostAuthenticationToken,
                             abcs.RememberMeAuthenticationToken):
@@ -259,7 +262,6 @@ class DefaultAuthenticator(abcs.Authenticator, event_abcs.EventBusAware):
 class AbstractAuthcService:
     # this class is new to Yosai
     def __init__(self):
-        authc_settings = AuthenticationSettings()
         # using default algorithm when generating crypt context:
         self.crypt_context = CryptContextFactory(authc_settings).\
             create_crypt_context()

@@ -65,6 +65,7 @@ from .exceptions import (
     RealmMisconfiguredException,
     SerializationException,
     SessionException,
+    SessionEventException,
     StoppedSessionException,
     UnauthenticatedException,
     UnauthorizedException,

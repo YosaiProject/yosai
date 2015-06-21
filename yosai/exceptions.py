@@ -281,6 +281,10 @@ class ExpiredSessionException(SessionException):
     pass
 
 
+class SessionEventException(SessionException):
+    pass
+
+
 class StoppedSessionException(SessionException):
     pass
 

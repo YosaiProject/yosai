@@ -507,3 +507,16 @@ class SessionContext(metaclass=ABCMeta):
     @abstractmethod
     def session_id(self, session_id):
         pass
+
+
+class SessionKey(metaclass=ABCMeta):
+
+    @property
+    @abstractmethod
+    def session_id(self):
+        pass
+
+    @session_id.setter
+    @abstractmethod
+    def session_id(self, session_id):
+        pass

@@ -14,8 +14,10 @@ from yosai import (
     ExpiredSessionException,
     IllegalArgumentException,
     IllegalStateException,
+    InvalidSessionException,
     LogManager,
     MissingMethodException,
+    SessionEventException,
     StoppedSessionException,
     UnknownSessionException,
     UnrecognizedAttributeException,
@@ -125,6 +127,52 @@ class ProxiedSession(abcs.Session):
 
     def __repr__(self):
         return "ProxiedSession(session_id={0})".format(self.session_id)
+
+
+class ImmutableProxiedSession(ProxiedSession):
+    """
+    Implementation of the Session interface that proxies another 
+    Session, but does not allow any 'write' operations to the underlying 
+    session. It allows 'read' operations only.
+
+    The Session write operations are defined as follows.  A call to any of 
+    these methods/setters on this proxy will immediately raise an 
+    InvalidSessionException:
+        * idle_timeout.setter, absolute_timeout.setter 
+        * touch()
+        * stop()
+        * set_attribute(key,value)
+        * remove_attribute(key)
+
+    Any other method invocation not listed above will result in a 
+    corresponding call to the underlying Session.
+    """
+    def __init__(self, target_session):
+        super().__init__(target_session)
+        self.exc_message = ("This session is immutable and read-only - it "
+                            "cannot be altered.  This is usually because "
+                            "the session has been stopped or expired.")
+    
+    @property
+    def set_idle_timeout(self, idle_timeout):
+        raise InvalidSessionException(self.exc_message)
+
+    @property
+    def set_absolute_timeout(self, absolute_timeout):
+        raise InvalidSessionException(self.exc_message)
+
+    def touch(self):
+        raise InvalidSessionException(self.exc_message)
+
+    def stop(self):
+        raise InvalidSessionException(self.exc_message)
+
+    def set_attribute(self, key, value):
+        raise InvalidSessionException(self.exc_message)
+
+    def remove_attribute(self, key):
+        raise InvalidSessionException(self.exc_message)
+        raise Exception('this exception should never have raised, ALERT!')
 
 
 class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
@@ -523,62 +571,121 @@ class DelegatingSession(abcs.Session):
         return self.session_manager.remove_attribute(self.key, attribute_key)
 
 
-class AbstractNativeSessionManager(
-        abcs.SessionManager, abcs.NativeSessionManager, 
-        event_abcs.EventBusAware):
-
-    def __init__(self): 
-        self._listeners = []  # session listeners
-        # yosai renames global_session_timeout to idle_timeout and added
-        # the absolute_timeout feature
-        self._absolute_timeout = session_settings.absolute_timeout  # timedelta 
-        self._idle_timeout = session_settings.idle_timeout   # timedelta 
+class DefaultSessionKey(abcs.SessionKey):
     
-    @property
-    def absolute_timeout(self):
-        return self._absolute_timeout
-
-    @absolute_timeout.setter
-    def absolute_timeout(self, abs_timeout):
-        """
-        :type abs_timeout: timedelta
-        """
-        self._absolute_timeout = abs_timeout
+    def __init__(self, session_id):
+        self._session_id = session_id
 
     @property
-    def idle_timeout(self):
-        return self._idle_timeout
+    def session_id(self):
+        return self._session_id
 
-    @idle_timeout.setter
-    def idle_timeout(self, idle_timeout):
-        """
-        :type idle_timeout: timedelta
-        """
-        self._idle_timeout = idle_timeout
+    @session_id.setter
+    def session_id(self, session_id):
+        self._session_id = session_id
 
+    def __eq__(self, other):
+        try:
+            return self.session_id == other.session_id
+        except AttributeError:
+            return False
+
+
+class AbstractNativeSessionManager(event_abcs.EventBusAware, 
+                                   abcs.NativeSessionManager,
+                                   metaclass=ABCMeta): 
+    """
+    AbstractNativeSessionManager is a mix-in, consisting largely of a 
+    concrete implementation but also the specification of abstract methods
+    to be implemented by its subclasses.  This is consistent with Shiro's
+    abstract design.
+    """
+
+    def __init__(self, event_bus): 
+        # new to yosai is the injection of the event_bus, as done with any
+        # other EventBusAware subclasses
+        
+        self._listeners = []
+        self._event_bus = event_bus
+    
     @property
     def session_listeners(self):
         return self._listeners
 
     @session_listeners.setter
-    def session_listeners(self, listeners=None):
-        if (listeners is not None):
-            self._listeners = listeners
+    def session_listeners(self, listeners):
+        self._listeners = listeners
+
+    @property
+    def event_bus(self):
+        return self._event_bus
+    
+    @event_bus.setter
+    def event_bus(self, event_bus):
+        self._event_bus = event_bus
+
+    def publish_event(self, event):
+        try:
+            self.event_bus.publish(event)
+        except AttributeError:
+            msg = 'Could not publish event to eventbus.'
+            raise SessionEventException(msg)
 
     def start(self, session_context):
         session = self.create_session(session_context)
-        self.apply_global_session_timeout(session_context)
+        # new approach for yosai is to apply *two* timeouts:
+        self.apply_session_timeouts(session_context)
         self.on_start(session, session_context)
         self.notify_start(session)
         
         # Don't expose the EIS-tier Session object to the client-tier:
         return self.create_exposed_session(session, session_context)
 
-    def apply_global_session_timeout(self, session):
-        session.set_timeout(self.global_session_timeout)
+    @abstractmethod
+    def create_session(self, session_context):
+        """
+        Creates a new {@code Session Session} instance based on the specified
+        (possibly {@code null}) * initialization data.  Implementing classes
+        must manage the persistent state of the returned session such that it
+        could later be acquired via the {@link #getSession(SessionKey)} method.
+     
+        :param session_context: the initialization data that can be used by the
+                                implementation or underlying SessionFactory
+                                when instantiating the internal Session 
+                                instance
+
+        :returns: the new Session instance
+     
+        :raises HostUnauthorizedException:  if the system access control policy 
+                                            restricts access based on client 
+                                            location/IP and the specified 
+                                            host address hasn't been enabled
+
+        :raises AuthorizationException:  if the system access control policy 
+                                         does not allow the currently executing
+                                         caller to start sessions
+        """
+        pass
+
+    # yosai renames applyGlobalSessionTimeout:
+    def apply_session_timeouts(self, session):
+        # new to yosai is the use of the absolute timeout:
+        session.absolute_timeout = self.absolute_timeout
+        session.idle_timeout = self.idle_timeout
         self.on_change(session)
     
-    def on_start(self, session, session_context):  # template for sub-classes
+    # yosai makes the following an abstractmethod, unlike shiro, so that 
+    # any subclass will state its use or pass, but state it nonetheless
+    @abstractmethod
+    def on_start(self, session, session_context):  
+        """
+        Template method that allows subclasses to react to a new session being
+        created.  This method is invoked *before* any session listeners are 
+        notified.
+     
+        :param session: the session that was just created
+        :param context: the SessionContext that was used to start the session
+        """
         pass
 
     def get_session(self, key):
@@ -592,26 +699,21 @@ class AbstractNativeSessionManager(
         return self.do_get_session(key)
 
     def lookup_required_session(self, key):
-        try:
-            session = self.lookup_session(key)
-            if (session is None):
-                msg = ("Unable to locate required Session instance based "
-                       "on session_key [" + key + "].")
-                raise UnknownSessionException(msg)
-            return session
-        except UnknownSessionException as ex:
-            print('lookup_required_session: ', ex)
+        session = self.lookup_session(key)
+        if (session is None):
+            msg = ("Unable to locate required Session instance based "
+                   "on session_key [" + str(key) + "].")
+            raise UnknownSessionException(msg)
+        return session
 
-    def create_exposed_session(self, **kwargs):
-        acceptable_args = ['key', 'session', 'session_context']
-        try:
-            for key in kwargs.keys():
-                if key not in acceptable_args:
-                    raise UnrecognizedAttributeException(key)
-        except UnrecognizedAttributeException as ex:
-            print('create_exposed_session passed unrecognized attribute:', ex)
+    @abstractmethod
+    def do_get_session(self, session_key):
+        pass
 
-        return DelegatingSession(self, Defaultsession_key(session.id))
+    # yosai introduces the keyword parameterization
+    def create_exposed_session(self, session, key=None, context=None): 
+        # shiro ignores key and context parameters
+        return DelegatingSession(self, DefaultSessionKey(session.session_id))
 
     def before_invalid_notification(self, session):
         return ImmutableProxiedSession(session)
@@ -635,6 +737,28 @@ class AbstractNativeSessionManager(
 
     def get_last_access_time(self, session_key):
         return self.lookup_required_session(session_key).last_access_time
+
+    @property
+    def absolute_timeout(self):
+        pass
+
+    @absolute_timeout.setter
+    def absolute_timeout(self, abs_timeout):
+        """
+        :type abs_timeout: timedelta
+        """
+        pass
+
+    @property
+    def idle_timeout(self):
+        pass
+
+    @idle_timeout.setter
+    def idle_timeout(self, idle_timeout):
+        """
+        :type idle_timeout: timedelta
+        """
+        pass
 
     def get_timeout(self, session_key):
         return self.lookup_required_session(session_key).timeout

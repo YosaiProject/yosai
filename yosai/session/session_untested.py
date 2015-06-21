@@ -409,24 +409,6 @@ class DefaultSessionContext():
         setattr(self._session_context, self.sessionid_name, sessionid)
 
 
-class DefaultSessionKey:
-
-    def __init__(self, sessionid):
-        self._session_id = sessionid
-
-    def __eq__(self, other):
-        # DG:  pythonic instance assumption..
-        return self.session_id == other.session_id
-    
-    @property
-    def session_id(self):
-        return self._session_id
-
-    @session_id.setter
-    def session_id(self, sessionid):
-        self._session_id = sessionid
-
-
 class SessionTokenGenerator:
     pass
 
