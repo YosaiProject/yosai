@@ -6,6 +6,7 @@ import time
 import uuid
 import traceback as tb
 from abc import ABCMeta, abstractmethod
+from yosai.event import abcs as event_abcs
 
 from yosai import (
     AbstractMethodException,
@@ -413,7 +414,7 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
                 'attributes': self.attributes}
 
 
-class SimpleSessionFactory:
+class SimpleSessionFactory(abcs.SessionFactory):
    
     @classmethod
     def create_session(cls, session_context=None):
@@ -520,3 +521,204 @@ class DelegatingSession(abcs.Session):
 
     def remove_attribute(self, attribute_key):
         return self.session_manager.remove_attribute(self.key, attribute_key)
+
+
+class AbstractNativeSessionManager(
+        abcs.SessionManager, abcs.NativeSessionManager, 
+        event_abcs.EventBusAware):
+
+    def __init__(self): 
+        self._listeners = []  # session listeners
+        # yosai renames global_session_timeout to idle_timeout and added
+        # the absolute_timeout feature
+        self._absolute_timeout = session_settings.absolute_timeout  # timedelta 
+        self._idle_timeout = session_settings.idle_timeout   # timedelta 
+    
+    @property
+    def absolute_timeout(self):
+        return self._absolute_timeout
+
+    @absolute_timeout.setter
+    def absolute_timeout(self, abs_timeout):
+        """
+        :type abs_timeout: timedelta
+        """
+        self._absolute_timeout = abs_timeout
+
+    @property
+    def idle_timeout(self):
+        return self._idle_timeout
+
+    @idle_timeout.setter
+    def idle_timeout(self, idle_timeout):
+        """
+        :type idle_timeout: timedelta
+        """
+        self._idle_timeout = idle_timeout
+
+    @property
+    def session_listeners(self):
+        return self._listeners
+
+    @session_listeners.setter
+    def session_listeners(self, listeners=None):
+        if (listeners is not None):
+            self._listeners = listeners
+
+    def start(self, session_context):
+        session = self.create_session(session_context)
+        self.apply_global_session_timeout(session_context)
+        self.on_start(session, session_context)
+        self.notify_start(session)
+        
+        # Don't expose the EIS-tier Session object to the client-tier:
+        return self.create_exposed_session(session, session_context)
+
+    def apply_global_session_timeout(self, session):
+        session.set_timeout(self.global_session_timeout)
+        self.on_change(session)
+    
+    def on_start(self, session, session_context):  # template for sub-classes
+        pass
+
+    def get_session(self, key):
+        session = self.lookup_session(key)
+        if (session):
+            return self.create_exposed_session(session, key)
+        else:
+            return None
+
+    def lookup_session(self, key):
+        return self.do_get_session(key)
+
+    def lookup_required_session(self, key):
+        try:
+            session = self.lookup_session(key)
+            if (session is None):
+                msg = ("Unable to locate required Session instance based "
+                       "on session_key [" + key + "].")
+                raise UnknownSessionException(msg)
+            return session
+        except UnknownSessionException as ex:
+            print('lookup_required_session: ', ex)
+
+    def create_exposed_session(self, **kwargs):
+        acceptable_args = ['key', 'session', 'session_context']
+        try:
+            for key in kwargs.keys():
+                if key not in acceptable_args:
+                    raise UnrecognizedAttributeException(key)
+        except UnrecognizedAttributeException as ex:
+            print('create_exposed_session passed unrecognized attribute:', ex)
+
+        return DelegatingSession(self, Defaultsession_key(session.id))
+
+    def before_invalid_notification(self, session):
+        return ImmutableProxiedSession(session)
+
+    def notify_start(self, session):
+        for listener in self.listeners:
+            listener.on_start(session)
+
+    def notify_stop(self, session):
+        for_notification = self.before_invalid_notification(session)
+        for listener in self.listeners: 
+            listener.on_stop(for_notification)
+
+    def notify_expiration(self, session):
+        for_notification = self.before_invalid_notification(session)
+        for listener in self.listeners: 
+            listener.on_expiration(for_notification)
+
+    def get_start_timestamp(self, session_key):
+        return self.lookup_required_session(session_key).start_timestamp
+
+    def get_last_access_time(self, session_key):
+        return self.lookup_required_session(session_key).last_access_time
+
+    def get_timeout(self, session_key):
+        return self.lookup_required_session(session_key).timeout
+
+    def set_timeout(self, session_key, max_idle_time_in_millis):
+        try:
+            session = self.lookup_required_session(session_key)
+            session.timeout = max_idle_time_in_millis
+            self.on_change(session)
+        except:
+            raise
+
+    def touch(self, session_key):
+        session = self.lookup_required_session(session_key)
+        session.touch()
+        self.on_change(s)
+
+    def get_host(self, session_key):
+        return self.lookup_required_session(session_key).host
+
+    def get_attribute_keys(self, session_key):
+        collection = self.lookup_required_session(session_key).\
+            get_attribute_keys()
+        if (collection):
+            return tuple(collection) 
+        else:
+            return tuple() 
+
+    def get_attribute(self, session_key, attribute_key):
+        return self.lookup_required_session(sessionKey).\
+            getAttribute(attributeKey)
+
+    def set_attribute(self, session_key, attribute_key, value):
+        if (value is None):
+            self.remove_attribute(session_key, attribute_key)
+        else: 
+            session = self.lookup_required_session(session_key)
+            session.set_attribute(attribute_key, value)
+            self.on_change(session)
+
+    def remove_attribute(self, session_key, attribute_key):
+        session = self.lookup_required_session(session_key)
+        removed = session.remove_attribute(attribute_key)
+        if (removed is not None): 
+            self.on_change(session)
+        return removed
+
+    def is_valid(self, session_key):
+        try:
+            self.check_valid(session_key)
+            return True
+        except:
+            print('is_valid Exception!')
+            raise
+        return False 
+
+    def stop(self, session_key):
+        session = self.lookup_required_session(session_key)
+        try:
+            msg = ("Stopping session with id [" + session._id + "]")
+            print(msg)            
+            session.stop()
+            self.on_stop(session, session_key)
+            self.notify_stop(session)
+        except:
+            raise
+        finally:
+            self.after_stopped(session)
+
+    def on_stop(self, session, session_key=None): 
+        if (session_key is None):
+            self.on_stop(session)
+        else:
+            self.on_change(session)
+
+    def after_stopped(self, session):
+        pass
+
+    def check_valid(self, session_key):
+        # just try to acquire it.  If there's a problem, an exception is thrown
+        try:
+            self.lookup_required_session(session_key)
+        except:
+            raise
+
+    def on_change(self, session):
+        pass
