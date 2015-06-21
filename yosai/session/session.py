@@ -716,6 +716,19 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
         return DelegatingSession(self, DefaultSessionKey(session.session_id))
 
     def before_invalid_notification(self, session):
+        """
+         Returns the session instance that should be passed to registered 
+         SessionListener(s) for notification that the session has been
+         invalidated (stopped or expired).
+         
+         The default implementation returns an ImmutableProxiedSession instance
+         to ensure that the specified {@code session} argument is not modified
+         by any listeners.
+        
+         :param session: the Session object to be invalidated
+         :returns: the Session instance that is passed to registered 
+                   SessionListener(s) as part of the notification process
+        """
         return ImmutableProxiedSession(session)
 
     def notify_start(self, session):
@@ -738,58 +751,40 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
     def get_last_access_time(self, session_key):
         return self.lookup_required_session(session_key).last_access_time
 
-    @property
-    def absolute_timeout(self):
-        pass
+    def get_absolute_timeout(self, session_key):
+        return self.lookup_required_session(session_key).absolute_timeout 
+       
+    def get_idle_timeout(self, session_key):
+        return self.lookup_required_session(session_key).idle_timeout 
 
-    @absolute_timeout.setter
-    def absolute_timeout(self, abs_timeout):
-        """
-        :type abs_timeout: timedelta
-        """
-        pass
+    def set_idle_timeout(self, session_key, idle_time):
+        session = self.lookup_required_session(session_key)
+        session.timeout = idle_time 
+        self.on_change(session)
 
-    @property
-    def idle_timeout(self):
-        pass
-
-    @idle_timeout.setter
-    def idle_timeout(self, idle_timeout):
-        """
-        :type idle_timeout: timedelta
-        """
-        pass
-
-    def get_timeout(self, session_key):
-        return self.lookup_required_session(session_key).timeout
-
-    def set_timeout(self, session_key, max_idle_time_in_millis):
-        try:
-            session = self.lookup_required_session(session_key)
-            session.timeout = max_idle_time_in_millis
-            self.on_change(session)
-        except:
-            raise
+    def set_absolute_timeout(self, session_key, absolute_time):
+        session = self.lookup_required_session(session_key)
+        session.timeout = absolute_time 
+        self.on_change(session)
 
     def touch(self, session_key):
         session = self.lookup_required_session(session_key)
         session.touch()
-        self.on_change(s)
+        self.on_change(session)
 
     def get_host(self, session_key):
         return self.lookup_required_session(session_key).host
 
     def get_attribute_keys(self, session_key):
-        collection = self.lookup_required_session(session_key).\
-            get_attribute_keys()
-        if (collection):
+        collection = self.lookup_required_session(session_key).attribute_keys
+        try: 
             return tuple(collection) 
-        else:
+        except TypeError: 
             return tuple() 
 
     def get_attribute(self, session_key, attribute_key):
-        return self.lookup_required_session(sessionKey).\
-            getAttribute(attributeKey)
+        return self.lookup_required_session(session_key).\
+            get_attribute(attribute_key)
 
     def set_attribute(self, session_key, attribute_key, value):
         if (value is None):
@@ -810,20 +805,19 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
         try:
             self.check_valid(session_key)
             return True
-        except:
-            print('is_valid Exception!')
-            raise
-        return False 
+        except InvalidSessionException:
+            return False 
 
     def stop(self, session_key):
         session = self.lookup_required_session(session_key)
         try:
-            msg = ("Stopping session with id [" + session._id + "]")
+            msg = ("Stopping session with id [" + str(session._id) + "]")
             print(msg)            
+            # log here
             session.stop()
             self.on_stop(session, session_key)
             self.notify_stop(session)
-        except:
+        except InvalidSessionException:
             raise
         finally:
             self.after_stopped(session)
@@ -833,16 +827,15 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
             self.on_stop(session)
         else:
             self.on_change(session)
-
+    
+    @abstractmethod
     def after_stopped(self, session):
         pass
 
     def check_valid(self, session_key):
-        # just try to acquire it.  If there's a problem, an exception is thrown
-        try:
-            self.lookup_required_session(session_key)
-        except:
-            raise
+        # just try to acquire it.  If there's a problem, an exception is raised 
+        self.lookup_required_session(session_key)
 
+    @abstractmethod
     def on_change(self, session):
         pass
