@@ -594,7 +594,7 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
                                    abcs.NativeSessionManager,
                                    metaclass=ABCMeta): 
     """
-    AbstractNativeSessionManager is a mix-in, consisting largely of a 
+    AbstractNativeSessionManager is an abc , consisting largely of a 
     concrete implementation but also the specification of abstract methods
     to be implemented by its subclasses.  This is consistent with Shiro's
     abstract design.
@@ -668,9 +668,11 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
 
     # yosai renames applyGlobalSessionTimeout:
     def apply_session_timeouts(self, session):
-        # new to yosai is the use of the absolute timeout:
-        session.absolute_timeout = self.absolute_timeout
-        session.idle_timeout = self.idle_timeout
+
+        # new to yosai is the use of the absolute timeout and module-level
+        # session_settings
+        session.absolute_timeout = session_settings.absolute_timeout
+        session.idle_timeout = session_settings.idle_timeout
         self.on_change(session)
     
     # yosai makes the following an abstractmethod, unlike shiro, so that 
@@ -699,7 +701,7 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
 
     def lookup_required_session(self, key):
         session = self.lookup_session(key)
-        if (session is None):
+        if (not session):
             msg = ("Unable to locate required Session instance based "
                    "on session_key [" + str(key) + "].")
             raise UnknownSessionException(msg)
@@ -758,12 +760,12 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
 
     def set_idle_timeout(self, session_key, idle_time):
         session = self.lookup_required_session(session_key)
-        session.timeout = idle_time 
+        session.idle_timeout = idle_time 
         self.on_change(session)
 
     def set_absolute_timeout(self, session_key, absolute_time):
         session = self.lookup_required_session(session_key)
-        session.timeout = absolute_time 
+        session.absolute_timeout = absolute_time 
         self.on_change(session)
 
     def touch(self, session_key):
@@ -778,14 +780,14 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
         collection = self.lookup_required_session(session_key).attribute_keys
         try: 
             return tuple(collection) 
-        except TypeError: 
+        except TypeError:  # collection is None 
             return tuple() 
 
     def get_attribute(self, session_key, attribute_key):
         return self.lookup_required_session(session_key).\
             get_attribute(attribute_key)
 
-    def set_attribute(self, session_key, attribute_key, value):
+    def set_attribute(self, session_key, attribute_key, value=None):
         if (value is None):
             self.remove_attribute(session_key, attribute_key)
         else: 
@@ -810,7 +812,7 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
     def stop(self, session_key):
         session = self.lookup_required_session(session_key)
         try:
-            msg = ("Stopping session with id [" + str(session._id) + "]")
+            msg = ("Stopping session with id [" + str(session.session_id) + "]")
             print(msg)            
             # log here
             session.stop()
@@ -822,10 +824,7 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
             self.after_stopped(session)
 
     def on_stop(self, session, session_key=None): 
-        if (session_key is None):
-            self.on_stop(session)
-        else:
-            self.on_change(session)
+        self.on_change(session)
     
     @abstractmethod
     def after_stopped(self, session):

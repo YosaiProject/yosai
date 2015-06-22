@@ -40,7 +40,7 @@ class Event:
         self.event_type = event_type  # ex:  AUTHENTICATION
         self.event_topic = event_topic  # ex:  AUTHENTICATION_FAILED
         self.source = source  # the object that emitted the event 
-        self.timestamp = datetime.datetime.utcnow().isoformat()
+        self.timestamp = datetime.datetime.utcnow()
         self.__dict__.update(**eventattrs)  # DG:  risky?
 
 

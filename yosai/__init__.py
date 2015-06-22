@@ -152,11 +152,11 @@ from .serialize import (
 
 from .session import (
     # AbstractSessionDAO,
-    # AbstractNativeSessionManager,
+    AbstractNativeSessionManager,
     # AbstractValidatingSessionManager,
     # CachingSessionDAO,
     # DefaultSessionContext,  
-    # DefaultSessionKey,
+    DefaultSessionKey,
     # DefaultSessionManager,
     DelegatingSession,
     # DefaultSessionStorageEvaluator,

@@ -1,6 +1,5 @@
 import pytest
-import calendar
-import time
+import datetime
 
 from yosai import (
     Event,
@@ -16,8 +15,8 @@ from yosai import (
 
 def test_event_timestamp_verify(default_event):
     """ timestamp integrity is vital, so confirm that it is working """
-    timestamp = calendar.timegm(time.gmtime())
-    assert (timestamp - default_event.timestamp) <= 10 
+    timestamp = datetime.datetime.utcnow() 
+    assert (timestamp - default_event.timestamp) <= datetime.timedelta(minutes=1) 
 
 def test_event_attr_set():
     test_event = Event(event_topic='topic1',

@@ -1,10 +1,10 @@
 
 from .session import (
 #    AbstractSessionDAO,
-#    AbstractNativeSessionManager,
+    AbstractNativeSessionManager,
 #    AbstractValidatingSessionManager,
 #    DefaultSessionContext,  
-#    DefaultSessionKey,
+    DefaultSessionKey,
 #    DefaultSessionManager,
     DefaultSessionSettings,
     ImmutableProxiedSession,

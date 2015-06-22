@@ -1,10 +1,15 @@
 import yosai.session.abcs as session_abcs
 import datetime
+from yosai import (
+    AbstractNativeSessionManager,
+)
 
 class MockSession(session_abcs.Session, object):
 
     def __init__(self):
         self.session = {'attr1': 1, 'attr2': 2, 'attr3': 3}
+        self._idle_timeout = datetime.timedelta(minutes=15)
+        self._absolute_timeout = datetime.timedelta(minutes=60) 
 
     @property
     def attribute_keys(self):
@@ -28,28 +33,28 @@ class MockSession(session_abcs.Session, object):
 
     @property
     def idle_timeout(self):
-        return datetime.timedelta(minutes=15)
+        return self._idle_timeout 
  
     @idle_timeout.setter
     def idle_timeout(self, idle_timeout):
-        pass
+        self._idle_timeout = idle_timeout 
    
     @property
     def absolute_timeout(self):
-        return datetime.timedelta(minutes=60) 
+        return self._absolute_timeout 
 
     @absolute_timeout.setter
     def absolute_timeout(self, absolute_timeout):
-        pass
+        self._absolute_timeout = absolute_timeout
 
     def get_attribute(self, key):
-        pass
+        return 'attrX' 
     
     def remove_attribute(self, key):
-        pass
+        return self.session.pop(key, None) 
     
     def set_attribute(self, key, value):
-        pass
+        self.session[key] = value 
 
     def stop(self):
         pass
@@ -99,3 +104,24 @@ class MockSessionManager:
     def remove_attribute(self, key, attr_key):
         pass
 
+
+class MockAbstractNativeSessionManager(AbstractNativeSessionManager):
+
+    def __init__(self, event_bus):
+        super().__init__(event_bus)
+        self.listeners = []
+    
+    def create_session(self, session_context):
+        pass 
+
+    def on_start(self, session, session_context):
+        pass
+
+    def do_get_session(self, session_key):
+        pass
+
+    def after_stopped(self, session):
+        pass
+
+    def on_change(self, session):
+        pass
