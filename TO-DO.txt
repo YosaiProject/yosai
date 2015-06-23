@@ -12,3 +12,5 @@ Requiring Concrete Implementations:
    - CacheManager
 
 Porting annotations to python
+
+the Session Scheduler should be concurrent.. 

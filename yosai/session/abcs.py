@@ -520,3 +520,86 @@ class SessionKey(metaclass=ABCMeta):
     @abstractmethod
     def session_id(self, session_id):
         pass
+
+
+class ValidatingSessionManager(SessionManager):
+    """
+    A ValidatingSessionManager is a SessionManager that can proactively
+    validate any or all sessions that may be expired.
+    """
+
+    @abstractmethod
+    def validated_sessions(self):
+        """
+        Performs session validation for all open/active sessions in the system
+        (those that have not been stopped or expired), and validates each one.
+        If a session is found to be invalid (e.g. it has expired), it is
+        updated and saved to the EIS.
+ 
+        This method is necessary in order to handle orphaned sessions and is
+        expected to be run at a regular interval, such as once an hour, once a
+        day or once a week, etc.  The &quot;best&quot; frequency to run this
+        method is entirely dependent upon the application and would be based on
+        factors such as performance, average number of active users, hours of
+        least activity, and other things.
+  
+        Most enterprise applications use a request/response programming model.
+        This is obvious in the case of web applications due to the HTTP
+        protocol, but it is equally true of remote client applications making
+        remote method invocations.  The server essentially sits idle and only
+        *works* when responding to client requests and/or method invocations.
+        This type of model is particularly efficent since it means the security
+        system only has to validate a session during those cases.  Such
+        *lazy* behavior enables the system to lie stateless and/or idle and
+        only incur overhead for session validation when necessary.
+   
+        However, if a client forgets to log-out, or in the event of a server
+        failure, it is possible for sessions to be orphaned since no further
+        requests would utilize that session.  Because of these
+        lower-probability cases, it might be required to regularly clean-up the
+        sessions maintained by the system, especially if sessions are backed by
+        a persistent data store.
+    
+        Even in applications that aren't primarily based on a request/response
+        model, such as those that use enterprise asynchronous messaging (where
+        data is pushed to a client without first receiving a client request),
+        it is almost always acceptable to utilize this lazy approach and run
+        this method at defined interval.
+     
+        Systems that want to proactively validate individual sessions may
+        simply call the get_session(session_key) method on any
+        ValidatingSessionManager instance as that method is expected to
+        validate the session before retrieving it.  Note that even with
+        proactive calls to get_session, this validate_sessions
+        method should be invoked regularly anyway to *guarantee* no
+        orphans exist.
+      
+        Note:
+        Yosai supports automatic execution of this method at a regular interval
+        by using SessionValidationScheduler(s).  The Yosai default 
+        SecurityManager implementations needing session validation will 
+        create and use one by default if one is not provided by the
+        application configuration.
+        """
+        pass
+
+class SessionValidationScheduler(metaclass=ABCMeta):
+
+    """ 
+    Returns True if this Scheduler is enabled and ready to begin validation at
+    the appropriate time, False otherwise.
+    
+    It does *not* indicate if the validation is actually executing at that
+    instant - only that it is prepared to do so at the appropriate time.
+    """ 
+    @abstractmethod
+    def is_enabled(self):
+        pass
+    
+    @abstractmethod
+    def enable_session_validation(self):
+        pass
+
+    @abstractmethod
+    def disable_session_validation(self):
+        pass

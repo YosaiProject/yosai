@@ -1,4 +1,5 @@
 import datetime
+import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 from os import urandom
 from hashlib import sha256, sha512
@@ -43,14 +44,14 @@ class DefaultSessionSettings:
         abstimeout = timeout_config.get('absolute_timeout', 1800)  # def:30min
         self.absolute_timeout = datetime.timedelta(seconds=abstimeout) 
 
-        idletimeout = timeout_config.get('idle_timeout', 450) # def:15min
+        idletimeout = timeout_config.get('idle_timeout', 450)  # def:15min
         self.idle_timeout = datetime.timedelta(seconds=idletimeout)
 
         self.validation_scheduler_enable =\
             validation_config.get('scheduler_enabled', True)
 
-        interval = validation_config.get('time_interval', 3600) # def:1hr 
-        self.validation_time_interval = interval
+        interval = validation_config.get('time_interval', 3600)  # def:1hr 
+        self.validation_time_interval = datetime.timedelta(seconds=interval)
 
     def __repr__(self):
         return ("SessionSettings(absolute_timeout={0}, idle_timeout={1}, "
@@ -836,4 +837,290 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
 
     @abstractmethod
     def on_change(self, session):
+        pass
+
+
+class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler):
+    """
+    Note:  Many data stores support TTL (time to live) as a feature.  It 
+           is unecessary to run a session-validation/Executor service if
+           you can use the TTL timeout feature.
+
+           Shiro uses a daemon thread for scheduled validation, signaling 
+           it when to shutdown.  Python terminates daemon threads much more
+           abruptly than Java, so Yosai will not use them.  Instead, Yosai uses 
+           regular threads and an event notification process to gracefully terminate.
+           See:  https://docs.python.org/3/library/threading.html#thread-objects
+           
+    """ 
+    def __init__(self, sessionmanager):
+        self._session_manager = sessionmanager
+        
+        self.session_validation_interval =\
+            session_settings.validation_time_interval
+
+        self._enabled = False
+        self._service = ScheduledExecutorService()
+
+    @property
+    def session_manager(self):
+        return self._session_manager
+
+    @session_manager.setter
+    def session_manager(self, sessionmanager):
+        self._session_manager = sessionmanager
+
+    @property
+    def interval(self):
+        return self._interval
+
+    @interval.setter
+    def interval(self, interval):
+        self._interval = interval
+
+    @property
+    def enabled(self):
+        return self._enabled
+    """    
+    # DG: URGENT todo -- requires analysis:
+    # Creates a ScheduledExecutorService to validate sessions at fixed intervals 
+    # and enables this scheduler. The executor is created as a daemon thread to allow JVM to shut down
+
+"""
+    # TODO Implement an integration test to test for jvm exit as part of the standalone example
+    # (so we don't have to change the unit test execution model for the core module)
+    public void enableSessionValidation() {
+        if (this.interval > 0l) {
+            this.service = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {  
+	        public Thread newThread(Runnable r) {  
+	            Thread thread = new Thread(r);  
+	            thread.setDaemon(true);  
+	            return thread;  
+                }  
+            });                  
+            this.service.scheduleAtFixedRate(this, interval, interval, TimeUnit.MILLISECONDS);
+            this.enabled = true;
+        }
+    }
+"""
+"""
+    def run(self):
+        # log here
+        msg = "Executing session validation..."
+        print(msg)
+        start_time = int(round(time.time() * 1000, 2)) 
+        self.session_manager.validate_sessions()
+        stop_time = int(round(time.time() * 1000, 2)) 
+        # log here
+        msg2 = ("Session validation completed successfully in "
+                (stop_time - start_time) + " milliseconds.")
+        print(msg2) 
+
+    def disable_session_validation(self):
+        #self.service.shutdownNow()  python terminates daemon threads abruptly
+        self.enabled = False
+
+
+class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
+                                       AbstractNativeSessionManager):
+    
+    def __init__(self):
+        self.session_validation_scheduler = None 
+        self.session_validation_scheduler_enabled =\
+            session_settings.validation_scheduler_enable
+        self.session_validation_interval =\
+            session_settings.validation_time_interval
+
+    def enable_session_validation_if_necessary(self):
+        scheduler = self.session_validation_scheduler
+        if (self.session_validation_scheduler_enabled and
+           (scheduler is None or (not scheduler.enabled))):
+            self.enable_session_validation()
+
+    def do_get_session(self, session_key):
+        self.enable_session_validation_if_necessary()
+        msg = "Attempting to retrieve session with key " + str(session_key)
+        print(msg)
+        # log here
+
+        session = self.retrieve_session(session_key)
+        if (session is not None):
+            self.validate(session, session_key)
+        
+        return session
+
+    @abstractmethod
+    def retrieve_session(self, session_key):
+        pass
+
+    def create_session(self, session_context):
+        self.enable_session_validation_if_necessary()
+        return self.do_create_session(session_context)
+
+    @abstractmethod
+    def do_create_session(self, session_context):
+        pass
+        
+    def validate(self, session, session_key):
+        try:
+            self.do_validate(session)
+        
+        except ExpiredSessionException as ese:
+            self.on_expiration(session, ese, session_key)
+            raise
+       
+        except InvalidSessionException as ise:
+            self.on_invalidation(session, ise, session_key)
+            raise
+      
+    def on_expiration(self, session=None, expired_session_exception=None,
+                      session_key=None):
+        if (expired_session_exception is None and session_key is None):
+            self.on_change(session)
+        else:
+            msg = "Session with id [{0}] has expired.".format(session.session_id)
+            # log here
+            print(msg)
+            try:
+                self.on_expiration(session)
+                self.notify_expiration(session)
+            except:
+                raise
+            finally:
+                self.after_expired(session)
+
+    @abstractmethod 
+    def after_expired(self, session):
+        pass
+
+    def on_invalidation(self, session, ise, session_key):
+        if (isinstance(ise, ExpiredSessionException)):
+            self.on_expiration(session, ExpiredSessionException(), session_key)
+            return
+        
+        msg = "Session with id [{0}] is invalid.".format(session.session_id)
+        print(msg)
+        # log here
+
+        try:
+            self.on_stop(session)
+            self.notify_stop(session)
+        except:
+            raise
+        finally:
+            self.after_stopped(session)
+
+    def do_validate(self, session):
+        try: 
+            session.validate()
+        except AttributeError: 
+            msg = ("The {0} implementation only supports Validating " 
+                   "Session implementations of the {1} interface.  " 
+                   "Please either implement this interface in your "
+                   "session implementation or override the {0}" 
+                   ".do_validate(Session) method to validate.").\
+                format('AbstractValidatingSessionManager',
+                       'ValidatingSession')
+                       
+            raise IllegalStateException(msg)
+
+    def get_idle_timeout(self, session):
+        return session.idle_timeout
+    
+    def get_absolute_timeout(self, session):
+        return session.absolute_timeout
+    
+    def create_session_validation_scheduler(self):
+        msg = ("No SessionValidationScheduler set.  Attempting to "
+               "create default instance.")
+        # log here
+        print(msg)
+
+        scheduler = ExecutorServiceSessionValidationScheduler(self)
+        scheduler.set_interval(self.session_validation_interval)
+
+        msg2 = ("Created default SessionValidationScheduler instance of "
+                "type [" + scheduler.__class__.__name__ + "].")
+        print(msg2)
+        # log here:
+        
+        return scheduler
+
+    def enable_session_validation(self):
+        scheduler = self.session_validation_scheduler
+        if (scheduler is None):
+            scheduler = self.create_session_validation_scheduler()
+            self.session_validation_scheduler = scheduler
+        
+        msg = "Enabling session validation scheduler..."
+        # log here
+        print(msg)
+       
+        scheduler.enable_session_validation()
+        self.after_session_validation_enabled()
+
+    @abstractmethod
+    def after_session_validation_enabled(self):
+        pass
+
+    def disable_session_validation(self):
+        self.before_session_validation_disabled()
+        scheduler = self.session_validation_scheduler
+        if (scheduler is not None): 
+            try:
+                scheduler.disable_session_validation()
+                msg = "Disabled session validation scheduler."
+                # log here
+                print(msg)
+               
+            except:
+                msg2 = ("Unable to disable SessionValidationScheduler. "
+                        "Ignoring (shutting down)...")
+                # log here 
+                print(msg2) 
+                
+            self.session_validation_scheduler = None
+
+    @abstractmethod 
+    def before_session_validation_disabled(self):
+        pass
+
+    def validate_sessions(self):
+        msg = "Validating all active sessions..."
+        print(msg)        
+        # log here
+
+        invalid_count = 0
+
+        active_sessions = self.get_active_sessions()
+
+        if (active_sessions):
+            for session in active_sessions:
+                try:
+                    # simulate a lookup key to satisfy the method signature.
+                    # self.could probably be cleaned up in future versions:
+                    session_key = DefaultSessionKey(session.session_id)
+                    self.validate(session, session_key)
+                except InvalidSessionException as ex:
+                    expired = isinstance(ex, ExpiredSessionException)
+                    msg3 = "Invalidated session with id [{s_id}] ({exp})".\
+                           format(s_id=session.get_id(),
+                                  exp="expired" if (expired) else "stopped")
+                    # log here 
+                    print(msg3) 
+                    invalid_count += 1
+
+        msg4 = "Finished session validation."
+        # log here 
+        print(msg4)
+
+        if (invalid_count > 0):
+            msg4 += "  [" + str(invalid_count) + "] sessions were stopped."
+        else: 
+            msg4 += "  No sessions were stopped."
+        print(msg4) 
+        # log here
+
+    @abstractmethod
+    def get_active_sessions(self):
         pass
