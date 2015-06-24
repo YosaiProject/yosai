@@ -85,6 +85,10 @@ from .conf import (
     Settings,
 )
 
+from .concurrency import (
+    StoppableScheduledExecutor,
+)
+
 
 from .logging import (
     LogManager,

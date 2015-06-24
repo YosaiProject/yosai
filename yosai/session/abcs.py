@@ -592,6 +592,7 @@ class SessionValidationScheduler(metaclass=ABCMeta):
     It does *not* indicate if the validation is actually executing at that
     instant - only that it is prepared to do so at the appropriate time.
     """ 
+    @property
     @abstractmethod
     def is_enabled(self):
         pass

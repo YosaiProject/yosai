@@ -19,6 +19,7 @@ from yosai import (
     LogManager,
     MissingMethodException,
     SessionEventException,
+    StoppableScheduledExecutor,
     StoppedSessionException,
     UnknownSessionException,
     UnrecognizedAttributeException,
@@ -26,6 +27,7 @@ from yosai import (
 )
 from yosai.serialize import abcs as serialize_abcs
 from yosai.session import abcs
+
 
 class DefaultSessionSettings:
     """
@@ -854,70 +856,41 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
            
     """ 
     def __init__(self, sessionmanager):
-        self._session_manager = sessionmanager
-        
-        self.session_validation_interval =\
-            session_settings.validation_time_interval
-
+        """
+        :param sessionmanager: a ValidatingSessionManager
+        """
+        self.session_manager = sessionmanager
+        self.interval = session_settings.validation_time_interval
         self._enabled = False
-        self._service = ScheduledExecutorService()
+        self.service = StoppableScheduledExecutor(self.run, 
+                                                  interval=self.interval) 
 
     @property
-    def session_manager(self):
-        return self._session_manager
-
-    @session_manager.setter
-    def session_manager(self, sessionmanager):
-        self._session_manager = sessionmanager
-
-    @property
-    def interval(self):
-        return self._interval
-
-    @interval.setter
-    def interval(self, interval):
-        self._interval = interval
-
-    @property
-    def enabled(self):
+    def is_enabled(self):
         return self._enabled
-    """    
-    # DG: URGENT todo -- requires analysis:
-    # Creates a ScheduledExecutorService to validate sessions at fixed intervals 
-    # and enables this scheduler. The executor is created as a daemon thread to allow JVM to shut down
-
-"""
-    # TODO Implement an integration test to test for jvm exit as part of the standalone example
-    # (so we don't have to change the unit test execution model for the core module)
-    public void enableSessionValidation() {
-        if (this.interval > 0l) {
-            this.service = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {  
-	        public Thread newThread(Runnable r) {  
-	            Thread thread = new Thread(r);  
-	            thread.setDaemon(true);  
-	            return thread;  
-                }  
-            });                  
-            this.service.scheduleAtFixedRate(this, interval, interval, TimeUnit.MILLISECONDS);
-            this.enabled = true;
-        }
-    }
-"""
-"""
+    
+    # StoppableScheduledExector validates sessions at fixed intervals 
+    def enable_session_validation(self):
+        if (self.interval):
+            self.service.start()
+            self._enabled = True
+    
     def run(self):
-        # log here
         msg = "Executing session validation..."
         print(msg)
+        # log here
+
         start_time = int(round(time.time() * 1000, 2)) 
         self.session_manager.validate_sessions()
         stop_time = int(round(time.time() * 1000, 2)) 
-        # log here
+
         msg2 = ("Session validation completed successfully in "
                 (stop_time - start_time) + " milliseconds.")
         print(msg2) 
+        # log here
 
     def disable_session_validation(self):
-        #self.service.shutdownNow()  python terminates daemon threads abruptly
+        self.service.stop()
         self.enabled = False
 
 
