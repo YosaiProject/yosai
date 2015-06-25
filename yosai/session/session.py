@@ -1,6 +1,5 @@
 import datetime
 import threading
-from apscheduler.schedulers.background import BackgroundScheduler
 from os import urandom
 from hashlib import sha256, sha512
 import time
@@ -855,12 +854,12 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
            See:  https://docs.python.org/3/library/threading.html#thread-objects
            
     """ 
-    def __init__(self, sessionmanager):
+    def __init__(self, sessionmanager, interval):
         """
         :param sessionmanager: a ValidatingSessionManager
         """
         self.session_manager = sessionmanager
-        self.interval = session_settings.validation_time_interval
+        self.interval = interval  # in seconds
         self._enabled = False
         self.service = StoppableScheduledExecutor(self.run, 
                                                   interval=self.interval) 
@@ -925,15 +924,15 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
     @abstractmethod
     def retrieve_session(self, session_key):
         pass
-
-    def create_session(self, session_context):
-        self.enable_session_validation_if_necessary()
-        return self.do_create_session(session_context)
-
+    
     @abstractmethod
     def do_create_session(self, session_context):
         pass
         
+    def create_session(self, session_context):
+        self.enable_session_validation_if_necessary()
+        return self.do_create_session(session_context)
+
     def validate(self, session, session_key):
         try:
             self.do_validate(session)
@@ -1009,8 +1008,8 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         # log here
         print(msg)
 
-        scheduler = ExecutorServiceSessionValidationScheduler(self)
-        scheduler.set_interval(self.session_validation_interval)
+        scheduler = ExecutorServiceSessionValidationScheduler(
+                sessionmanager=self, interval=self.session_validation_interval)
 
         msg2 = ("Created default SessionValidationScheduler instance of "
                 "type [" + scheduler.__class__.__name__ + "].")
@@ -1060,7 +1059,7 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
 
     def validate_sessions(self):
         msg = "Validating all active sessions..."
-        print(msg)        
+        print(msg)
         # log here
 
         invalid_count = 0
@@ -1080,16 +1079,15 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
                            format(s_id=session.get_id(),
                                   exp="expired" if (expired) else "stopped")
                     # log here 
-                    print(msg3) 
+                    print(msg3)
                     invalid_count += 1
 
         msg4 = "Finished session validation."
         # log here 
         print(msg4)
-
         if (invalid_count > 0):
-            msg4 += "  [" + str(invalid_count) + "] sessions were stopped."
-        else: 
+            msg4 += "[" + str(invalid_count) + "] sessions were stopped."
+        else:
             msg4 += "  No sessions were stopped."
         print(msg4) 
         # log here

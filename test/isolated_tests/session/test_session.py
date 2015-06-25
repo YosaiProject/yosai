@@ -1302,3 +1302,12 @@ def test_ansm_check_valid_raises(patched_abstract_native_session_manager):
         mocky.assert_called_with('sessionkey123')
 
 
+# ----------------------------------------------------------------------------
+# ExecutorServiceSessionValidationScheduler 
+# ----------------------------------------------------------------------------
+
+
+
+# ----------------------------------------------------------------------------
+# AbstractValidatingSessionManager 
+# ----------------------------------------------------------------------------
