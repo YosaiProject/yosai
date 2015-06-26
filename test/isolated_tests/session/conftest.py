@@ -5,5 +5,6 @@ from .fixtures import (
     mock_session,
     patched_abstract_native_session_manager,
     patched_delegating_session,
+    session_validation_scheduler,
     simple_session,
 )

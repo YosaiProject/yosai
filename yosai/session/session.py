@@ -847,6 +847,7 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
            is unecessary to run a session-validation/Executor service if
            you can use the TTL timeout feature.
 
+           yosai vs shiro:
            Shiro uses a daemon thread for scheduled validation, signaling 
            it when to shutdown.  Python terminates daemon threads much more
            abruptly than Java, so Yosai will not use them.  Instead, Yosai uses 
@@ -857,6 +858,7 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
     def __init__(self, sessionmanager, interval):
         """
         :param sessionmanager: a ValidatingSessionManager
+        :param interval:  a time interval, in seconds
         """
         self.session_manager = sessionmanager
         self.interval = interval  # in seconds
@@ -868,7 +870,7 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
     def is_enabled(self):
         return self._enabled
     
-    # StoppableScheduledExector validates sessions at fixed intervals 
+    # StoppableScheduledExecutor validates sessions at fixed intervals 
     def enable_session_validation(self):
         if (self.interval):
             self.service.start()
