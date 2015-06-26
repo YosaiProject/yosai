@@ -1307,7 +1307,6 @@ def test_ansm_check_valid_raises(patched_abstract_native_session_manager):
 # ----------------------------------------------------------------------------
 
 def test_svs_
-
 svs = session_validation_scheduler
 
 
