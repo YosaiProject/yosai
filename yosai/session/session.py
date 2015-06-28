@@ -885,8 +885,8 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
         self.session_manager.validate_sessions()
         stop_time = int(round(time.time() * 1000, 2)) 
 
-        msg2 = ("Session validation completed successfully in "
-                (stop_time - start_time) + " milliseconds.")
+        msg2 = ("Session validation completed successfully in " +
+                str(stop_time - start_time) + " milliseconds.")
         print(msg2) 
         # log here
 

@@ -541,9 +541,9 @@ def test_esvs_run(executor_session_validation_scheduler):
 
     with mock.patch.object(MockAbstractNativeSessionManager, 
                            'validate_sessions') as sm_vs:
-#        sm_vs.return_value = None
-#        esvs.run()
-#        sm_vs.assert_called_with()
+        sm_vs.return_value = None
+        esvs.run()
+        sm_vs.assert_called_with()
 
 # ----------------------------------------------------------------------------
 # AbstractValidatingSessionManager 
