@@ -2,6 +2,7 @@ import pytest
 
 from yosai import (
     AbstractNativeSessionManager,
+    AbstractValidatingSessionManager,
     DefaultSessionSettings,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
@@ -12,6 +13,7 @@ from yosai import (
 
 from .doubles import (
     MockAbstractNativeSessionManager,
+    MockAbstractValidatingSessionManager,
     MockSession,
     MockSessionManager,
 )
@@ -61,3 +63,8 @@ def executor_session_validation_scheduler(patched_abstract_native_session_manage
     interval = 360
     return ExecutorServiceSessionValidationScheduler(session_manager=pansm, 
                                                      interval=interval) 
+
+@pytest.fixture(scope='function')
+def abstract_validating_session_manager(patched_event_bus):
+    return MockAbstractValidatingSessionManager(patched_event_bus)
+

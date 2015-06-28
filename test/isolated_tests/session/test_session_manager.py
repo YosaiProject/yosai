@@ -4,11 +4,13 @@ import datetime
 
 from .doubles import (
     MockAbstractNativeSessionManager,
+    MockAbstractValidatingSessionManager,
     MockSession,
     MockSessionManager,
 )
 
 from yosai import (
+    AbstractValidatingSessionManager,
     DefaultSessionSettings,
     DelegatingSession,
     EventBus,
@@ -529,6 +531,13 @@ def test_ansm_check_valid_raises(patched_abstract_native_session_manager):
 # ----------------------------------------------------------------------------
 
 def test_esvs_enable_session_validation(executor_session_validation_scheduler):
+    """
+    unit tested:  enable_session_validation
+
+    test case:
+    interval is set, so service.start() will be invoked and enabled = True 
+    """
+    
     esvs = executor_session_validation_scheduler
     sse = StoppableScheduledExecutor  # from yosai.concurrency
     with mock.patch.object(sse, 'start') as sse_start:
@@ -537,6 +546,12 @@ def test_esvs_enable_session_validation(executor_session_validation_scheduler):
 
 
 def test_esvs_run(executor_session_validation_scheduler):
+    """
+    unit tested:  run
+
+    test case:
+    session_manager.validate_sessions is invoked
+    """
     esvs = executor_session_validation_scheduler
 
     with mock.patch.object(MockAbstractNativeSessionManager, 
@@ -545,6 +560,96 @@ def test_esvs_run(executor_session_validation_scheduler):
         esvs.run()
         sm_vs.assert_called_with()
 
+def test_esvs_disable_session_validation(executor_session_validation_scheduler):
+    """
+    unit tested:  disable_session_validation
+
+    test case:
+    interval is set, so service.stop() will be invoked and enabled = False 
+    """
+
+    esvs = executor_session_validation_scheduler
+    sse = StoppableScheduledExecutor  # from yosai.concurrency
+    with mock.patch.object(sse, 'stop') as sse_stop:
+        esvs.disable_session_validation()
+        sse_stop.assert_called_with() and not esvs.is_enabled
+
 # ----------------------------------------------------------------------------
 # AbstractValidatingSessionManager 
 # ----------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    'svse,scheduler,scheduler_enabled,expected_result',
+    [(True, True, False, True),
+     (True, True, True, False),
+     (False, True, False, False),
+     (True, False, None, True)])
+def test_avsm_esvin(abstract_validating_session_manager, monkeypatch,
+                    svse, scheduler, scheduler_enabled, expected_result,
+                    executor_session_validation_scheduler):
+    """
+    unit tested:  enable_session_validation_if_necessary
+
+    test case:
+    sets a scheduler, defaulting to that from init else enable_session_validation
+
+    I) session_validation_scheduler_enabled = True
+       scheduler = self.session_validation_scheduler  
+       scheduler.enabled = False 
+   II) session_validation_scheduler_enabled = True
+       scheduler = self.session_validation_scheduler  
+       scheduler.enabled = True 
+  III) session_validation_scheduler_enabled = False 
+       scheduler = self.session_validation_scheduler
+   IV) session_validation_scheduler_enabled = True
+       scheduler = None
+    """
+    myscheduler = None
+    if scheduler:
+        myscheduler = executor_session_validation_scheduler
+        monkeypatch.setattr(myscheduler, '_enabled', scheduler_enabled) 
+
+    avsm = abstract_validating_session_manager
+    monkeypatch.setattr(avsm, 'session_validation_scheduler', myscheduler)
+    monkeypatch.setattr(avsm, 'session_validation_scheduler_enabled', svse) 
+
+    with mock.patch.object(AbstractValidatingSessionManager,
+                           'enable_session_validation') as avsm_esv:
+        avsm_esv.return_value = None
+        avsm.enable_session_validation_if_necessary()
+        assert avsm_esv.called == expected_result
+
+@pytest.mark.parametrize('expected_result', [None, 'retrieved'])
+def test_avsm_dogetsession(abstract_validating_session_manager, monkeypatch,
+                           expected_result):
+    """
+    unit tested: do_get_session
+
+    test case:
+    enable_session_validation_if_necessary is called
+    validate will be called if retrieve_session returns a session
+    session is returned
+    """
+    avsm = abstract_validating_session_manager
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'enable_session_validation_if_necessary') as avsm_esvin:
+        with mock.patch.object(MockAbstractValidatingSessionManager, 
+                               'validate') as avsm_validate:
+            monkeypatch.setattr(avsm, 'retrieve_session', 
+                                lambda x: expected_result) 
+            result = avsm.do_get_session('sessionkey123')
+            avsm_esvin.assert_called_with()
+
+            assert (avsm_esvin.called and result == expected_result and
+                    avsm_validate.called == bool(expected_result))
+
+def test_avsm_create_session(
+        abstract_validating_session_manager, monkeypatch):
+    avsm = abstract_validating_session_manager
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'enable_session_validation_if_necessary') as avsm_esvin:
+        with mock.patch.object(MockAbstractValidatingSessionManager, 
+                               'do_create_session') as avsm_dcs:
+            avsm_dcs.return_value = 'session'
+            result = avsm.create_session('sessioncontext')
+            assert avsm_esvin.called and result == 'session' 

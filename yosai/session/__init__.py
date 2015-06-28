@@ -2,7 +2,7 @@
 from .session import (
 #    AbstractSessionDAO,
     AbstractNativeSessionManager,
-#    AbstractValidatingSessionManager,
+    AbstractValidatingSessionManager,
 #    DefaultSessionContext,  
     DefaultSessionKey,
 #    DefaultSessionManager,

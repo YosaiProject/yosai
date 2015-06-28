@@ -157,7 +157,7 @@ from .serialize import (
 from .session import (
     # AbstractSessionDAO,
     AbstractNativeSessionManager,
-    # AbstractValidatingSessionManager,
+    AbstractValidatingSessionManager,
     # CachingSessionDAO,
     # DefaultSessionContext,  
     DefaultSessionKey,

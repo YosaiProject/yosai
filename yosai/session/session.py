@@ -898,7 +898,9 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
 class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
                                        AbstractNativeSessionManager):
     
-    def __init__(self):
+    def __init__(self, event_bus):
+        # event_bus injection is new to Yosai
+        super().__init__(event_bus)
         self.session_validation_scheduler = None 
         self.session_validation_scheduler_enabled =\
             session_settings.validation_scheduler_enable
@@ -908,7 +910,7 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
     def enable_session_validation_if_necessary(self):
         scheduler = self.session_validation_scheduler
         if (self.session_validation_scheduler_enabled and
-           (scheduler is None or (not scheduler.enabled))):
+           (scheduler is None or (not scheduler.is_enabled))):
             self.enable_session_validation()
 
     def do_get_session(self, session_key):
@@ -1010,7 +1012,8 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         # log here
         print(msg)
 
-        scheduler = ExecutorServiceSessionValidationScheduler(
+        scheduler =\
+            ExecutorServiceSessionValidationScheduler(
                 sessionmanager=self, interval=self.session_validation_interval)
 
         msg2 = ("Created default SessionValidationScheduler instance of "

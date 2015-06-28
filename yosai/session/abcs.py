@@ -529,7 +529,7 @@ class ValidatingSessionManager(SessionManager):
     """
 
     @abstractmethod
-    def validated_sessions(self):
+    def validate_sessions(self):
         """
         Performs session validation for all open/active sessions in the system
         (those that have not been stopped or expired), and validates each one.
