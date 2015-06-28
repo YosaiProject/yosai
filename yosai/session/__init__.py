@@ -17,7 +17,7 @@ from .session import (
 #    CachingSessionDAO,
     DelegatingSession,
 #    DefaultSessionStorageEvaluator,
-#    ExecutorServiceSessionValidationScheduler,
+    ExecutorServiceSessionValidationScheduler,
     SimpleSession,
     RandomSessionIDGenerator,
     SimpleSessionFactory,

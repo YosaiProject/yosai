@@ -56,7 +56,7 @@ def patched_abstract_native_session_manager(patched_event_bus, monkeypatch, mock
 
 
 @pytest.fixture(scope='function')
-def session_validation_scheduler(patched_abstract_native_session_manager):
+def executor_session_validation_scheduler(patched_abstract_native_session_manager):
     pansm = patched_abstract_native_session_manager
     interval = 360
     return ExecutorServiceSessionValidationScheduler(session_manager=pansm, 

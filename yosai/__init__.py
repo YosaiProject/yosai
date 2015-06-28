@@ -165,7 +165,7 @@ from .session import (
     DelegatingSession,
     # DefaultSessionStorageEvaluator,
     DefaultSessionSettings,
-    # ExecutorServiceSessionValidationScheduler,
+    ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionDAO,
     # MemorySessionDAO,
     ImmutableProxiedSession,

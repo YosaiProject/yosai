@@ -855,12 +855,12 @@ class ExecutorServiceSessionValidationScheduler(abcs.SessionValidationScheduler)
            See:  https://docs.python.org/3/library/threading.html#thread-objects
            
     """ 
-    def __init__(self, sessionmanager, interval):
+    def __init__(self, session_manager, interval):
         """
         :param sessionmanager: a ValidatingSessionManager
         :param interval:  a time interval, in seconds
         """
-        self.session_manager = sessionmanager
+        self.session_manager = session_manager
         self.interval = interval  # in seconds
         self._enabled = False
         self.service = StoppableScheduledExecutor(self.run, 
