@@ -948,22 +948,33 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         except InvalidSessionException as ise:
             self.on_invalidation(session, ise, session_key)
             raise
-      
-    def on_expiration(self, session=None, expired_session_exception=None,
+
+    def on_expiration(self, session, expired_session_exception=None,
                       session_key=None):
-        if (expired_session_exception is None and session_key is None):
-            self.on_change(session)
-        else:
-            msg = "Session with id [{0}] has expired.".format(session.session_id)
-            # log here
-            print(msg)
+        """
+        Two possible scenarios supported:
+            1) All three arguments passed = session + ese + session_key
+            2) Only session passed as an argument
+        """
+        if (expired_session_exception and session_key):
             try:
-                self.on_expiration(session)
+                self.on_change(session)
+                msg = "Session with id [{0}] has expired.".\
+                    format(session.session_id)
+                print(msg)
+                # log here
                 self.notify_expiration(session)
             except:
                 raise
             finally:
                 self.after_expired(session)
+        elif not expired_session_exception and not session_key:
+            self.on_change(session)
+
+        # Yosai adds this exception handling
+        else:
+            msg = "on_exception takes either 1 argument or 3 arguments"
+            raise IllegalArgumentException(msg)
 
     @abstractmethod 
     def after_expired(self, session):

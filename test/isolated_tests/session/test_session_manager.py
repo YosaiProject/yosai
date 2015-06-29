@@ -15,6 +15,7 @@ from yosai import (
     DelegatingSession,
     EventBus,
     ExpiredSessionException,
+    IllegalArgumentException,
     SessionEventException,
     StoppableScheduledExecutor,
     StoppedSessionException,
@@ -653,3 +654,97 @@ def test_avsm_create_session(
             avsm_dcs.return_value = 'session'
             result = avsm.create_session('sessioncontext')
             assert avsm_esvin.called and result == 'session' 
+
+def test_avsm_validate_succeeds(abstract_validating_session_manager):
+    """
+    unit test:  validate
+
+    test case:
+    basic code path exercise, succeeding to call do_validate
+    """
+    avsm = abstract_validating_session_manager
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'do_validate') as avsm_dv:
+        avsm.validate('testsession', 'sessionkey123')
+        avsm_dv.assert_called_with
+
+
+def test_avsm_validate_expired(abstract_validating_session_manager):
+    """
+    unit test:  validate
+
+    test case:
+    do_validate raises expired session exception, calling on_expiration and
+    raising
+    """
+    avsm = abstract_validating_session_manager
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'do_validate') as avsm_dv:
+        avsm_dv.side_effect = ExpiredSessionException
+        with mock.patch.object(MockAbstractValidatingSessionManager,
+                               'on_expiration') as avsm_oe:
+            with pytest.raises(ExpiredSessionException) as excinfo: 
+                avsm.validate('testsession', 'sessionkey123')
+                assert (avsm_dv.called and avsm_oe.called and 
+                        excinfo.type == ExpiredSessionException)
+
+
+def test_avsm_validate_invalid(abstract_validating_session_manager):
+    """
+    unit test:  validate
+
+    test case:
+    do_validate raises invalid session exception, calling on_invalidation and
+    raising
+    """
+    avsm = abstract_validating_session_manager
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'do_validate') as avsm_dv:
+        avsm_dv.side_effect = InvalidSessionException
+        with mock.patch.object(MockAbstractValidatingSessionManager,
+                               'on_invalidation') as avsm_oi:
+            with pytest.raises(InvalidSessionException) as excinfo: 
+                avsm.validate('testsession', 'sessionkey123')
+                assert (avsm_dv.called and avsm_oi.called and 
+                        excinfo.type == InvalidSessionException)
+
+@pytest.mark.parametrize('ese,session_key',
+                         [('ExpiredSessionException', None), 
+                          (None, 'sessionkey123')])
+def test_avsm_on_expiration_onenotset(
+        abstract_validating_session_manager, ese, session_key):
+    """
+    unit tested:  on_expiration
+
+    test case:
+        expired_session_exception or session_key are set, but not both
+    """
+    avsm = abstract_validating_session_manager
+
+    with pytest.raises(IllegalArgumentException):
+        avsm.on_expiration(session='testsession',
+                           expired_session_exception=ese,
+                           session_key=session_key)
+
+
+def test_avsm_on_expiration_only_session(abstract_validating_session_manager):
+    """
+    unit tested:  on_expiration
+
+    test case:
+        only session is passed as an argument, resulting in on_change called 
+    """
+    avsm = abstract_validating_session_manager
+
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'notify_expiration') as avsm_ne:
+        
+        with mock.patch.object(MockAbstractValidatingSessionManager,
+                               'after_expired') as avsm_ae:
+        
+            with mock.patch.object(MockAbstractValidatingSessionManager,
+                                   'on_change') as avsm_oc:
+
+                avsm.on_expiration(session='testsession')
+                assert (avsm_oc.called and
+                        not avsm_ae.called and not avsm_ne.called)
