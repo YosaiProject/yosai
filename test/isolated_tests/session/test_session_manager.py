@@ -748,3 +748,71 @@ def test_avsm_on_expiration_only_session(abstract_validating_session_manager):
                 avsm.on_expiration(session='testsession')
                 assert (avsm_oc.called and
                         not avsm_ae.called and not avsm_ne.called)
+
+
+def test_avsm_on_expiration_allset(
+        abstract_validating_session_manager, mock_session):
+    """
+    unit tested:  on_expiration
+
+    test case:
+        all parameters are passed, calling on_change, notify_expiration, and 
+        after_expired 
+    """
+    avsm = abstract_validating_session_manager
+
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'notify_expiration') as avsm_ne:
+        
+        with mock.patch.object(MockAbstractValidatingSessionManager,
+                               'after_expired') as avsm_ae:
+        
+            with mock.patch.object(MockAbstractValidatingSessionManager,
+                                   'on_change') as avsm_oc:
+
+                avsm.on_expiration(session=mock_session,
+                                   expired_session_exception='ExpiredSessionException',
+                                   session_key='sessionkey123')
+
+                assert (avsm_oc.called and avsm_ae.called and avsm_ne.called)
+
+
+def test_avsm_on_invalidation_esetype(
+        abstract_validating_session_manager, mock_session):
+    """
+    unit tested:  on_invalidation
+
+    test case:
+        when an exception of type ExpiredSessionException is passed, 
+        on_expiration is called and then method returns
+    """
+    avsm = abstract_validating_session_manager
+    ise = ExpiredSessionException('testing')
+    session_key = 'sessionkey123'
+    with mock.patch.object(MockAbstractValidatingSessionManager, 
+                           'on_expiration') as mock_oe:
+        avsm.on_invalidation(session=mock_session,
+                             ise=ise,
+                             session_key=session_key)
+        mock_oe.assert_called_with
+
+
+def test_avsm_on_invalidation_non_esetype(
+        abstract_validating_session_manager, mock_session):
+    """
+    unit tested:  on_invalidation
+
+    test case:
+        when an exception NOT of type ExpiredSessionException is passed, 
+        on_stop, notify_stop, and after_stopped are called
+    """
+    avsm = abstract_validating_session_manager
+    ise = InvalidSessionException('testing')
+    session_key = 'sessionkey123'
+    with mock.patch.object(MockAbstractValidatingSessionManager, 
+                           'on_expiration') as mock_oe:
+        avsm.on_invalidation(session=mock_session,
+                             ise=ise,
+                             session_key=session_key)
+        mock_oe.assert_called_with
+

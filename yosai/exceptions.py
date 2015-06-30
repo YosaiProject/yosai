@@ -249,10 +249,6 @@ class IncorrectAttributeException(YosaiException):
     pass
 
 
-class InvalidSessionException(YosaiException):
-    pass
-
-
 class UnrecognizedAttributeException(YosaiException):
     pass
 
@@ -277,21 +273,24 @@ class SessionException(YosaiException):
     pass
 
 
-class ExpiredSessionException(SessionException):
+class InvalidSessionException(SessionException):
+    pass
+
+
+class StoppedSessionException(InvalidSessionException):
+    pass
+
+
+class ExpiredSessionException(StoppedSessionException):
+    pass
+
+
+class UnknownSessionException(InvalidSessionException):
     pass
 
 
 class SessionEventException(SessionException):
     pass
-
-
-class StoppedSessionException(SessionException):
-    pass
-
-
-class UnknownSessionException(SessionException):
-    pass
-
 
 
 # ---------------------------------------------------------------------------

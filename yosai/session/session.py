@@ -982,7 +982,9 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
 
     def on_invalidation(self, session, ise, session_key):
         if (isinstance(ise, ExpiredSessionException)):
-            self.on_expiration(session, ExpiredSessionException(), session_key)
+            self.on_expiration(session, 
+                               ExpiredSessionException(ise.args[0]), 
+                               session_key)
             return
         
         msg = "Session with id [{0}] is invalid.".format(session.session_id)
