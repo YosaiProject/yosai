@@ -797,22 +797,59 @@ def test_avsm_on_invalidation_esetype(
         mock_oe.assert_called_with
 
 
-def test_avsm_on_invalidation_non_esetype(
+def test_avsm_on_invalidation_isetype(
         abstract_validating_session_manager, mock_session):
     """
     unit tested:  on_invalidation
 
     test case:
         when an exception NOT of type ExpiredSessionException is passed, 
-        on_stop, notify_stop, and after_stopped are called
+        an InvalidSessionException higher up the hierarchy is assumed 
+        and on_stop, notify_stop, and after_stopped are called
     """
     avsm = abstract_validating_session_manager
     ise = InvalidSessionException('testing')
     session_key = 'sessionkey123'
     with mock.patch.object(MockAbstractValidatingSessionManager, 
-                           'on_expiration') as mock_oe:
-        avsm.on_invalidation(session=mock_session,
-                             ise=ise,
-                             session_key=session_key)
-        mock_oe.assert_called_with
+                           'on_stop') as mock_onstop:
+    
+        with mock.patch.object(MockAbstractValidatingSessionManager, 
+                               'notify_stop') as mock_ns:
+        
+            with mock.patch.object(MockAbstractValidatingSessionManager, 
+                                   'after_stopped') as mock_as:
+
+                avsm.on_invalidation(session=mock_session,
+                                     ise=ise,
+                                     session_key=session_key)
+
+                mock_onstop.assert_called_with
+                mock_ns.assert_called_with
+                mock_as.assert_called_with
+
+def test_avsm_do_validate(abstract_validating_session_manager, mock_session):
+    """
+    unit tested:  do_validate
+
+    test case:
+    basic code path exercise where method is called and successfully finishes
+    """
+    avsm = abstract_validating_session_manager
+    assert avsm.do_validate(mock_session) is None
+
+
+def test_avsm_do_validate_raises(abstract_validating_session_manager):
+    """
+    unit tested:  do_validate
+
+    test case:
+    session.validate is missing, raising an AttributeError which in turn raises
+    IllegalStateException
+    """
+    avsm = abstract_validating_session_manager
+
+    mock_session = type('DumbSession', (object,), {})()
+
+    with pytest.raises(IllegalStateException):
+        avsm.do_validate(mock_session)
 

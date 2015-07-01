@@ -63,6 +63,9 @@ class MockSession(session_abcs.Session, object):
     def touch(self):
         pass 
 
+    def validate(self):
+        pass
+
 
 class MockSessionManager:
 

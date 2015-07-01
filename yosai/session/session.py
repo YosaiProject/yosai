@@ -938,14 +938,17 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         return self.do_create_session(session_context)
 
     def validate(self, session, session_key):
+        # session exception hierarchy:  invalid -> stopped -> expired
         try:
             self.do_validate(session)
         
         except ExpiredSessionException as ese:
             self.on_expiration(session, ese, session_key)
             raise
-       
-        except InvalidSessionException as ise:
+      
+        # should be a stopped exception if this is reached, but a more
+        # generalized invalid exception is checked
+        except InvalidSessionException as ise:  # a more generalized exception
             self.on_invalidation(session, ise, session_key)
             raise
 
@@ -981,12 +984,12 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         pass
 
     def on_invalidation(self, session, ise, session_key):
+
+        # session exception hierarchy:  invalid -> stopped -> expired
         if (isinstance(ise, ExpiredSessionException)):
-            self.on_expiration(session, 
-                               ExpiredSessionException(ise.args[0]), 
-                               session_key)
+            self.on_expiration(session, ise, session_key)
             return
-        
+
         msg = "Session with id [{0}] is invalid.".format(session.session_id)
         print(msg)
         # log here
@@ -1000,9 +1003,10 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
             self.after_stopped(session)
 
     def do_validate(self, session):
+        # session.validate will raise exceptions handled further up the stack
         try: 
-            session.validate()
-        except AttributeError: 
+            session.validate()  # can raise Stopped or Expired exceptions
+        except AttributeError:  # means it's not a validating session
             msg = ("The {0} implementation only supports Validating " 
                    "Session implementations of the {1} interface.  " 
                    "Please either implement this interface in your "
