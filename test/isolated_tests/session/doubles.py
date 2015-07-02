@@ -149,9 +149,6 @@ class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
     def on_change(self, session):
         pass
     
-    def validate_sessions(self):
-        pass
-
     def retrieve_session(self, session_key):
         pass
     

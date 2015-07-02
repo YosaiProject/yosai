@@ -988,3 +988,55 @@ def test_avsm_disable_session_validation_without_scheduler(
 
         assert mock_bsvd.called and avsm.session_validation_scheduler is None 
 
+
+def test_avsm_validate_sessions_raises(
+        abstract_validating_session_manager, monkeypatch): 
+    """
+    unit tested:  validate_sessions
+
+    test case:
+    get_active_sessions() is called, returning a list containing THREE sessions
+        - the first session succeeds to validate
+        - the second session raises ExpiredSessionException from validate
+        - the third session raises StoppedSessionException from validate
+    """
+    avsm = abstract_validating_session_manager
+
+    valid_session = mock.MagicMock()
+    expired_session = mock.MagicMock()
+    stopped_session = mock.MagicMock()
+    expired_session.validate.side_effect = ExpiredSessionException
+    stopped_session.validate.side_effect = StoppedSessionException
+    active_sessions = [valid_session, expired_session, stopped_session]
+
+    monkeypatch.setattr(avsm, 'get_active_sessions', lambda: active_sessions)
+
+    with mock.patch('yosai.session.DefaultSessionKey') as dsk:
+        dsk.return_value = 'sessionkey123'
+        results = avsm.validate_sessions()
+        assert '[2] sessions' in results 
+
+def test_avsm_validate_sessions_allvalid(
+        abstract_validating_session_manager, monkeypatch):
+    """
+    unit tested:  validate_sessions
+
+    test case:
+    get_active_sessions() is called, returning a list containing TWO sessions
+        - the first session succeeds to validate
+        - the second session succeeds to validate 
+    """
+    avsm = abstract_validating_session_manager
+
+    valid_session1 = mock.MagicMock()
+    valid_session2 = mock.MagicMock()
+
+    active_sessions = [valid_session1, valid_session2]
+
+    monkeypatch.setattr(avsm, 'get_active_sessions', lambda: active_sessions)
+
+    with mock.patch('yosai.session.DefaultSessionKey') as dsk:
+        dsk.return_value = 'sessionkey123'
+        results = avsm.validate_sessions()
+        assert 'No sessions' in results 
+

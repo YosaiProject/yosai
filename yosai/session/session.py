@@ -1081,14 +1081,13 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         pass
 
     def validate_sessions(self):
-        msg = "Validating all active sessions..."
-        print(msg)
+        msg1 = "Validating all active sessions..."
+        print(msg1)
         # log here
 
         invalid_count = 0
-
         active_sessions = self.get_active_sessions()
-
+        print('\n\nactive sessions: ', active_sessions, '\n\n')
         if (active_sessions):
             for session in active_sessions:
                 try:
@@ -1098,22 +1097,25 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
                     self.validate(session, session_key)
                 except InvalidSessionException as ex:
                     expired = isinstance(ex, ExpiredSessionException)
-                    msg3 = "Invalidated session with id [{s_id}] ({exp})".\
+                    msg2 = "Invalidated session with id [{s_id}] ({exp})".\
                            format(s_id=session.get_id(),
                                   exp="expired" if (expired) else "stopped")
+                    print(msg2)
                     # log here 
-                    print(msg3)
                     invalid_count += 1
 
-        msg4 = "Finished session validation."
+        msg3 = "Finished session validation.  "
+        print(msg3)
         # log here 
-        print(msg4)
+        
         if (invalid_count > 0):
-            msg4 += "[" + str(invalid_count) + "] sessions were stopped."
+            msg3 += "[" + str(invalid_count) + "] sessions were stopped."
         else:
-            msg4 += "  No sessions were stopped."
-        print(msg4) 
+            msg3 += "No sessions were stopped."
+        print(msg3) 
         # log here
+
+        return msg3 
 
     @abstractmethod
     def get_active_sessions(self):
