@@ -1031,7 +1031,7 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
 
         scheduler =\
             ExecutorServiceSessionValidationScheduler(
-                sessionmanager=self, interval=self.session_validation_interval)
+                session_manager=self, interval=self.session_validation_interval)
 
         msg2 = ("Created default SessionValidationScheduler instance of "
                 "type [" + scheduler.__class__.__name__ + "].")
@@ -1043,6 +1043,7 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
     def enable_session_validation(self):
         scheduler = self.session_validation_scheduler
         if (scheduler is None):
+            print("Creating session validation scheduler")
             scheduler = self.create_session_validation_scheduler()
             self.session_validation_scheduler = scheduler
         

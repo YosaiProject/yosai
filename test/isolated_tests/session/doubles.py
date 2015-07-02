@@ -169,4 +169,3 @@ class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
 
     def get_active_sessions(self):
         pass
-

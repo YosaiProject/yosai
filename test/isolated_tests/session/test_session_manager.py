@@ -14,6 +14,7 @@ from yosai import (
     DefaultSessionSettings,
     DelegatingSession,
     EventBus,
+    ExecutorServiceSessionValidationScheduler,
     ExpiredSessionException,
     IllegalArgumentException,
     SessionEventException,
@@ -852,4 +853,66 @@ def test_avsm_do_validate_raises(abstract_validating_session_manager):
 
     with pytest.raises(IllegalStateException):
         avsm.do_validate(mock_session)
+
+def test_avsm_create_svs(abstract_validating_session_manager):
+    """
+    unit tested: create_session_validation_scheduler 
+
+    test case:
+    basic codepath exercise that returns a scheduler instance
+    """
+    avsm = abstract_validating_session_manager
+    result = avsm.create_session_validation_scheduler()
+    assert isinstance(result, ExecutorServiceSessionValidationScheduler)
+
+
+def test_avsm_esv_schedulerexists(
+    abstract_validating_session_manager, 
+        executor_session_validation_scheduler, monkeypatch):
+    """
+    unit tested: enable_session_validation 
+
+    test case:
+    a scheduler is already set, so no new one is created, and two methods 
+    called
+    """
+    avsm = abstract_validating_session_manager
+    esvs = executor_session_validation_scheduler
+
+    monkeypatch.setattr(avsm, 'session_validation_scheduler', esvs)
+
+    with mock.patch.object(ExecutorServiceSessionValidationScheduler,
+                           'enable_session_validation') as scheduler_esv:
+        scheduler_esv.return_value = None
+        with mock.patch.object(MockAbstractValidatingSessionManager,
+                               'after_session_validation_enabled') as asve:
+            asve.return_value = None
+
+            avsm.enable_session_validation()
+
+            scheduler_esv.assert_called_with()
+            asve.assert_called_with()
+
+def test_avsm_esv_schedulernotexists(
+        abstract_validating_session_manager, monkeypatch,
+        patched_abstract_native_session_manager): 
+    """
+    unit tested:  enable_session_validation 
+
+    test case:
+    no scheduler is set, so a new one is created and set, and then two 
+    methods called
+    """
+    avsm = abstract_validating_session_manager
+    mock_csvs = mock.MagicMock()
+    mock_asve = mock.MagicMock()
+    monkeypatch.setattr(avsm, 'create_session_validation_scheduler', mock_csvs)
+    monkeypatch.setattr(avsm, 'after_session_validation_enabled', mock_asve)
+
+    avsm.enable_session_validation()
+    
+    assert (avsm.session_validation_scheduler.enable_session_validation.called and
+            mock_asve.called)
+
+def test_avsm_disable_session_validation
 
