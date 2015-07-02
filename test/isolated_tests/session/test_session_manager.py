@@ -910,9 +910,81 @@ def test_avsm_esv_schedulernotexists(
     monkeypatch.setattr(avsm, 'after_session_validation_enabled', mock_asve)
 
     avsm.enable_session_validation()
-    
-    assert (avsm.session_validation_scheduler.enable_session_validation.called and
-            mock_asve.called)
+    scheduler_esv = avsm.session_validation_scheduler.enable_session_validation
+    assert (scheduler_esv.called and mock_asve.called)
 
-def test_avsm_disable_session_validation
+
+def test_avsm_disable_session_validation_withscheduler_succeeds(
+        abstract_validating_session_manager, monkeypatch):
+    """
+    unit tested:  disable_session_validation
+
+    test case:
+    with a scheduler set, the scheduler's disable_session_validation is called
+    and succeeds, and then session_validation_scheduler is set to None
+    """
+    avsm = abstract_validating_session_manager
+    scheduler = ExecutorServiceSessionValidationScheduler
+
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'before_session_validation_disabled') as mock_bsvd:
+        mock_bsvd.return_value = None
+
+        with mock.patch.object(scheduler, 'disable_session_validation') as dsv:
+            dsv.return_value = None
+
+            sched = scheduler(session_manager=avsm, interval=60)
+            monkeypatch.setattr(avsm, 'session_validation_scheduler', sched)
+
+            avsm.disable_session_validation()
+
+            assert (mock_bsvd.called and dsv.called and  
+                    avsm.session_validation_scheduler is None)
+
+def test_avsm_disable_session_validation_withscheduler_fails(
+        abstract_validating_session_manager, monkeypatch):
+    """
+    unit tested:  disable_session_validation
+
+    test case:
+    with a scheduler set, the scheduler's disable_session_validation is called
+    and fails, and then session_validation_scheduler is set to None
+    """
+    avsm = abstract_validating_session_manager
+    
+    scheduler = ExecutorServiceSessionValidationScheduler
+
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'before_session_validation_disabled') as mock_bsvd:
+        mock_bsvd.return_value = None
+
+        with mock.patch.object(scheduler, 'disable_session_validation') as dsv:
+            dsv.side_effect = AttributeError 
+
+            sched = scheduler(session_manager=avsm, interval=60)
+            monkeypatch.setattr(avsm, 'session_validation_scheduler', sched)
+
+            avsm.disable_session_validation()
+
+            assert (mock_bsvd.called and dsv.called and  
+                    avsm.session_validation_scheduler is None)
+
+
+def test_avsm_disable_session_validation_without_scheduler(
+        abstract_validating_session_manager, monkeypatch):
+    """
+    unit tested:  disable_session_validation
+
+    test case:
+    without a scheduler set,  only before_session_validation_disabled is called
+    """
+    avsm = abstract_validating_session_manager
+
+    with mock.patch.object(MockAbstractValidatingSessionManager,
+                           'before_session_validation_disabled') as mock_bsvd:
+        mock_bsvd.return_value = None
+
+        avsm.disable_session_validation()
+
+        assert mock_bsvd.called and avsm.session_validation_scheduler is None 
 
