@@ -10,7 +10,7 @@ from yosai.event import abcs as event_abcs
 
 from yosai import (
     AbstractMethodException,
-    # Context,
+    MapContext,
     ExpiredSessionException,
     IllegalArgumentException,
     IllegalStateException,
@@ -1120,3 +1120,36 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
     @abstractmethod
     def get_active_sessions(self):
         pass
+
+
+class DefaultSessionContext:
+    # DG:  shiro extends from MapContext but I just use composition instead,
+    #      just as with SubjectContext
+    
+    def __init__(self, context_map=None):
+        dsc_name = self.__class__.__name__
+        self.host_name = dsc_name + ".HOST"
+        self.sessionid_name = dsc_name + ".SESSION_ID"
+        if (context_map):
+            self._session_context = Context(context_type='SESSION',
+                                            **contextmap)
+        else:
+            self._session_context = Context(context_type='SESSION')
+
+    @property
+    def host(self):
+        return self._session_context.get_and_validate(
+            self.host_name, str)
+
+    @host.setter
+    def host(self, hostname):
+        setattr(self._session_context, self.host_name, hostname)
+
+    @property
+    def session_id(self):
+        return self._session_context.get_and_validate(self.sessionid_name, str)
+
+    @session_id.setter
+    def session_id(self, sessionid):
+        setattr(self._session_context, self.sessionid_name, sessionid)
+
