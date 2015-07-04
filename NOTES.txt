@@ -33,3 +33,4 @@ not yet clear as to whether I need to be as concerned about hash codes as Shiro 
 
 would Colander be useful with serialization?
 
+general rule is to use no more than 1 level of inheritance

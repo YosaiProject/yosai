@@ -156,7 +156,7 @@ from .session import (
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
     # CachingSessionDAO,
-    # DefaultSessionContext,  
+    DefaultSessionContext,  
     DefaultSessionKey,
     # DefaultSessionManager,
     DelegatingSession,

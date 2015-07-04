@@ -18,12 +18,12 @@ def test_mapcontext_clear(default_map_context):
     assert len(default_map_context.context) == 0
 
 def test_mapcontext_len(default_map_context):
-    assert len(default_map_context) == 3
+    assert default_map_context.size() == 3
 
 def test_mapcontext_nonzero():
     emptycontext1 = MapContext()
     emptycontext2 = MapContext({'one': 1})
-    assert not emptycontext1 and emptycontext2
+    assert emptycontext1.is_empty and not emptycontext2.is_empty
 
 def test_mapcontext_contains(default_map_context):
     assert ('nine' not in default_map_context and
@@ -31,13 +31,13 @@ def test_mapcontext_contains(default_map_context):
             'attr3' in default_map_context)
 
 def test_mapcontext_setattr(default_map_context):
-    default_map_context.test = 'testing'
+    default_map_context.put('test', 'testing')
     assert default_map_context.context.get('test') == 'testing'
 
 def test_mapcontext_getattr(default_map_context):
-    assert default_map_context.attr2 == 'attribute2'
+    assert default_map_context.get('attr2') == 'attribute2'
 
 def test_mapcontext_delattr(default_map_context):
-    del default_map_context.attr1
+    default_map_context.remove('attr1')
     assert default_map_context.context.get('attr1', 'nope') == 'nope'
 

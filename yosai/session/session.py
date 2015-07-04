@@ -1122,34 +1122,35 @@ class AbstractValidatingSessionManager(abcs.ValidatingSessionManager,
         pass
 
 
-class DefaultSessionContext:
-    # DG:  shiro extends from MapContext but I just use composition instead,
-    #      just as with SubjectContext
-    
-    def __init__(self, context_map=None):
-        dsc_name = self.__class__.__name__
-        self.host_name = dsc_name + ".HOST"
-        self.sessionid_name = dsc_name + ".SESSION_ID"
-        if (context_map):
-            self._session_context = Context(context_type='SESSION',
-                                            **contextmap)
-        else:
-            self._session_context = Context(context_type='SESSION')
+class DefaultSessionContext(MapContext, abcs.SessionContext):
+    """
+    This implementation refactors shiro's version quite a bit:
+        - Accessor/mutator methods are omitted
+            - getTypedValue isn't pythonic
+            - attribute access is much more straightforward in python
+        - key names aren't following the CLASSNAME.KEY convention 
+    """
+    def __init__(self, context_map={}):
+        """
+        :type context_map: dict
+        """
+        super().__init__(context_map)
+
+    # properties are used to enforce the interface:
 
     @property
     def host(self):
-        return self._session_context.get_and_validate(
-            self.host_name, str)
+        return self.get('host')
 
     @host.setter
-    def host(self, hostname):
-        setattr(self._session_context, self.host_name, hostname)
+    def host(self, host):
+        self.put('host', host)
 
     @property
     def session_id(self):
-        return self._session_context.get_and_validate(self.sessionid_name, str)
+        return self.get('session_id')
 
     @session_id.setter
     def session_id(self, sessionid):
-        setattr(self._session_context, self.sessionid_name, sessionid)
-
+        # cannot set a session_id == None
+        self.none_safe_put('session_id', sessionid)
