@@ -604,3 +604,129 @@ class SessionValidationScheduler(metaclass=ABCMeta):
     @abstractmethod
     def disable_session_validation(self):
         pass
+
+
+class SessionDAO(metaclass=ABCMeta):
+    """
+    Data Access Object design pattern specification to enable Session
+    access to an EIS (Enterprise Information System).  It provides your four
+    typical CRUD methods:
+        - create(session)
+        - read_session(session_id)
+        - update(Session)
+        - delete(Session)
+
+    The remaining get_active_sessions() method exists as a support
+    mechanism to pre-emptively orphaned sessions, typically by 
+    ValidatingSessionManager(s), and should be as efficient as possible,
+    especially if there are thousands of active sessions.  Large scale/high
+    performance implementations will often return a subset of the total active
+    sessions and perform validation a little more frequently, rather than
+    return a massive set and infrequently validate.
+    """ 
+
+    @abstractmethod
+    def create(self, session):
+        """
+        Inserts a new Session record into the underling EIS (e.g. Relational
+        database, file system, persistent cache, etc, depending on the DAO
+        implementation).  After this method is invoked, the Session.session_id 
+        property obtained from the argument must return a valid session 
+        identifier.  That is, the following should always be true:
+
+            session_id = create(session)
+            session_id.equals(session.session_id) == True
+
+        Implementations are free to throw any exceptions that might occur due
+        to integrity violation constraints or other EIS related errors.
+     
+        :param session: the Session object to create in the EIS
+        :returns: the EIS id (e.g. primary key) of the created 
+                  Session object
+        """     
+        pass
+
+    @abstractmethod
+    def read_session(self, session_id):
+        """
+        Retrieves the session from the EIS uniquely identified by the specified
+        session_id
+         
+        :param session_id: the system-wide unique identifier of the Session 
+                           object to retrieve from the EIS
+        :returns: the persisted session in the EIS identified by session_id
+        :raises UnknownSessionException: if there is no EIS record for any 
+                 session with the specified session_id
+        """     
+        pass
+
+    @abstractmethod
+    def update(self, session):
+        """
+        Updates (persists) data from a previously created Session instance in
+        the EIS identified by session.session_id.  This effectively propagates
+        the data in the argument to the EIS record previously saved.
+        
+        In addition to UnknownSessionException, implementations are free to 
+        raise any other exceptions that might occur due to integrity violation
+        constraints or other EIS related errors.
+
+        :param session: the Session to update
+        :raises UnknownSessionException: if no existing EIS session record 
+                                         exists with the identifier of 
+                                         session.session_id
+        """ 
+        pass
+
+    @abstractmethod
+    def delete(self, session):
+        """
+        Deletes the associated EIS record of the specified session.  If there
+        never existed a session EIS record with the identifier of
+        session.session_id, then this method does nothing.
+        
+        :param session: the session to delete
+        """
+        pass
+
+    def get_active_sessions(self):
+        """
+        Returns all sessions in the EIS that are considered active, meaning all
+        sessions that haven't been stopped/expired.  This is primarily used to
+        validate potential orphans.
+
+        If there are no active sessions in the EIS, this method may return an
+        empty collection or None.  
+        
+        Performance
+        -----------
+        This method should be as efficient as possible, especially in larger
+        systems where there might be thousands of active sessions.  Large
+        scale/high performance implementations will often return a subset of
+        the total active sessions and perform validation a little more
+        frequently, rather than return a massive set and validate infrequently.
+        If efficient and possible, it would make sense to return the oldest
+        unstopped sessions available, ordered by last_access_time.
+
+        Smart Results
+        -------------
+        *Ideally*, this method would only return active sessions that the EIS
+        was certain should be invalided.  Typically that is any session that is
+        not stopped and where its last_access_timestamp is older than either 
+        session timeout (idle or absolute).
+     
+        For example, if sessions were backed by a relational database or SQL-92
+        'query-able' enterprise cache, you might return something similar to
+        the results returned by this query (assuming SimpleSession(s) were 
+        being stored):
+
+            SELECT * 
+            FROM sessions s 
+            WHERE s.lastAccessTimestamp < {idle_timeout} and 
+                  s.lastAccessTimestamp < {absolute_timeout} and 
+                  s.stopTimestamp is null
+
+        :returns: a Collection of session(s) that are considered active, or an
+                  empty collection or None if there are no active sessions
+        """
+        pass
