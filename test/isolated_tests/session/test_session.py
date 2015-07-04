@@ -799,3 +799,17 @@ def test_dsk_eq(first, second, boolcheck):
     dsk1 = DefaultSessionKey(session_id=first)
     dsk2 = DefaultSessionKey(session_id=second)
     assert (dsk1 == dsk2) == boolcheck
+
+
+# ----------------------------------------------------------------------------
+# DefaultSessionContext
+# ----------------------------------------------------------------------------
+
+def test_dsc_basic_test(default_session_context):
+    dsc = default_session_context
+
+    dsc.host = 'myhost'
+    dsc.session_id = 'mysessionid'
+
+    assert (dsc.context['host'] == 'myhost' and 
+            dsc.context['session_id'] == 'mysessionid')

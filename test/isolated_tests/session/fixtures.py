@@ -3,6 +3,7 @@ import pytest
 from yosai import (
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
+    DefaultSessionContext,
     DefaultSessionSettings,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
@@ -67,4 +68,11 @@ def executor_session_validation_scheduler(patched_abstract_native_session_manage
 @pytest.fixture(scope='function')
 def abstract_validating_session_manager(patched_event_bus):
     return MockAbstractValidatingSessionManager(patched_event_bus)
+
+
+@pytest.fixture(scope='function')
+def default_session_context():
+    return DefaultSessionContext(context_map={'attr1': 'attributeOne',
+                                              'attr2': 'attributeTwo',
+                                              'attr3': 'attributeThree'})
 
