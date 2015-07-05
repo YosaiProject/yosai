@@ -10,64 +10,74 @@ from yosai import (
     UnknownSessionException,
 )
 
-import yosai.session.abcs as abcs
+from yosai.session import abcs as session_abcs
+from abc import abstractmethod
 
 
-class AbstractSessionDAO:
+class AbstractSessionDAO(session_abcs.SessionDAO):
+    """
+    An abstract SessionDAO implementation that performs some sanity checks on
+    session creation and reading and allows for pluggable Session ID generation
+    strategies if desired.  The SessionDAO SessionDAO.update and
+    SessionDAO.delete methods are left to subclasses.
+
+    Session ID Generation
+    ---------------------
+    This class also allows for plugging in a {@link SessionIdGenerator} for
+    custom ID generation strategies.  This is optional, as the default
+    generator is probably sufficient for most cases.  Subclass implementations
+    that do use a generator (default or custom) will want to call the
+    generate_session_id(Session) method from within their do_create
+    implementations.
+
+    Subclass implementations that rely on the EIS data store to generate the ID
+    automatically (e.g. when the session ID is also an auto-generated primary
+    key), they can simply ignore the SessionIdGenerator concept
+    entirely and just return the data store's ID from the do_create
+    implementation.
+    """
 
     def __init__(self):
+        # shiro defaults to UUID, yosai uses random:
         self._session_id_generator = RandomSessionIDGenerator()
         
-    @property
-    def session_id_generator(self):
-        return self._session_id_generator
-    
-    @session_id_generator.setter
-    def session_id_generator(self, sid_generator):
-        self._session_id_generator = sid_generator
-
     def generate_session_id(self, session):
-        return self.session_id_generator.generate_id(session)
+        try:
+            return self.session_id_generator.generate_id(session)
+        except AttributeError:
+            msg = "session_id_generator attribute has not been configured"
+            raise IllegalStateException(msg)
     
-    def create_session_id(self, session):  # DG renamed
+    def create(self, session):
         session_id = self.do_create(session)
         self.verify_session_id(session_id)
         return session_id
 
     def verify_session_id(self, session_id):
-        try:
-            if (session_id is None):
-                msg = ("sessionId returned from doCreate implementation "
-                       "is null. Please verify the implementation.")
-                raise IllegalStateException(msg)
-        except IllegalStateException as ex:
-            print('verify_session_id: ', ex)
+        if (session_id is None):
+            msg = ("session_id returned from do_create implementation "
+                   "is None. Please verify the implementation.")
+            raise IllegalStateException(msg)
     
     def assign_session_id(self, session, session_id):
-        session = SimpleSession(session)  # DG:  shiro casts instead
-        session.set_id(session_id)
+        session.session_id = session_id
     
-    # abstract method, to be implemented by subclass
+    @abstractmethod
     def do_create(self, session):
-        msg = 'Failed to Implement Abstract Method: '
-        raise AbstractMethodException(msg + 'do_create')
+        pass
 
     def read_session(self, session_id):
         try:
-            session = self.do_read_session(session_id)
-            if (session is None):
-                msg = "There is no session with id [" + session_id + "]"
-                raise UnknownSessionException(msg)
-            return session
-        except UnknownSessionException as ex:
-            print('read_session: ', ex)
+            return self.do_read_session(session_id)
+        except AttributeError:
+            msg = "There is no session with id [" + str(session_id) + "]"
+            raise UnknownSessionException(msg)
 
-    # abstract method, to be implemented by subclass
+    @abstractmethod
     def do_read_session(self, session_id):
-        msg = 'Failed to Implement Abstract Method: '
-        raise AbstractMethodException(msg + 'do_read_session')
+        pass
 
-"""
+
 class MemorySessionDAO(AbstractSessionDAO):
 
     def __init__(self):
@@ -79,7 +89,7 @@ class MemorySessionDAO(AbstractSessionDAO):
         self.store_session(sessionid, session)
         return sessionid
 
-    def store_Session(self, session_id, session):
+    def store_session(self, session_id, session):
         try:
             if (session_id is None):
                 raise IllegalArgumentException("id argument cannot be null.")
@@ -94,7 +104,7 @@ class MemorySessionDAO(AbstractSessionDAO):
     
     def update(self, session):
         try:
-            self.store_session(session.id, session)
+            self.store_session(session.session_id, session)
         except:
             raise
 
@@ -106,17 +116,16 @@ class MemorySessionDAO(AbstractSessionDAO):
         except IllegalArgumentException as ex:
             print('MemorySessionDAO.delete Null param passed', ex)
         else:
-            sessionid = session.id
+            sessionid = session.session_id
             if (sessionid is not None):
-                self.sessions.pop(id)
+                self.sessions.pop(session_id)
 
     def get_active_sessions(self):
         values = self.sessions.values()
         if (not values()):
-            return set() 
+            return tuple() 
         else:
             return tuple(values)
-"""
 
 """
 class CachingSessionDAO(AbstractSessionDAO):

@@ -2,6 +2,7 @@ from yosai.cache import abcs
 
 from yosai import (
     CacheException, 
+    CacheManager,
     LogManager,
     IllegalArgumentException,
 )
@@ -9,6 +10,11 @@ from yosai import (
 
 # omitting DisabledCache (see NOTES.txt)
 # omitting DisabledCacheManager (see NOTES.txt)
+
+class CacheManager:
+    # temporary mock class used to pass session testing.. replace later
+    pass
+
 
 class MapCache(abcs.Cache):
 

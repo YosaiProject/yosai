@@ -13,4 +13,3 @@ Requiring Concrete Implementations:
 
 Porting annotations to python
 
-the Session Scheduler should be concurrent.. 

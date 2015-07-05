@@ -806,10 +806,17 @@ def test_dsk_eq(first, second, boolcheck):
 # ----------------------------------------------------------------------------
 
 def test_dsc_basic_test(default_session_context):
+    """
+    unit tested:  entire class
+
+    test case:
+
+    basic accessor / mutator code path exercise
+    """
     dsc = default_session_context
 
     dsc.host = 'myhost'
     dsc.session_id = 'mysessionid'
+    dsc.session_id = None  # should be ignored due to none_safe_put
 
-    assert (dsc.context['host'] == 'myhost' and 
-            dsc.context['session_id'] == 'mysessionid')
+    assert (dsc.host == 'myhost' and dsc.session_id == 'mysessionid')
