@@ -293,6 +293,10 @@ class SessionEventException(SessionException):
     pass
 
 
+class SessionDeleteException(SessionException):
+    pass
+
+
 # ---------------------------------------------------------------------------
 # ----  Subject Exceptions
 # ---------------------------------------------------------------------------

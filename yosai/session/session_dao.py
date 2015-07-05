@@ -7,6 +7,7 @@ from yosai import (
     AbstractMethodException,
     IllegalArgumentException,
     IllegalStateException,
+    SessionDeleteException,
     UnknownSessionException,
 )
 
@@ -91,41 +92,34 @@ class MemorySessionDAO(AbstractSessionDAO):
 
     def store_session(self, session_id, session):
         try:
-            if (session_id is None):
-                raise IllegalArgumentException("id argument cannot be null.")
-        except IllegalArgumentException as ex:
-            print('MemorySessionDAO.store_session Null param passed', ex)
-        else:
             self.sessions[session_id] = session
             return self.sessions.get(session_id, None)
+        except (AttributeError, KeyError):
+            msg = 'MemorySessionDAO.store_session invalid param passed'
+            raise IllegalArgumentException(msg)
 
     def do_read_session(self, sessionid):
         return self.sessions.get(sessionid, None)
     
     def update(self, session):
-        try:
-            self.store_session(session.session_id, session)
-        except:
-            raise
+        self.store_session(session.session_id, session)
 
     def delete(self, session):
         try:
-            if (session is None):
-                msg = "session argument cannot be null."
-                raise IllegalArgumentException(msg)
-        except IllegalArgumentException as ex:
-            print('MemorySessionDAO.delete Null param passed', ex)
-        else:
             sessionid = session.session_id
-            if (sessionid is not None):
-                self.sessions.pop(session_id)
+            self.sessions.pop(sessionid)
+        except AttributeError: 
+            msg = 'MemorySessionDAO.delete None param passed'
+            raise IllegalArgumentException(msg)
+        except KeyError:
+            msg = 'MemorySessionDAO could not delete: ', str(session)
+            raise SessionDeleteException(msg)
 
     def get_active_sessions(self):
-        values = self.sessions.values()
-        if (not values()):
-            return tuple() 
-        else:
-            return tuple(values)
+        try:
+            return tuple(self.sessions.values())
+        except TypeError:
+            return tuple()
 
 """
 class CachingSessionDAO(AbstractSessionDAO):
