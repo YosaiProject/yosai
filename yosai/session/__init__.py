@@ -1,6 +1,5 @@
 
 from .session import (
-#    AbstractSessionDAO,
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
     DefaultSessionContext,  
@@ -9,12 +8,10 @@ from .session import (
     DefaultSessionSettings,
     ImmutableProxiedSession,
 #    EnterpriseCacheSessionDAO,
-#    MemorySessionDAO,
     ProxiedSession,
 #    SessionTokenGenerator,
 #    SessionManager,
 #    Session,
-#    CachingSessionDAO,
     DelegatingSession,
 #    DefaultSessionStorageEvaluator,
     ExecutorServiceSessionValidationScheduler,
@@ -24,3 +21,8 @@ from .session import (
     UUIDSessionIDGenerator,
 )
 
+from .session_dao import (
+    AbstractSessionDAO,
+    MemorySessionDAO,
+    CachingSessionDAO,
+)

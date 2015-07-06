@@ -14,6 +14,7 @@ from yosai import (
 
 from .doubles import (
     MockAbstractNativeSessionManager,
+    MockAbstractSessionDAO,
     MockAbstractValidatingSessionManager,
     MockSession,
     MockSessionManager,
@@ -76,3 +77,7 @@ def default_session_context():
                                               'attr2': 'attributeTwo',
                                               'attr3': 'attributeThree'})
 
+
+@pytest.fixture(scope='function')
+def mock_abstract_session_dao():
+    return MockAbstractSessionDAO()

@@ -2,6 +2,7 @@ import yosai.session.abcs as session_abcs
 import datetime
 from yosai import (
     AbstractNativeSessionManager,
+    AbstractSessionDAO,
     AbstractValidatingSessionManager,
 )
 
@@ -166,3 +167,22 @@ class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
 
     def get_active_sessions(self):
         pass
+
+
+class MockAbstractSessionDAO(AbstractSessionDAO):
+
+    def __init__(self):
+        super().__init__()
+
+    def do_create(self, session):
+            pass
+
+    def do_read_session(self, session_id):
+        pass
+
+    def delete(self, session):
+        pass
+
+    def update(self, session):
+        pass
+

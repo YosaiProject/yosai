@@ -23,12 +23,12 @@ class AbstractSessionDAO(session_abcs.SessionDAO):
     """
     An abstract SessionDAO implementation that performs some sanity checks on
     session creation and reading and allows for pluggable Session ID generation
-    strategies if desired.  The SessionDAO SessionDAO.update and
-    SessionDAO.delete methods are left to subclasses.
+    strategies if desired.  The SessionDAO.update and SessionDAO.delete method
+    implementations are left to subclasses.
 
     Session ID Generation
     ---------------------
-    This class also allows for plugging in a {@link SessionIdGenerator} for
+    This class also allows for plugging in a SessionIdGenerator for
     custom ID generation strategies.  This is optional, as the default
     generator is probably sufficient for most cases.  Subclass implementations
     that do use a generator (default or custom) will want to call the
@@ -44,9 +44,13 @@ class AbstractSessionDAO(session_abcs.SessionDAO):
 
     def __init__(self):
         # shiro defaults to UUID, yosai uses random:
-        self._session_id_generator = RandomSessionIDGenerator()
+        self.session_id_generator = RandomSessionIDGenerator
         
     def generate_session_id(self, session):
+        """
+        :param session: the new session instance for which an ID will be 
+                        generated and then assigned
+        """
         try:
             return self.session_id_generator.generate_id(session)
         except AttributeError:
@@ -65,6 +69,10 @@ class AbstractSessionDAO(session_abcs.SessionDAO):
             raise IllegalStateException(msg)
     
     def assign_session_id(self, session, session_id):
+        if session is None or session_id is None:
+            msg = ("session and sessionid parameters must be passed in "
+                   "order to assign session_id")
+            raise IllegalArgumentException(msg)
         session.session_id = session_id
     
     @abstractmethod
@@ -72,11 +80,11 @@ class AbstractSessionDAO(session_abcs.SessionDAO):
         pass
 
     def read_session(self, session_id):
-        try:
-            return self.do_read_session(session_id)
-        except AttributeError:
+        session = self.do_read_session(session_id)
+        if session is None:
             msg = "There is no session with id [" + str(session_id) + "]"
             raise UnknownSessionException(msg)
+        return session
 
     @abstractmethod
     def do_read_session(self, session_id):

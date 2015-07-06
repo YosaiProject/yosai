@@ -5,6 +5,7 @@ from .fixtures import (
     default_session_context,
     executor_session_validation_scheduler,
     immutable_proxied_session,
+    mock_abstract_session_dao,
     mock_session,
     patched_abstract_native_session_manager,
     patched_delegating_session,

@@ -155,10 +155,10 @@ from .serialize import (
 )
 
 from .session import (
-    # AbstractSessionDAO,
+    AbstractSessionDAO,
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
-    # CachingSessionDAO,
+    CachingSessionDAO,
     DefaultSessionContext,  
     DefaultSessionKey,
     # DefaultSessionManager,
@@ -167,7 +167,7 @@ from .session import (
     DefaultSessionSettings,
     ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionDAO,
-    # MemorySessionDAO,
+    MemorySessionDAO,
     ImmutableProxiedSession,
     ProxiedSession,
     RandomSessionIDGenerator,
