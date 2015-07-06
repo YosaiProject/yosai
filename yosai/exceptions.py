@@ -289,11 +289,19 @@ class UnknownSessionException(InvalidSessionException):
     pass
 
 
+class SessionCacheException(SessionException):
+    pass
+
+
 class SessionEventException(SessionException):
     pass
 
 
 class SessionDeleteException(SessionException):
+    pass
+
+
+class UncacheSessionException(SessionException):
     pass
 
 

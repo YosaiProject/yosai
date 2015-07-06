@@ -1,5 +1,5 @@
 <h1 align=center>🏯 Yosai</h1>
-<h2 align=center>Security Management for the Python Generation</h2>
+<h2 align=center>Application Security Management for Python</h2>
 
 ![alt text](http://i.imgur.com/QDhDfKN.jpg "Yosai 🏯 ")
 

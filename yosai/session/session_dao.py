@@ -8,10 +8,14 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     SessionDeleteException,
+    SessionCacheException,
+    UncacheSessionException,
     UnknownSessionException,
 )
 
 from yosai.session import abcs as session_abcs
+from yosai.cache import abcs as cache_abcs
+
 from abc import abstractmethod
 
 
@@ -121,12 +125,30 @@ class MemorySessionDAO(AbstractSessionDAO):
         except TypeError:
             return tuple()
 
-"""
-class CachingSessionDAO(AbstractSessionDAO):
 
+class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
+    """
+    An CachingSessionDAO is a SessionDAO that provides a transparent caching
+    layer between the components that use it and the underlying EIS
+    (Enterprise Information System) session backing store (for example,
+    filesystem, database, enterprise grid/cloud, etc).
+
+    This implementation caches all active sessions in a configured
+    active_sessions_cache.  This property is None by default and if one is
+    not explicitly set, a cache manager is expected to be configured that will 
+    in turn be used to acquire the Cache instance used for the 
+    active_sessions_cache.
+
+    All SessionDAO methods are implemented by this class to employ
+    caching behavior and delegates the actual EIS operations to respective 
+    'do' methods to be implemented by subclasses (do_create, do_read, etc).
+    """
     def __init__(self):
-        self._active_sessions_cache_name = "shiro-activeSessionCache"
-
+        self.active_sessions_cache_name = "yosai_active_session_cache"
+        self.cache_manager = None
+        self.active_sessions = None
+    
+    # cache_manager property is required by interface
     @property
     def cache_manager(self):
         return self._cache_manager
@@ -136,120 +158,106 @@ class CachingSessionDAO(AbstractSessionDAO):
         self._cache_manager = cachemanager
 
     @property
-    def active_sessions_cache_name(self):
-        return self._active_sessions_cache_name
-
-    @active_sessions_cache_name.setter
-    def active_sessions_cache_name(self, name):
-        self._active_sessions_cache_name = name
-
-    @property
     def active_sessions_cache(self):
-        return self._active_sessions_cache
+        return self.active_sessions
 
     @active_sessions_cache.setter
     def active_sessions_cache(self, cache):
-        self._active_sessions_cache = cache
+        self.active_sessions = cache
 
     def get_active_sessions_cache_lazy(self):
-        if (not self.active_sessions):
+        if (self.active_sessions is None):
             self.active_sessions = self.create_active_sessions_cache()
         
-        return active_sessions
+        return self.active_sessions
     
     def create_active_sessions_cache(self):
+        cache = None
         mgr = self.cache_manager
         if (mgr):
             name = self.active_sessions_cache_name
-            cache = mgr.getCache(name)
-        
+            cache = mgr.get_cache(name)
         return cache
     
     def create(self, session):
         sessionid = super().create(session)
-        self.cache(session, sessionid)
+        self.cache(session=session, session_id=sessionid)
         return sessionid
     
-    def get_cached_session(self, sessionid):
-        if (sessionid):
-            cache = get_active_sessions_cache_lazy()
-            if (cache):
-                cached = self.get_cached_session(sessionid, cache)
-   
-        return cached
-    
-    def get_cached_session(self, sessionid, cache): 
-        return cache.get(sessionid)
-    
-    def cache(self, session=None, sessionid=None, cache=None):
-        if (not session or not sessionid):
+    def get_cached_session(self, sessionid, cache=None):
+            try:
+                if not cache: 
+                    cache = self.get_active_sessions_cache_lazy()
+                    return self.get_cached_session(sessionid, cache)
+                else:
+                    return cache.get(sessionid)
+            except AttributeError:
+                msg = "Cannot get cached session"
+                raise SessionCacheException(msg)
+
+    def cache(self, session, sessionid, cache=None):
+        # don't try to cache garbage:
+        if session is None or sessionid is None:
             return
-    
-        if (not cache):
-            cache = self.get_active_sessions_cache_lazy()
+        try:
             if (not cache):
-                return
-    
-        cache.put(sessionid, session)
+                cache = self.get_active_sessions_cache_lazy()
+        
+            cache.put(sessionid, session)
+        except AttributeError:
+            return
 
     def read_session(self, sessionid):
-        try:
-            session = self.get_cached_session(sessionid)
-            if (not session):
-                session = super().read_session(sessionid)
-            
-            return session
-        except:
-            raise
+        session = self.get_cached_session(sessionid)
+        if (session is None):
+            session = super().read_session(sessionid)
+        
+        return session
     
     def update(self, session):
-        try:
-            self.do_update(session)
-            if (isinstance(session, abcs.ValidatingSession)):
-                if (session.is_valid):
-                    self.cache(session, session.id)
-                else: 
-                    self.uncache(session)
-                
-            else:
-                self.cache(session, session.id)
+        self.do_update(session)
+        if (isinstance(session, session_abcs.ValidatingSession)):
+            if (session.is_valid):
+                self.cache(session=session, session_id=session.session_id)
+            else: 
+                self.uncache(session)
             
-        except:
-            raise
+        else:
+            self.cache(session=session, session_id=session.session_id)
     
-    # abstract method, to be implemented by subclass
+    @abstractmethod
     def do_update(self, session):
-        msg = 'Failed to Implement Abstract Method: '
-        raise AbstractMethodException(msg + 'do_update')
+        pass
 
     def delete(self, session):
         self.uncache(session)
         self.do_delete(session)
 
-    # abstract method, to be implemented by subclass
+    @abstractmethod
     def do_delete(self, session):
-        msg = 'Failed to Implement Abstract Method: '
-        raise AbstractMethodException(msg + 'do_update')
-    
+        pass
+
     def uncache(self, session): 
-        if (not session):
-            return
-        
-        sessionid = session.id
-        if (not session):
-            return
-        
-        cache = self.get_active_sessions_cache_lazy()
-        if (cache):
+        try:
+            sessionid = session.session_id
+            cache = self.get_active_sessions_cache_lazy()
             cache.remove(sessionid)
-        
+        except AttributeError:
+            msg = "Tried to uncache a session with incomplete parameters"
+            print(msg)
+            # log here
+            return
+        except KeyError:
+            msg = "Tried to uncache a session that wasn't cached."
+            raise UncacheSessionException(msg)
+            
     def get_active_sessions(self):
-        cache = self.get_active_sessions_cache_lazy()
-        if (cache):
-            return cache.values()
-        else: 
-            return set()
-"""
+        try:
+            cache = self.get_active_sessions_cache_lazy()
+            return tuple(cache.values())
+
+        except AttributeError: 
+            return tuple()
 
 """
 class EnterpriseCacheSessionDAO(CachingSessionDAO):
