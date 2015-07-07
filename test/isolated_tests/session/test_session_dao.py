@@ -146,6 +146,27 @@ def test_asd_read_session_succeeds(mock_abstract_session_dao, monkeypatch):
 # MemorySessionDAO
 # -----------------------------------------------------------------------------
 
+def test_msd_do_create(mock_memory_session_dao):
+    """
+    unit tested:
+
+    test case:
+
+    """
+    msd = mock_memory_session_dao 
+
+    with mock.patch.object(msd, 'assign_session_id') as mock_asi:
+        mock_asi.return_value = None
+
+        with mock.patch.object(msd, 'store_session') as mock_ss:
+            mock_ss.return_value = None
+
+    """
+    unit tested:
+
+    test case:
+
+    """
 
 # -----------------------------------------------------------------------------
 # CachingSessionDAO
