@@ -64,7 +64,6 @@ from .exceptions import (
     RealmAttributesException,
     RealmMisconfiguredException,
     SerializationException,
-    SessionCacheException,
     SessionDeleteException,
     SessionException,
     SessionEventException,

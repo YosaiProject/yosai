@@ -8,7 +8,6 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     SessionDeleteException,
-    SessionCacheException,
     UncacheSessionException,
     UnknownSessionException,
 )
@@ -156,11 +155,12 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
         self.cache_manager = None
         self.active_sessions = None
     
-    # cache_manager property is required by interface
+    # cache_manager property is required for CacheManagerAware interface 
     @property
     def cache_manager(self):
         return self._cache_manager
 
+    # cache_manager property is required for CacheManagerAware interface 
     @cache_manager.setter
     def cache_manager(self, cachemanager):
         self._cache_manager = cachemanager
@@ -180,37 +180,37 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
         return self.active_sessions
     
     def create_active_sessions_cache(self):
-        cache = None
-        mgr = self.cache_manager
-        if (mgr):
+        try:
+            mgr = self.cache_manager
             name = self.active_sessions_cache_name
-            cache = mgr.get_cache(name)
-        return cache
-    
+            return mgr.get_cache(name)
+        except:
+            return None
+
     def create(self, session):
         sessionid = super().create(session)
         self.cache(session=session, session_id=sessionid)
         return sessionid
-    
-    def get_cached_session(self, sessionid, cache=None):
-            try:
-                if not cache: 
+   
+    # java overloading port, resulting in poor design
+    def get_cached_session(self, sessionid=None, cache=None):
+            cached = None
+            if sessionid is not None:
+                if cache is None:
                     cache = self.get_active_sessions_cache_lazy()
-                    return self.get_cached_session(sessionid, cache)
-                else:
-                    return cache.get(sessionid)
-            except AttributeError:
-                msg = "Cannot get cached session"
-                raise SessionCacheException(msg)
+                cached = cache.get(sessionid)
+            return cached
 
     def cache(self, session, sessionid, cache=None):
-        # don't try to cache garbage:
-        if session is None or sessionid is None:
+
+        # don't bother caching incomplete records: 
+        if (session is None or sessionid is None):
             return
+
+        if (cache is None):
+            cache = self.get_active_sessions_cache_lazy()
+
         try:
-            if (not cache):
-                cache = self.get_active_sessions_cache_lazy()
-        
             cache.put(sessionid, session)
         except AttributeError:
             return
