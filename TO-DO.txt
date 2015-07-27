@@ -13,9 +13,6 @@ Requiring Concrete Implementations:
 
 Porting annotations to python decorators
 
-Serialization:  __getstate__ is __serialize__, and the serialization needs to be 
-                completed
-
 /serialize sub-package changed to accomodate marshmallow, so unit tests 
 changes are required
 
