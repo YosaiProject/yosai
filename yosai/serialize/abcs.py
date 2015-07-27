@@ -3,47 +3,28 @@ from abc import ABCMeta, abstractmethod
 
 class Serializable(metaclass=ABCMeta):
 
-    @classmethod 
-    def materialize(cls, deserialized):
-        """
-        Materializes an object from its de-serialized parts, essentially
-        restoring the state of an object prior to its serialization.
-
-        Note about de-serialized schema:
-        To reduce overhead, Yosai does not validate nor filter the contents 
-        of deserialized.  Regardless of whatever the contents may be, a class 
-        will assume them as attributes.  A library such as Colander could be
-        used to enforce schema.
-
-        :param deserialized: the deserialized message
-        :type deserialized: dict
-        """
-        instance = cls.__new__(cls)
-        instance.__dict__.update(deserialized)
-
-        return instance
-
+    @classmethod
     @abstractmethod
-    def __serialize__(self):
+    def serialization_schema(cls):
         """
-        Define the attributes to be serialized:
-            {'attributeA': self.attributeA, 
-             'attributeB': self.attributeB,
-                    . . . .  }
+        Each serializable class must define its respective Schema (marshmallow)
+        and its make_object method.
 
+        :returns: a SerializationSchema class
+        """
+        pass
+    
+    def serialize(self):
+        """
         :returns: a dict
         """
-        pass
-
-
-class Serializer(metaclass=ABCMeta):
+        schema = self.serialization_schema()()
+        return schema.dump(self).data
 
     @classmethod
-    @abstractmethod
-    def serialize(self, obj, *args, **kwargs):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def deserialize(self, message, *args, **kwargs):
-        pass
+    def deserialize(cls, data):
+        """
+        :returns: a dict
+        """
+        schema = cls.serialization_schema()()
+        return schema.load(data=data).data

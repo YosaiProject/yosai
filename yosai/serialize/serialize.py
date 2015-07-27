@@ -10,31 +10,47 @@ import datetime
 
 class SerializationManager:
     """
-    Serializer proxies serialization requests.  It is designed so to support
-    multiple serialization methods.
+    SerializationManager proxies serialization requests.  It is non-opinionated,
+    designed so as to support multiple serialization methods.  MSGPack is 
+    the default encoding scheme.
+
+    TO-DO:  configure serialization scheme from yosai settings json
     """
     def __init__(self, format='msgpack'):
         self.format = format
+
+        # add encoders here:
         self.serializers = {'msgpack': MSGPackSerializer}
+
         try:
             self.serializer = self.serializers[self.format]
         except KeyError:
             msg = ('Could not locate serialization format: ', format)
             raise InvalidSerializationFormatException(msg)
     
-    def serialize(self, obj, *args, **kwargs):
-        if isinstance(obj, abcs.Serializable):
+    def serialize(self, obj):
+        try:
             newdict = {}
-            newdict.update({'class': obj.__class__.__name__,
+            newdict.update({'cls': obj.__class__.__name__,
                             'record_dt': datetime.datetime.utcnow().isoformat()})
-            newdict.update(obj.__serialize__()) 
-            return self.serializer.serialize(newdict, *args, **kwargs)
-        else:
-            raise SerializationException('Must implement ISerializable')
+            newdict.update(obj.serialize()) 
+            return newdict
 
-    def deserialize(self, message, *args, **kwargs):
-        return self.serializer.deserialize(message, *args, **kwargs)
+        except AttributeError: 
+            raise SerializationException('Only serialize Serializable objects')
 
+    def deserialize(self, message):
+        # initially, supporting deserialization of one object, until support of
+        # a collection is needed
+        unpacked = self.serializer.deserialize(message)
+        # NOTE:  unpacked is expected to be a dict
+
+        yosai = __import__('yosai')
+        cls = getattr(yosai, unpacked['cls'])
+        try:
+            return cls.deserialize(unpacked)()
+        except AttributeError:
+            raise SerializationException('Only de-serialize Serializable objects')
 
 class MSGPackSerializer(abcs.Serializer):
     

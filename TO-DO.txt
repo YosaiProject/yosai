@@ -13,3 +13,6 @@ Requiring Concrete Implementations:
 
 Porting annotations to python
 
+/serialize sub-package changed to accomodate marshmallow, so unit tests 
+changes are required
+
