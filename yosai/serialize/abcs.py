@@ -47,3 +47,16 @@ class Serializable(metaclass=ABCMeta):
         """
         schema = cls.serialization_schema()()
         return schema.load(data=data).data
+
+
+class Serializer(metaclass=ABCMeta):
+
+    @classmethod
+    @abstractmethod
+    def serialize(self, obj):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def deserialize(self, message):
+        pass

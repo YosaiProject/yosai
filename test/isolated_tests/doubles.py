@@ -6,6 +6,7 @@ from yosai.account import abcs as acct_abcs
 from yosai.authc import abcs as authc_abcs
 from yosai.cache import abcs as cache_abcs
 from yosai.realm import abcs as realm_abcs
+from marshmallow import fields, Schema
 
 class MockCache(cache_abcs.Cache):
     
@@ -91,6 +92,38 @@ class MockAccount(acct_abcs.Account):
     def __repr__(self):
         return "<MockAccount(id={0}, credentials={1}, attributes={2})>".\
             format(self.account_id, self.credentials, self.attributes)
+
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+            account_id = fields.Str()
+            credentials = fields.Nested(cls.AccountCredentialsSchema) 
+            attributes = fields.Nested(cls.AccountAttributesSchema)
+     
+            def make_object(self, data):
+                mycls = MockAccount 
+                instance = mycls.__new__(cls)
+                instance.__dict__.update(data)
+                return instance
+
+        return SerializationSchema
+
+    class AccountCredentialsSchema(Schema):
+        password = fields.Str()
+        api_key_secret = fields.Str()
+        
+        def make_object(self, data):
+            return dict(data)
+
+    class AccountAttributesSchema(Schema):
+        givenname = fields.Str()
+        surname = fields.Str()
+        email = fields.Email()
+        username = fields.Str()
+        api_key_id = fields.Str()
+
+        def make_object(self, data):
+            return dict(data)
 
 
 class MockAccountStore(acct_abcs.AccountStore):

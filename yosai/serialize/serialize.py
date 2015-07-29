@@ -53,7 +53,7 @@ class SerializationManager:
             newdict.update({'cls': obj.__class__.__name__,
                             'record_dt': datetime.datetime.utcnow().isoformat()})
             newdict.update(obj.serialize()) 
-            return newdict
+            return self.serializer.serialize(newdict)
 
         except AttributeError: 
             raise SerializationException('Only serialize Serializable objects')
@@ -71,12 +71,13 @@ class SerializationManager:
         except AttributeError:
             raise SerializationException('Only de-serialize Serializable objects')
 
+
 class MSGPackSerializer(abcs.Serializer):
     
     @classmethod
-    def serialize(self, obj, *args, **kwargs):
+    def serialize(self, obj):
         return msgpack.packb(obj.__serialize__())
 
     @classmethod
-    def deserialize(self, message, *args, **kwargs): 
+    def deserialize(self, message):
         return msgpack.unpackb(message, encoding='utf-8')

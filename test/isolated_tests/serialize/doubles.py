@@ -1,14 +1,23 @@
 import yosai.serialize.abcs as serialize_abcs
+from marshmallow import Schema, fields
 
 
 class MockSerializable(serialize_abcs.Serializable):
 
     def __init__(self):
         self.myname = 'Mock Serialize'
-        self.mydict = {'one': 1, 'two': 2, 'three': 3}
-        self.mytuple = ('item1', 'item2')
-        
-    def __serialize__(self):
-        return {'name': self.myname, 
-                'mydict': self.mydict,
-                'mytuple': self.mytuple}
+        self.myage = 12
+
+    @classmethod
+    def serialization_schema(self):
+        class SerializationSchema(Schema):
+            myname = fields.Str()
+            myage = fields.Integer()
+
+            def make_object(self, data):
+                cls = MockSerializable 
+                instance = cls.__new__(cls)
+                instance.__dict__.update(data)
+                return instance
+        return SerializationSchema
+
