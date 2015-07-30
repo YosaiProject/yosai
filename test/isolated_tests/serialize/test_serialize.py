@@ -2,6 +2,10 @@ import pytest
 import msgpack
 from unittest import mock
 
+from .doubles import (
+    MockSerializable,
+)
+
 from yosai import (
     InvalidSerializationFormatException,
     SerializationException,
@@ -42,11 +46,13 @@ def test_sm_init_unrecognized_format():
     with pytest.raises(InvalidSerializationFormatException):
         SerializationManager(format='protobufferoni')
 
-def test_sm_serialize_serializable(serialization_manager, mock_serializable):
+def test_sm_serialize_serializable(
+        serialization_manager, mock_serializable, monkeypatch):
     """
     unit tested:  serialize
 
     test case:
+    Confirms that 
     Conducts a partial match between the dict sent to MSGPackSerializer and
     my test dictionary.  The reason a partial match is used is that I won't 
     be able to match on record_dt. 
@@ -56,7 +62,9 @@ def test_sm_serialize_serializable(serialization_manager, mock_serializable):
 
     test_dict = {'class': 'MockSerializable', 'name': 'Mock Serialize'}
     dict_matcher = DictMatcher(test_dict, ['class', 'name'])
-    
+  
+    monkeypatch.setattr(mock_serializable, 'serialize', lambda: test_dict)
+
     with mock.patch.object(MSGPackSerializer, 'serialize') as mp_ser:
         mp_ser.return_value = None
         
@@ -78,19 +86,26 @@ def test_sm_serialize_nonserializable(serialization_manager):
         sm.serialize(DumbClass())
 
 
-def test_sm_deserialize(serialization_manager):
+def test_sm_deserialize(serialization_manager, monkeypatch):
     """
     unit tested:  deserialize
 
     test case:
-    basic code path exercise 
+    decodes (unpacks) the message and then calls the respective class's
+    deserialize method that will create (return) a new instance
     """
     sm = serialization_manager
 
+    unpacked = {'myname': 'Mock Serialize', 'myage': 12, 
+                'cls': 'MockSerializable'}
+
+    # inject a class for testing:
+    monkeypatch.setattr('yosai.MockSerializable', MockSerializable) 
+
     with mock.patch.object(MSGPackSerializer, 'deserialize') as mp_deser:
-        mp_deser.return_value = None
-        sm.deserialize('arbitrary')
-        assert mp_deser.called
+        mp_deser.return_value = unpacked 
+        result = sm.deserialize('arbitrary value')
+        assert isinstance(result, MockSerializable)
 
 # ----------------------------------------------------------------------------
 # MSGPackSerializer Tests

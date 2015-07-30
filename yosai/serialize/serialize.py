@@ -59,14 +59,15 @@ class SerializationManager:
             raise SerializationException('Only serialize Serializable objects')
 
     def deserialize(self, message):
-        # initially, supporting deserialization of one object, until support of
-        # a collection is needed
-        unpacked = self.serializer.deserialize(message)
+        # initially, supporting deserialization of one object at a time until 
+        # support for a collection of objects is needed
+
         # NOTE:  unpacked is expected to be a dict
 
-        yosai = __import__('yosai')
-        cls = getattr(yosai, unpacked['cls'])
         try:
+            unpacked = self.serializer.deserialize(message)
+            yosai = __import__('yosai')
+            cls = getattr(yosai, unpacked['cls'])
             return cls.deserialize(unpacked)()
         except AttributeError:
             raise SerializationException('Only de-serialize Serializable objects')

@@ -16,16 +16,22 @@ from .doubles import (
 )
 
 @pytest.fixture(scope='function')
-def full_mock_account():
-    creds = {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO', 
-             'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'}
-    attrs = {'givenname': 'Napolean',
-             'surname': 'Dynamite',
-             'email': 'napoleandynamite@example.com',
-             'username': 'napodyna',
-             'api_key_id': '144JVZINOF5EBNCMG9EXAMPLE'}
+def mock_account_state():
+    return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO', 
+                      'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
+            'attrs': {'givenname': 'Napolean',
+                      'surname': 'Dynamite',
+                      'email': 'napoleandynamite@example.com',
+                      'username': 'napodyna',
+                      'api_key_id': '144JVZINOF5EBNCMG9EXAMPLE'}}
+         
 
-    return MockAccount(account_id=31337, credentials=creds, attributes=attrs)
+@pytest.fixture(scope='function')
+def full_mock_account(mock_account_state):
+    mas = mock_account_state
+    return MockAccount(account_id=31337, 
+                       credentials=mas['creds'],
+                       attributes=mas['attrs'])
 
 
 @pytest.fixture(scope='function')
