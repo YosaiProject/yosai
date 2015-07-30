@@ -175,21 +175,23 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
     """
     An CachingSessionDAO is a SessionDAO that provides a transparent caching
     layer between the components that use it and the underlying EIS
-    (Enterprise Information System) session backing store (for example,
-    filesystem, database, enterprise grid/cloud, etc).
+    (Enterprise Information System) session backing store (e.g.
+    Redis, Memcached, filesystem, database, enterprise grid/cloud, etc).
 
     This implementation caches all active sessions in a configured
-    active_sessions_cache.  This property is None by default and if one is
-    not explicitly set, a cache manager is expected to be configured that will 
-    in turn be used to acquire the Cache instance used for the 
-    active_sessions_cache.
+    active_sessions_cache.  This property is None by default. If one is
+    not explicitly set, a cache manager is expected to be configured 
+    to acquire the Cache instance used for the active_sessions_cache.
 
     All SessionDAO methods are implemented by this class to employ
-    caching behavior and delegates the actual EIS operations to respective 
-    'do' methods to be implemented by subclasses (do_create, do_read, etc).
+    caching behavior, delegating the actual EIS operations to respective 
+    'do' methods implemented by subclasses (do_create, do_read, etc).
     """
+
+    ACTIVE_SESSIONS_CACHE_NAME = "yosai_active_session_cache"
+
     def __init__(self):
-        self.active_sessions_cache_name = "yosai_active_session_cache"
+        self.active_sessions_cache_name = self.__class__.ACTIVE_SESSIONS_CACHE_NAME
         self.cache_manager = None
         self.active_sessions = None
     
@@ -230,20 +232,20 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
         self.cache(session=session, session_id=sessionid)
         return sessionid
    
-    # java overloading port, resulting in poor design
-    def get_cached_session(self, sessionid=None, cache=None):
-            cached = None
-            if sessionid is not None:
-                if cache is None:
-                    cache = self.get_active_sessions_cache_lazy()
-                cached = cache.get(sessionid)
-            return cached
+    # java overloaded methods combined:
+    def get_cached_session(self, sessionid, cache=None):
+        if cache is None:
+            cache = self.get_active_sessions_cache_lazy()
+        try:
+            # assume that sessionid isn't None
+            return cache.get(sessionid)
+        except AttributeError:
+            msg = "no cache parameter nor lazy-defined cache"
+            print(msg)
+            # log here
+        return None
 
     def cache(self, session, sessionid, cache=None):
-
-        # don't bother caching incomplete records: 
-        if (session is None or sessionid is None):
-            return
 
         if (cache is None):
             cache = self.get_active_sessions_cache_lazy()
@@ -251,7 +253,9 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
         try:
             cache.put(sessionid, session)
         except AttributeError:
-            return
+            msg = "no cache parameter nor lazy-defined cache"
+            print(msg)
+        return
 
     def read_session(self, sessionid):
         session = self.get_cached_session(sessionid)
@@ -262,13 +266,15 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
     
     def update(self, session):
         self.do_update(session)
-        if (isinstance(session, session_abcs.ValidatingSession)):
+
+        # if (isinstance(session, session_abcs.ValidatingSession)):
+        try:
             if (session.is_valid):
                 self.cache(session=session, session_id=session.session_id)
             else: 
                 self.uncache(session)
             
-        else:
+        except AttributeError:
             self.cache(session=session, session_id=session.session_id)
     
     @abstractmethod
@@ -293,9 +299,6 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
             print(msg)
             # log here
             return
-        except KeyError:
-            msg = "Tried to uncache a session that wasn't cached."
-            raise UncacheSessionException(msg)
             
     def get_active_sessions(self):
         try:
