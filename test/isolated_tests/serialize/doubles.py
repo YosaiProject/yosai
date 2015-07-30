@@ -8,6 +8,9 @@ class MockSerializable(serialize_abcs.Serializable):
         self.myname = 'Mock Serialize'
         self.myage = 12
 
+    def __repr__(self):
+        return "MockSerializable(myname={0},myage={1})".format(self.myname,self.myage)
+
     @classmethod
     def serialization_schema(self):
         class SerializationSchema(Schema):

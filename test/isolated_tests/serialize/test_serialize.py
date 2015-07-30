@@ -98,13 +98,13 @@ def test_sm_deserialize(serialization_manager, monkeypatch):
 
     unpacked = {'myname': 'Mock Serialize', 'myage': 12, 
                 'cls': 'MockSerializable'}
-
+    yosai = __import__('yosai')
     # inject a class for testing:
-    monkeypatch.setattr('yosai.MockSerializable', MockSerializable) 
+    monkeypatch.setattr(yosai, 'MockSerializable', MockSerializable, raising=False) 
 
     with mock.patch.object(MSGPackSerializer, 'deserialize') as mp_deser:
         mp_deser.return_value = unpacked 
-        result = sm.deserialize('arbitrary value')
+        result = sm.deserialize(MockSerializable())
         assert isinstance(result, MockSerializable)
 
 # ----------------------------------------------------------------------------
@@ -143,15 +143,26 @@ def test_mps_deserialize():
 # abc.Serializable Tests
 # ----------------------------------------------------------------------------
 
-def test_serializable_materialize():
+def test_serializable_serialize(full_mock_account, mock_account_state):
+    """
+    unit tested:  serialize
 
-    class DumbClass(serialize_abcs.Serializable): 
-        def __serialize__(self):
-            return {'one': 1, 'two': 2, 'three': 3}
+    test case:  
+    serializes an object according to its marshmallow schema
+    """
+    serialized = full_mock_account.serialize()
+    assert (serialized['credentials'] == mock_account_state['creds'] and 
+            serialized['attributes'] == mock_account_state['attrs'])
 
-    mydict = {'one': 1, 'two': 2, 'three': 3}
 
-    newobj = DumbClass.materialize(mydict)
+def test_serializable_deserialize():
+    """
+    unit tested:  deserialize
 
-    assert (isinstance(newobj, DumbClass) and hasattr(newobj, 'one') and
-            hasattr(newobj, 'two') and hasattr(newobj, 'three'))
+    test case:
+    converts a dict into an object instance
+    """
+    dumbstate = {'myname': 'Mock Serializable', 'myage': 12}
+    newobj = MockSerializable.deserialize(dumbstate)
+    print(newobj)
+    assert isinstance(newobj, MockSerializable) and hasattr(newobj, 'myname') 

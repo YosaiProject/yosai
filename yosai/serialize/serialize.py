@@ -68,7 +68,7 @@ class SerializationManager:
             unpacked = self.serializer.deserialize(message)
             yosai = __import__('yosai')
             cls = getattr(yosai, unpacked['cls'])
-            return cls.deserialize(unpacked)()
+            return cls.deserialize(unpacked)
         except AttributeError:
             raise SerializationException('Only de-serialize Serializable objects')
 
