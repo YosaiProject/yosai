@@ -9,6 +9,10 @@ from yosai import (
     UUIDSessionIDGenerator,
 )
 
+from ..doubles import (
+    MockCache,
+)
+
 from .doubles import (
     MockCachingSessionDAO,
 )
@@ -343,4 +347,89 @@ def test_csd_getcachedsession_wo_cache(
     monkeypatch.setattr(mcsd, 'get_active_sessions_cache_lazy', lambda: mock_cache) 
     result = mcsd.get_cached_session('sessionid123')
     assert result == 'session_123'
+
+def test_csd_getcachedsession_w_cache(
+        mock_caching_session_dao, mock_cache, monkeypatch):
+    """
+    unit tested:  get_cached_session
+
+    test case:
+        when cache param is passed, it is used to get the sessionid 
+    """
+    mcsd = mock_caching_session_dao
+    result = mcsd.get_cached_session(sessionid='sessionid123', cache=mock_cache)
+    assert result == 'session_123'
+
+def test_csd_getcachedsession_none_default(
+        mock_caching_session_dao, mock_cache, monkeypatch):
+    """
+    unit tested:  get_cached_session
+
+    test case:
+        when cache param is passed, it is used to get the sessionid 
+    """
+    mcsd = mock_caching_session_dao
+    dumb = type('DumbClass', (object,), {})()
+    monkeypatch.setattr(mcsd, 'get_active_sessions_cache_lazy', lambda: dumb)
+    result = mcsd.get_cached_session(sessionid='sessionid123')
+    assert result is None
+
+def test_csd_cache_with_cache_param(
+        mock_caching_session_dao, mock_cache, monkeypatch, mock_session):
+    """
+    unit tested:  cache 
+
+    test case:
+    uses cache param to put session away
+    """
+    mcsd = mock_caching_session_dao
+    with mock.patch.object(MockCache, 'put') as mockc_put:
+        mcsd.cache(mock_session, 'sessionid123', mock_cache)
+        mockc_put.assert_called_once_with('sessionid123', mock_session)
+
+def test_csd_cache_without_cache_param(
+        mock_caching_session_dao, mock_cache, monkeypatch, mock_session):
+    """
+    unit tested:  cache 
+
+    test case:
+    gets active session cache and puts session away
+    """
+    mcsd = mock_caching_session_dao
+    with mock.patch.object(MockCachingSessionDAO, 
+                           'get_active_sessions_cache_lazy') as mock_csd:
+        mock_csd.return_value = mock_cache
+        with mock.patch.object(MockCache, 'put') as mockc_put:
+            mcsd.cache(mock_session, 'sessionid123')
+            mockc_put.assert_called_once_with('sessionid123', mock_session)
+            mock_csd.assert_called_once_with()
+
+def test_csd_read_session_exists(
+        mock_caching_session_dao, monkeypatch, mock_session):
+    """
+    unit tested:  read_session
+
+    test case:
+    get_cached_session returns a session, which in turn is returned by 
+    read_session
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mcsd, 'get_cached_session', lambda x: mock_session)
+    result = mcsd.read_session('sessionid123')
+    assert result == mock_session
+
+def test_csd_read_session_not_exists(
+        mock_caching_session_dao, monkeypatch, mock_session):
+    """
+    unit tested:  read_session
+
+    test case:
+    get_cached_session returns None, therefore super's read_session is called 
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mcsd, 'get_cached_session', lambda x: None) 
+    with mock.patch.object(AbstractSessionDAO, 'read_session') as abs_rs:
+        abs_rs.return_value = mock_session 
+        result = mcsd.read_session('sessionid123')
+        assert result == mock_session
 
