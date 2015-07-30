@@ -11,6 +11,7 @@ from yosai import (
 from .doubles import (
     MockAccount,
     MockAccountStore,
+    MockCache,
     MockPubSub,
     MockToken,
 )
@@ -29,7 +30,7 @@ def mock_account_state():
 @pytest.fixture(scope='function')
 def full_mock_account(mock_account_state):
     mas = mock_account_state
-    return MockAccount(account_id=31337, 
+    return MockAccount(account_id=8675309,
                        credentials=mas['creds'],
                        attributes=mas['attrs'])
 
@@ -75,3 +76,8 @@ def patched_event_bus(mock_pubsub, monkeypatch):
     monkeypatch.setattr(eb, '_event_bus', mock_pubsub)
     return eb
 
+
+@pytest.fixture(scope='function')
+def mock_cache(full_mock_account):
+    return MockCache({'sessionid123': 'session_123',
+                      'user123': full_mock_account})

@@ -249,6 +249,7 @@ def test_dach_gca_fails_to_locate_cached_account(
     token = username_password_token
     pmacr = patched_mock_account_cache_resolver
     pmackr = patched_mock_account_cache_key_resolver
+    monkeypatch.setattr(pmackr, 'key', 'user223344')
 
     monkeypatch.setattr(pdach, 'account_cache_resolver', pmacr)
     monkeypatch.setattr(pdach, 'account_cache_key_resolver', pmackr)

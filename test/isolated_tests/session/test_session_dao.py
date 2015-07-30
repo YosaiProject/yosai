@@ -1,11 +1,16 @@
 import pytest
 from unittest import mock
 from yosai import (
+    AbstractSessionDAO,
     IllegalArgumentException,
     IllegalStateException,
     RandomSessionIDGenerator,
     UnknownSessionException,
     UUIDSessionIDGenerator,
+)
+
+from .doubles import (
+    MockCachingSessionDAO,
 )
 
 # -----------------------------------------------------------------------------
@@ -252,4 +257,90 @@ def test_msd_get_active_sessions(memory_session_dao, monkeypatch, mock_session):
 # -----------------------------------------------------------------------------
 # CachingSessionDAO
 # -----------------------------------------------------------------------------
+
+def test_csd_gasc_lazy_wo_activesessions(mock_caching_session_dao, monkeypatch):
+    """
+    unit tested:  get_active_sessions_cache_lazy
+
+    test case:
+    no active_sessions attribute by default, so method gets called
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mcsd, 'create_active_sessions_cache', lambda: 'active')
+    result = mcsd.get_active_sessions_cache_lazy()
+    assert result == 'active'
+
+def test_csd_gasc_lazy_w_activesessions(mock_caching_session_dao, monkeypatch):
+    """
+    unit tested:  get_active_sessions_cache_lazy
+
+    test case:
+    when active_sessions attribute exists, it is returned
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mcsd, 'active_sessions', 'active')
+    result = mcsd.get_active_sessions_cache_lazy()
+    assert result == 'active'
+
+def test_csd_create_active_sessions_cache_returns_value(
+        mock_caching_session_dao, monkeypatch):
+    """
+    unit tested:  create_active_sessions_cache
+    
+    test case:
+    a cache manager returns a cache    
+    """
+    mcsd = mock_caching_session_dao
+    cm = type('CacheManager', (object,), {})()
+    monkeypatch.setattr(cm, 'get_cache', lambda name: 'cacheX', raising=False)
+    monkeypatch.setattr(mcsd, 'cache_manager', cm) 
+
+    result = mcsd.create_active_sessions_cache()
+
+    assert result == 'cacheX'
+
+
+def test_csd_create_active_sessions_cache_returns_none(
+        mock_caching_session_dao, monkeypatch):
+    """
+    unit tested:  create_active_sessions_cache
+    
+    test case:
+    a cache manager returns a cache else None    
+    """
+    mcsd = mock_caching_session_dao
+    result = mcsd.create_active_sessions_cache()
+    assert result is None
+
+
+def test_csd_create(mock_caching_session_dao):
+    """
+    unit tested:  create
+
+    test case:
+    calls two methods and returns sessionid
+    """
+    mcsd = mock_caching_session_dao
+    with mock.patch.object(AbstractSessionDAO, 'create') as mock_asdc:
+        mock_asdc.return_value = 'sessionid123'
+        with mock.patch.object(MockCachingSessionDAO, 'cache') as mcsdc:
+            mcsdc.return_value = None
+            result = mcsd.create('session')
+            mcsdc.assert_called_once_with(session='session', 
+                                          session_id='sessionid123')
+            assert result == 'sessionid123' 
+
+def test_csd_getcachedsession_wo_cache(
+        mock_caching_session_dao, mock_cache, monkeypatch):
+    """
+    unit tested:  get_cached_session
+
+    test case:
+        when no cache param is passed, the cache is obtained by method call
+        and then used to get the sessionid 
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mcsd, 'get_active_sessions_cache_lazy', lambda: mock_cache) 
+    result = mcsd.get_cached_session('sessionid123')
+    assert result == 'session_123'
 

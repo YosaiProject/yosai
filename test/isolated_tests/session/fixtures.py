@@ -3,6 +3,7 @@ import pytest
 from yosai import (
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
+    CachingSessionDAO,
     DefaultSessionContext,
     DefaultSessionSettings,
     DelegatingSession,
@@ -17,6 +18,7 @@ from .doubles import (
     MockAbstractNativeSessionManager,
     MockAbstractSessionDAO,
     MockAbstractValidatingSessionManager,
+    MockCachingSessionDAO,
     MockSession,
     MockSessionManager,
 )
@@ -85,3 +87,7 @@ def mock_abstract_session_dao():
 @pytest.fixture(scope='function')
 def memory_session_dao():
     return MemorySessionDAO()
+
+@pytest.fixture(scope='function')
+def mock_caching_session_dao():
+    return MockCachingSessionDAO()

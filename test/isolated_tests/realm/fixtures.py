@@ -20,8 +20,8 @@ def mock_account_cache_resolver():
     return MockAccountCacheResolver()
 
 @pytest.fixture(scope='function')
-def patched_mock_account_cache_resolver(full_mock_account):
-    return MockAccountCacheResolver(MockCache())
+def patched_mock_account_cache_resolver(full_mock_account, mock_cache):
+    return MockAccountCacheResolver(mock_cache)
 
 @pytest.fixture(scope='function')
 def patched_mock_account_cache_key_resolver():

@@ -4,6 +4,7 @@ from .fixtures import (
     full_mock_account,
     mock_account_state,
     mock_account_store,
+    mock_cache,
     mock_pubsub,
     mock_token,
     patched_event_bus,

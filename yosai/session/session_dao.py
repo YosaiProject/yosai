@@ -29,6 +29,7 @@ from yosai import (
     SessionDeleteException,
     UncacheSessionException,
     UnknownSessionException,
+    settings,
 )
 
 from yosai.session import abcs as session_abcs
@@ -188,10 +189,8 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
     'do' methods implemented by subclasses (do_create, do_read, etc).
     """
 
-    ACTIVE_SESSIONS_CACHE_NAME = "yosai_active_session_cache"
-
     def __init__(self):
-        self.active_sessions_cache_name = self.__class__.ACTIVE_SESSIONS_CACHE_NAME
+        self.active_sessions_cache_name = settings.active_sessions_cache_name
         self.cache_manager = None
         self.active_sessions = None
     

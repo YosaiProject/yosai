@@ -4,6 +4,7 @@ from yosai import (
     AbstractNativeSessionManager,
     AbstractSessionDAO,
     AbstractValidatingSessionManager,
+    CachingSessionDAO,
 )
 
 class MockSession(session_abcs.Session, object):
@@ -184,4 +185,19 @@ class MockAbstractSessionDAO(AbstractSessionDAO):
         pass
 
     def update(self, session):
+        pass
+
+
+class MockCachingSessionDAO(CachingSessionDAO):
+   
+    def do_create(self, session):
+        pass
+
+    def do_delete(self, session):
+        pass
+
+    def do_read_session(self, session_id):
+        pass
+
+    def do_update(self, session):
         pass

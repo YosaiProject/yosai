@@ -24,6 +24,8 @@ from yosai import (
 )
 
 from yosai.authc import abcs
+from marshmallow import Schema, fields
+
 
 class DefaultCompositeAccountId(abcs.CompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..
@@ -101,3 +103,12 @@ class DefaultCompositeAccount(abcs.CompositeAccount):
                 
     def get_realm_attributes(self, realm_name):
         return self._realm_attrs.get(realm_name, dict())  # DG: no frozen dict
+
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+            pass  # TBD
+
+            def make_object(self):
+                pass  # TBD
+

@@ -17,6 +17,10 @@ specific language governing permissions and limitations
 under the License.
 """
 
+from .session_settings import (
+    DefaultSessionSettings,
+    session_settings,
+)
 
 from .session import (
     AbstractNativeSessionManager,
@@ -24,13 +28,11 @@ from .session import (
     DefaultSessionContext,  
     DefaultSessionKey,
 #    DefaultSessionManager,
-    DefaultSessionSettings,
     ImmutableProxiedSession,
 #    EnterpriseCacheSessionDAO,
     ProxiedSession,
 #    SessionTokenGenerator,
 #    SessionManager,
-#    Session,
     DelegatingSession,
 #    DefaultSessionStorageEvaluator,
     ExecutorServiceSessionValidationScheduler,
