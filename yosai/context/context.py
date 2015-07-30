@@ -18,6 +18,7 @@ under the License.
 """
 
 from yosai.serialize import abcs as serialize_abcs
+from marshmallow import Schema, fields
 
 
 class MapContext(serialize_abcs.Serializable):
@@ -79,5 +80,20 @@ class MapContext(serialize_abcs.Serializable):
                                for key, value in self.context.items())
         return "<" + self.__class__.__name__ + "(" + attributes + ")>"
 
-    def __serialize__(self):
-        return self.context
+    class ContextSchema(Schema):
+        # Define key/value here for the dictionary
+        pass
+
+        def make_object(self, data):
+            return dict(data)
+
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+            context = fields.Nested(cls.ContextSchema)
+
+            def make_object(self, data):
+                mycls = MapContext 
+                instance = mycls.__new__(cls)
+                instance.__dict__.update(data)
+                return instance

@@ -110,9 +110,28 @@ class AbstractSessionDAO(session_abcs.SessionDAO):
 
 
 class MemorySessionDAO(AbstractSessionDAO):
+    """
+    Simple memory-based implementation of the SessionDAO that stores all of its
+    sessions in an in-memory dict.  This implementation does not page
+    to disk and is therefore unsuitable for applications that could experience
+    a large amount of sessions and would therefore result in MemoryError
+    exceptions as the interpreter runs out of memory.  This class is *not* 
+    recommended for production use in most environments.
+
+    Memory Restrictions
+    -------------------
+    If your application is expected to host many sessions beyond what can be
+    stored in the memory available to the Python interpreter, it is highly 
+    recommended that you use a different SessionDAO implementation using a 
+    more expansive or permanent backing data store.
+
+    Instead, use a custom CachingSessionDAO implementation that communicates 
+    with a higher-capacity data store of your choice (Redis, Memcached, 
+    file system, rdbms, etc).
+    """
 
     def __init__(self):
-        self.sessions = {} 
+        self.sessions = {}
     
     def do_create(self, session):
         sessionid = self.generate_session_id(session)
@@ -121,18 +140,19 @@ class MemorySessionDAO(AbstractSessionDAO):
         return sessionid
 
     def store_session(self, session_id, session):
-        try:
-            self.sessions[session_id] = session
-            return self.sessions.get(session_id, None)
-        except (AttributeError, KeyError):
+        # stores only if session doesn't already exist, returning the existing 
+        # session (as default) otherwise
+        if session_id is None or session is None:
             msg = 'MemorySessionDAO.store_session invalid param passed'
             raise IllegalArgumentException(msg)
 
+        return self.sessions.setdefault(session_id, session)
+
     def do_read_session(self, sessionid):
-        return self.sessions.get(sessionid, None)
+        return self.sessions.get(sessionid)
     
     def update(self, session):
-        self.store_session(session.session_id, session)
+        return self.store_session(session.session_id, session)
 
     def delete(self, session):
         try:
@@ -142,14 +162,13 @@ class MemorySessionDAO(AbstractSessionDAO):
             msg = 'MemorySessionDAO.delete None param passed'
             raise IllegalArgumentException(msg)
         except KeyError:
-            msg = 'MemorySessionDAO could not delete: ', str(session)
-            raise SessionDeleteException(msg)
+            msg = ('MemorySessionDAO could not delete ', str(sessionid), 
+                   'because it does not exist in memory!')
+            print(msg)
+            # log here
 
     def get_active_sessions(self):
-        try:
-            return tuple(self.sessions.values())
-        except TypeError:
-            return tuple()
+        return tuple(self.sessions.values())
 
 
 class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
@@ -285,25 +304,3 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
 
         except AttributeError: 
             return tuple()
-
-"""
-class EnterpriseCacheSessionDAO(CachingSessionDAO):
-
-    def __init__(self): 
-        
-        DG:  not sure how to refactor this:
-        public EnterpriseCacheSessionDAO() {
-        setCacheManager(new AbstractCacheManager() {
-            @Override
-            protected Cache<Serializable, Session> createCache(String name) throws CacheException {
-                return new MapCache<Serializable, Session>(name, new ConcurrentHashMap<Serializable, Session>());
-            }
-        });
-
-    def do_create(self, session):
-        sessionid = self.generate_session_id(session)
-        self.assign_session_id(session, sessionid)
-        return sessionid
-
-"""
-

@@ -32,12 +32,10 @@ Requiring Concrete Implementations:
 
 Porting annotations to python decorators
 
-/serialize
-----------
-much of the sub-package changed so to accomodate marshmallow, therefore unit tests 
-changes are required
-
 /session
 ----------
 session_dao.py:  reconcile/refactor memory and caching classes, and unit test
-session_untested:  move to session.py, reconcile, refactor, and unit test 
+
+Serializables:  any serializable class in shiro should have its respective
+                serializable counterpart in Yosai, common sense permitting
+

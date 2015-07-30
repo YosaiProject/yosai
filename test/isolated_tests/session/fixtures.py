@@ -8,6 +8,7 @@ from yosai import (
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
     ImmutableProxiedSession,
+    MemorySessionDAO,
     ProxiedSession,
     SimpleSession,
 )
@@ -16,7 +17,6 @@ from .doubles import (
     MockAbstractNativeSessionManager,
     MockAbstractSessionDAO,
     MockAbstractValidatingSessionManager,
-    MockMemorySessionDAO,
     MockSession,
     MockSessionManager,
 )
@@ -83,5 +83,5 @@ def mock_abstract_session_dao():
     return MockAbstractSessionDAO()
 
 @pytest.fixture(scope='function')
-def mock_memory_session_dao():
-    return MockMemorySessionDAO()
+def memory_session_dao():
+    return MemorySessionDAO()

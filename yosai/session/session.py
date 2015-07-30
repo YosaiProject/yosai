@@ -26,6 +26,7 @@ import uuid
 import traceback as tb
 from abc import ABCMeta, abstractmethod
 from yosai.event import abcs as event_abcs
+from marshmallow import Schema, fields
 
 from yosai import (
     AbstractMethodException,
@@ -471,16 +472,35 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         return "SimpleSession(start_timestamp={0}, last_access_time={1})".\
             format(self.start_timestamp, self.last_access_time)
        
-    def __serialize__(self):
-        return {'session_id': self.session_id,
-                'start_timestamp': self.start_timestamp,
-                'stop_timestamp': self.stop_timestamp,
-                'last_access_time': self.last_access_time,
-                'timeout': self.timeout,
-                'is_expired': self.is_expired,
-                'host': self.host,
-                'attributes': self.attributes}
+    class SimpleSessionAttributesSchema(Schema):
+        # Define key/value here for the attributes dictionary
+        # e.g.: 
+        #  attribute1 = fields.Str()
+        pass
 
+        def make_object(self, data):
+            return dict(data)
+
+    @classmethod
+    def serialization_schema(cls): 
+        class SerializationSchema(Schema):
+            session_id = fields.Str()
+            start_timestamp = fields.DateTime()  # iso is default
+            stop_timestamp = fields.DateTime()  # iso is default
+            last_access_time = fields.DateTime()  # iso is default
+            idle_timeout = fields.TimeDelta()
+            absolute_timeout = fields.TimeDelta()
+            is_expired = fields.Boolean()
+            host = fields.Str()
+            attributes = fields.Nested(cls.SimpleSessionAttributesSchema)
+            
+            def make_object(self, data):
+                mycls = SimpleSession 
+                instance = mycls.__new__(cls)
+                instance.__dict__.update(data)
+                return instance
+
+        return SerializationSchema
 
 class SimpleSessionFactory(abcs.SessionFactory):
    

@@ -185,7 +185,3 @@ class MockAbstractSessionDAO(AbstractSessionDAO):
 
     def update(self, session):
         pass
-
-
-class MockMemorySessionDAO(MockAbstractSessionDAO):
-    pass
