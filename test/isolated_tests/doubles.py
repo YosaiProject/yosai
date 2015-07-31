@@ -12,7 +12,8 @@ class MockCache(cache_abcs.Cache):
     
     def __init__(self, keyvals={}):
         # keyvals is a dict
-        self.kvstore = keyvals
+        self.kvstore = {}
+        self.kvstore.update(keyvals)
     
     @property
     def values(self):

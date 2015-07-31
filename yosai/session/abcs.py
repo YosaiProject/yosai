@@ -228,6 +228,7 @@ class SessionStorageEvaluator(metaclass=ABCMeta):
 
 class ValidatingSession(Session):
 
+    @property
     @abstractmethod
     def is_valid(self):
         pass

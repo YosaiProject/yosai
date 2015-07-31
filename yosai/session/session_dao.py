@@ -302,7 +302,7 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
     def get_active_sessions(self):
         try:
             cache = self.get_active_sessions_cache_lazy()
-            return tuple(cache.values())
+            return tuple(cache.values)  # s/b a property attribute
 
         except AttributeError: 
             return tuple()

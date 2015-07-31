@@ -307,6 +307,7 @@ class SimpleSession(abcs.ValidatingSession, serialize_abcs.Serializable):
         self.stop()
         self.is_expired = True
 
+    @property
     def is_valid(self):
         return (not self.is_stopped and not self.is_expired)
 
@@ -803,7 +804,7 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
         if (removed is not None): 
             self.on_change(session)
         return removed
-
+    
     def is_valid(self, session_key):
         try:
             self.check_valid(session_key)

@@ -162,7 +162,7 @@ def test_ss_is_valid(
     ss = simple_session
     monkeypatch.setattr(ss, '_stop_timestamp', is_stopped)
     monkeypatch.setattr(ss, '_is_expired', is_expired)
-    assert ss.is_valid() == check 
+    assert ss.is_valid == check 
 
 
 # see docstring below for more information about these parameters:

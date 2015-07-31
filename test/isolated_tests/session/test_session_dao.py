@@ -433,3 +433,134 @@ def test_csd_read_session_not_exists(
         result = mcsd.read_session('sessionid123')
         assert result == mock_session
 
+def test_csd_update_isvalid(mock_caching_session_dao, mock_session):
+    """
+    unit tested:  update
+
+    test case:
+    when a validating session is passed, and the session is valid, cache is 
+    called
+    """
+    mcsd = mock_caching_session_dao
+    with mock.patch.object(mcsd, 'do_update') as mock_doupdate:
+        mock_doupdate.return_value = None
+        with mock.patch.object(mcsd, 'cache') as mock_cache:
+            mock_cache.return_value = None
+
+            mcsd.update(mock_session)
+
+            mock_doupdate.assert_called_once_with(mock_session)
+            mock_cache.assert_called_once_with(
+                session=mock_session, session_id=mock_session.session_id)
+
+def test_csd_update_isnotvalid(
+        mock_caching_session_dao, mock_session, monkeypatch):
+    """
+    unit tested:  update
+
+    test case:
+    when a validating session is passed, and the session is invalid,
+    uncache is called
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mock_session, '_isvalid', False)
+    with mock.patch.object(mcsd, 'do_update') as mock_doupdate:
+        mock_doupdate.return_value = None
+        with mock.patch.object(mcsd, 'uncache') as mock_uncache:
+            mock_uncache.return_value = None
+
+            mcsd.update(mock_session)
+
+            mock_doupdate.assert_called_once_with(mock_session)
+            mock_uncache.assert_called_once_with(mock_session)
+
+
+def test_csd_update_noisvalid(
+        mock_caching_session_dao, mock_session, monkeypatch):
+    """
+    unit tested:  update
+
+    test case:
+    when a session that is not of type ValidatingSession is passed, cache
+    is called
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.delattr(mock_session, '_isvalid')
+    with mock.patch.object(mcsd, 'do_update') as mock_doupdate:
+        mock_doupdate.return_value = None
+        with mock.patch.object(mcsd, 'cache') as mock_cache:
+            mock_cache.return_value = None
+
+            mcsd.update(mock_session)
+
+            mock_doupdate.assert_called_once_with(mock_session)
+            mock_cache.assert_called_once_with(
+                session=mock_session, session_id=mock_session.session_id)
+
+def test_csd_delete(mock_caching_session_dao):
+    """
+    unit tested:  delete
+
+    test case:
+    basic code path exercise
+    """
+    mcsd = mock_caching_session_dao
+    with mock.patch.object(mcsd, 'uncache') as mock_uncache:
+        mock_uncache.return_value = None
+        with mock.patch.object(mcsd, 'do_delete') as mock_dodelete:
+            mock_dodelete.return_value = None
+            mcsd.delete('session')
+            mock_uncache.assert_called_once_with('session')
+            mock_dodelete.assert_called_once_with('session')
+
+def test_csd_uncache(
+        mock_caching_session_dao, mock_cache, mock_session, monkeypatch):
+    """
+    unit tested:  uncache
+
+    test case:  
+    cache is lazily obtained and session is removed by sessionid
+    """
+    mcsd = mock_caching_session_dao
+    monkeypatch.setattr(mcsd, 'get_active_sessions_cache_lazy', lambda: mock_cache) 
+    with mock.patch.object(MockCache, 'remove') as mock_remove:
+        mock_remove.return_value = None
+        mcsd.uncache(mock_session)
+        mock_remove.assert_called_once_with(mock_session.session_id)
+
+def test_csd_uncache_raises(mock_caching_session_dao):
+    """
+    unit tested:  uncache
+
+    test case:
+    cannot obtain cache, resulting in returned execution
+    """
+    mcsd = mock_caching_session_dao
+    mcsd.uncache('session') 
+
+def test_csd_get_active_sessions_returns_cache(
+        mock_caching_session_dao, monkeypatch):
+    """
+    unit tested:  get_active_sessions
+
+    test case:
+    returns a tuple containing the one cache
+    """
+    mcsd = mock_caching_session_dao
+    mock_cache = MockCache({'cache': 'cache1'})
+    with mock.patch.object(MockCachingSessionDAO, 
+                           'get_active_sessions_cache_lazy') as mock_gascl:
+        mock_gascl.return_value = mock_cache
+        results = mcsd.get_active_sessions()
+        assert results == tuple(['cache1'])
+
+def test_csd_get_active_sessions_returns_empty(mock_caching_session_dao):
+    """
+    unit tested:  get_active_sessions
+
+    test case:
+    returns an empty tuple
+    """
+    mcsd = mock_caching_session_dao
+    results = mcsd.get_active_sessions()
+    assert results == tuple() 

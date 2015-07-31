@@ -7,12 +7,13 @@ from yosai import (
     CachingSessionDAO,
 )
 
-class MockSession(session_abcs.Session, object):
+class MockSession(session_abcs.ValidatingSession, object):
 
     def __init__(self):
         self.session = {'attr1': 1, 'attr2': 2, 'attr3': 3}
         self._idle_timeout = datetime.timedelta(minutes=15)
         self._absolute_timeout = datetime.timedelta(minutes=60) 
+        self._isvalid = True  # only used for testing
 
     @property
     def attribute_keys(self):
@@ -21,6 +22,13 @@ class MockSession(session_abcs.Session, object):
     @property
     def host(self):
         return '127.0.0.1' 
+    
+    @property
+    def is_valid(self):
+        return self._isvalid 
+
+    def validate(self, session):
+        pass
 
     @property
     def session_id(self):
