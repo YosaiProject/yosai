@@ -820,3 +820,8 @@ def test_dsc_basic_test(default_session_context):
     dsc.session_id = None  # should be ignored due to none_safe_put
 
     assert (dsc.host == 'myhost' and dsc.session_id == 'mysessionid')
+
+
+# ----------------------------------------------------------------------------
+# DefaultSessionManager
+# ----------------------------------------------------------------------------
