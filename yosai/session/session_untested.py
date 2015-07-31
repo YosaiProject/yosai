@@ -24,44 +24,6 @@ class SessionTokenGenerator:
 """
 
 """
-class SessionManager:
-    A SessionManager manages the creation, maintenance, and clean-up of all 
-    application Sessions.  A SessionManager will only return a VALID Session
-    object to serve a request.
-
-    Sessions are 'the time-based data contexts in which a Subject interacts 
-    with an application'.
-
-    def __init__(self, cache_manager):
-        self._cache_manager = cache_manager
-        self._scheduler = BackgroundScheduler()
-
-    def get_session(self, token):
-        if (token is None):
-            return create_session()
-        elif (token is not None):
-            session = self._cache_manager.get_deserialized('session:'+token)
-            if (session.is_valid()):
-                return session
-            else:
-                return create_session()
-
-    def create_session(self, kwargs):
-        session = self._session_factory.create_session(self._scheduler, kwargs)
-        if (session.is_valid()):
-            return session
-        else:
-            raise Exception('SessionManager Could Not Create Valid Session!')
-            return None
-
-    def delete_session(self, token):
-        pass
-
-    def session_factory(self):
-        pass
-"""
-
-"""
 class DefaultSessionStorageEvaluator:
 
      # Global policy determining if Subject sessions may be used to persist
