@@ -1427,7 +1427,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
         self.delete_invalid_sessions = True
         self.session_factory = SimpleSessionFactory()
         self._cache_manager = None 
-        self._session_DAO = MemorySessionDAO()  # TBD:  change default to CachingSessionDAO
+        self._session_DAO = MemorySessionDAO()  # advised change to CachingSessionDAO 
 
     @property
     def session_DAO(self):
@@ -1449,7 +1449,8 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
 
     def apply_cache_manager_to_session_DAO(self):
         try:
-            self.session_DAO.set_cache_manager(self.cache_manager)
+            if isinstance(self.session_DAO, cache_abcs.CacheManagerAware):
+                self.session_DAO.cache_manager = self._cache_manager
         except AttributeError:
             msg = ("tried to set a cache manager in a SessionDAO that isn\'t"
                    "defined or configured in the DefaultSessionManager")
@@ -1493,7 +1494,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
 
     def on_expiration(self, session):
         try:
-            session.expired = True
+            session.is_expired = True
         except AttributeError:
             msg = ("tried to expire a session but couldn\'t, unlikely "
                    "working with a SimpleSession instance")

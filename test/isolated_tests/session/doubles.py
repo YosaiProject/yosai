@@ -5,6 +5,7 @@ from yosai import (
     AbstractSessionDAO,
     AbstractValidatingSessionManager,
     CachingSessionDAO,
+    DefaultSessionManager,
 )
 
 class MockSession(session_abcs.ValidatingSession, object):
@@ -208,4 +209,16 @@ class MockCachingSessionDAO(CachingSessionDAO):
         pass
 
     def do_update(self, session):
+        pass
+
+
+class MockDefaultSessionManager(DefaultSessionManager):
+
+    def after_session_validation_enabled(self):
+        pass
+    
+    def before_session_validation_disabled(self):
+        pass
+        
+    def on_start(self, session, session_context):  
         pass

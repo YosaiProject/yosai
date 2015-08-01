@@ -5,7 +5,6 @@ from yosai import (
     AbstractValidatingSessionManager,
     CachingSessionDAO,
     DefaultSessionContext,
-    DefaultSessionManager,
     DefaultSessionSettings,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
@@ -20,6 +19,7 @@ from .doubles import (
     MockAbstractSessionDAO,
     MockAbstractValidatingSessionManager,
     MockCachingSessionDAO,
+    MockDefaultSessionManager,
     MockSession,
     MockSessionManager,
 )
@@ -94,6 +94,6 @@ def mock_caching_session_dao():
     return MockCachingSessionDAO()
 
 @pytest.fixture(scope='function')
-def default_session_manager():
-    return DefaultSessionManager()
+def mock_default_session_manager():
+    return MockDefaultSessionManager()
 

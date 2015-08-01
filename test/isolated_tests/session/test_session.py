@@ -822,6 +822,3 @@ def test_dsc_basic_test(default_session_context):
     assert (dsc.host == 'myhost' and dsc.session_id == 'mysessionid')
 
 
-# ----------------------------------------------------------------------------
-# DefaultSessionManager
-# ----------------------------------------------------------------------------
