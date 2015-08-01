@@ -48,10 +48,9 @@ Finished Unit Testing:
 
 Pytest unit testing coverage stats are as follows:
 
-|Name                        |Stmts|Miss | Cover|
-|----------------------------|-----|-----|------|
-| yosai/__init__                    | 21  | 0   | 100% |
+|Name                               |Stmts|Miss | Cover|
 |-----------------------------------|-----|-----|------|
+| yosai/__init__                    | 21  | 0   | 100% |
 | yosai/account/__init__            | 0   | 0   | 100% |
 | yosai/account/abcs                | 19  | 5   | 74%  |
 | yosai/authc/__init__              | 5   | 0   | 100% |
