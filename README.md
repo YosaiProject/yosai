@@ -84,9 +84,9 @@ Pytest unit testing coverage stats are as follows:
 | yosai/realm/__init__              | 1   | 0   | 100% |
 | yosai/realm/abcs                  | 42  | 12  | 71%  |
 | yosai/realm/realm                 | 88  | 3   | 97%  |
-| yosai/security/__init__           | 0   | 0   | 100% |
-| yosai/security/abcs               | 22  | 22  | 0%   |
-| yosai/security/security           | 463 | 463 | 0%   |
+| yosai/mgt/__init__                | 0   | 0   | 100% |
+| yosai/mgt/abcs                    | 22  | 22  | 0%   |
+| yosai/mgt/mgt                     | 463 | 463 | 0%   |
 | yosai/serialize/__init__          | 1   | 0   | 100% |
 | yosai/serialize/abcs              | 18  | 3   | 83%  |
 | yosai/serialize/serialize         | 34  | 2   | 94%  |
