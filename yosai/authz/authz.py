@@ -493,7 +493,6 @@ class ModularRealmAuthorizer(abcs.Authorizer,
     # yosai consolidates has_role functionality to one method:
     def has_role(self, principals, roleid_s):
         """
-        
         :param principals: a collection of principals
         :type principals: Set
 
@@ -512,7 +511,15 @@ class ModularRealmAuthorizer(abcs.Authorizer,
         return [(roleid_s, self._has_role(principals, roleid_s))]
 
     def has_all_roles(self, principals, roleid_s):
+        """
+        :param principals: a collection of principals
+        :type principals: Set
 
+        :param roleid_s: 1..N role identifiers
+        :type roleid_s:  a String or List of Strings 
+
+        :returns: a Boolean
+        """
         self.assert_realms_configured()
 
         for (roleid, hasrole) in \
@@ -521,9 +528,18 @@ class ModularRealmAuthorizer(abcs.Authorizer,
                 return False
         return True
 
-    def check_role(self, principals, role_s):
+    def check_role(self, principals, roleid_s):
+        """
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param roleid_s: 1..N role identifiers
+        :type roleid_s:  a String or List of Strings 
+
+        :raises UnauthorizedException: if Subject not assigned to all roles
+        """
         self.assert_realms_configured()
-        has_role_s = self.has_all_roles(principals, role_s) 
+        has_role_s = self.has_all_roles(principals, roleid_s) 
         if not has_role_s: 
             msg = "Subject does not have role(s)" 
             print(msg)

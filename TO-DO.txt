@@ -38,3 +38,6 @@ Serializables:  any serializable class in shiro should have its respective
 refactoring shiro thread-based concurrency to an appropriate concurrency 
 solution in python  (greenlets?  asyncio coroutines?)
 
+add eventbus functionality to the ModularRealmAuthorizor, and inject the 
+eventbus from the DefaultSecurityManager into the MRA
+

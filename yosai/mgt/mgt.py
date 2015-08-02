@@ -47,6 +47,7 @@ from yosai import(
 )
 
 from yosai.mgt import mgt_abcs
+from yosai.authc import abcs as authc_abcs
 from yosai.event import abcs as event_abcs
 from yosai.cache import abcs as cache_abcs
 
@@ -368,16 +369,83 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         # re-hydrate the remember_me principal_collection on every operation).
         self.save(subject)
         return subject
+
+    def remember_me_successful_login(self, authc_token, account, subject):
+        rmm = self.remember_me_manager 
+        if (rmm is not None):
+            try:
+                rmm.on_successful_login(subject, authc_token, account)
+            except Exception as ex: 
+                msg = ("Delegate RememberMeManager instance of type [" + 
+                       rmm.__class__.__name__ + "] threw an exception "
+                       + "during on_successful_login.  RememberMe services "
+                       + "will not be performed for account [" + account + 
+                       "].")
+                print(msg)
+                # log warn , including exc_info=ex
+
+        else:
+            msg = ("This " + rmm.__class__.__name__ + 
+                   " instance does not have a [RememberMeManager] instance " +
+                   "configured.  RememberMe services will not be performed " +
+                   "for account [" + account + "].")
+            print(msg)
+            # log trace here 
+
+    def remember_me_failed_login(self, authc_token, authc_exc, subject):
+        rmm = self.remember_me_manager
+        if (rmm is not None): 
+            try:
+                rmm.on_failed_login(subject, authc_token, ex)
+
+            except Exception as ex:
+                msg = ("Delegate RememberMeManager instance of type " 
+                       "[" + rmm.__class__.__name__ + "] threw an exception "
+                       "during on_failed_login for AuthenticationToken [" +
+                       authc_token + "].")
+                print(msg)
+                # log warning here , including exc_info = ex
+
+    def remember_me_logout(self, subject):
+        rmm = self.remember_me_manager
+        if (rmm is not None): 
+            try:
+                rmm.onLogout(subject);
+            except Exception as ex:
+                msg = ("Delegate RememberMeManager instance of type [" + 
+                        rmm.__class__.__name__ + "] threw an exception during "
+                        "on_logout for subject with principals [{principals}]".\
+                        format(principals=subject.principals if subject else None)
+                print(msg)
+                # log warn, including exc_info = ex
         
     def login(self, subject, authc_token): 
-        """ DG: I removed any trace of remember_me functionality """
         try:
-            authc_info = self.authenticate(authc_token)
-        except AuthenticationException as ex: 
-            raise ex
+            account = self.authenticate_account(authc_token)
+        except AuthenticationException as authc_ex: 
+            try:
+                self.on_failed_login(authc_token, authc_ex, subject) 
+            except Exception as ex:
+                msg = ("on_failed_login method threw an exception.  Logging "
+                      "and propagating original AuthenticationException.", ex)
+               # log info here, including exc_info=ex 
+            raise
 
-        logged_in = self.create_subject(authc_token, authc_info, subject)
+        logged_in = self.create_subject(authc_token, account, subject)
+        self.on_successful_login(authc_token, account, logged_in)
         return logged_in
+
+    def on_successful_login(self, authc_token, account, subject):
+        self.remember_me_successful_login(token, info, subject)
+    
+    def onfailed_login(self, authc_token, authc_exc, subject):
+        self.remember_me_failed_login(token, ae, subject)
+
+    def before_logout(self, subject):
+        self.remember_me_logout(subject)
+
+    def copy(self, subject_context):
+        return DefaultSubjectContext(subject_context)
 
     def do_create_subject(self, subject_context):
         return self.subject_factory.create_subject(subject_context)
@@ -450,7 +518,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             print(msg)
             # log trace here
 
-            principals = self.get_remembered_identity(context)
+            principals = self.get_remembered_identity(subject_context)
             
             if principals:
                 msg = ("Found remembered PrincipalCollection.  Adding to the "
@@ -458,7 +526,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                        "SubjectFactory.")
                 print(msg)
                 # log debug here
-                context.principals = principals
+                subject_context.principals = principals
 
             else:
                 msg = ("No remembered identity found.  Returning original "
@@ -485,32 +553,47 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             msg = "Subject method argument cannot be None."
             raise IllegalArgumentException(msg)
 
+        self.before_logout(subject)
+
         principals = subject.principals
         if (principals):
-            # log here
             msg = ("Logging out subject with primary principal {0}".format(
                    principals.primary_principal))
+            print(msg)
+            # log debug here
             authc = self.authenticator
-            if (isinstance(authc, ILogoutAware)):
+            if (isinstance(authc, authc_abcs.LogoutAware)):
                 authc.on_logout(principals)
 
         try:
             self.delete(subject)
         except Exception as ex:
-            # log here
             msg = "Unable to cleanly unbind Subject.  Ignoring (logging out)."
             print(msg) 
+            # log debug here, including exc_info = ex
         finally:
             try:
                 self.stop_session(subject)
             except Exception as ex2:
-                # log here 
                 msg2 = ("Unable to cleanly stop Session for Subject [" 
                         + subject.principal + "] " +
                         "Ignoring (logging out).", ex2)
                 print(msg2)
+                # log debug here, including exc_info = ex 
 
     def stop_session(self, subject):
         session = subject.get_session(False)
         if (session):
             session.stop()
+
+    def get_remembered_identity(self, subject_context):
+        rmm = self.remember_me_manager
+        if rmm is not None:
+            try:
+                return rmm.get_remembered_principals(subject_context)
+            except Exception as ex:
+                msg = ("Delegate RememberMeManager instance of type [" + 
+                       rmm.__class__.__name__ + "] raised an exception during "
+                       "get_remembered_principals()."
+                # log warn here , including exc_info = ex
+        return None 

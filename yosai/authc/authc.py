@@ -167,6 +167,10 @@ class DefaultAuthenticator(abcs.Authenticator, event_abcs.EventBusAware):
     def event_bus(self):
         return self._event_bus
 
+    @event_bus.setter
+    def event_bus(self, eventbus):
+        self._event_bus = eventbus
+
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):
             msg = ("Realm [{0}] does not support authentication token [{1}]."
