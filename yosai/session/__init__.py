@@ -40,7 +40,7 @@ from .session import (
     ProxiedSession,
 #    SessionTokenGenerator,
     DelegatingSession,
-#    DefaultSessionStorageEvaluator,
+    DefaultSessionStorageEvaluator,
     ExecutorServiceSessionValidationScheduler,
     SimpleSession,
     SimpleSessionFactory,

@@ -16,7 +16,7 @@ from yosai import (
     CachingSessionDAO,
     DefaultSessionSettings,
     DelegatingSession,
-    EventBus,
+    DefaultEventBus,
     ExecutorServiceSessionValidationScheduler,
     ExpiredSessionException,
     IllegalArgumentException,
@@ -42,7 +42,7 @@ def test_ansm_publish_event_succeeds(abstract_native_session_manager):
     test case:  successful publish of event to event bus
     """
     ansm = abstract_native_session_manager
-    with mock.patch.object(EventBus, 'publish') as meb_pub:
+    with mock.patch.object(DefaultEventBus, 'publish') as meb_pub:
         meb_pub.return_value = None
         ansm.publish_event('dumbevent')
         meb_pub.assert_called_once_with('dumbevent')

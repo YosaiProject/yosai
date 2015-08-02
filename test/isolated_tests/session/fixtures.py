@@ -6,6 +6,7 @@ from yosai import (
     CachingSessionDAO,
     DefaultSessionContext,
     DefaultSessionSettings,
+    DefaultSessionStorageEvaluator,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
     ImmutableProxiedSession,
@@ -97,3 +98,6 @@ def mock_caching_session_dao():
 def mock_default_session_manager():
     return MockDefaultSessionManager()
 
+@pytest.fixture(scope='function')
+def default_session_storage_evaluator():
+    return DefaultSessionStorageEvaluator()

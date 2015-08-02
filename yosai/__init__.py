@@ -122,7 +122,7 @@ from .utils import (
 
 from .event import (
     Event,
-    EventBus,
+    DefaultEventBus,
 )
 
 from .authc import (
@@ -181,7 +181,7 @@ from .session import (
     DefaultSessionKey,
     DefaultSessionManager,
     DelegatingSession,
-    # DefaultSessionStorageEvaluator,
+    DefaultSessionStorageEvaluator,
     DefaultSessionSettings,
     ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionDAO,

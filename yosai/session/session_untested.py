@@ -23,32 +23,6 @@ class SessionTokenGenerator:
     pass
 """
 
-"""
-class DefaultSessionStorageEvaluator:
-
-     # Global policy determining if Subject sessions may be used to persist
-     # Subject state if the Subject's Session does not yet exist.
-    
-    def __init__(self):
-        self._session_storage_enabled = True
-
-    def is_session_storage_enabled(self, subject=None):
-        if (not subject):
-            return self.session_storage_enabled
-        else:
-            return ((subject and subject.get_session(False)) or 
-                    bool(self.session_storage_enabled))
-   
-    @property
-    def session_storage_enabled(self):
-        return self._session_storage_enabled
-    
-    @session_storage_enabled.setter
-    def session_storage_enabled(self, sse):
-        self._session_storage_enabled = sse
-
-
-"""
 
 """
 class EnterpriseCacheSessionDAO(CachingSessionDAO):

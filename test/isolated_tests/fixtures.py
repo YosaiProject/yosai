@@ -3,7 +3,7 @@ from unittest import mock
 
 from yosai import (
     AccountStoreRealm,
-    EventBus,
+    DefaultEventBus,
     PasswordMatcher,
     UsernamePasswordToken,
 )
@@ -72,7 +72,7 @@ def mock_pubsub():
 
 @pytest.fixture(scope='function')
 def patched_event_bus(mock_pubsub, monkeypatch):
-    eb = EventBus()
+    eb = DefaultEventBus()
     monkeypatch.setattr(eb, '_event_bus', mock_pubsub)
     return eb
 

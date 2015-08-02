@@ -19,5 +19,5 @@ under the License.
 
 from .event import (
     Event,
-    EventBus,
+    DefaultEventBus,
 )

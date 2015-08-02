@@ -43,6 +43,28 @@ from yosai import (
     UnsupportedOperationException,
 )
 
+from yosai.subject import abcs as subject_abcs
+
+
+# moved from /mgt and reconciled:
+class DefaultSubjectFactory(subject_abcs.SubjectFactory):
+    
+    def __init__(self):
+        pass
+
+    def create_subject(self, subject_context):
+        security_manager = subject_context.resolve_security_manager()
+        session = subject_context.resolve_session()
+        session_creation_enabled = subject_context.session_creation_enabled
+        principals = subject_context.resolve_principals()
+        authenticated = subject_context.resolve_authenticated()
+        host = subject_context.resolve_host()
+
+        return DelegatingSubject(principals, authenticated, host, session,
+                                 session_creation_enabled, security_manager)
+
+
+
 
 class DefaultSubjectContext:
 
@@ -372,23 +394,6 @@ class DefaultSubjectDAO:
 
     def delete(self, subject):
         self.remove_from_session(subject)
-
-
-class DefaultSubjectFactory:
-    
-    def __init__(self):
-        pass
-
-    def create_subject(self, subject_context):
-        security_manager = subject_context.resolve_security_manager()
-        session = subject_context.resolve_session()
-        session_creation_enabled = subject_context.session_creation_enabled
-        principals = subject_context.resolve_principals()
-        authenticated = subject_context.resolve_authenticated()
-        host = subject_context.resolve_host()
-
-        return DelegatingSubject(principals, authenticated, host, session,
-                                 session_creation_enabled, security_manager)
 
 
 class DelegatingSubject:

@@ -63,7 +63,7 @@ class Event:
         self.__dict__.update(**eventattrs)  # DG:  risky?
 
 
-class EventBus(abcs.EventBus):
+class DefaultEventBus(abcs.EventBus):
     """
     Yosai's EventBus is a proxy to pypubsub.  Its API is unique to Yosai,
     having little in common with the EventBus implementation in Shiro.

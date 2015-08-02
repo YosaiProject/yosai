@@ -219,7 +219,34 @@ class SessionListener(metaclass=ABCMeta):
         pass
 
 
+# moved from /mgt:
 class SessionStorageEvaluator(metaclass=ABCMeta):
+    """
+    Evaluates whether or not Shiro may use a Subject}'s Session to persist that
+    Subject's internal state.
+
+    It is a common Shiro implementation strategy to use a Subject's session to
+    persist the Subject's identity and authentication state (e.g. after login)
+    so that information does not need to be passed around for any further
+    requests/invocations.  This effectively allows a session id to be used for
+    any request or invocation as the only 'pointer' that Shiro needs, and from
+    that, Shiro can re-create the Subject instance based on the referenced
+    Session.
+
+    However, in purely stateless applications, such as some REST applications
+    or those where every request is authenticated, it is usually not needed or
+    desirable to use Sessions to store this state (since it is in fact 
+    re-created on every request).  In these applications, sessions would never
+    be used.
+
+    This interface allows implementations to determine exactly when a Session
+    might be used or not to store Subject state on a *per-Subject* basis.
+
+    If you simply wish to enable or disable session usage at a global level for
+    all Subject(s), the DefaultSessionStorageEvaluator should be sufficient.  
+    Per-subject behavior should be performed in custom implementations of this 
+    interface.
+    """
 
     @abstractmethod
     def is_session_storage_enabled(self, subject):

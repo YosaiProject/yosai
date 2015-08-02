@@ -10,9 +10,10 @@ from .doubles import (
 
 from yosai import (
     DefaultSessionSettings,
+    DefaultSessionStorageEvaluator,
     DefaultSessionKey,
     DelegatingSession,
-    EventBus,
+    DefaultEventBus,
     ExpiredSessionException,
     SessionEventException,
     StoppedSessionException,
@@ -821,4 +822,37 @@ def test_dsc_basic_test(default_session_context):
 
     assert (dsc.host == 'myhost' and dsc.session_id == 'mysessionid')
 
+
+# ----------------------------------------------------------------------------
+# DefaultSessionStorageEvaluator
+# ----------------------------------------------------------------------------
+
+def test_dsse_isse_wo_subject(default_session_storage_evaluator):
+    """
+    unit tested:  is_session_storage_enabled
+
+    test case:
+    basic code path exercise where no param is passed to the method and so 
+    method defaults
+    """
+    dsse = default_session_storage_evaluator
+    result = dsse.is_session_storage_enabled()
+    assert result is True
+
+def test_dsse_isse_w_subject(default_session_storage_evaluator, monkeypatch):
+    """
+    unit tested:  is_session_storage_enabled
+
+    test case:
+    basic code path exercise where subject param is passed to the method and
+    so boolean logic is applied
+    """
+    class MockSubject:
+        def get_session(self, booly):
+            return None 
+
+    dsse = default_session_storage_evaluator
+    monkeypatch.setattr(dsse, '_session_storage_enabled', False)
+    result = dsse.is_session_storage_enabled(subject=MockSubject())
+    assert result is False 
 

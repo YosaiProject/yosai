@@ -364,19 +364,75 @@ class Subject(metaclass=ABCMeta):
         def build_subject(self):
             return self._security_manager.create_subject(self.subject_context)
 
-
+# moved from /mgt:
 class SubjectDAO(metaclass=ABCMeta):
+    """
+    A SubjectDAO is responsible for persisting a Subject instance's internal
+    state such that the Subject instance can be recreated at a later time if
+    necessary.
 
+    Shiro's default SecurityManager implementations typically use a SubjectDAO
+    in conjunction with a SubjectFactory after the SubjectFactory creates a
+    Subject instance, the SubjectDAO is used to persist that subject's state
+    such that it can be accessed later if necessary.
+
+    Usage
+    --------
+    Note that this component is used by SecurityManager implementations to
+    manage Subject state persistence.  It does *not* make Subject instances
+    accessible to the application (e.g. via SecurityUtils.getSubject()).
+    """
     @abstractmethod
     def save(self, subject):
+        """
+        Persists the specified Subject's state for later access.  If there is 
+        a no existing state persisted, this persists it if possible (i.e. a
+        create operation).  If there is existing state for the specified 
+        Subject, this method updates the existing state to reflect the 
+        current state (i.e. an update operation).
+       
+        :param subject: the Subject instance for which its state will be
+                        created or updated
+        :returns: the Subject instance to use after persistence is complete
+                  - this can be the same as the method argument if the 
+                    underlying implementation does not need to make any Subject 
+                    changes
+        """
         pass
 
     @abstractmethod
     def delete(self, subject):
+        """
+        Removes any persisted state for the specified Subject instance.
+        This is a delete operation such that the Subject's state will not be
+        accessible at a later time.
+
+        :param subject: the Subject instance for which any persistent state
+                        should be deleted 
+        """
         pass
 
 
+# moved from /mgt:
 class SubjectFactory(metaclass=ABCMeta):
+    """
+    A SubjectFactory is responsible for constructing Subject instances as 
+    needed
+    """
 
     def create_subject(self, context):
+        """
+        Creates a new Subject instance reflecting the state of the specified 
+        contextual data.  The data would be anything required to required to 
+        construct a Subject instance and its contents can vary based on
+        environment.
+
+        Any data supported by Shiro core will be accessible by one of the 
+        SubjectContext(s) accessor properties or methods.  All other data is 
+        available as map attributes.
+
+        :param context: the contextual data to be used by the implementation 
+                        to construct an appropriate Subject instance
+        :returns: a Subject instance created based on the specified context
+        """
         pass

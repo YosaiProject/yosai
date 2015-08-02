@@ -3,7 +3,7 @@ import datetime
 
 from yosai import (
     Event,
-    EventBus,
+    DefaultEventBus,
     EventBusMessageDataException,
     EventBusTopicException,
     EventBusSubscriptionException,

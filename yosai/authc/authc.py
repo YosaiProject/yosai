@@ -21,7 +21,7 @@ from yosai import (
     AccountException,
     AuthenticationException,
     Event,
-    EventBus,
+    DefaultEventBus,
     InvalidTokenPasswordException,
     LogManager,
     MissingPrivateSaltException,

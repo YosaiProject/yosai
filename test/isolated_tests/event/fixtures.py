@@ -3,7 +3,7 @@ from unittest import mock
 
 from yosai import (
     Event,
-    EventBus,
+    DefaultEventBus,
 )
 
 from ..doubles import (

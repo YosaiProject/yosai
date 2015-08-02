@@ -32,10 +32,9 @@ Requiring Concrete Implementations:
 
 Porting annotations to python decorators
 
-/session
-----------
-session_dao.py:  reconcile/refactor memory and caching classes, and unit test
-
 Serializables:  any serializable class in shiro should have its respective
                 serializable counterpart in Yosai, common sense permitting
+
+refactoring shiro thread-based concurrency to an appropriate concurrency 
+solution in python  (greenlets?  asyncio coroutines?)
 
