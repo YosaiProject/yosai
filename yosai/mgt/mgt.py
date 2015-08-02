@@ -87,17 +87,17 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                              cache_abcs.CacheManagerAware):
 
     def __init__(self):
-        self._realms = defaultdict(list) 
-        self._event_bus = DefaultEventBus()
-        self.set_cache_manager(DisabledCacheManager())
+        self.realms = defaultdict(list) 
+        self.event_bus = DefaultEventBus()
+        self.cache_manager = DisabledCacheManager()  # cannot be set to None
         
         # new to Yosai is the injection of the eventbus:
-        self.set_authenticator(DefaultAuthenticator(self._event_bus))
-
-        self.set_authorizer(ModularRealmAuthorizer()) 
-        self._session_manager = SessionManager()
-        self._subject_DAO = SubjectDAO()
-        self._subject_factory = SubjectFactory()
+        self.authenticator = DefaultAuthenticator(self._event_bus)
+        self.authorizer = ModularRealmAuthorizer()
+        self.session_manager = None 
+        self.remember_me_manager = None
+        self.subject_DAO = None 
+        self.subject_factory = None 
 
     """
     * ===================================================================== *
@@ -110,21 +110,18 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
     @authenticator.setter
     def authenticator(self, authenticator):
-        try:
-            if (authenticator):
-                self._authenticator = authenticator
+        if authenticator:
+            self._authenticator = authenticator
 
-                if (isinstance(self.authenticator, DefaultAuthenticator)):
-                    self.authenticator.realms = self.realms  # was set_realms
-                
-                self.apply_event_bus(self.authenticator)
-                self.apply_cache_manager(self.authenticator)
+            if (isinstance(self.authenticator, DefaultAuthenticator)):
+                self.authenticator.realms = self.realms  # was set_realms
             
-            else:
-                raise IncorrectAttributeException
-
-        except IncorrectAttributeException:
-            print(myself() + ': Incorrect authenticator parameter. ')
+            self.apply_event_bus(self.authenticator)
+            self.apply_cache_manager(self.authenticator)
+        
+        else:
+            msg = "authenticator parameter must have a value" 
+            raise IncorrectAttributeException(msg)
 
     @property
     def authorizer(self):
@@ -132,122 +129,80 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
     @authorizer.setter
     def authorizer(self, authorizer):
-        try:
-            if (authorizer):
-                self._authorizer = authorizer
-                self.apply_event_bus(self.authorizer)
-                self.apply_cache_manager(self.authorizer)
-            else: 
-                raise IncorrectAttributeException
+        if authorizer:
+            self._authorizer = authorizer
+            self.apply_event_bus(self.authorizer)
+            self.apply_cache_manager(self.authorizer)
+        else: 
+            msg = "authorizer parameter must have a value" 
+            raise IncorrectAttributeException(msg)
         
-        except IncorrectAttributeException as ex:
-            print(myself() + ': Incorrect parameter. Authorizer cannot be '
-                  'None', ex)
-
     @property
     def cache_manager(self):
         return self._cache_manager
 
     @cache_manager.setter
     def cache_manager(self, cachemanager):
-        try:
-            if (cachemanager):
-                self._cache_manager = cachemanager
-                self.apply_cache_manager(
-                    self.get_dependencies_for_injection(self.cache_manager))
+        if (cachemanager):
+            self._cache_manager = cachemanager
+            self.apply_cache_manager(
+                self.get_dependencies_for_injection(self.cache_manager))
 
-            else: 
-                raise IncorrectAttributeException
+        else: 
+            msg = ('Incorrect parameter.  If you want to disable caching, '
+                   'configure a disabled cachemanager instance')
+            raise IncorrectAttributeException(msg)
         
-        except IncorrectAttributeException as ex:
-            print(myself() + ': Incorrect parameter.  If you want to disable'
-                  ' caching, configure a disabled cachemanager instance', ex)
-
-    # property required by EventBusAware interface:
+    #  property required by EventBusAware interface:
     @property
     def event_bus(self):
         return self._event_bus
 
     @event_bus.setter
     def event_bus(self, eventbus):
+        if eventbus:
+            self._event_bus = eventbus
+            self.apply_event_bus(
+                self.get_dependencies_for_injection(self._event_bus))
+        else:
+            msg = 'eventbus parameter must have a value'
+            raise IncorrectAttributeException(msg)
+
+    def set_realms(self, realm_s):
+        """
+        :realm_s: an immutable collection of one or more realms
+        :type realm_s: tuple
+        """
         try:
-            if (eventbus):
-                self._event_bus = eventbus
-                self.apply_event_bus(
-                    self.get_dependencies_for_injection(self._event_bus))
-            else:
-                raise IncorrectAttributeException
+            for realm in realm_s:  
+                self.apply_event_bus(realm)
+                self.apply_cache_manager(realm)
 
-        except IncorrectAttributeException:
-            print(myself() + ': Incorrect parameter. ')
+            authc = self.authenticator
+            if (isinstance(authc, DefaultAuthenticator)):
+                authc.realms = realm_s 
 
-    @property
-    def realms(self):
-        return self._realms
-
-    @realms.setter
-    def realms(self, realms):
-        try:
-            if (realms):
-                immutable_realms_collection = tuple(realms)
-
-                self.realms = immutable_realms_collection
-                self.apply_event_bus(self.realms)
-                self.apply_cache_manager(self.realms)
-                authc = self.authenticator
-                if (isinstance(authc, DefaultAuthenticator)):
-                    authc.set_realms(immutable_realms_collection)
-   
-                authz = self.authorizer
-                if (isinstance(authz, ModularRealmAuthorizer)):
-                    authz.set_realms(immutable_realms_collection)
-                
-            else: 
-                raise IncorrectAttributeException
+            authz = self.authorizer
+            if (isinstance(authz, ModularRealmAuthorizer)):
+                authz.realms = realm_s 
+        except TypeError:
+            msg = 'Cannot pass None as a parameter value for realms'
+            raise IllegalArgumentException(msg)
         
-        except IncorrectAttributeException as ex:
-            print(myself() + ': Incorrect realms parameter. ', ex)
-
-    @property
-    def session_manager(self):
-        return self._session_manager
-
-    @session_manager.setter
-    def session_manager(self, sessionmanager):
-        self._session_manager = sessionmanager
-   
-    @property
-    def subject_factory(self): 
-        return self._subject_factory
-
-    @subject_factory.setter
-    def subject_factory(self, subjectfactory): 
-        self._subject_factory = subjectfactory
-
-    @property
-    def subject_DAO(self):
-        return self._subject_DAO
-
-    @subject_DAO.setter
-    def subject_DAO(self, subjectdao):
-        self.subject_DAO = subjectdao
-
     def apply_cache_manager(self, target):
-        if (isinstance(target, set)):
-            my_collection = target 
-            for element in my_collection:
-                self.apply_cache_manager(element)
-        
-        elif (target.cache_manager):  # DG:  then cache manager aware!
+        """
+        :param target:  an individual object instance
+        """
+        # yosai refactored, deferring iteration to the methods that call it
+        if isinstance(target, cache_abcs.CacheManagerAware):
             target.cache_manager = self.cache_manager
 
     def apply_event_bus(self, target):
-        if (isinstance(target, set)):
-            my_collection = target
-            for item in my_collection: 
-                self.apply_event_bus(item)
-        
-        elif (target.event_bus):
+        """
+        :param target:  an individual object instance
+        """
+        # yosai refactored, deferring iteration to the methods that call it
+        if isinstance(target, event_abcs.EventBusAware):
             target.event_bus = self.event_bus
 
     def get_dependencies_for_injection(self, ignore):
@@ -255,8 +210,13 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                 self.authenticator, self.authorizer,
                 self.session_manager, self.subject_DAO,
                 self.subject_factory}
-        if (ignore is not None):
+        try:
             deps.remove(ignore)
+        except KeyError:
+            msg = ("Could not remove " + str(ignore) + 
+                   " from dependencies_for_injection: ")
+            print(msg)
+            # log warning here
         
         return deps
     
@@ -265,118 +225,150 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     * Authenticator Methods                                                 *
     * ===================================================================== *
     """
-    def authenticate(self, authc_token):
-        return self.authenticator.authenticate(authc_token)
-
+    
     def authenticate_account(self, authc_token):
         return self.authenticator.authenticate_account(authc_token)
 
     """
     * ===================================================================== *
     * Authorizer Methods                                                    *
+    *
+    * Note: Yosai refactored authz functionality in order to eliminate 
+    *       method overloading
     * ===================================================================== *
     """
-
-    def is_permitted(self, principals, permissions):
+    def is_permitted(self, principals, permission_s):
         """
-        Input:
-            principals = a List
-            permissions = a Set of Permission Tuples
+        :param principals: a collection of principals
+        :type principals: Set
 
-        Output:
-            a List of Booleans corresponding to the permission elements
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
+
+        :returns: a List of tuple(s), containing the Permission and a Boolean 
+                  indicating whether the permission is granted
         """
-        return self.authorizer.is_permitted(principals, permissions)
+        return self.authorizer.is_permitted(principals, permission_s)
+    
+    def is_permitted_all(self, principals, permission_s):
+        """
+        :param principals: a Set of Principal objects
+        :param permission_s:  a List of Permission objects
 
-    def check_permission(self, principals, permissions):
-        return self.authorizer.check_permission(principals, permissions)
+        :returns: a Boolean
+        """
+        return self.authorizer.is_permitted_all(principals, permission_s)
 
-    # DG:  I removed the role-related functionality.  It can be added in
-    #      later versions.
+    def check_permission(self, principals, permission_s):
+        """
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission objects or Strings
+
+        :returns: a List of Booleans corresponding to the permission elements
+        """
+        return self.authorizer.check_permission(principals, permission_s)
+   
+    def has_role(self, principals, roleid_s):
+        """
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param roleid_s: 1..N role identifiers
+        :type roleid_s:  a String or List of Strings 
+
+        :returns: a tuple containing the roleid and a boolean indicating 
+                  whether the role is assigned (this is different than Shiro)
+        """
+        return self.authorizer.has_role(principals, roleid_s)
+
+    def has_all_roles(self, principals, roleid_s):
+        """
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param roleid_s: 1..N role identifiers
+        :type roleid_s:  a String or List of Strings 
+
+        :returns: a Boolean
+        """
+        return self.authorizer.has_all_roles(principals, roleid_s)
+
+    def check_role(self, principals, roleid_s):
+        """
+        :param principals: a collection of principals
+        :type principals: Set
+
+        :param roleid_s: 1..N role identifiers
+        :type roleid_s:  a String or List of Strings 
+
+        :raises UnauthorizedException: if Subject not assigned to all roles
+        """
+        return self.authorizer.check_role(principals, roleid_s)
 
     """
     * ===================================================================== *
-    * session_manager Methods                                                *
+    * SessionManager Methods                                                *
     * ===================================================================== *
     """
-    def start(self, session_context):  # DG: should rename to start_session
-        try:
-            return self.session_manager.start(session_context)
-        except:
-            raise
+    def start(self, session_context):
+        return self.session_manager.start(session_context)
 
     def get_session(self, session_key):
-        try:
-            return self.session_manager.get_session(session_key)
-        except:
-            raise
+        return self.session_manager.get_session(session_key)
     
     """
     * ===================================================================== *
-    * security_manager Methods                                               *
+    * SecurityManager Methods                                               *
     * ===================================================================== *
     """
 
     def create_subject_context(self):
         return DefaultSubjectContext()
 
-    def create_subject(self, **kwargs): 
-        acceptable_args = ['authc_token', 'authc_info', 'existing_subject', 
-                           'subject_context']
-        try:
-            for key in kwargs.keys():
-                if key not in acceptable_args:
-                    raise UnrecognizedAttributeException(key)
-        except UnrecognizedAttributeException as ex: 
-            print('create_subject received unrecognized attribute:', ex)
-            return
+    def create_subject(self, 
+                       authc_token=None, 
+                       account=None, 
+                       existing_subject=None,
+                       subject_context=None): 
 
-        existing_subject = kwargs.get('existing_subject', None)
-        subject_context = kwargs.get('subject_context', None)
-
-        if (subject_context):
-
-            context = copy.deepcopy(subject_context)
-
-            # ensure that the context has a security_manager instance, and if
-            # not, add one: 
-            context = self.ensure_security_manager(context)
-
-            """
-            Resolve an associated Session (usually based on a referenced
-            session ID), and place it in the context before sending to the
-            subject_factory.  The subject_factory should not need to know how
-            to acquire sessions as the process is often environment specific -
-            better to shield the SF from these details: """
-            context = self.resolve_session(context)
-
-            """
-            Similarly, the subject_factory should not require any concept of
-            remember_me - translate that here first if possible before handing
-            off to the subject_factory:
-            """
-            context = self.resolve_principals(context)
-            subject = self.do_create_subject(context)
-
-            """
-            save self subject for future reference if necessary:
-            (self is needed here in case remember_me principals were resolved
-            and they need to be stored in the session, so we don't constantly
-            rehydrate the remember_me principal_collection on every operation).
-            """
-            self.save(subject)
-            return subject
-        
-        else:
-
+        if not subject_context: 
             context = self.create_subject_context()
             context.authenticated = True
-            context.authentication_token = kwargs.get('authc_token', None)
-            context.authentication_info = kwargs.get('authc_info', None)
+            context.authentication_token = authc_token
+            context.account = account
             if (existing_subject):
                 context.subject = existing_subject 
-            return self.create_subject(context)
-    
+
+        else:
+            context = copy.copy(subject_context)
+
+        # ensure that the context has a security_manager instance, and if
+        # not, add one: 
+        context = self.ensure_security_manager(context)
+
+        # Resolve an associated Session (usually based on a referenced
+        # session ID), and place it in the context before sending to the
+        # subject_factory.  The subject_factory should not need to know how
+        # to acquire sessions as the process is often environment specific -
+        # better to shield the SF from these details: 
+        context = self.resolve_session(context)
+
+        # Similarly, the subject_factory should not require any concept of
+        # remember_me -- translate that here first if possible before handing
+        # off to the subject_factory:
+        context = self.resolve_principals(context)
+        subject = self.do_create_subject(context)
+
+        # save this subject for future reference if necessary:
+        # (this is needed here in case remember_me principals were resolved
+        # and they need to be stored in the session, so we don't constantly
+        # re-hydrate the remember_me principal_collection on every operation).
+        self.save(subject)
+        return subject
+        
     def login(self, subject, authc_token): 
         """ DG: I removed any trace of remember_me functionality """
         try:
@@ -388,7 +380,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         return logged_in
 
     def do_create_subject(self, subject_context):
-        return self.get_subject_factory().create_subject(subject_context)
+        return self.subject_factory.create_subject(subject_context)
 
     def save(self, subject):
         self.subject_DAO.save(subject)
@@ -398,52 +390,47 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
     def ensure_security_manager(self, subject_context):
         if (subject_context.resolve_security_manager() is not None):
-            # log here
             msg = ("Subject Context already contains a security_manager "
                    "instance. Returning.")
             print(msg)
+            # log trace here
             return subject_context
-        else:
-            # log here
-            msg = ("No security_manager found in context.  Adding self "
-                   "reference.")
-            print(msg)
-            subject_context.security_manager = self
-            return subject_context
+
+        msg = ("No security_manager found in context.  Adding self "
+               "reference.")
+        print(msg)
+        # log trace here
+        subject_context.security_manager = self
+        return subject_context
 
     def resolve_session(self, subject_context):
         if (subject_context.resolve_session() is not None): 
-            # log here
             msg = ("Context already contains a session.  Returning.")
             print(msg)
+            # log debug here
             return subject_context
         
         try:
-            """
-            Context couldn't resolve it directly, let's see if we can since we
-            have direct access to the session manager:
-            """
-            session = self.resolve_subject_context_session(subject_context)
+            # Context couldn't resolve it directly, let's see if we can 
+            # since we  have direct access to the session manager:
+            session = self.resolve_context_session(subject_context)
             if (session is not None): 
                 subject_context.session = session
             
         except InvalidSessionException as ex:
-            # log here
             msg = ("Resolved subject_subject_context context session is "
                    "invalid.  Ignoring and creating an anonymous "
-                   "(session-less) Subject instance.", ex)
+                   "(session-less) Subject instance.")
             print(msg)
+            # log debug here, including exc_info=ex
         
         return subject_context
     
     def resolve_context_session(self, subject_context):
-        try:
-            session_key = self.get_session_key(subject_context)
-          
-            if (session_key is not None):
-                return self.get_session(session_key)
-        except:
-            raise
+        session_key = self.get_session_key(subject_context)
+      
+        if (session_key is not None):
+            return self.get_session(session_key)
 
         return None
 
@@ -453,20 +440,31 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             return DefaultSessionKey(session_id)
         return None
 
-    def is_empty(self, principal_collection):
-        return bool(principal_collection)
+    # yosai omits is_empty method
 
     def resolve_principals(self, subject_context):
-
         principals = subject_context.resolve_principals()
-
         if (not principals):
-            # log here
             msg = ("No identity (principal_collection) found in the "
-                   "subject_context. Returning original subject_context.")
+                   "subject_context.  Looking for a remembered identity.")
             print(msg)
+            # log trace here
 
-            # DG:  removed remembered identity functionality
+            principals = self.get_remembered_identity(context)
+            
+            if principals:
+                msg = ("Found remembered PrincipalCollection.  Adding to the "
+                       "context to be used for subject construction by the "
+                       "SubjectFactory.")
+                print(msg)
+                # log debug here
+                context.principals = principals
+
+            else:
+                msg = ("No remembered identity found.  Returning original "
+                       "context.")
+                print(msg)
+                # log trace here
 
         return subject_context
 
@@ -483,13 +481,9 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         return session_context
 
     def logout(self, subject):
-        try:
-            if (subject is None):
-                msg = "Subject method argument cannot be None."
-                raise IllegalArgumentException(msg)
-        except IllegalArgumentException as ex:
-            print('logout exception: ', ex)
-            return
+        if (subject is None):
+            msg = "Subject method argument cannot be None."
+            raise IllegalArgumentException(msg)
 
         principals = subject.principals
         if (principals):
