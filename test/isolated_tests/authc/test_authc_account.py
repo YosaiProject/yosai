@@ -2,9 +2,6 @@ import pytest
 
 from yosai import (
     RealmAttributesException,
-)
-
-from yosai.authc import (
     DefaultCompositeAccountId,
     DefaultCompositeAccount,
 )

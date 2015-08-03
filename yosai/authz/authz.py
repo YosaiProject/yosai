@@ -26,9 +26,9 @@ from yosai import (
     OrderedSet,
     UnauthenticatedException,
     UnauthorizedException,
+    authz_abcs,
 )
 
-from yosai.authz import abcs
 import copy
 import collections
 
@@ -292,9 +292,9 @@ class DomainPermission(WildcardPermission):
             return domain
         return self._domain  # shouldn't be returned unless using the wrong clazz
 
-class ModularRealmAuthorizer(abcs.Authorizer,
-                             abcs.PermissionResolverAware,
-                             abcs.RolePermissionResolverAware):
+class ModularRealmAuthorizer(authz_abcs.Authorizer,
+                             authz_abcs.PermissionResolverAware,
+                             authz_abcs.RolePermissionResolverAware):
                              
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults 
@@ -330,7 +330,7 @@ class ModularRealmAuthorizer(abcs.Authorizer,
         new to Yosai: a generator expression filters out non-authz realms 
         """
         return (realm for realm in self._realms 
-                if isinstance(realm, abcs.Authorizer))
+                if isinstance(realm, authz_abcs.Authorizer))
 
     @property
     def permission_resolver(self):
@@ -357,7 +357,7 @@ class ModularRealmAuthorizer(abcs.Authorizer,
         if (resolver and realms):
             for realm in realms: 
                 # interface contract validation: 
-                if isinstance(realm, abcs.PermissionResolverAware):
+                if isinstance(realm, authz_abcs.PermissionResolverAware):
                     realm.permission_resolver = resolver
             self._realms = realms 
 
@@ -381,7 +381,7 @@ class ModularRealmAuthorizer(abcs.Authorizer,
         realms = copy.copy(self._realms)
         if (role_perm_resolver and realms): 
             for realm in realms: 
-                if isinstance(realm, abcs.RolePermissionResolverAware):
+                if isinstance(realm, authz_abcs.RolePermissionResolverAware):
                     realm.role_permission_resolver = role_perm_resolver
             self._realms = realms 
 
@@ -549,7 +549,7 @@ class ModularRealmAuthorizer(abcs.Authorizer,
 
 class SimpleAuthorizationInfo:
     """ 
-    Simple implementation of the abcs.AuthorizationInfo interface that stores 
+    Simple implementation of the authz_abcs.AuthorizationInfo interface that stores 
     roles and permissions as internal attributes.
     """
 

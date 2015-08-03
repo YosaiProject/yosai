@@ -18,11 +18,11 @@ under the License.
 """
 
 from yosai import (
+    serialize_abcs,
     InvalidSerializationFormatException,
     SerializationException,
 )
 
-from yosai.serialize import abcs
 import msgpack
 import datetime
 
@@ -73,7 +73,7 @@ class SerializationManager:
             raise SerializationException('Only de-serialize Serializable objects')
 
 
-class MSGPackSerializer(abcs.Serializer):
+class MSGPackSerializer(serialize_abcs.Serializer):
     
     @classmethod
     def serialize(self, obj):

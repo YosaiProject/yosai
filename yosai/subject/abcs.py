@@ -23,9 +23,8 @@ from yosai import (
     InvalidArgumentException, 
     IllegalArgumentException,
     IllegalStateException,
+    SecurityUtils,
 )
-
-from .subject import DefaultSubjectContext
 
 
 class PrincipalCollection(metaclass=ABCMeta):
@@ -301,6 +300,9 @@ class Subject(metaclass=ABCMeta):
     def release_run_as(self):
         pass
 
+    # unlike Shiro, Yosai doesn't need to implement the Builder pattern
+    # because it can use keyword args
+    """
     class Builder(object):
 
         def __init__(self,
@@ -363,6 +365,7 @@ class Subject(metaclass=ABCMeta):
 
         def build_subject(self):
             return self._security_manager.create_subject(self.subject_context)
+    """
 
 # moved from /mgt:
 class SubjectDAO(metaclass=ABCMeta):

@@ -1,11 +1,11 @@
 from yosai import (
     CacheKeyRemovalException,
+    account_abcs,
+    authc_abcs,
+    cache_abcs,
+    realm_abcs,
 )
 
-from yosai.account import abcs as acct_abcs
-from yosai.authc import abcs as authc_abcs
-from yosai.cache import abcs as cache_abcs
-from yosai.realm import abcs as realm_abcs
 from marshmallow import fields, Schema
 
 class MockCache(cache_abcs.Cache):
@@ -62,7 +62,7 @@ class MockAccountCacheHandler(realm_abcs.AccountCacheHandler):
         return self.account  # always returns the initialized account 
 
 
-class MockAccount(acct_abcs.Account):
+class MockAccount(account_abcs.Account):
 
     def __init__(self, account_id, credentials={}, attributes={}):
         self._account_id = account_id
@@ -127,7 +127,7 @@ class MockAccount(acct_abcs.Account):
             return dict(data)
 
 
-class MockAccountStore(acct_abcs.AccountStore):
+class MockAccountStore(account_abcs.AccountStore):
     
     def __init__(self, account=MockAccount(account_id='MAS123')):
         self.account = account

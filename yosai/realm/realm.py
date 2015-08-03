@@ -28,11 +28,11 @@ from yosai import (
     PasswordMatcher,
     RealmMisconfiguredException,
     UsernamePasswordToken,
+    realm_abcs,
 )
 
-from yosai.realm import abcs
 
-class AccountStoreRealm(abcs.Realm):
+class AccountStoreRealm(realm_abcs.Realm):
     """ as of Shiro rev1681068 , authorization implementation is TBD """
     
     def __init__(self):
@@ -147,7 +147,7 @@ class AccountStoreRealm(abcs.Realm):
 
 # omitted AbstractCacheHandler implementation / references
 
-class DefaultAccountCacheHandler(abcs.AccountCacheHandler):
+class DefaultAccountCacheHandler(realm_abcs.AccountCacheHandler):
 
     def __init__(self, cache_resolver, cache_key_resolver):
         # this init is new to Yosai in that it requires 2 positional arguments

@@ -6,9 +6,6 @@ from yosai import (
     InvalidTokenPasswordException,
     MultiRealmAuthenticationException,
     UnsupportedTokenException,
-)
-
-from yosai.authc import (
     DefaultAuthenticator,
     DefaultCompositeAccount,
     UsernamePasswordToken,

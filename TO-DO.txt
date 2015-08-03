@@ -20,9 +20,7 @@ under the License.
 Interfaces have been defined in the Shiro 2.0 alpha yet have no
 corresponding concrete class implementation using them.  I presume this is 
 due to their discretionary nature and that their implementation is subject
-to change among the datastores used.
-
-Requiring Concrete Implementations:
+to change among the datastores used.  Requiring Concrete Implementations:
    - Account
    - AccountStore
    - AuthorizingAccountStoreRealm
@@ -40,4 +38,7 @@ solution in python  (greenlets?  asyncio coroutines?)
 
 add eventbus functionality to the ModularRealmAuthorizor, and inject the 
 eventbus from the DefaultSecurityManager into the MRA
+
+implementing the /crypto API, using the cryptography library as its backend
+ - needed for RememberMe
 

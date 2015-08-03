@@ -1,9 +1,11 @@
 import uuid
 from hashlib import sha256, sha512
-from yosai.session import abcs
+from yosai import (
+    session_abcs,
+)
 from os import urandom
 
-class UUIDSessionIDGenerator(abcs.SessionIDGenerator):
+class UUIDSessionIDGenerator(session_abcs.SessionIDGenerator):
 
     @classmethod
     def generate_id(self, session):
@@ -11,7 +13,7 @@ class UUIDSessionIDGenerator(abcs.SessionIDGenerator):
         return str(uuid.uuid4())
 
 
-class RandomSessionIDGenerator(abcs.SessionIDGenerator):
+class RandomSessionIDGenerator(session_abcs.SessionIDGenerator):
 
     # saving self.random is unecessary, so omitting
 

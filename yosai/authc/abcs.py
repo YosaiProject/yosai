@@ -17,7 +17,9 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from yosai.account import abcs as account_abcs
+from yosai import (
+    account_abcs,
+)
 
 from abc import ABCMeta, abstractmethod
 
@@ -70,7 +72,43 @@ class AuthenticationListener(metaclass=ABCMeta):
 
 
 class AuthenticationToken(metaclass=ABCMeta):
-   
+    """
+    An AuthenticationToken is a consolidation of an account's principals and
+    supporting credentials submitted by a user during an authentication
+    attempt.
+
+    The token is submitted to an Authenticator via the 
+    authenticate_account(token) method.  The Authenticator then executes the 
+    authentication/log-in process.
+
+    Common implementations of an AuthenticationToken would have
+    username/password pairs, X.509 Certificate, PGP key, or anything else you
+    can think of.  The token can be anything needed by an Authenticator to
+    authenticate properly.
+
+    Because applications represent user data and credentials in different ways,
+    implementations of this interface are application-specific.  You are free
+    to acquire a user's principals and credentials however you wish (e.g. web
+    form, Swing form, fingerprint identification, etc) and then submit them to
+    the Yosai framework in the form of an implementation of this interface.
+
+    >If your application's authentication process is  username/password based
+    (like most), instead of implementing this interface yourself, take a look
+    at the UsernamePasswordToken class, as it is probably sufficient for your
+    needs.
+
+    RememberMe services are enabled for a token if they implement a
+    sub-interface of this one, called RememberMeAuthenticationToken.  Implement
+    that interface if you need RememberMe services (the UsernamePasswordToken
+    already implements this interface).
+
+    If you are familiar with JAAS, an AuthenticationToken replaces the concept
+    of a Callback, and  defines meaningful behavior (Callback is just a marker
+    interface, and of little use).  We also think the name AuthenticationToken
+    more accurately reflects its true purpose in a login framework, whereas
+    Callback is less obvious.
+    """
+
     @property
     @abstractmethod
     def principal(self):
@@ -85,7 +123,7 @@ class AuthenticationToken(metaclass=ABCMeta):
     def credentials(self):
         """
         Returns the credentials submitted by the user during the authentication
-        process that verifies the submitted principal account identity.
+        process that verifies the submitted Principal account identity.
         """
         pass
 
@@ -192,7 +230,17 @@ class AuthenticationAttempt(metaclass=ABCMeta):
 
 
 class AuthenticationStrategy(metaclass=ABCMeta):
+    """
+    A AuthenticationStrategy implementation attempts to authenticate an account
+    by consulting one or more Realms. This interface enables the
+    <a href="http://en.wikipedia.org/wiki/Strategy_pattern">Strategy Design Pattern</a> 
+    for authentication, allowing a Yosai user to customize an Authenticator's
+    authentication processing logic.
 
+    Most Yosai users will find one of the existing Strategy implementations 
+    suitable for most needs, but if those are not sufficient, custom logic can
+    be performed by implementing this interface.  
+    """
     @abstractmethod
     def execute(self, attempt):
         pass

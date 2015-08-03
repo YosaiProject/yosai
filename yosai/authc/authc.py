@@ -32,24 +32,17 @@ from yosai import (
     UnknownAccountException,
     UnsupportedTokenException,
     YosaiException,
-)
-
-from yosai.event import abcs as event_abcs
-from yosai.authc import abcs
-
-from . import (
+    event_abcs,
+    authc_abcs,
     AuthenticationSettings,
     CryptContextFactory,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
+    authc_settings,
 )
 
-# module-level settings, defined at initialization:
-authc_settings = AuthenticationSettings()
-
-
-class UsernamePasswordToken(abcs.HostAuthenticationToken,
-                            abcs.RememberMeAuthenticationToken):
+class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
+                            authc_abcs.RememberMeAuthenticationToken):
 
     def __init__(self, username=None, password=None, remember_me=False,
                  host=None):
@@ -151,7 +144,7 @@ class UsernamePasswordToken(abcs.HostAuthenticationToken,
 # Yosai deprecates SuccessfulAuthenticationEvent
 
 
-class DefaultAuthenticator(abcs.Authenticator, event_abcs.EventBusAware):
+class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
     def __init__(self, event_bus, strategy=FirstRealmSuccessfulStrategy()):

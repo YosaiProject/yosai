@@ -21,13 +21,13 @@ from collections import defaultdict
 
 from yosai import (
     RealmAttributesException,
+    authc_abcs,
 )
 
-from yosai.authc import abcs
 from marshmallow import Schema, fields
 
 
-class DefaultCompositeAccountId(abcs.CompositeAccountId):
+class DefaultCompositeAccountId(authc_abcs.CompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..
 
     def __init__(self):
@@ -53,7 +53,7 @@ class DefaultCompositeAccountId(abcs.CompositeAccountId):
                          in self.realm_accountids.items()])
 
 
-class DefaultCompositeAccount(abcs.CompositeAccount):
+class DefaultCompositeAccount(authc_abcs.CompositeAccount):
 
     def __init__(self, overwrite=True):
         self._account_id = DefaultCompositeAccountId()  # DG renamed 

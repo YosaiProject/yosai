@@ -1,5 +1,7 @@
 
-from yosai.realm import abcs as realm_abcs
+from yosai import (
+    realm_abcs,
+)
 
 from ..doubles import (
     MockAccount,

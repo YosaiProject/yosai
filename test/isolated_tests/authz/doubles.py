@@ -1,4 +1,6 @@
-from yosai.authz import abcs as authz_abcs
+from yosai import (
+    authz_abcs,
+)
 
 class MockAuthzAccountStoreRealm(authz_abcs.Authorizer,
                                  authz_abcs.PermissionResolverAware,

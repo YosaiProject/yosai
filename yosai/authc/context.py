@@ -114,3 +114,6 @@ class CryptContextFactory():
         return ("<CryptContextFactory(authc_settings={0})>".
                 format(self.authc_settings))
 
+
+# module-level settings, defined at initialization:
+authc_settings = AuthenticationSettings()

@@ -5,9 +5,6 @@ from yosai import (
     MissingCredentialsException,
     PasswordMatcherInvalidAccountException,
     PasswordMatcherInvalidTokenException,
-)
-
-from yosai.authc.credential import (
     AllowAllCredentialsMatcher,
     PasswordMatcher,
     SimpleCredentialsMatcher,

@@ -19,8 +19,10 @@ under the License.
 
 from abc import ABCMeta, abstractmethod
 
-from yosai.account import abcs as account_abcs
-from yosai.authc import abcs as authc_abcs
+from yosai import (
+    account_abcs,
+    authc_abcs,
+)
 
 class AccountCacheHandler(metaclass=ABCMeta):
 

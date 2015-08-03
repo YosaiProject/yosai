@@ -3,7 +3,9 @@ from unittest import mock
 
 from yosai import (
     AccountStoreRealm,
+    DefaultAuthenticator,
     DefaultEventBus,
+    FirstRealmSuccessfulStrategy,
     PasswordMatcher,
     UsernamePasswordToken,
 )
@@ -81,3 +83,14 @@ def patched_event_bus(mock_pubsub, monkeypatch):
 def mock_cache(full_mock_account):
     return MockCache({'sessionid123': 'session_123',
                       'user123': full_mock_account})
+
+
+@pytest.fixture(scope="function")
+def first_realm_successful_strategy():
+    return FirstRealmSuccessfulStrategy()
+
+
+@pytest.fixture(scope='function')
+def default_authenticator(first_realm_successful_strategy, patched_event_bus):
+    return DefaultAuthenticator(patched_event_bus, 
+                                first_realm_successful_strategy)

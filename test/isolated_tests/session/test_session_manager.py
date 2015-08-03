@@ -1015,7 +1015,7 @@ def test_avsm_validate_sessions_raises(
 
     monkeypatch.setattr(avsm, 'get_active_sessions', lambda: active_sessions)
 
-    with mock.patch('yosai.session.DefaultSessionKey') as dsk:
+    with mock.patch('yosai.DefaultSessionKey') as dsk:
         dsk.return_value = 'sessionkey123'
         results = avsm.validate_sessions()
         assert '[2] sessions' in results 
@@ -1039,7 +1039,7 @@ def test_avsm_validate_sessions_allvalid(
 
     monkeypatch.setattr(avsm, 'get_active_sessions', lambda: active_sessions)
 
-    with mock.patch('yosai.session.DefaultSessionKey') as dsk:
+    with mock.patch('yosai.DefaultSessionKey') as dsk:
         dsk.return_value = 'sessionkey123'
         results = avsm.validate_sessions()
         assert 'No sessions' in results 

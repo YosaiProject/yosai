@@ -18,33 +18,37 @@ under the License.
 """
 
 from collections import deque
-from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable, 
-                         Thread)
+#from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable, 
+#                         Thread)
 
 from yosai import (
-    AuthenticationInfo, 
-    AuthenticationToken, 
-    Context,
+    MapContext,
     DefaultSessionContext,
+    DefaultSessionStorageEvaluator,
     DisabledSessionException,
     ExecutionException,
-    HostAuthenticationToken,
+    IllegalArgumentException,
+    IllegalStateException,
+    InvalidArgumentException,
+    InvalidSessionException,
     LogManager,
     NullPointerException,
     ProxiedSession,
     PrimaryPrincipalIntegrityException,
-    PrincipalCollection,
-    SecurityManager,
     SecurityUtils,
-    Session,
     SessionException,
-    Subject,
+    UnauthenticatedException,
+    UnavailableSecurityManagerException,
     UnrecognizedPrincipalException,
     UnsupportedOperationException,
+    concurrency_abcs,
+    subject_abcs,
+    account_abcs,
+    authc_abcs,
+    subject_abcs,
+    mgt_abcs,
+    session_abcs,
 )
-
-from yosai.subject import abcs as subject_abcs
-
 
 # moved from /mgt and reconciled:
 class DefaultSubjectFactory(subject_abcs.SubjectFactory):
@@ -63,16 +67,18 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         return DelegatingSubject(principals, authenticated, host, session,
                                  session_creation_enabled, security_manager)
 
-
-
-
 class DefaultSubjectContext:
-
-    # DG:  using composition rather than inheritance..
-
+    """
+    Yosai notes:  Shiro uses the getTypedValue method to validate objects 
+                  as it obtains them from the MapContext.  I've decided that
+                  this checking is unecessary overhead in Python and to 
+                  instead *assume* that objects are mapped correctly within
+                  the MapContext.  Exceptions will raise further down the
+                  call stack should a mapping be incorrect.
+    """
     def __init__(self):
         self._attributes = self.get_initial_context_attributes()
-        self._subject_context = Context(context_type='SUBJECT')
+        self._subject_context = MapContext(context_type='SUBJECT')
 
     def get_initial_context_attributes(self):
         dsc_name = self.__class__.__name__
@@ -80,7 +86,7 @@ class DefaultSubjectContext:
             "SECURITY_MANAGER": dsc_name + ".SECURITY_MANAGER",
             "SESSION_ID": dsc_name + ".SESSION_ID",
             "AUTHENTICATION_TOKEN": dsc_name + ".AUTHENTICATION_TOKEN", 
-            "AUTHENTICATION_INFO": dsc_name + ".AUTHENTICATION_INFO",
+            "ACCOUNT": dsc_name + ".ACCOUNT",
             "SUBJECT": dsc_name + ".SUBJECT",
             "PRINCIPALS": dsc_name + ".PRINCIPALS",
             "SESSION": dsc_name + ".SESSION", 
@@ -93,8 +99,7 @@ class DefaultSubjectContext:
 
     @property
     def security_manager(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['SECURITY_MANAGER'], SecurityManager)
+        return self._subject_context.get(self._attributes['SECURITY_MANAGER'])
 
     @security_manager.setter
     def security_manager(self, security_manager):
@@ -104,8 +109,7 @@ class DefaultSubjectContext:
 
     @property
     def session_id(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['SESSION_ID'], str)  # was Serializable class
+        return self._subject_context.get(self._attributes['SESSION_ID'])
    
     @session_id.setter
     def session_id(self, session_id):
@@ -116,36 +120,33 @@ class DefaultSubjectContext:
 
     @property 
     def subject(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['SUBJECT'], Subject)
+        return self._subject_context.get(self._attributes['SUBJECT'])
 
     @subject.setter
     def subject(self, subject):
-        if isinstance(subject, Subject):
+        if isinstance(subject, subject_abcs.Subject):
             setattr(self._subject_context, 
                     str(self._attributes['SUBJECT']), 
                     subject)
 
     @property
     def principals(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['PRINCIPALS'], PrincipalCollection)
+        return self._subject_context.get(self._attributes['PRINCIPALS'])
         
     @principals.setter
     def principals(self, principals):
-        if isinstance(principals, PrincipalCollection):
+        if isinstance(principals, subject_abcs.PrincipalCollection):
             setattr(self._subject_context, 
                     str(self._attributes['PRINCIPALS']), 
                     principals)
 
     @property
     def session(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['SESSION'], Session)
+        return self._subject_context.get(self._attributes['SESSION'])
 
     @session.setter
     def session(self, session):
-        if isinstance(session, Session):
+        if isinstance(session, session_abcs.Session):
             setattr(self._subject_context, 
                     str(self._attributes['SESSION']), 
                     session)
@@ -160,8 +161,8 @@ class DefaultSubjectContext:
 
     @property
     def session_creation_enabled(self):
-        val = self._subject_context.get_and_validate(
-            self._attributes['SESSION_CREATION_ENABLED'], bool)
+        val = self._subject_context.get(
+            self._attributes['SESSION_CREATION_ENABLED'])
         return (val is None or val)
 
     @session_creation_enabled.setter
@@ -173,8 +174,7 @@ class DefaultSubjectContext:
 
     @property
     def authenticated(self):
-        authc = self._subject_context.get_and_validate(
-            self._attributes['AUTHENTICATED'], bool)
+        authc = self._subject_context.get(self._attributes['AUTHENTICATED'])
         return (authc is not None and authc)
 
     @authenticated.setter
@@ -185,33 +185,31 @@ class DefaultSubjectContext:
                     authc)
 
     @property
-    def authentication_info(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['AUTHENTICATION_INFO'], AuthenticationInfo)
+    def account(self):
+        return self._subject_context.get(self._attributes['ACCOUNT'])
 
-    @authentication_info.setter
-    def authentication_info(self, info):
-        if isinstance(info, AuthenticationInfo):
+    @account.setter
+    def account(self, account):
+        if isinstance(account, account_abcs.Account):
             setattr(self._subject_context, 
-                    str(self._attributes['AUTHENTICATION_INFO']), 
-                    info)
+                    str(self._attributes['ACCOUNT']), 
+                    account)
 
     @property
     def authentication_token(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['AUTHENTICATION_TOKEN'], AuthenticationToken)
+        return self._subject_context.get(
+            self._attributes['AUTHENTICATION_TOKEN'])
 
     @authentication_token.setter
     def authentication_token(self, token):
-        if isinstance(token, AuthenticationToken):
+        if isinstance(token, authc_abcs.AuthenticationToken):
             setattr(self._subject_context, 
                     str(self._attributes['AUTHENTICATION_TOKEN']), 
                     token)
 
     @property
     def host(self):
-        return self._subject_context.get_and_validate(
-            self._attributes['HOST'], str)
+        return self._subject_context.get(self._attributes['HOST'])
 
     @host.setter
     def host(self, host):
@@ -225,7 +223,7 @@ class DefaultSubjectContext:
         if (not authc):
             #  see if there is an AuthenticationInfo object.  If so, the very
             #  presence of one indicates a successful authentication attempt:
-            authc = (self.authentication_info is not None)
+            authc = (self.account is not None)
         if (not authc):
             #  fall back to a session check:
             session = self.resolve_session()
@@ -242,7 +240,7 @@ class DefaultSubjectContext:
             # check to see if there is an AuthenticationToken from which to
             # retrieve it: 
             if (isinstance(self.authentication_token, 
-                           HostAuthenticationToken)):
+                           authc_abcs.HostAuthenticationToken)):
                 host = self.authentication_token.host
 
         if (not host):
@@ -256,8 +254,7 @@ class DefaultSubjectContext:
         principals = None 
 
         # sequence matters:
-        sources = [self.principals, self.authentication_info, 
-                   self.subject]
+        sources = [self.principals, self.account, self.subject]
 
         for x in sources:
             if (x):
@@ -273,16 +270,15 @@ class DefaultSubjectContext:
             
         return principals
 
-
     def resolve_security_manager(self): 
-        security_manager = self.get_security_manager()
+        security_manager = self.security_manager
         if (security_manager is None):
             #  add logging here
             print("No SecurityManager available in subject context map.  " +
-                  "Falling back to SecurityUtils.get_security_manager() for" +
+                  "Falling back to SecurityUtils.security_manager for" +
                   " lookup.")
             try: 
-                security_manager = SecurityUtils.get_security_manager()
+                security_manager = SecurityUtils.security_manager
             except UnavailableSecurityManagerException as ex:
                 # log here
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
@@ -476,7 +472,7 @@ class DelegatingSubject:
     @principals.setter
     def principals(self, principals):
         try:
-            if isinstance(principals, PrincipalCollection):
+            if isinstance(principals, subject_abcs.PrincipalCollection):
                 self._principals = principals
             else:
                 raise TypeError
@@ -490,7 +486,7 @@ class DelegatingSubject:
     @security_manager.setter
     def security_manager(self, security_manager):
         try:
-            if isinstance(security_manager, SecurityManager):
+            if isinstance(security_manager, mgt_abcs.SecurityManager):
                 self._security_manager = security_manager
             else:
                 raise TypeError
@@ -504,7 +500,7 @@ class DelegatingSubject:
     @session.setter
     def session(self, session):
         try:
-            if isinstance(session, Session):
+            if isinstance(session, session_abcs.Session):
                 self._session = session
             else:
                 raise TypeError
@@ -626,7 +622,7 @@ class DelegatingSubject:
             self.principals = principals
             self.authenticated = True
 
-            if isinstance(auth_token, HostAuthenticationToken):
+            if isinstance(auth_token, authc_abcs.HostAuthenticationToken):
                 host = auth_token.host
 
             if (host):
@@ -706,11 +702,11 @@ class DelegatingSubject:
     def execute(self, _able):
         # DG: combined execute and associatewith methods
         try:
-            if isinstance(_able, Callable):
+            if isinstance(_able, concurrency_abcs.Callable):
                 associated = SubjectCallable(self, _able) 
                 return associated.call()
 
-            elif isinstance(_able, Runnable):
+            elif isinstance(_able, concurrency_abcs.Runnable):
                 if isinstance(_able, Thread):
                     msg = ("This implementation does not support Thread args."
                            "Instead, the method argument should be a "
@@ -815,7 +811,7 @@ class DelegatingSubject:
     class SubjectBuilder:
         
         def __init__(self,
-                     securitymanager=SecurityUtils.get_security_manager()):
+                     securitymanager=SecurityUtils.security_manager):
 
             if (securitymanager is None):
                 msg = "SecurityManager method argument cannot be null."

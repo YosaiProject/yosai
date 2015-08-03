@@ -1,6 +1,6 @@
 import pytest
 
-from yosai.realm import (
+from yosai import (
     DefaultAccountCacheHandler,
 )
 

@@ -22,9 +22,7 @@ import copy
 from collections import defaultdict
 
 from yosai import(
-    Authorizer,
     AuthenticationException,
-    CacheManager,
     DefaultAuthenticator,
     DisabledCacheManager,
     DefaultSessionManager,
@@ -37,19 +35,13 @@ from yosai import(
     InvalidSessionException,
     LogManager,
     ModularRealmAuthorizer,
-    Realm,
-    SessionManager,
-    SubjectDAO,
-    SubjectFactory,
-    Subject,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
+    mgt_abcs,
+    authc_abcs,
+    event_abcs,
+    cache_abcs
 )
-
-from yosai.mgt import mgt_abcs
-from yosai.authc import abcs as authc_abcs
-from yosai.event import abcs as event_abcs
-from yosai.cache import abcs as cache_abcs
 
 
 class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
@@ -57,28 +49,34 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
     Abstract implementation of the RememberMeManager interface that handles
     serialization and encryption of the remembered user identity.
 
-    The remembered identity storage location and details are left to subclasses.
+    The remembered identity storage location and details are left to 
+    subclasses.
 
     Default encryption key
     -----------------------
     This implementation uses an {@link AesCipherService AesCipherService} for 
     strong encryption by default.  It also uses a default generated symmetric 
-    key to both encrypt and decrypt data.  As AES is a symmetric cipher, the same
-    {@code key} is used to both encrypt and decrypt data, BUT NOTE:
-    <p/>
-    Because Shiro is an open-source project, if anyone knew that you were using Shiro's default
-    {@code key}, they could download/view the source, and with enough effort, reconstruct the {@code key}
-    and decode encrypted data at will.
-    <p/>
-    Of course, this key is only really used to encrypt the remembered {@code PrincipalCollection} which is typically
-    a user id or username.  So if you do not consider that sensitive information, and you think the default key still
-    makes things 'sufficiently difficult', then you can ignore this issue.
-    <p/>
-    However, if you do feel this constitutes sensitive information, it is recommended that you provide your own
-    {@code key} via the {@link #setCipherKey setCipherKey} method to a key known only to your application,
-    guaranteeing that no third party can decrypt your data.  You can generate your own key by calling the
-    {@code CipherService}'s {@link org.apache.shiro.crypto.AesCipherService#generateNewKey() generateNewKey} method
-    and using that result as the {@link #setCipherKey cipherKey} configuration attribute.
+    key to both encrypt and decrypt data.  As AES is a symmetric cipher, the
+    same key is used to both encrypt and decrypt data, BUT NOTE:
+
+    Because Shiro is an open-source project, if anyone knew that you were 
+    using Shiro's default key, they could download/view the source, and with 
+    enough effort, reconstruct the key and decode encrypted data at will.
+
+    Of course, this key is only really used to encrypt the remembered
+    PrincipalCollection, which is typically a user id or username.  So if you
+    do not consider that sensitive information, and you think the default key
+    still makes things 'sufficiently difficult', then you can ignore this 
+    issue.
+
+    However, if you do feel this constitutes sensitive information, it is
+    recommended that you provide your own key and set it via the cipher_key 
+    property attribute to a key known only to your application,
+    guaranteeing that no third party can decrypt your data.  
+    
+    You can generate your own key by calling the CipherService's 
+    generate_new_key method and using that result as the 
+    cipher_key configuration attribute.  
     """
     pass  # requires refactoring, TBD
 
@@ -410,12 +408,12 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         rmm = self.remember_me_manager
         if (rmm is not None): 
             try:
-                rmm.onLogout(subject);
+                rmm.on_logout(subject)
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" + 
-                        rmm.__class__.__name__ + "] threw an exception during "
-                        "on_logout for subject with principals [{principals}]".\
-                        format(principals=subject.principals if subject else None)
+                       rmm.__class__.__name__ + "] threw an exception during "
+                       "on_logout for subject with principals [{principals}]".\
+                       format(principals=subject.principals if subject else None))
                 print(msg)
                 # log warn, including exc_info = ex
         
@@ -427,8 +425,9 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                 self.on_failed_login(authc_token, authc_ex, subject) 
             except Exception as ex:
                 msg = ("on_failed_login method threw an exception.  Logging "
-                      "and propagating original AuthenticationException.", ex)
-               # log info here, including exc_info=ex 
+                       "and propagating original AuthenticationException.", ex)
+                print(msg)
+                # log info here, including exc_info=ex 
             raise
 
         logged_in = self.create_subject(authc_token, account, subject)
@@ -436,10 +435,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         return logged_in
 
     def on_successful_login(self, authc_token, account, subject):
-        self.remember_me_successful_login(token, info, subject)
+        self.remember_me_successful_login(authc_token, account, subject)
     
     def onfailed_login(self, authc_token, authc_exc, subject):
-        self.remember_me_failed_login(token, ae, subject)
+        self.remember_me_failed_login(authc_token, authc_exc, subject)
 
     def before_logout(self, subject):
         self.remember_me_logout(subject)
@@ -594,6 +593,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" + 
                        rmm.__class__.__name__ + "] raised an exception during "
-                       "get_remembered_principals()."
+                       "get_remembered_principals().")
+                print(msg)
                 # log warn here , including exc_info = ex
         return None 

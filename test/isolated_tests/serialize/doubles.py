@@ -1,4 +1,6 @@
-import yosai.serialize.abcs as serialize_abcs
+from yosai import (
+    serialize_abcs,
+)
 from marshmallow import Schema, fields
 
 

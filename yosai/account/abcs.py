@@ -18,7 +18,9 @@ under the License.
 """
 
 from abc import ABCMeta, abstractmethod
-from yosai.serialize.abcs import Serializable
+from yosai import (
+    serialize_abcs,
+)
 
 # not pythonic, will change later:
 class AccountId(metaclass=ABCMeta):
@@ -26,7 +28,7 @@ class AccountId(metaclass=ABCMeta):
     def __repr__(self):
         pass
 
-class Account(Serializable, metaclass=ABCMeta):
+class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
 
     """
     An Account is a unique identity within an AccountStore  that has a set of

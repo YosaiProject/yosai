@@ -8,21 +8,16 @@ from yosai import (
     AccountStoreRealm,
     IncorrectCredentialsException,
     settings,
-)
-
-from yosai.authc import (
     AllRealmsSuccessfulStrategy,
     AtLeastOneRealmSuccessfulStrategy,
     AuthenticationSettings,
     CryptContextFactory,
     AbstractAuthcService,
     DefaultAuthenticationAttempt,
-    DefaultAuthenticator,
     DefaultCompositeAccountId,
     DefaultCompositeAccount,
     DefaultHashService,
     DefaultPasswordService,
-    FirstRealmSuccessfulStrategy,
     PasswordMatcher,
     SimpleCredentialsMatcher,
     UsernamePasswordToken,
@@ -39,11 +34,6 @@ def all_realms_successful_strategy():
 @pytest.fixture(scope="function")
 def alo_realms_successful_strategy():
     return AtLeastOneRealmSuccessfulStrategy()
-
-
-@pytest.fixture(scope="function")
-def first_realm_successful_strategy():
-    return FirstRealmSuccessfulStrategy()
 
 
 @pytest.fixture(scope="function")
@@ -200,8 +190,3 @@ def default_realm_accountids():
 @pytest.fixture(scope='function')
 def default_simple_credentials_matcher():
     return SimpleCredentialsMatcher()
-
-@pytest.fixture(scope='function')
-def default_authenticator(first_realm_successful_strategy, patched_event_bus):
-    return DefaultAuthenticator(patched_event_bus, 
-                                first_realm_successful_strategy)

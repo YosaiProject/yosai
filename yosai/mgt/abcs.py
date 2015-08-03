@@ -19,9 +19,12 @@ under the License.
 
 
 from abc import ABCMeta, abstractmethod
-import yosai.authc.abcs as authc_abcs
-import yosai.authz.abcs as authz_abcs
-import yosai.session.abcs as session_abcs
+
+from yosai import (
+    authc_abcs,
+    authz_abcs,
+    session_abcs,
+)
 
 
 class RememberMeManager(metaclass=ABCMeta):

@@ -73,16 +73,55 @@ class AuthorizationInfo(metaclass=ABCMeta):
 
 class Authorizer(metaclass=ABCMeta):
 
-    @abstractmethod
-    def check_permission(self, principals, permission_s):
-        pass
-
+    """
+    An Authorizer performs authorization (access control) operations
+    for any given Subject (aka 'application user').  
+    
+    Each method requires a subject principal to perform the action for the 
+    corresponding Subject/user.  
+    
+    This principal argument is usually an object representing a user database 
+    primary key or a String username or something similar that uniquely
+    identifies an application user.  The runtime value of the this principal
+    is application-specific and provided by the application's configured
+    Realms.
+   
+    Note that the Permission methods in this interface accept either String
+    arguments or Permission instances. This provides convenience in allowing
+    the caller to use a String representation of a Permission if one is so
+    desired.  Most implementations of this interface will simply convert these
+    String values to Permission instances and then just call the corresponding
+    type-safe method.  (Yosai's default implementations do String-to-Permission
+    conversion for these methods using PermissionResolver(s)
+    """
+    
     @abstractmethod
     def is_permitted(self, principals, permission_s):
+        """
+        Returns True if the corresponding subject/user is permitted to perform
+        an action or access a resource summarized by the specified permission.
+
+        More specifically, this method determines whether any Permission(s) 
+        associated with the subject imply the specified permission.
+
+        :param principals: the application-specific subject/user identifier(s)
+        :type principals: a set
+
+        :param permission_s: the permission(s) being checked
+        :type permission_s: List of Permission object(s) or String(s)
+
+        :returns: a List of tuple(s), containing the Permission and a Boolean 
+                  indicating whether the permission is granted, True if the 
+                  corresponding Subject/user is permitted, False otherwise
+        """
         pass
 
     @abstractmethod
     def is_permitted_all(self, principals, permission_s):
+        pass
+
+    @abstractmethod
+    def check_permission(self, principals, permission_s):
         pass
 
     @abstractmethod
@@ -96,6 +135,7 @@ class Authorizer(metaclass=ABCMeta):
     @abstractmethod
     def check_role(self, principals, role_s):
         pass
+
 
 class Permission(metaclass=ABCMeta):
 

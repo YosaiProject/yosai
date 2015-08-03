@@ -9,6 +9,7 @@ from .doubles import (
 from yosai import (
     InvalidSerializationFormatException,
     SerializationException,
+    serialize_abcs,
 )
 
 from yosai.serialize.serialize import (
@@ -19,8 +20,6 @@ from yosai.serialize.serialize import (
 from ..matcher import (
     DictMatcher,
 )
-
-import yosai.serialize.abcs as serialize_abcs
 
 # ----------------------------------------------------------------------------
 # SerializationManager Tests

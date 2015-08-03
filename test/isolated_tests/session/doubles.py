@@ -1,4 +1,3 @@
-import yosai.session.abcs as session_abcs
 import datetime
 from yosai import (
     AbstractNativeSessionManager,
@@ -6,6 +5,7 @@ from yosai import (
     AbstractValidatingSessionManager,
     CachingSessionDAO,
     DefaultSessionManager,
+    session_abcs,
 )
 
 class MockSession(session_abcs.ValidatingSession, object):

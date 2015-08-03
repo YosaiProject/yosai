@@ -41,9 +41,9 @@ from yosai import (
     EventBusMessageDataException,
     EventBusSubscriptionException,
     LogManager,
+    event_abcs,
 )
 
-from yosai.event import abcs
 import datetime
 
 
@@ -63,7 +63,7 @@ class Event:
         self.__dict__.update(**eventattrs)  # DG:  risky?
 
 
-class DefaultEventBus(abcs.EventBus):
+class DefaultEventBus(event_abcs.EventBus):
     """
     Yosai's EventBus is a proxy to pypubsub.  Its API is unique to Yosai,
     having little in common with the EventBus implementation in Shiro.

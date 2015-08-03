@@ -17,25 +17,25 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from yosai.cache import abcs
-
 from yosai import (
     CacheException, 
-    CacheManager,
     LogManager,
     IllegalArgumentException,
+    cache_abcs
 )
 
+class DisabledCache:
+    pass
 
-# omitting DisabledCache (see NOTES.txt)
-# omitting DisabledCacheManager (see NOTES.txt)
+class DisabledCacheManager:
+    pass
 
 class CacheManager:
     # temporary mock class used to pass session testing.. replace later
     pass
 
 
-class MapCache(abcs.Cache):
+class MapCache(cache_abcs.Cache):
 
     def __init__(self, name=None, backing_map=None):
         if (name is None):
@@ -81,7 +81,7 @@ class MapCache(abcs.Cache):
         return set()
 
 
-class MemoryConstrainedCacheManager(abcs.AbstractCacheManager):
+class MemoryConstrainedCacheManager(cache_abcs.AbstractCacheManager):
 
     def create_cache(self, name):
         return MapCache(name, {})  # DG:  was a SoftHashMap...

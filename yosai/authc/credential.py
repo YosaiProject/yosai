@@ -22,16 +22,12 @@ from yosai import (
     MissingCredentialsException,
     PasswordMatcherInvalidAccountException,
     PasswordMatcherInvalidTokenException,
-)
-
-from . import (
+    authc_abcs,
     DefaultPasswordService,
 )
 
-from yosai.authc import abcs
 
-
-class PasswordMatcher(abcs.CredentialsMatcher):
+class PasswordMatcher(authc_abcs.CredentialsMatcher):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""
 
     def __init__(self):
@@ -66,7 +62,7 @@ class PasswordMatcher(abcs.CredentialsMatcher):
             raise PasswordMatcherInvalidAccountException
 
 
-class SimpleCredentialsMatcher(abcs.CredentialsMatcher):
+class SimpleCredentialsMatcher(authc_abcs.CredentialsMatcher):
 
     def __init__(self):
         pass
@@ -107,7 +103,7 @@ class SimpleCredentialsMatcher(abcs.CredentialsMatcher):
         return token_credentials == account_credentials
         
 
-class AllowAllCredentialsMatcher(abcs.CredentialsMatcher):
+class AllowAllCredentialsMatcher(authc_abcs.CredentialsMatcher):
 
     def credentials_match(self, authc_token, account):
         return True

@@ -17,7 +17,9 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from yosai.serialize import abcs as serialize_abcs
+from yosai import (
+    serialize_abcs,
+)
 from marshmallow import Schema, fields
 
 
@@ -69,8 +71,9 @@ class MapContext(serialize_abcs.Serializable):
         if value:
             self.context[attr] = value
 
+    # omitting type validation in Yosai (re: getTypedValue)
     def get(self, attr):
-        return self.context.get(attr, None)
+        return self.context.get(attr)
 
     def remove(self, attr):
         return self.context.pop(attr, None)
