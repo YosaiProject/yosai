@@ -9,7 +9,6 @@ from .fixtures import (
     memory_session_dao,
     mock_abstract_session_dao,
     mock_caching_session_dao,
-    mock_default_session_manager,
     mock_session,
     patched_abstract_native_session_manager,
     patched_delegating_session,

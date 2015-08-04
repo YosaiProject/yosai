@@ -19,7 +19,6 @@ under the License.
 
 from abc import ABCMeta, abstractmethod
 import copy
-from collections import defaultdict
 
 from yosai import(
     AuthenticationException,
@@ -31,7 +30,6 @@ from yosai import(
     DefaultSubjectContext,
     DefaultEventBus,
     IllegalArgumentException,
-    IncorrectAttributeException,
     InvalidSessionException,
     LogManager,
     ModularRealmAuthorizer,
@@ -40,7 +38,7 @@ from yosai import(
     mgt_abcs,
     authc_abcs,
     event_abcs,
-    cache_abcs
+    cache_abcs,
 )
 
 
@@ -86,9 +84,9 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                              cache_abcs.CacheManagerAware):
 
     def __init__(self):
-        self.realms = defaultdict(list) 
-        self.event_bus = DefaultEventBus()
-        self.cache_manager = DisabledCacheManager()  # cannot be set to None
+        self.realms = None
+        self._event_bus = DefaultEventBus()
+        self._cache_manager = DisabledCacheManager()  # cannot be set to None
         
         # new to Yosai is the injection of the eventbus:
         self.authenticator = DefaultAuthenticator(self._event_bus)
@@ -113,14 +111,14 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self._authenticator = authenticator
 
             if (isinstance(self.authenticator, DefaultAuthenticator)):
-                self.authenticator.realms = self.realms  # was set_realms
+                self.authenticator.realms = self.realms
             
             self.apply_event_bus(self.authenticator)
             self.apply_cache_manager(self.authenticator)
         
         else:
             msg = "authenticator parameter must have a value" 
-            raise IncorrectAttributeException(msg)
+            raise IllegalArgumentException(msg)
 
     @property
     def authorizer(self):
@@ -134,7 +132,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self.apply_cache_manager(self.authorizer)
         else: 
             msg = "authorizer parameter must have a value" 
-            raise IncorrectAttributeException(msg)
+            raise IllegalArgumentException(msg)
         
     @property
     def cache_manager(self):
@@ -145,12 +143,12 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         if (cachemanager):
             self._cache_manager = cachemanager
             self.apply_cache_manager(
-                self.get_dependencies_for_injection(self.cache_manager))
+                self.get_dependencies_for_injection(self._cache_manager))
 
         else: 
             msg = ('Incorrect parameter.  If you want to disable caching, '
                    'configure a disabled cachemanager instance')
-            raise IncorrectAttributeException(msg)
+            raise IllegalArgumentException(msg)
         
     #  property required by EventBusAware interface:
     @property
@@ -163,19 +161,19 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self._event_bus = eventbus
             self.apply_event_bus(
                 self.get_dependencies_for_injection(self._event_bus))
+
         else:
             msg = 'eventbus parameter must have a value'
-            raise IncorrectAttributeException(msg)
+            raise IllegalArgumentException(msg)
 
     def set_realms(self, realm_s):
         """
         :realm_s: an immutable collection of one or more realms
         :type realm_s: tuple
         """
-        try:
-            for realm in realm_s:  
-                self.apply_event_bus(realm)
-                self.apply_cache_manager(realm)
+        if realm_s: 
+            self.apply_event_bus(realm_s)
+            self.apply_cache_manager(realm_s)
 
             authc = self.authenticator
             if (isinstance(authc, DefaultAuthenticator)):
@@ -184,28 +182,48 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             authz = self.authorizer
             if (isinstance(authz, ModularRealmAuthorizer)):
                 authz.realms = realm_s 
-        except TypeError:
+
+        else: 
             msg = 'Cannot pass None as a parameter value for realms'
             raise IllegalArgumentException(msg)
-        
-    def apply_cache_manager(self, target):
-        """
-        :param target:  an individual object instance
-        """
-        # yosai refactored, deferring iteration to the methods that call it
-        if isinstance(target, cache_abcs.CacheManagerAware):
-            target.cache_manager = self.cache_manager
+   
+    # new to yosai, helper method:
+    def apply_target_s(self, validate_apply, target_s):
+        try:
+            for target in target_s:
+                validate_apply(target)
+        except TypeError: 
+            validate_apply(target_s)
 
-    def apply_event_bus(self, target):
+    def apply_cache_manager(self, target_s):
         """
-        :param target:  an individual object instance
+        :param target: the object or objects that, if eligible, are to have
+                       the cache manager set 
+        :type target: an individual object instance or iterable
         """
         # yosai refactored, deferring iteration to the methods that call it
-        if isinstance(target, event_abcs.EventBusAware):
-            target.event_bus = self.event_bus
+        def validate_apply(target):
+            if isinstance(target, cache_abcs.CacheManagerAware):
+                target.cache_manager = self.cache_manager
+
+        self.apply_target_s(validate_apply, target_s)
+
+    def apply_event_bus(self, target_s):
+        """
+        :param target: the object or objects that, if eligible, are to have
+                       the eventbus set 
+        :type target: an individual object instance or iterable
+        """
+        # yosai refactored, deferring iteration to the methods that call it
+
+        def validate_apply(target):
+            if isinstance(target, event_abcs.EventBusAware):
+                target.event_bus = self.event_bus
+        
+        self.apply_target_s(validate_apply, target_s)
 
     def get_dependencies_for_injection(self, ignore):
-        deps = {self.event_bus, self.cache_manager, self.realms, 
+        deps = {self._event_bus, self._cache_manager, self.realms, 
                 self.authenticator, self.authorizer,
                 self.session_manager, self.subject_DAO,
                 self.subject_factory}

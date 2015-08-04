@@ -304,10 +304,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     one-or-more; in English, this is expressed as '(s)', eg: duck(s)
     indicates one or more ducks
 
-    :type realms:  OrderedSet
+    :type realms:  Tuple 
     """
     def __init__(self, realms=None):
-        self._realms = OrderedSet() 
+        self._realms = tuple() 
         self._permission_resolver = None 
         self._role_permission_resolver = None 
 
@@ -318,7 +318,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     @realms.setter
     def realms(self, realms):
         """
-        :type realms: set
+        :type realms: Tuple 
         """
         self._realms = realms
         self.apply_permission_resolver_to_realms()

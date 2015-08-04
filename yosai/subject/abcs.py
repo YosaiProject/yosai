@@ -185,12 +185,12 @@ class SubjectContext(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def authentication_info(self):
+    def account(self):
         pass
 
-    @authentication_info.setter
+    @account.setter
     @abstractmethod
-    def authentication_info(self, authc_info):
+    def account(self, account):
         pass
 
     @property

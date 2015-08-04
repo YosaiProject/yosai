@@ -90,25 +90,25 @@ def second_accountstorerealm_succeeds(monkeypatch):
 
 @pytest.fixture(scope='function')
 def one_accountstorerealm_succeeds(first_accountstorerealm_succeeds):
-    return {first_accountstorerealm_succeeds}
+    return tuple([first_accountstorerealm_succeeds])
 
 @pytest.fixture(scope='function')
 def one_accountstorerealm_fails(first_accountstorerealm_fails):
-    return {first_accountstorerealm_fails}
+    return tuple([first_accountstorerealm_fails])
 
 @pytest.fixture(scope='function')
 def two_accountstorerealms_fails(first_accountstorerealm_fails):
-    return {first_accountstorerealm_fails, first_accountstorerealm_fails}
+    return tuple([first_accountstorerealm_fails, first_accountstorerealm_fails])
 
 @pytest.fixture(scope='function')
 def two_accountstorerealms_succeeds(first_accountstorerealm_succeeds,
                                     second_accountstorerealm_succeeds):
-    return {first_accountstorerealm_succeeds, second_accountstorerealm_succeeds}
+    return tuple([first_accountstorerealm_succeeds, second_accountstorerealm_succeeds])
 
 @pytest.fixture(scope='function')
 def two_accountstorerealms_fails(first_accountstorerealm_fails,
                                  second_accountstorerealm_fails):
-    return {first_accountstorerealm_fails, second_accountstorerealm_fails}
+    return tuple([first_accountstorerealm_fails, second_accountstorerealm_fails])
 
 @pytest.fixture(scope='function')
 def default_authc_attempt(username_password_token, one_accountstorerealm_succeeds): 
@@ -127,7 +127,7 @@ def fail_multi_authc_attempt(username_password_token, two_accountstorerealms_fai
 
 @pytest.fixture(scope='function')
 def realmless_authc_attempt(username_password_token):
-    return DefaultAuthenticationAttempt(username_password_token, set()) 
+    return DefaultAuthenticationAttempt(username_password_token, tuple()) 
 
 @pytest.fixture(scope='function')
 def mock_token_attempt(mock_token, one_accountstorerealm_succeeds): 

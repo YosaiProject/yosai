@@ -153,7 +153,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
         'at least one successful', which was often not desired and caused
         unnecessary I/O.  """
         self.authentication_strategy = strategy
-        self.realms = None  # this gets set by the AppSecurityManager
+        self.realms = None  # this gets set by DefaultSecurityManager as a tuple 
         self._event_bus = event_bus
 
     @property
@@ -178,7 +178,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
 
     def authenticate_multi_realm_account(self, realms, authc_token):
         """ 
-        :type realms: Set
+        :type realms: Tuple 
         """
         attempt = DefaultAuthenticationAttempt(authc_token, realms)
         return self.authentication_strategy.execute(attempt)

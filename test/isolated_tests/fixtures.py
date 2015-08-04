@@ -18,6 +18,10 @@ from .doubles import (
     MockToken,
 )
 
+from .session.doubles import (
+    MockDefaultSessionManager,
+)
+
 @pytest.fixture(scope='function')
 def mock_account_state():
     return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO', 
@@ -94,3 +98,9 @@ def first_realm_successful_strategy():
 def default_authenticator(first_realm_successful_strategy, patched_event_bus):
     return DefaultAuthenticator(patched_event_bus, 
                                 first_realm_successful_strategy)
+
+
+@pytest.fixture(scope='function')
+def mock_default_session_manager():
+    return MockDefaultSessionManager()
+

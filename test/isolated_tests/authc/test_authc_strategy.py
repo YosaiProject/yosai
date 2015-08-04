@@ -22,7 +22,7 @@ def test_authc_attempt_invalid_authc_token(default_authc_attempt):
 
 def test_authc_attempt_invalid_realms(default_authc_attempt, monkeypatch):
     """
-    realms must be a set
+    realms must be an OrderedSet, passing anything else raises an exception
     """
     invalid_realm = {'dumbdict': 'dumb'}
     with pytest.raises(InvalidAuthcAttemptRealmsArgumentException):

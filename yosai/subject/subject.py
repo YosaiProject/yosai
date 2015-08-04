@@ -50,7 +50,7 @@ from yosai import (
     session_abcs,
 )
 
-# moved from /mgt and reconciled:
+# moved from /mgt, reconciled, ready to test:
 class DefaultSubjectFactory(subject_abcs.SubjectFactory):
     
     def __init__(self):
@@ -67,7 +67,8 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         return DelegatingSubject(principals, authenticated, host, session,
                                  session_creation_enabled, security_manager)
 
-class DefaultSubjectContext:
+# reconciled, ready to test:
+class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
     Yosai notes:  Shiro uses the getTypedValue method to validate objects 
                   as it obtains them from the MapContext.  I've decided that
@@ -76,10 +77,12 @@ class DefaultSubjectContext:
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self):
+    def __init__(self, subject_context={}):
+        super().__init__(context_map=subject_context)
+        # yosai takes a different approach to managing key names:
         self._attributes = self.get_initial_context_attributes()
-        self._subject_context = MapContext(context_type='SUBJECT')
 
+    # new to yosai:
     def get_initial_context_attributes(self):
         dsc_name = self.__class__.__name__
         return {
@@ -99,128 +102,121 @@ class DefaultSubjectContext:
 
     @property
     def security_manager(self):
-        return self._subject_context.get(self._attributes['SECURITY_MANAGER'])
+        return self.context.get(self._attributes['SECURITY_MANAGER'])
 
     @security_manager.setter
-    def security_manager(self, security_manager):
-        setattr(self._subject_context, 
-                str(self._attributes['SECURITY_MANAGER']), 
-                security_manager)
+    def security_manager(self, securitymanager):
+        self.context.none_safe_put(
+            self._attributes['SECURITY_MANAGER'], securitymanager)
+    
+    def resolve_security_manager(self): 
+        security_manager = self.security_manager
+        if (security_manager is None):
+            msg = ("No SecurityManager available in subject context map.  " +
+                   "Falling back to SecurityUtils.security_manager for" +
+                   " lookup.")
+            print(msg)
+            #  log debug here
+
+            try: 
+                security_manager = SecurityUtils.security_manager
+            except UnavailableSecurityManagerException as ex:
+                msg = ("DefaultSubjectContext.resolve_security_manager cannot "
+                       "obtain security_manager! No SecurityManager available "
+                       "via SecurityUtils.  Heuristics exhausted.", ex)
+                print(msg)
+                # log debug here, including exc_info=ex
+        
+        return security_manager
 
     @property
     def session_id(self):
-        return self._subject_context.get(self._attributes['SESSION_ID'])
+        return self.context.get(self._attributes['SESSION_ID'])
    
     @session_id.setter
     def session_id(self, session_id):
-        if isinstance(session_id, str):
-            setattr(self._subject_context, 
-                    str(self._attributes['SESSION_ID']), 
-                    session_id)
+        self.context.none_safe_put(self._attributes['SESSION_ID'], session_id)
 
     @property 
     def subject(self):
-        return self._subject_context.get(self._attributes['SUBJECT'])
+        return self.context.get(self._attributes['SUBJECT'])
 
     @subject.setter
     def subject(self, subject):
-        if isinstance(subject, subject_abcs.Subject):
-            setattr(self._subject_context, 
-                    str(self._attributes['SUBJECT']), 
-                    subject)
+            self.context.none_safe_put(self._attributes['SUBJECT'], subject)
 
     @property
     def principals(self):
-        return self._subject_context.get(self._attributes['PRINCIPALS'])
+        return self.context.get(self._attributes['PRINCIPALS'])
         
     @principals.setter
     def principals(self, principals):
-        if isinstance(principals, subject_abcs.PrincipalCollection):
-            setattr(self._subject_context, 
-                    str(self._attributes['PRINCIPALS']), 
-                    principals)
+        self.context.none_safe_put(self._attributes['PRINCIPALS'], principals)
+
+    def resolve_principals(self):
+        principals = self.principals 
+
+        if not principals:
+            # note that the sequence matters:
+            for entity in [self.account, self.subject]:
+                try:
+                    principals = entity.principals
+                except AttributeError:
+                    continue 
+                else:
+                    break
+
+        # otherwise, use the session key as the principal:
+        if not principals:
+            session = self.resolve_session()
+            try:
+                principals = session.get_attribute(
+                    self._attributes['PRINCIPALS_SESSION_KEY']) 
+            except AttributeError:
+                pass
+            
+        return principals
 
     @property
     def session(self):
-        return self._subject_context.get(self._attributes['SESSION'])
+        return self.context.get(self._attributes['SESSION'])
 
     @session.setter
     def session(self, session):
-        if isinstance(session, session_abcs.Session):
-            setattr(self._subject_context, 
-                    str(self._attributes['SESSION']), 
-                    session)
+        self.context.none_safe_put(self._attributes['SESSION'], session)
 
     def resolve_session(self):
-        if (not self.session):
-            # try the Subject, if it exists:
-            if (self.subject is not None):
+        session = self.session
+        if session is None:
+            try: 
                 session = self.subject.get_session(False)
+            except AttributeError:
+                pass 
+        return self.session
 
-        return session
-
+    # yosai renamed so to match property accessor with mutator:
     @property
     def session_creation_enabled(self):
-        val = self._subject_context.get(
-            self._attributes['SESSION_CREATION_ENABLED'])
+        val = self.context.get(self._attributes['SESSION_CREATION_ENABLED'])
         return (val is None or val)
 
     @session_creation_enabled.setter
     def session_creation_enabled(self, enabled):
-        if isinstance(enabled, bool):
-            setattr(self._subject_context, 
-                    str(self._attributes['SESSION_CREATION_ENABLED']), 
-                    enabled)
-
+        self.context.none_safe_put(
+            self._attributes['SESSION_CREATION_ENABLED'], enabled)
+    
     @property
     def authenticated(self):
-        authc = self._subject_context.get(self._attributes['AUTHENTICATED'])
-        return (authc is not None and authc)
+        authc = self.context.get(self._attributes['AUTHENTICATED'])
+        return bool(authc)
 
     @authenticated.setter
     def authenticated(self, authc):
-        if isinstance(authc, bool):
-            setattr(self._subject_context, 
-                    str(self._attributes['AUTHENTICATED']), 
-                    authc)
-
-    @property
-    def account(self):
-        return self._subject_context.get(self._attributes['ACCOUNT'])
-
-    @account.setter
-    def account(self, account):
-        if isinstance(account, account_abcs.Account):
-            setattr(self._subject_context, 
-                    str(self._attributes['ACCOUNT']), 
-                    account)
-
-    @property
-    def authentication_token(self):
-        return self._subject_context.get(
-            self._attributes['AUTHENTICATION_TOKEN'])
-
-    @authentication_token.setter
-    def authentication_token(self, token):
-        if isinstance(token, authc_abcs.AuthenticationToken):
-            setattr(self._subject_context, 
-                    str(self._attributes['AUTHENTICATION_TOKEN']), 
-                    token)
-
-    @property
-    def host(self):
-        return self._subject_context.get(self._attributes['HOST'])
-
-    @host.setter
-    def host(self, host):
-        if (isinstance(host, str) and (host)):
-            setattr(self._subject_context, 
-                    str(self._attributes['HOST']), 
-                    host)
+        self.context.put(self._attributes['AUTHENTICATED'], authc)
 
     def resolve_authenticated(self):
         authc = self.authenticated  # a bool
-        if (not authc):
+        if authc is None:
             #  see if there is an AuthenticationInfo object.  If so, the very
             #  presence of one indicates a successful authentication attempt:
             authc = (self.account is not None)
@@ -228,67 +224,58 @@ class DefaultSubjectContext:
             #  fall back to a session check:
             session = self.resolve_session()
             if (session is not None):
-                authc = bool(getattr(
-                    session, 
-                    self._attributes['AUTHENTICATED_SESSION_KEY']))
+                session_authc = session.get_attribute(
+                    self._attributes['AUTHENTICATED_SESSION_KEY'])
+                authc = bool(session_authc)
 
         return authc 
 
+    @property
+    def account(self):
+        return self.context.get(self._attributes['ACCOUNT'])
+
+    @account.setter
+    def account(self, account):
+        self.context.none_safe_put(self._attributes['ACCOUNT'], account)
+
+    @property
+    def authentication_token(self):
+        return self.context.get(
+            self._attributes['AUTHENTICATION_TOKEN'])
+
+    @authentication_token.setter
+    def authentication_token(self, token):
+        self.context.none_safe_put(
+            self._attributes['AUTHENTICATION_TOKEN'], token)
+
+    @property
+    def host(self):
+        return self.context.get(self._attributes['HOST'])
+
+    @host.setter
+    def host(self, host):
+        self.context.put(self._attributes['HOST'], host)
+
     def resolve_host(self):
         host = self.host
-        if(not host):
+        if host is None:
             # check to see if there is an AuthenticationToken from which to
             # retrieve it: 
-            if (isinstance(self.authentication_token, 
-                           authc_abcs.HostAuthenticationToken)):
+            try:
                 host = self.authentication_token.host
+            except AttributeError:
+                pass
 
-        if (not host):
-            session = self.resolve_session()
-            if (session):
+        if host is None:
+            try:
+                session = self.resolve_session()
                 host = session.host
+            except AttributeError:
+                pass
 
         return host
     
-    def resolve_principals(self):
-        principals = None 
-
-        # sequence matters:
-        sources = [self.principals, self.account, self.subject]
-
-        for x in sources:
-            if (x):
-                if (x.principals):
-                    principals = x.principals
-                    break
-
-        # otherwise, use the session key as the principal:
-        if (not principals):
-            session = self.resolve_session()
-            principals = getattr(session, 
-                                 self._attributes['PRINCIPALS_SESSION_KEY']) 
-            
-        return principals
-
-    def resolve_security_manager(self): 
-        security_manager = self.security_manager
-        if (security_manager is None):
-            #  add logging here
-            print("No SecurityManager available in subject context map.  " +
-                  "Falling back to SecurityUtils.security_manager for" +
-                  " lookup.")
-            try: 
-                security_manager = SecurityUtils.security_manager
-            except UnavailableSecurityManagerException as ex:
-                # log here
-                msg = ("DefaultSubjectContext.resolve_security_manager cannot "
-                       "obtain security_manager! No SecurityManager available "
-                       "via SecurityUtils.  Heuristics exhausted.")
-                print(msg, ex)
-        
-        return security_manager
-
-
+   
 class DefaultSubjectDAO:
 
     def __init__(self):
@@ -818,44 +805,44 @@ class DelegatingSubject:
                 raise InvalidArgumentException(msg)
             
             self.security_manager = securitymanager
-            self.subject_context = self.new_subject_context_instance()
+            self.subject_context = self.newcontext_instance()
             if (self.subject_context is None):
                 msg = ("Subject instance returned from" 
-                       "'new_subject_context_instance' cannot be null.")
+                       "'newcontext_instance' cannot be null.")
                 raise IllegalStateException(msg)
             self.subject_context.security_manager = securitymanager
       
-        def new_subject_context_instance(self):
+        def newcontext_instance(self):
                 return DefaultSubjectContext()
 
         def session_id(self, session_id):
             if (session_id):
-                self._subject_context.session_id = session_id
+                self.context.session_id = session_id
             return self
 
         def host(self, host):
             if (host):
-                self._subject_context.host = host
+                self.context.host = host
             return self
             
         def session(self, session):
             if (session):
-                self._subject_context.session = session
+                self.context.session = session
             return self
 
         def principals(self, principals):
             if (principals):
-                self._subject_context.principals = principals
+                self.context.principals = principals
             return self
 
         def session_creation_enabled(self, enabled):
             if (enabled):
-                self._subject_context.set_session_creation_enabled = enabled
+                self.context.set_session_creation_enabled = enabled
             return self
 
         def authenticated(self, authenticated):
             if (authenticated):
-                self._subject_context.authenticated = authenticated
+                self.context.authenticated = authenticated
             return self
 
         def context_attribute(self, attribute_key, attribute_value):
@@ -863,9 +850,9 @@ class DelegatingSubject:
                 msg = "Subject context map key cannot be null."
                 raise IllegalArgumentException(msg) 
             elif (not attribute_value):
-                self._subject_context.remove(attribute_key)
+                self.context.remove(attribute_key)
             else:
-                self._subject_context.put(attribute_key, attribute_value)
+                self.context.put(attribute_key, attribute_value)
             return self
 
         def build_subject(self):

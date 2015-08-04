@@ -20,7 +20,6 @@ from .doubles import (
     MockAbstractSessionDAO,
     MockAbstractValidatingSessionManager,
     MockCachingSessionDAO,
-    MockDefaultSessionManager,
     MockSession,
     MockSessionManager,
 )
@@ -93,10 +92,6 @@ def memory_session_dao():
 @pytest.fixture(scope='function')
 def mock_caching_session_dao():
     return MockCachingSessionDAO()
-
-@pytest.fixture(scope='function')
-def mock_default_session_manager():
-    return MockDefaultSessionManager()
 
 @pytest.fixture(scope='function')
 def default_session_storage_evaluator():

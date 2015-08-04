@@ -29,6 +29,7 @@ from yosai import (
     MultiRealmAuthenticationException,
     authc_abcs,
     DefaultCompositeAccount,
+    OrderedSet,
 )
 
 
@@ -41,7 +42,7 @@ class DefaultAuthenticationAttempt(authc_abcs.AuthenticationAttempt):
     def __init__(self, authc_token, realms):
         """
         :type authc_token:  AuthenticationToken
-        :type realms: a Set/FrozenSet of realm objects (e.g. AccountStoreRealm) 
+        :type realms: a Tuple of realm objects (e.g. AccountStoreRealm) 
         """
         self.authentication_token = authc_token
         self.realms = realms 
@@ -62,7 +63,7 @@ class DefaultAuthenticationAttempt(authc_abcs.AuthenticationAttempt):
 
     @realms.setter
     def realms(self, realms):
-        if not isinstance(realms, set):
+        if not isinstance(realms, tuple): 
             raise InvalidAuthcAttemptRealmsArgumentException
         self._realms = realms
 

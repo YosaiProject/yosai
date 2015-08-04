@@ -7,6 +7,7 @@ from .fixtures import (
     mock_account_state,
     mock_account_store,
     mock_cache,
+    mock_default_session_manager,
     mock_pubsub,
     mock_token,
     patched_event_bus,
