@@ -398,30 +398,30 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # generators so as to optimize processing and improve readability 
    
     # new to Yosai:
-    def _has_role(self, principals, roleid): 
+    def _has_role(self, identifiers, roleid): 
         for realm in self.authorizing_realms:
-            if realm.has_role(principals, roleid): 
+            if realm.has_role(identifiers, roleid): 
                 return True
         return False 
     
     # new to Yosai:
-    def _role_collection(self, principals, roleids): 
+    def _role_collection(self, identifiers, roleids): 
         for roleid in roleids:
-            yield (roleid, self._has_role(principals, roleid))
+            yield (roleid, self._has_role(identifiers, roleid))
 
     # new to Yosai:
-    def _is_permitted(self, principals, permission):
+    def _is_permitted(self, identifiers, permission):
         for realm in self.authorizing_realms:
-            if realm.is_permitted(principals, permission):
+            if realm.is_permitted(identifiers, permission):
                 return True
         return False 
 
     # new to Yosai:
-    def _permit_collection(self, principals, permissions):
+    def _permit_collection(self, identifiers, permissions):
         for permission in permissions:
-            yield (permission, self._is_permitted(principals, permission))
+            yield (permission, self._is_permitted(identifiers, permission))
     
-    def is_permitted(self, principals, permission_s):
+    def is_permitted(self, identifiers, permission_s):
         """
         Yosai differs from Shiro in how it handles String-typed Permission 
         parameters.  Rather than supporting *args of String-typed Permissions, 
@@ -429,8 +429,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         while determining permissions a bit more pythonically.  This may 
         be refactored later.
 
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -443,13 +443,13 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         if isinstance(permission_s, collections.Iterable):
             return [(permission, permit) for (permission, permit) in 
-                    self._permit_collection(principals, permission_s)]
+                    self._permit_collection(identifiers, permission_s)]
 
-        return [permission_s, self._is_permitted(principals, permission_s)]
+        return [permission_s, self._is_permitted(identifiers, permission_s)]
 
-    def is_permitted_all(self, principals, permission_s):
+    def is_permitted_all(self, identifiers, permission_s):
         """
-        :param principals: a Set of Principal objects
+        :param identifiers: a Set of Identifier objects
         :param permission_s:  a List of Permission objects
 
         :returns: a Boolean
@@ -459,23 +459,23 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         if isinstance(permission_s, collections.Iterable):
             # using a generator in order to fail immediately
             for (permission, permitted) in self._permit_collection(
-                    principals, permission_s):
+                    identifiers, permission_s):
                 if not permitted:
                     return False
             return True
 
         # else:    
-        return self._is_permitted(principals, permission_s)  # 1 Bool
+        return self._is_permitted(identifiers, permission_s)  # 1 Bool
 
     # yosai consolidates check_permission functionality to one method:
-    def check_permission(self, principals, permission_s):
+    def check_permission(self, identifiers, permission_s):
         """
         like Yosai's authentication process, the authorization process will 
         raise an Exception to halt further authz checking once Yosai determines
         that a Subject is unauthorized to receive the requested permission
 
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
@@ -483,7 +483,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :returns: a List of Booleans corresponding to the permission elements
         """
         self.assert_realms_configured()
-        permitted = self.is_permitted_all(principals, permission_s)
+        permitted = self.is_permitted_all(identifiers, permission_s)
         if not permitted:
             msg = "Subject does not have permission(s)"
             print(msg)
@@ -491,10 +491,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise UnauthorizedException(msg)
     
     # yosai consolidates has_role functionality to one method:
-    def has_role(self, principals, roleid_s):
+    def has_role(self, identifiers, roleid_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings 
@@ -506,14 +506,14 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         if isinstance(roleid_s, collections.Iterable):
             return [(roleid, hasrole) for (roleid, hasrole) in 
-                    self._role_collection(principals, roleid_s)]
+                    self._role_collection(identifiers, roleid_s)]
 
-        return [(roleid_s, self._has_role(principals, roleid_s))]
+        return [(roleid_s, self._has_role(identifiers, roleid_s))]
 
-    def has_all_roles(self, principals, roleid_s):
+    def has_all_roles(self, identifiers, roleid_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings 
@@ -523,15 +523,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         self.assert_realms_configured()
 
         for (roleid, hasrole) in \
-                self._role_collection(principals, roleid_s):
+                self._role_collection(identifiers, roleid_s):
             if not hasrole: 
                 return False
         return True
 
-    def check_role(self, principals, roleid_s):
+    def check_role(self, identifiers, roleid_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings 
@@ -539,7 +539,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         self.assert_realms_configured()
-        has_role_s = self.has_all_roles(principals, roleid_s) 
+        has_role_s = self.has_all_roles(identifiers, roleid_s) 
         if not has_role_s: 
             msg = "Subject does not have role(s)" 
             print(msg)

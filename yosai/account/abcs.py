@@ -42,7 +42,7 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
     Since Yosai sometimes logs account operations, please ensure your Account's
     __repr__ implementation does *not* print out account CREDENTIALS 
     (password, etc), as these might be viewable to someone reading your logs.
-    This is good practice anyway, and account principals should rarely (if
+    This is good practice anyway, and account identifiers should rarely (if
     ever) be printed out for any reason.
 
     Yosai's default implementations of this interface only ever print account 

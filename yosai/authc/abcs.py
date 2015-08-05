@@ -58,14 +58,14 @@ class AuthenticationListener(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def on_logout(self, principals):
+    def on_logout(self, identifiers):
         """
         Callback triggered when a {@code Subject} logs-out of the system.
         
         This method will only be triggered when a Subject explicitly logs-out
         of the session.  It will not be triggered if their Session times out.
       
-        :param principals: the identifying principals of the Subject logging
+        :param identifiers: the identifying identifiers of the Subject logging
                            out.
         """
         pass
@@ -73,7 +73,7 @@ class AuthenticationListener(metaclass=ABCMeta):
 
 class AuthenticationToken(metaclass=ABCMeta):
     """
-    An AuthenticationToken is a consolidation of an account's principals and
+    An AuthenticationToken is a consolidation of an account's identifiers and
     supporting credentials submitted by a user during an authentication
     attempt.
 
@@ -88,7 +88,7 @@ class AuthenticationToken(metaclass=ABCMeta):
 
     Because applications represent user data and credentials in different ways,
     implementations of this interface are application-specific.  You are free
-    to acquire a user's principals and credentials however you wish (e.g. web
+    to acquire a user's identifiers and credentials however you wish (e.g. web
     form, Swing form, fingerprint identification, etc) and then submit them to
     the Yosai framework in the form of an implementation of this interface.
 
@@ -111,7 +111,7 @@ class AuthenticationToken(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def principal(self):
+    def identifier(self):
         """
         Returns the account identity submitted during the authentication
         process.  
@@ -123,7 +123,7 @@ class AuthenticationToken(metaclass=ABCMeta):
     def credentials(self):
         """
         Returns the credentials submitted by the user during the authentication
-        process that verifies the submitted Principal account identity.
+        process that verifies the submitted Identifier account identity.
         """
         pass
 
@@ -182,7 +182,7 @@ class HostAuthenticationToken(AuthenticationToken):
 class LogoutAware(metaclass=ABCMeta):
 
     @abstractmethod
-    def on_logout(self, principals):
+    def on_logout(self, identifiers):
         pass
 
 

@@ -179,10 +179,10 @@ def test_mra_private_has_role_true(modular_realm_authorizer_ftf):
     unit tested:  _has_role
 
     test case:  
-    a realm confirming role assignment (a principal is assigned a role)
+    a realm confirming role assignment (a identifier is assigned a role)
     """
     mra = modular_realm_authorizer_ftf
-    result = mra._has_role('arbitrary_principals', 'arbitrary_roleid')
+    result = mra._has_role('arbitrary_identifiers', 'arbitrary_roleid')
     assert result is True
 
 def test_mra_private_has_role_false(modular_realm_authorizer_fff):
@@ -193,7 +193,7 @@ def test_mra_private_has_role_false(modular_realm_authorizer_fff):
     a realm denies role affiliation 
     """
     mra = modular_realm_authorizer_fff
-    result = mra._has_role('arbitrary_principals', 'arbitrary_roleid')
+    result = mra._has_role('arbitrary_identifiers', 'arbitrary_roleid')
     assert result is False 
 
 def test_mra_private_role_collection_yields(modular_realm_authorizer_ftf):
@@ -206,7 +206,7 @@ def test_mra_private_role_collection_yields(modular_realm_authorizer_ftf):
     """
     mra = modular_realm_authorizer_ftf
     result = [check for check in 
-              mra._role_collection('arbitrary_principals', 
+              mra._role_collection('arbitrary_identifiers', 
                                    ['roleid1', 'roleid2'])]
     assert all(x in result for x in [('roleid1', True), ('roleid2', True)])
 
@@ -215,10 +215,10 @@ def test_mra_private_is_permitted_true(modular_realm_authorizer_ftf):
     unit tested:  _is_permitted
 
     test case:  
-    a realm confirming privilege (a principal IS granted permission)
+    a realm confirming privilege (a identifier IS granted permission)
     """
     mra = modular_realm_authorizer_ftf
-    result = mra._is_permitted('arbitrary_principals', 'permission')
+    result = mra._is_permitted('arbitrary_identifiers', 'permission')
     assert result is True
 
 def test_mra_private_is_permitted_false(modular_realm_authorizer_fff):
@@ -229,7 +229,7 @@ def test_mra_private_is_permitted_false(modular_realm_authorizer_fff):
     permission is denied
     """
     mra = modular_realm_authorizer_fff
-    result = mra._is_permitted('arbitrary_principals', 'permission')
+    result = mra._is_permitted('arbitrary_identifiers', 'permission')
     assert result is False 
 
 def test_mra_private_permit_collection_yields(modular_realm_authorizer_fff):
@@ -242,7 +242,7 @@ def test_mra_private_permit_collection_yields(modular_realm_authorizer_fff):
     """
     mra = modular_realm_authorizer_fff
     result = [check for check in 
-              mra._permit_collection('arbitrary_principals', 
+              mra._permit_collection('arbitrary_identifiers', 
                                      ['perm1', 'perm2'])]
     assert all(x in result for x in [('perm1', False), ('perm2', False)])
 
@@ -267,7 +267,7 @@ def test_mra_is_permitted_single_permission_returns_true(
     a single permission argument receives a single Boolean response 
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.is_permitted('arbitrary_principals', 'permission')
+    result = mra.is_permitted('arbitrary_identifiers', 'permission')
     assert result[0][1] == True
 
 def test_mra_is_permitted_single_permission_returns_false(
@@ -279,7 +279,7 @@ def test_mra_is_permitted_single_permission_returns_false(
     a single permission argument receives a single Boolean response 
     """
     mra = modular_realm_authorizer_fff
-    result = mra.is_permitted('arbitrary_principals', 'permission')
+    result = mra.is_permitted('arbitrary_identifiers', 'permission')
     assert result[0][1] == False 
 
 def test_mra_is_permitted_all_collection_false(modular_realm_authorizer_fff):
@@ -290,7 +290,7 @@ def test_mra_is_permitted_all_collection_false(modular_realm_authorizer_fff):
     a collection of permissions receives a single Boolean
     """
     mra = modular_realm_authorizer_fff
-    result = mra.is_permitted_all('arbitrary_principals', 
+    result = mra.is_permitted_all('arbitrary_identifiers', 
                                   ['perm1', 'perm2', 'perm3'])
     assert result is False 
 
@@ -303,7 +303,7 @@ def test_mra_is_permitted_all_collection_true(
     a collection of permissions receives a single Boolean
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.is_permitted_all('arbitrary_principals', 
+    result = mra.is_permitted_all('arbitrary_identifiers', 
                                   ['perm1', 'perm2', 'perm3'])
     assert result is True 
 
@@ -315,7 +315,7 @@ def test_mra_is_permitted_all_single_true(modular_realm_authorizer_ftf):
     a single permission receives a single Boolean
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.is_permitted_all('arbitrary_principals', 'perm1')
+    result = mra.is_permitted_all('arbitrary_identifiers', 'perm1')
     assert result is True 
 
 def test_mra_is_permitted_all_single_false(modular_realm_authorizer_fff):
@@ -326,7 +326,7 @@ def test_mra_is_permitted_all_single_false(modular_realm_authorizer_fff):
     a single permission receives a single Boolean
     """
     mra = modular_realm_authorizer_fff
-    result = mra.is_permitted_all('arbitrary_principals', 'perm1')
+    result = mra.is_permitted_all('arbitrary_identifiers', 'perm1')
     assert result is False 
 
 def test_mra_check_permission_collection_raises(modular_realm_authorizer_fff):
@@ -338,7 +338,7 @@ def test_mra_check_permission_collection_raises(modular_realm_authorizer_fff):
     """
     mra = modular_realm_authorizer_fff
     with pytest.raises(UnauthorizedException):
-        mra.check_permission('arbitrary_principals', ['perm1', 'perm2'])
+        mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'])
 
 def test_mra_check_permission_collection_succeeds(modular_realm_authorizer_ftf):
     """
@@ -349,7 +349,7 @@ def test_mra_check_permission_collection_succeeds(modular_realm_authorizer_ftf):
     and nothing returned if success 
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.check_permission('arbitrary_principals', ['perm1', 'perm2'])
+    result = mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'])
     assert result is None
 
 def test_mra_has_role_collection_returns_truetruetrue(
@@ -372,7 +372,7 @@ def test_mra_has_role_single_role_returns_true(modular_realm_authorizer_ftf):
     when passed a single roleid, returns a list containing one Tuple
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.has_role('arbitrary_principals', 'roleid1')
+    result = mra.has_role('arbitrary_identifiers', 'roleid1')
     assert result[0][1] == True
 
 def test_mra_has_role_single_role_returns_false(modular_realm_authorizer_fff):
@@ -383,7 +383,7 @@ def test_mra_has_role_single_role_returns_false(modular_realm_authorizer_fff):
     when passed a single roleid, returns a list containing one Tuple
     """
     mra = modular_realm_authorizer_fff
-    result = mra.has_role('arbitrary_principals', 'roleid1')
+    result = mra.has_role('arbitrary_identifiers', 'roleid1')
     assert result[0][1] == False 
 
 def test_mra_has_all_roles_collection_false(
@@ -395,7 +395,7 @@ def test_mra_has_all_roles_collection_false(
     a collection of roleids receives a single Boolean
     """
     mra = modular_realm_authorizer_fff
-    result = mra.has_all_roles('arbitrary_principals', 
+    result = mra.has_all_roles('arbitrary_identifiers', 
                                ['roleid1', 'roleid2', 'roleid3'])
     assert result is False 
 
@@ -407,7 +407,7 @@ def test_mra_has_all_roles_collection_true(modular_realm_authorizer_ftf):
     a collection of roleids receives a single Boolean
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.has_all_roles('arbitrary_principals', 
+    result = mra.has_all_roles('arbitrary_identifiers', 
                                ['roleid1', 'roleid2', 'roleid3'])
     assert result is True 
 
@@ -419,7 +419,7 @@ def test_mra_has_all_roles_single_true(modular_realm_authorizer_ftf):
     a single permission receives a single Boolean
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.is_permitted_all('arbitrary_principals', 'roleid1')
+    result = mra.is_permitted_all('arbitrary_identifiers', 'roleid1')
     assert result is True 
 
 def test_mra_has_all_roles_single_false(modular_realm_authorizer_fff):
@@ -430,7 +430,7 @@ def test_mra_has_all_roles_single_false(modular_realm_authorizer_fff):
     a single permission receives a single Boolean
     """
     mra = modular_realm_authorizer_fff
-    result = mra.has_all_roles('arbitrary_principals', 'roleid1')
+    result = mra.has_all_roles('arbitrary_identifiers', 'roleid1')
     assert result is False 
 
 def test_mra_check_role_collection_false(modular_realm_authorizer_fff):
@@ -443,7 +443,7 @@ def test_mra_check_role_collection_false(modular_realm_authorizer_fff):
     """
     mra = modular_realm_authorizer_fff
     with pytest.raises(UnauthorizedException):
-        mra.check_role('arbitrary_principals', ['roleid1', 'roleid2'])
+        mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'])
 
 def test_mra_check_role_collection_true(modular_realm_authorizer_ftf):
     """
@@ -454,7 +454,7 @@ def test_mra_check_role_collection_true(modular_realm_authorizer_ftf):
     and nothing returned if success 
     """
     mra = modular_realm_authorizer_ftf
-    result = mra.check_role('arbitrary_principals', ['roleid1', 'roleid2'])
+    result = mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'])
     assert result is None
 
 

@@ -62,7 +62,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
     enough effort, reconstruct the key and decode encrypted data at will.
 
     Of course, this key is only really used to encrypt the remembered
-    PrincipalCollection, which is typically a user id or username.  So if you
+    IdentifierCollection, which is typically a user id or username.  So if you
     do not consider that sensitive information, and you think the default key
     still makes things 'sufficiently difficult', then you can ignore this 
     issue.
@@ -254,10 +254,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     *       method overloading
     * ===================================================================== *
     """
-    def is_permitted(self, principals, permission_s):
+    def is_permitted(self, identifiers, permission_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -265,33 +265,33 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         :returns: a List of tuple(s), containing the Permission and a Boolean 
                   indicating whether the permission is granted
         """
-        return self.authorizer.is_permitted(principals, permission_s)
+        return self.authorizer.is_permitted(identifiers, permission_s)
     
-    def is_permitted_all(self, principals, permission_s):
+    def is_permitted_all(self, identifiers, permission_s):
         """
-        :param principals: a Set of Principal objects
+        :param identifiers: a Set of Identifier objects
         :param permission_s:  a List of Permission objects
 
         :returns: a Boolean
         """
-        return self.authorizer.is_permitted_all(principals, permission_s)
+        return self.authorizer.is_permitted_all(identifiers, permission_s)
 
-    def check_permission(self, principals, permission_s):
+    def check_permission(self, identifiers, permission_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
 
         :returns: a List of Booleans corresponding to the permission elements
         """
-        return self.authorizer.check_permission(principals, permission_s)
+        return self.authorizer.check_permission(identifiers, permission_s)
    
-    def has_role(self, principals, roleid_s):
+    def has_role(self, identifiers, roleid_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings 
@@ -299,31 +299,31 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         :returns: a tuple containing the roleid and a boolean indicating 
                   whether the role is assigned (this is different than Shiro)
         """
-        return self.authorizer.has_role(principals, roleid_s)
+        return self.authorizer.has_role(identifiers, roleid_s)
 
-    def has_all_roles(self, principals, roleid_s):
+    def has_all_roles(self, identifiers, roleid_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings 
 
         :returns: a Boolean
         """
-        return self.authorizer.has_all_roles(principals, roleid_s)
+        return self.authorizer.has_all_roles(identifiers, roleid_s)
 
-    def check_role(self, principals, roleid_s):
+    def check_role(self, identifiers, roleid_s):
         """
-        :param principals: a collection of principals
-        :type principals: Set
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings 
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
-        return self.authorizer.check_role(principals, roleid_s)
+        return self.authorizer.check_role(identifiers, roleid_s)
 
     """
     * ===================================================================== *
@@ -376,13 +376,13 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         # Similarly, the subject_factory should not require any concept of
         # remember_me -- translate that here first if possible before handing
         # off to the subject_factory:
-        context = self.resolve_principals(context)
+        context = self.resolve_identifiers(context)
         subject = self.do_create_subject(context)
 
         # save this subject for future reference if necessary:
-        # (this is needed here in case remember_me principals were resolved
+        # (this is needed here in case remember_me identifiers were resolved
         # and they need to be stored in the session, so we don't constantly
-        # re-hydrate the remember_me principal_collection on every operation).
+        # re-hydrate the remember_me identifier_collection on every operation).
         self.save(subject)
         return subject
 
@@ -430,8 +430,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" + 
                        rmm.__class__.__name__ + "] threw an exception during "
-                       "on_logout for subject with principals [{principals}]".\
-                       format(principals=subject.principals if subject else None))
+                       "on_logout for subject with identifiers [{identifiers}]".\
+                       format(identifiers=subject.identifiers if subject else None))
                 print(msg)
                 # log warn, including exc_info = ex
         
@@ -527,23 +527,23 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
     # yosai omits is_empty method
 
-    def resolve_principals(self, subject_context):
-        principals = subject_context.resolve_principals()
-        if (not principals):
-            msg = ("No identity (principal_collection) found in the "
+    def resolve_identifiers(self, subject_context):
+        identifiers = subject_context.resolve_identifiers()
+        if (not identifiers):
+            msg = ("No identity (identifier_collection) found in the "
                    "subject_context.  Looking for a remembered identity.")
             print(msg)
             # log trace here
 
-            principals = self.get_remembered_identity(subject_context)
+            identifiers = self.get_remembered_identity(subject_context)
             
-            if principals:
-                msg = ("Found remembered PrincipalCollection.  Adding to the "
+            if identifiers:
+                msg = ("Found remembered IdentifierCollection.  Adding to the "
                        "context to be used for subject construction by the "
                        "SubjectFactory.")
                 print(msg)
                 # log debug here
-                subject_context.principals = principals
+                subject_context.identifiers = identifiers
 
             else:
                 msg = ("No remembered identity found.  Returning original "
@@ -572,15 +572,15 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         self.before_logout(subject)
 
-        principals = subject.principals
-        if (principals):
-            msg = ("Logging out subject with primary principal {0}".format(
-                   principals.primary_principal))
+        identifiers = subject.identifiers
+        if (identifiers):
+            msg = ("Logging out subject with primary identifier {0}".format(
+                   identifiers.primary_identifier))
             print(msg)
             # log debug here
             authc = self.authenticator
             if (isinstance(authc, authc_abcs.LogoutAware)):
-                authc.on_logout(principals)
+                authc.on_logout(identifiers)
 
         try:
             self.delete(subject)
@@ -593,7 +593,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                 self.stop_session(subject)
             except Exception as ex2:
                 msg2 = ("Unable to cleanly stop Session for Subject [" 
-                        + subject.principal + "] " +
+                        + subject.identifier + "] " +
                         "Ignoring (logging out).", ex2)
                 print(msg2)
                 # log debug here, including exc_info = ex 
@@ -607,11 +607,11 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         rmm = self.remember_me_manager
         if rmm is not None:
             try:
-                return rmm.get_remembered_principals(subject_context)
+                return rmm.get_remembered_identifiers(subject_context)
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" + 
                        rmm.__class__.__name__ + "] raised an exception during "
-                       "get_remembered_principals().")
+                       "get_remembered_identifiers().")
                 print(msg)
                 # log warn here , including exc_info = ex
         return None 

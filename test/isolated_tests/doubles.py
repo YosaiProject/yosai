@@ -45,7 +45,7 @@ class MockCacheManager(cache_abcs.CacheManager):
 class MockToken(authc_abcs.AuthenticationToken):
 
     @property
-    def principal(self):
+    def identifier(self):
         pass
 
     @property

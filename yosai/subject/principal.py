@@ -18,154 +18,154 @@ under the License.
 """
 
 from collections import defaultdict
-from yosai import UnrecognizedPrincipalException
+from yosai import UnrecognizedIdentifierException
 
 
-class SimplePrincipalCollection:
+class SimpleIdentifierCollection:
     """
     DG:
     I excluded:
         - asList, asSet
         - the serialization methods, because jsonpickle does it automatically?
     """
-    def __init__(self, realm_principals=None, principals=None, realm=None):
+    def __init__(self, realm_identifiers=None, identifiers=None, realm=None):
         """
-        You can initialize a SimplePrincipalCollection in two ways:
-            1) by passing a realm_principals Dict of Sets, where realms
-               are the keys and each set contains corresponding principals
-            2) by instantiating a local instance of realm_principals using
-               realm and principals parameters
+        You can initialize a SimpleIdentifierCollection in two ways:
+            1) by passing a realm_identifiers Dict of Sets, where realms
+               are the keys and each set contains corresponding identifiers
+            2) by instantiating a local instance of realm_identifiers using
+               realm and identifiers parameters
 
         Input:
-            realm_principals = a Dict of Sets
-            principals = a Set
+            realm_identifiers = a Dict of Sets
+            identifiers = a Set
             realm = a String
         """
-        self.realm_principals = defaultdict(set)  # my realmprincipals 'map'
+        self.realm_identifiers = defaultdict(set)  # my realmidentifiers 'map'
 
-        if (realm_principals):
-            self.realm_principals = realm_principals  # DG: overwrites, I know
+        if (realm_identifiers):
+            self.realm_identifiers = realm_identifiers  # DG: overwrites, I know
 
-        elif (realm and principals):
+        elif (realm and identifiers):
 
-            """realm_principals is a Dict of Sets:
+            """realm_identifiers is a Dict of Sets:
                 1) realm name is the dict key
-                2) each Set contains Principal objects
+                2) each Set contains Identifier objects
             """
-            self.realm_principals[realm] = principals
+            self.realm_identifiers[realm] = identifiers
 
-        self.primary_principal = None
+        self.primary_identifier = None
 
     def __eq__(self, other):
         if type(other) == type(self):
-            return (self.realm_principals == other.realm_principals)
+            return (self.realm_identifiers == other.realm_identifiers)
         return False
 
     def __repr__(self):
         return ','.join([str(key) + '=' + str(value) for (key, value) in 
-                        self.realm_principals.items()])
+                        self.realm_identifiers.items()])
 
     @property
     def hash_code(self):  # DG:  implementing this for consistency with shiro
         return id(self)
 
     @property
-    def primary_principal(self):
-        if (not self._primary_principal):
+    def primary_identifier(self):
+        if (not self._primary_identifier):
             try:
-                # DG:  shiro arbitrarily selects for missing primary principal
-                primary_principal = next(iter(self.realm_principals.values())) 
+                # DG:  shiro arbitrarily selects for missing primary identifier
+                primary_identifier = next(iter(self.realm_identifiers.values())) 
             except:
-                print('failed to arbitrarily obtain primary principal')
+                print('failed to arbitrarily obtain primary identifier')
                 return None
             else:
-                self._primary_principal = primary_principal
-                return primary_principal
-        return self._primary_principal
+                self._primary_identifier = primary_identifier
+                return primary_identifier
+        return self._primary_identifier
   
-    def add(self, principals=None, realm_name=None):  # DG: includes addAll
+    def add(self, identifiers=None, realm_name=None):  # DG: includes addAll
         """
             Inputs:
-                principals = a Set of Principal object(s)
+                identifiers = a Set of Identifier object(s)
                 realm_name = a String
 
-         principals is a defaultdict, so I can always add a principal to 
+         identifiers is a defaultdict, so I can always add a identifier to 
          a realm, even if the realm doesn't yet exist
         """
         if (realm_name):
-            self.realm_principals[realm_name].update(principals)
-        elif (principals.get_realm_names()):
-            for realm_name in principals.get_realm_names():
-                for principal in principals.from_realm(realm_name):
-                    self.add(principal, realm_name)
+            self.realm_identifiers[realm_name].update(identifiers)
+        elif (identifiers.get_realm_names()):
+            for realm_name in identifiers.get_realm_names():
+                for identifier in identifiers.from_realm(realm_name):
+                    self.add(identifier, realm_name)
         
-    def by_type(self, principal_class):
-        """ returns all occurances of a type of principal """
-        _principals = set() 
-        for principal_collection in self.realm_principals.values():
-            for principal in principal_collection: 
-                if (isinstance(principal, principal_class)):
-                    _principals.update(principal)
-        return _principals if _principals else None 
+    def by_type(self, identifier_class):
+        """ returns all occurances of a type of identifier """
+        _identifiers = set() 
+        for identifier_collection in self.realm_identifiers.values():
+            for identifier in identifier_collection: 
+                if (isinstance(identifier, identifier_class)):
+                    _identifiers.update(identifier)
+        return _identifiers if _identifiers else None 
 
-    def add_realm_principal(self, realm, principle_key, principal):
-        self.realm_principals[realm].update({principle_key: principal})
+    def add_realm_identifier(self, realm, principle_key, identifier):
+        self.realm_identifiers[realm].update({principle_key: identifier})
 
     def clear(self):
-        self.realm_principals = None
+        self.realm_identifiers = None
 
-    def delete_realm_principal(self, realm, principal):
-        return self.realm_principals[realm].pop(principal, None)
+    def delete_realm_identifier(self, realm, identifier):
+        return self.realm_identifiers[realm].pop(identifier, None)
 
     def delete_realm(self, realm):
-        return self.realm_principals.pop(realm, None)
+        return self.realm_identifiers.pop(realm, None)
     
     def from_realm(self, realm_name):
-        return self.realm_principals.get(realm_name, set())
+        return self.realm_identifiers.get(realm_name, set())
     
-    def get_all_principals(self):
-        return self.realm_principals
+    def get_all_identifiers(self):
+        return self.realm_identifiers
 
-    def get_principals_lazy(self, realm_name):
-        if (self.realm_principals is None): 
-            self.realm_principals = defaultdict(set) 
+    def get_identifiers_lazy(self, realm_name):
+        if (self.realm_identifiers is None): 
+            self.realm_identifiers = defaultdict(set) 
         
-        principals = self.realm_principals.get(realm_name, None)
-        if (not principals):  # an empty set
-            self.realm_principals[realm_name].update(principals)
+        identifiers = self.realm_identifiers.get(realm_name, None)
+        if (not identifiers):  # an empty set
+            self.realm_identifiers[realm_name].update(identifiers)
         
-        return principals
+        return identifiers
     
     def get_realm_names(self):
-        return {self.realm_principals.keys()}
+        return {self.realm_identifiers.keys()}
     
     def is_empty(self):
-        return (not self.realm_principals.keys())
+        return (not self.realm_identifiers.keys())
     
-    def one_by_type(self, principal_class):
-        """ gets the first-found principal of a type """
-        if (not self.realm_principals):
+    def one_by_type(self, identifier_class):
+        """ gets the first-found identifier of a type """
+        if (not self.realm_identifiers):
             return None
-        for principal_collection in self.realm_principals.values():
-            for principal in principal_collection: 
-                if (isinstance(principal, principal_class)):
-                    return principal
+        for identifier_collection in self.realm_identifiers.values():
+            for identifier in identifier_collection: 
+                if (isinstance(identifier, identifier_class)):
+                    return identifier
         return None
 
-    def set_primary_principal(self, principal):
+    def set_primary_identifier(self, identifier):
         """ DG:  not sure whether shiro's logic makes sense for this.. 
-                they seem to grab an arbitrary principal from any realm..
+                they seem to grab an arbitrary identifier from any realm..
                 not sure whether my logic below will apply, either"""
         exists = False
         try:
-            for realm in self._principals.keys():
-                for _principal in realm.keys():
-                    if (_principal == principal):
+            for realm in self._identifiers.keys():
+                for _identifier in realm.keys():
+                    if (_identifier == identifier):
                         exists = True
             if(exists is False):
-                raise UnrecognizedPrincipalException
-        except UnrecognizedPrincipalException:
-            print('Could not locate principal requested as primary. ')
+                raise UnrecognizedIdentifierException
+        except UnrecognizedIdentifierException:
+            print('Could not locate identifier requested as primary. ')
         else:
-            self._primary_principal = principal 
+            self._primary_identifier = identifier 
 

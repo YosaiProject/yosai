@@ -62,7 +62,7 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self.password = password
         self.is_remember_me = remember_me
         self.username = username
-        self.principal = username  # used in public api  DG:  TBD - I Dont like
+        self.identifier = username  # used in public api  DG:  TBD - I Dont like
         self.credentials = password  # used in public apiDG:  TBD - I Dont like
 
     # DG:  these properties are required implementations of the abcs
@@ -105,12 +105,12 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self._username = username
 
     @property
-    def principal(self):
-        return self._principal
+    def identifier(self):
+        return self._identifier
 
-    @principal.setter
-    def principal(self, principal):
-        self._principal = principal
+    @identifier.setter
+    def identifier(self, identifier):
+        self._identifier = identifier
 
     @property
     def credentials(self):

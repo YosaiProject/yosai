@@ -10,22 +10,22 @@ class MockAuthzAccountStoreRealm(authz_abcs.Authorizer,
         self.id = id(self)  # required for uniqueness among set members
         self._permission_resolver = None
 
-    def check_permission(self, principals, permission_s):
+    def check_permission(self, identifiers, permission_s):
         pass
     
-    def check_role(self, principals, role_s):
+    def check_role(self, identifiers, role_s):
         return False 
 
-    def has_role(self, principals, roleid_s):
+    def has_role(self, identifiers, roleid_s):
         return False 
 
-    def has_all_roles(self, principals, roleid_s):
+    def has_all_roles(self, identifiers, roleid_s):
         return False 
 
-    def is_permitted(self, principals, permission_s):
+    def is_permitted(self, identifiers, permission_s):
         return False 
 
-    def is_permitted_all(self, principals, permission_s):
+    def is_permitted_all(self, identifiers, permission_s):
         return False 
 
     @property

@@ -315,8 +315,8 @@ def test_dsm_is_permitted(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'is_permitted') as mra_ip:
-        dsm.is_permitted('principals', 'permission_s')
-        mra_ip.assert_called_once_with('principals', 'permission_s')
+        dsm.is_permitted('identifiers', 'permission_s')
+        mra_ip.assert_called_once_with('identifiers', 'permission_s')
 
 
 def test_dsm_is_permitted_all(default_security_manager):
@@ -328,8 +328,8 @@ def test_dsm_is_permitted_all(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'is_permitted_all') as mra_ipa:
-        dsm.is_permitted_all('principals', 'permission_s')
-        mra_ipa.assert_called_once_with('principals', 'permission_s')
+        dsm.is_permitted_all('identifiers', 'permission_s')
+        mra_ipa.assert_called_once_with('identifiers', 'permission_s')
 
 
 def test_dsm_check_permission(default_security_manager):
@@ -341,8 +341,8 @@ def test_dsm_check_permission(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_permission') as mra_cp:
-        dsm.check_permission('principals', 'permission_s')
-        mra_cp.assert_called_once_with('principals', 'permission_s')
+        dsm.check_permission('identifiers', 'permission_s')
+        mra_cp.assert_called_once_with('identifiers', 'permission_s')
 
 
 def test_dsm_has_role(default_security_manager):
@@ -354,8 +354,8 @@ def test_dsm_has_role(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'has_role') as mra_hr:
-        dsm.has_role('principals', 'permission_s')
-        mra_hr.assert_called_once_with('principals', 'permission_s')
+        dsm.has_role('identifiers', 'permission_s')
+        mra_hr.assert_called_once_with('identifiers', 'permission_s')
 
 
 def test_dsm_has_all_roles(default_security_manager):
@@ -367,8 +367,8 @@ def test_dsm_has_all_roles(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'has_all_roles') as mra_har:
-        dsm.has_all_roles('principals', 'permission_s')
-        mra_har.assert_called_once_with('principals', 'permission_s')
+        dsm.has_all_roles('identifiers', 'permission_s')
+        mra_har.assert_called_once_with('identifiers', 'permission_s')
 
 
 def test_dsm_check_role(default_security_manager):
@@ -380,8 +380,8 @@ def test_dsm_check_role(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_role') as mra_cr:
-        dsm.check_role('principals', 'permission_s')
-        mra_cr.assert_called_once_with('principals', 'permission_s')
+        dsm.check_role('identifiers', 'permission_s')
+        mra_cr.assert_called_once_with('identifiers', 'permission_s')
 
 def test_dsm_start(
         default_security_manager, mock_default_session_manager, monkeypatch):
@@ -449,7 +449,7 @@ def test_dsm_create_subject_wo_context(default_security_manager):
         dsm_esm.return_value = expected_subject_context
         with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
             dsm_rs.return_value = expected_subject_context
-            with mock.patch.object(dsm, 'resolve_principals') as dsm_rp:
+            with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
                 dsm_rp.return_value = expected_subject_context 
                 with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
                     dsm_dcs.return_value = 'subject'

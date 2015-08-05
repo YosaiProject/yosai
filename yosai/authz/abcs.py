@@ -77,12 +77,12 @@ class Authorizer(metaclass=ABCMeta):
     An Authorizer performs authorization (access control) operations
     for any given Subject (aka 'application user').  
     
-    Each method requires a subject principal to perform the action for the 
+    Each method requires a subject identifier to perform the action for the 
     corresponding Subject/user.  
     
-    This principal argument is usually an object representing a user database 
+    This identifier argument is usually an object representing a user database 
     primary key or a String username or something similar that uniquely
-    identifies an application user.  The runtime value of the this principal
+    identifies an application user.  The runtime value of the this identifier
     is application-specific and provided by the application's configured
     Realms.
    
@@ -96,7 +96,7 @@ class Authorizer(metaclass=ABCMeta):
     """
     
     @abstractmethod
-    def is_permitted(self, principals, permission_s):
+    def is_permitted(self, identifiers, permission_s):
         """
         Returns True if the corresponding subject/user is permitted to perform
         an action or access a resource summarized by the specified permission.
@@ -104,8 +104,8 @@ class Authorizer(metaclass=ABCMeta):
         More specifically, this method determines whether any Permission(s) 
         associated with the subject imply the specified permission.
 
-        :param principals: the application-specific subject/user identifier(s)
-        :type principals: a set
+        :param identifiers: the application-specific subject/user identifier(s)
+        :type identifiers: a set
 
         :param permission_s: the permission(s) being checked
         :type permission_s: List of Permission object(s) or String(s)
@@ -117,23 +117,23 @@ class Authorizer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted_all(self, principals, permission_s):
+    def is_permitted_all(self, identifiers, permission_s):
         pass
 
     @abstractmethod
-    def check_permission(self, principals, permission_s):
+    def check_permission(self, identifiers, permission_s):
         pass
 
     @abstractmethod
-    def has_role(self, principals, roleid_s):
+    def has_role(self, identifiers, roleid_s):
         pass
 
     @abstractmethod
-    def has_all_roles(self, principals, roleid_s):
+    def has_all_roles(self, identifiers, roleid_s):
         pass
 
     @abstractmethod
-    def check_role(self, principals, role_s):
+    def check_role(self, identifiers, role_s):
         pass
 
 

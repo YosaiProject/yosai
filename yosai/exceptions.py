@@ -337,11 +337,11 @@ class NullPointerException(YosaiException):
     pass
 
 
-class PrimaryPrincipalIntegrityException(YosaiException):
+class PrimaryIdentifierIntegrityException(YosaiException):
     pass
 
 
-class UnrecognizedPrincipalException(YosaiException):
+class UnrecognizedIdentifierException(YosaiException):
     pass
 
 

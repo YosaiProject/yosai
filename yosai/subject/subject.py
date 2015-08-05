@@ -34,12 +34,12 @@ from yosai import (
     LogManager,
     NullPointerException,
     ProxiedSession,
-    PrimaryPrincipalIntegrityException,
+    PrimaryIdentifierIntegrityException,
     SecurityUtils,
     SessionException,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
-    UnrecognizedPrincipalException,
+    UnrecognizedIdentifierException,
     UnsupportedOperationException,
     concurrency_abcs,
     subject_abcs,
@@ -60,11 +60,11 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         security_manager = subject_context.resolve_security_manager()
         session = subject_context.resolve_session()
         session_creation_enabled = subject_context.session_creation_enabled
-        principals = subject_context.resolve_principals()
+        identifiers = subject_context.resolve_identifiers()
         authenticated = subject_context.resolve_authenticated()
         host = subject_context.resolve_host()
 
-        return DelegatingSubject(principals, authenticated, host, session,
+        return DelegatingSubject(identifiers, authenticated, host, session,
                                  session_creation_enabled, security_manager)
 
 # reconciled, ready to test:
@@ -146,36 +146,36 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             self.none_safe_put(self._attributes['SUBJECT'], subject)
 
     @property
-    def principals(self):
+    def identifiers(self):
         return self.get(self._attributes['PRINCIPALS'])
         
-    @principals.setter
-    def principals(self, principals):
-        self.none_safe_put(self._attributes['PRINCIPALS'], principals)
+    @identifiers.setter
+    def identifiers(self, identifiers):
+        self.none_safe_put(self._attributes['PRINCIPALS'], identifiers)
 
-    def resolve_principals(self):
-        principals = self.principals 
+    def resolve_identifiers(self):
+        identifiers = self.identifiers 
 
-        if not principals:
+        if not identifiers:
             # note that the sequence matters:
             for entity in [self.account, self.subject]:
                 try:
-                    principals = entity.principals
+                    identifiers = entity.identifiers
                 except AttributeError:
                     continue 
                 else:
                     break
 
-        # otherwise, use the session key as the principal:
-        if not principals:
+        # otherwise, use the session key as the identifier:
+        if not identifiers:
             session = self.resolve_session()
             try:
-                principals = session.get_attribute(
+                identifiers = session.get_attribute(
                     self._attributes['PRINCIPALS_SESSION_KEY']) 
             except AttributeError:
                 pass
             
-        return principals
+        return identifiers
 
     @property
     def session(self):
@@ -312,39 +312,39 @@ class DefaultSubjectDAO:
     def save_to_session(self, subject):
         # performs merge logic, only updating the Subject's session if it 
         # does not match the current state:
-        self.merge_principals(subject)
+        self.merge_identifiers(subject)
         self.merge_authentication_state(subject)
 
-    def merge_principals(self, subject):
+    def merge_identifiers(self, subject):
         """
-        This method tries to obtain the attribute _principals from a 
-        DelegatingSubject object and if _principals is not yet set obtains
-        through through the property/method 'principals' which obtains the
-        principals off of a deque 'stack'.
+        This method tries to obtain the attribute _identifiers from a 
+        DelegatingSubject object and if _identifiers is not yet set obtains
+        through through the property/method 'identifiers' which obtains the
+        identifiers off of a deque 'stack'.
         """
         if (bool(subject.is_run_as) 
            and isinstance(subject, DelegatingSubject)):
-            current_principals = subject._principals  # direct access
+            current_identifiers = subject._identifiers  # direct access
         
-        if (not current_principals):
-            current_principals = subject.principals  # indirect, method-based
+        if (not current_identifiers):
+            current_identifiers = subject.identifiers  # indirect, method-based
 
         session = subject.get_session(False)
         if (not session):
-            if (current_principals):
+            if (current_identifiers):
                 session = subject.get_session()  # True is default
-                setattr(session, self.dsc_psk, current_principals)
-            # otherwise no session and no principals - nothing to save
+                setattr(session, self.dsc_psk, current_identifiers)
+            # otherwise no session and no identifiers - nothing to save
         else:
-            existing_principals = session.get_attribute(self.dsc_psk)
+            existing_identifiers = session.get_attribute(self.dsc_psk)
 
-            if (not current_principals):
-                if (existing_principals):
+            if (not current_identifiers):
+                if (existing_identifiers):
                     session.remove_attribute(self.dsc_psk)
                 # otherwise both are null or empty - no need to update session
             else:
-                if (current_principals == existing_principals):
-                    session.set_attribute(self.dsc_psk, current_principals)
+                if (current_identifiers == existing_identifiers):
+                    session.set_attribute(self.dsc_psk, current_identifiers)
                 # otherwise they're the same - no need to update the session
 
     def merge_authentication_state(self, subject):
@@ -385,7 +385,7 @@ class DelegatingSubject:
     SecurityManager
     """
 
-    def __init__(self, principals=None,
+    def __init__(self, identifiers=None,
                  authenticated=False, host=None, session=None,
                  session_creation_enabled=True,
                  security_manager=None):
@@ -398,7 +398,7 @@ class DelegatingSubject:
         else:
             self._security_manager = security_manager 
         
-        self._principals = principals
+        self._identifiers = identifiers
         self._authenticated = authenticated 
         self._host = host 
         if (session is not None):
@@ -423,11 +423,11 @@ class DelegatingSubject:
     
     @property
     def is_run_as(self):
-        return bool(self.get_run_as_principals_stack())
+        return bool(self.get_run_as_identifiers_stack())
 
     @property
-    def has_principals(self):
-        return (self._principals is not None)
+    def has_identifiers(self):
+        return (self._identifiers is not None)
 
     @property
     def host(self):
@@ -444,27 +444,27 @@ class DelegatingSubject:
             print('DelegatingSubject.host.setter:  wrong object type')
 
     @property
-    def primary_principal(self):
-        return self._principals.primary_principal
+    def primary_identifier(self):
+        return self._identifiers.primary_identifier
 
     @property
-    def principals(self):
-        # expecting a List of PrincipalCollection objects:
-        run_as_principals = self.get_run_as_principals_stack()
-        if (run_as_principals):
-            return run_as_principals[0]  # DG:  I dont feel good about this!
+    def identifiers(self):
+        # expecting a List of IdentifierCollection objects:
+        run_as_identifiers = self.get_run_as_identifiers_stack()
+        if (run_as_identifiers):
+            return run_as_identifiers[0]  # DG:  I dont feel good about this!
         else:
-            return self._principals    
+            return self._identifiers    
 
-    @principals.setter
-    def principals(self, principals):
+    @identifiers.setter
+    def identifiers(self, identifiers):
         try:
-            if isinstance(principals, subject_abcs.PrincipalCollection):
-                self._principals = principals
+            if isinstance(identifiers, subject_abcs.IdentifierCollection):
+                self._identifiers = identifiers
             else:
                 raise TypeError
         except TypeError:
-            print('DelegatingSubject.principals.setter:  wrong type of object')
+            print('DelegatingSubject.identifiers.setter:  wrong type of object')
 
     @property
     def security_manager(self):
@@ -518,9 +518,9 @@ class DelegatingSubject:
                 granted to the corresponding permission Tuple recieved as
                 input
         """
-        if (self.has_principals()):
+        if (self.has_identifiers()):
                 return self._security_manager.is_permitted(
-                    scope, self.principals, permissions)
+                    scope, self.identifiers, permissions)
         else:
             return [False for x in permissions] 
 
@@ -540,18 +540,18 @@ class DelegatingSubject:
                 granted to the corresponding permission Tuple recieved as
                 input
         """
-        return (self.has_principals() and
+        return (self.has_identifiers() and
                 self._security_manager.is_permitted_all(
-                scope, self.principals, permissions))
+                scope, self.identifiers, permissions))
 
     def assert_authz_check_possible(self):
         try:
-            if (self.principals):
+            if (self.identifiers):
                 msg = (
                     "This subject is anonymous - it does not have any " +
-                    "identifying principals and authorization operations " +
+                    "identifying identifiers and authorization operations " +
                     "required an identity to check against.  A Subject " +
-                    "instance will acquire these identifying principals " +
+                    "instance will acquire these identifying identifiers " +
                     "automatically after a successful login is performed be " +
                     "executing " + self.__class__.__name__ + 
                     ".login(AuthenticationToken) or when 'Remember Me' " +
@@ -571,7 +571,7 @@ class DelegatingSubject:
         except:
             raise
         else:
-            self._security_manager.check_permission(self.principals,
+            self._security_manager.check_permission(self.identifiers,
                                                     permission)
     
     def check_permissions(self, permissions):
@@ -580,7 +580,7 @@ class DelegatingSubject:
         except:
             raise
         else:
-            self._security_manager.check_permissions(self.principals,
+            self._security_manager.check_permissions(self.identifiers,
                                                      permissions)
 
     # DG:  I am omitting any role-based methods for first release..
@@ -594,19 +594,19 @@ class DelegatingSubject:
             if (isinstance(subject, DelegatingSubject)):
                 delegating = subject
                 # we localize attributes in case there are assumed 
-                # identities --  we don't want to lose the 'real' principals:
-                principals = delegating.principals
+                # identities --  we don't want to lose the 'real' identifiers:
+                identifiers = delegating.identifiers
                 host = delegating.host
             else:
-                principals = subject.principals
+                identifiers = subject.identifiers
 
-            if(not principals):
-                msg = ("Principals returned from securityManager.login(token" +
+            if(not identifiers):
+                msg = ("Identifiers returned from securityManager.login(token" +
                        ") returned a null or empty value. This value must be" +
                        " non-null and populated with one or more elements.")
                 raise IllegalStateException(msg)
             
-            self.principals = principals
+            self.identifiers = identifiers
             self.authenticated = True
 
             if isinstance(auth_token, authc_abcs.HostAuthenticationToken):
@@ -673,7 +673,7 @@ class DelegatingSubject:
         finally:
             # bypassing the validated setters:
             self._session = None
-            self._principals = None
+            self._identifiers = None
             self._authenticated = False
             """
             Don't set securityManager to null here - the Subject can still be
@@ -710,8 +710,8 @@ class DelegatingSubject:
         except ExecutionException:
             print('DelegatingSubject.execute:  ExecutionException')
 
-    def run_as(self, principals):
-        if (not self.has_principals()):
+    def run_as(self, identifiers):
+        if (not self.has_identifiers()):
             msg = ("This subject does not yet have an identity.  Assuming the "
                    "identity of another Subject is only allowed for Subjects "
                    "with an existing identity.  Try logging this subject in "
@@ -720,10 +720,10 @@ class DelegatingSubject:
                    "necessary.")
             raise IllegalStateException(msg)
         else: 
-            self.push_identity(principals)
+            self.push_identity(identifiers)
 
-    def get_previous_principals(self):
-        stack = self.get_run_as_principals_stack()
+    def get_previous_identifiers(self):
+        stack = self.get_run_as_identifiers_stack()
         if (not stack):
             stack_size = 0
         else:
@@ -731,20 +731,20 @@ class DelegatingSubject:
 
         if (stack_size > 0):
             if (stack_size == 1):
-                previous_principals = self.principals
+                previous_identifiers = self.identifiers
             else:
                 # always get the one behind the current
-                previous_principals = stack[1]
-        return previous_principals
+                previous_identifiers = stack[1]
+        return previous_identifiers
 
     def release_run_as(self):
         return self.pop_identity()
 
-    def get_run_as_principals_stack(self):
+    def get_run_as_identifiers_stack(self):
         session = self.get_session(False)
         if (session is not None):
             """
-            expecting a List of PrincipalCollection objects:
+            expecting a List of IdentifierCollection objects:
             """
             return getattr(self._session, self._RUN_AS_PRINCIPALS_SESSION_KEY)
         return None 
@@ -754,10 +754,10 @@ class DelegatingSubject:
         if (session is not None): 
             delattr(session, self._RUN_AS_PRINCIPALS_SESSION_KEY)
 
-    def push_identity(self, principals):
+    def push_identity(self, identifiers):
         try:
-            if (not principals):
-                msg = ("Specified Subject principals cannot be null or empty "
+            if (not identifiers):
+                msg = ("Specified Subject identifiers cannot be null or empty "
                        "for 'run as' functionality.")
                 raise NullPointerException(msg)
 
@@ -765,15 +765,15 @@ class DelegatingSubject:
             print('DelegatingSubject.push_identity NullPointerException', ex)
 
         else: 
-            stack = self.get_run_as_principals_stack()
+            stack = self.get_run_as_identifiers_stack()
             if (not stack):
                 stack = deque() 
-            stack.appendleft(principals)
+            stack.appendleft(identifiers)
             session = self.get_session()  # initializes a session if one DNE
             setattr(session, self._RUN_AS_PRINCIPALS_SESSION_KEY, stack)
     
     def pop_identity(self):
-        stack = self.get_run_as_principals_stack()
+        stack = self.get_run_as_identifiers_stack()
         if (stack): 
             popped = stack.popleft()
             if (stack):
@@ -830,9 +830,9 @@ class DelegatingSubject:
                 self.context.session = session
             return self
 
-        def principals(self, principals):
-            if (principals):
-                self.context.principals = principals
+        def identifiers(self, identifiers):
+            if (identifiers):
+                self.context.identifiers = identifiers
             return self
 
         def session_creation_enabled(self, enabled):

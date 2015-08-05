@@ -27,19 +27,19 @@ from yosai import (
 )
 
 
-class PrincipalCollection(metaclass=ABCMeta):
+class IdentifierCollection(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def primary_principal(self):
+    def primary_identifier(self):
         pass
 
     @abstractmethod
-    def one_by_type(self, principal_type):
+    def one_by_type(self, identifier_type):
         pass
 
     @abstractmethod
-    def by_type(self, principal_type):
+    def by_type(self, identifier_type):
         pass
 
     @abstractmethod
@@ -57,14 +57,14 @@ class PrincipalCollection(metaclass=ABCMeta):
         pass
 
 
-class MutablePrincipalCollection(PrincipalCollection):
+class MutableIdentifierCollection(IdentifierCollection):
 
     @abstractmethod
-    def add(self, principal, realm_name):
+    def add(self, identifier, realm_name):
         pass
 
     @abstractmethod
-    def addAll(self, principals=None, realm_name=None):
+    def addAll(self, identifiers=None, realm_name=None):
         pass
 
     @abstractmethod
@@ -72,26 +72,26 @@ class MutablePrincipalCollection(PrincipalCollection):
         pass
 
 
-class PrincipalMap(PrincipalCollection):
+class IdentifierMap(IdentifierCollection):
 
     @abstractmethod
-    def get_realm_principals(self, realm_name):
+    def get_realm_identifiers(self, realm_name):
         pass
 
     @abstractmethod
-    def set_realm_principals(self, realm_name, principals):
+    def set_realm_identifiers(self, realm_name, identifiers):
         pass
 
     @abstractmethod
-    def set_realm_principal(self, realm_name, principal_name, principal):
+    def set_realm_identifier(self, realm_name, identifier_name, identifier):
         pass
 
     @abstractmethod
-    def get_realm_principal(self, realm_name, realm_principal):
+    def get_realm_identifier(self, realm_name, realm_identifier):
         pass
 
     @abstractmethod
-    def remove_realm_principal(self, realm_name, principal_name):
+    def remove_realm_identifier(self, realm_name, identifier_name):
         pass
 
 
@@ -133,16 +133,16 @@ class SubjectContext(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def principals(self):
+    def identifiers(self):
         pass
     
-    @principals.setter
+    @identifiers.setter
     @abstractmethod
-    def principals(self, principals):
+    def identifiers(self, identifiers):
         pass
 
     @abstractmethod
-    def resolve_principals(self):
+    def resolve_identifiers(self):
         pass
 
     @property
@@ -222,12 +222,12 @@ class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def principal(self):
+    def identifier(self):
         pass
 
     @property
     @abstractmethod
-    def principals(self):
+    def identifiers(self):
         pass
 
     @abstractmethod
@@ -285,7 +285,7 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def run_as(self, principals):
+    def run_as(self, identifiers):
         pass
 
     @abstractmethod
@@ -293,7 +293,7 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_previous_principals(self):
+    def get_previous_identifiers(self):
         pass
 
     @abstractmethod
@@ -338,9 +338,9 @@ class Subject(metaclass=ABCMeta):
                 self.subject_context.session = session
             return self
 
-        def principals(self, principals):
-            if (principals):
-                self.subject_context.principals = principals
+        def identifiers(self, identifiers):
+            if (identifiers):
+                self.subject_context.identifiers = identifiers
             return self
 
         def session_creation_enabled(self, enabled):
