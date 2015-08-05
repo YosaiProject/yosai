@@ -78,6 +78,12 @@ class MapContext(serialize_abcs.Serializable):
     def remove(self, attr):
         return self.context.pop(attr, None)
 
+    def __eq__(self, other):
+        try:
+            return self.context == other.context
+        except:
+            return False
+
     def __repr__(self):
         attributes = ", ".join(str(key) + ': ' + str(value) 
                                for key, value in self.context.items())

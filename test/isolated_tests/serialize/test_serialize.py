@@ -151,7 +151,7 @@ def test_serializable_serialize(full_mock_account, mock_account_state):
     """
     serialized = full_mock_account.serialize()
     assert (serialized['credentials'] == mock_account_state['creds'] and 
-            serialized['attributes'] == mock_account_state['attrs'])
+            serialized['identifiers'] == mock_account_state['identifiers'])
 
 
 def test_serializable_deserialize():

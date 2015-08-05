@@ -90,7 +90,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         
         # new to Yosai is the injection of the eventbus:
         self.authenticator = DefaultAuthenticator(self._event_bus)
+
+        # TBD:  add support for eventbus to the authorizer and inject the bus:
         self.authorizer = ModularRealmAuthorizer()
+
         self.session_manager = None 
         self.remember_me_manager = None
         self.subject_Store = None 
@@ -352,6 +355,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                        subject_context=None): 
 
         if not subject_context: 
+            print('subject_context is NONE')
             context = self.create_subject_context()
             context.authenticated = True
             context.authentication_token = authc_token
@@ -412,7 +416,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         rmm = self.remember_me_manager
         if (rmm is not None): 
             try:
-                rmm.on_failed_login(subject, authc_token, ex)
+                rmm.on_failed_login(subject, authc_token, authc_exc)
 
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type " 

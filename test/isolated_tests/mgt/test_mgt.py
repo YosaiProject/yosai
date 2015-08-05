@@ -14,6 +14,11 @@ from ..session.doubles import (
     MockDefaultSessionManager,
 )
 
+from .doubles import (
+    MockRememberMeManager,
+)
+
+
 def test_dsm_setauthenticator_da(
         default_security_manager, default_authenticator, monkeypatch):
     """
@@ -439,76 +444,195 @@ def test_dsm_create_subject_wo_context(default_security_manager):
     """
     dsm = default_security_manager
 
-    expected_subject_context = dsm.create_subject_context()
-    expected_subject_context.authenticated = True
-    expected_subject_context.authentication_token = 'dumb_token'
-    expected_subject_context.account = 'dumb_account'
-    expected_subject_context.subject = 'existing_subject'
+    testcontext = DefaultSubjectContext()
+    testcontext.authenticated = True
+    testcontext.authentication_token = 'dumb_token'
+    testcontext.account = 'dumb_account'
+    testcontext.subject = 'existing_subject'
 
     with mock.patch.object(dsm, 'ensure_security_manager') as dsm_esm:
-        dsm_esm.return_value = expected_subject_context
+        dsm_esm.return_value = testcontext 
         with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
-            dsm_rs.return_value = expected_subject_context
+            dsm_rs.return_value = testcontext 
             with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
-                dsm_rp.return_value = expected_subject_context 
+                dsm_rp.return_value = testcontext 
                 with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
-                    dsm_dcs.return_value = 'subject'
+                    dsm_dcs.return_value = 'subject' 
                     with mock.patch.object(dsm, 'save') as dsm_save:
                         dsm_save.return_value = None
+
                         result = dsm.create_subject(authc_token='dumb_token', 
                                                     account='dumb_account',
                                                     existing_subject='existing_subject')
-
-                        dsm_esm.assert_called_once_with(expected_subject_context)
-                        dsm_rs.assert_called_once_with(expected_subject_context)
-                        dsm_rp.assert_called_once_with(expected_subject_context)
-                        dsm_dcs.assert_called_once_with(expected_subject_context)
-                        dsm_save.assert_called_once_with('subject')
-
+                        
+                        dsm_esm.assert_called_once_with(testcontext)
+                        dsm_rs.assert_called_once_with(testcontext)
+                        dsm_rp.assert_called_once_with(testcontext)
+                        dsm_dcs.assert_called_once_with(testcontext)
                         assert result == 'subject'
 
-#def test_dsm_create_subject_w_context
+def test_dsm_create_subject_w_context(default_security_manager):
     """
-    unit tested
+    unit tested:  create_subject
+
+    test case:
+    context is passed as an argument, and so it is used
+    """
+    dsm = default_security_manager
+
+    testcontext = DefaultSubjectContext()
+    testcontext.authenticated = True
+    testcontext.authentication_token = 'dumb_token'
+    testcontext.account = 'dumb_account'
+    testcontext.subject = 'existing_subject'
+
+    with mock.patch.object(dsm, 'ensure_security_manager') as dsm_esm:
+        dsm_esm.return_value = testcontext 
+        with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
+            dsm_rs.return_value = testcontext 
+            with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
+                dsm_rp.return_value = testcontext 
+                with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
+                    dsm_dcs.return_value = None 
+                    with mock.patch.object(dsm, 'save') as dsm_save:
+                        dsm_save.return_value = None
+
+                        dsm.create_subject(subject_context=testcontext)
+                        
+                        dsm_esm.assert_called_once_with(testcontext)
+                        dsm_rs.assert_called_once_with(testcontext)
+                        dsm_rp.assert_called_once_with(testcontext)
+                        dsm_dcs.assert_called_once_with(testcontext)
+
+
+def test_dsm_rememberme_successful_login(
+        default_security_manager, mock_remember_me_manager, monkeypatch):
+    """
+    unit tested:  remember_me_successful_login
 
     test case:
     """
-#def test_dsm_rememberme_successful_login
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+
+    with mock.patch.object(MockRememberMeManager,
+                           'on_successful_login') as mrmm_osl:
+        mrmm_osl.return_value = None
+        dsm.remember_me_successful_login('authc_token', 'account', 'subject')
+        mrmm_osl.assert_called_once_with('subject', 'authc_token', 'account')
+
+def test_dsm_rememberme_successful_login_rmm_set_but_raises(
+        capsys, default_security_manager, mock_remember_me_manager, 
+        monkeypatch):
     """
-    unit tested:
+    unit tested:  remember_me_successful_login
 
     test case:
+    1) the remember_me_manager attribute is set
+    2) the call for rmm.on_successful_login raises an exception
+    3) a warning message is emitted
     """
-#def test_dsm_rememberme_successful_login_warned(capsys, 
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+
+    with mock.patch.object(MockRememberMeManager,
+                           'on_successful_login') as mrmm_osl:
+        mrmm_osl.side_effect = Exception
+        dsm.remember_me_successful_login('authc_token', 'account', 'subject')
+        out, err = capsys.readouterr()
+        assert 'threw an exception' in out 
+
+
+def test_dsm_rememberme_successful_login_rmm_notset(
+        capsys, default_security_manager):
     """
-    unit tested:
+    unit tested:  remember_me_successful_login
 
     test case:
+    when the remember_me_manager attribute is not set, a warning message is 
+    emitted
     """
-#def test_dsm_rememberme_failed_login
+    dsm = default_security_manager
+    dsm.remember_me_successful_login('authc_token', 'account', 'subject')
+    out, err = capsys.readouterr()
+    assert 'does not have' in out 
+
+def test_dsm_rememberme_failed_login(
+        default_security_manager, mock_remember_me_manager, monkeypatch):
     """
-    unit tested:
+    unit tested:  remember_me_failed_login
 
     test case:
+    when a remember_me_manager is set, it's on_failed_login is called
     """
-#def test_dsm_rememberme_failed_login_warned(capsys,
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+
+    with mock.patch.object(MockRememberMeManager,
+                           'on_failed_login') as mrmm_ofl:
+        mrmm_ofl.return_value = None
+        dsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
+        mrmm_ofl.assert_called_once_with('subject', 'authc_token', 'authc_exc')
+
+
+def test_dsm_rememberme_failed_login_warned(
+        default_security_manager, mock_remember_me_manager, monkeypatch,
+        capsys):
     """
-    unit tested:
+    unit tested:  remember_me_failed_login
 
     test case:
+    when the remember_me_manager attribute is not set, a warning message is 
+    emitted
     """
-#def test_dsm_rememberme_logout
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+
+    with mock.patch.object(MockRememberMeManager,
+                           'on_failed_login') as mrmm_ofl:
+        mrmm_ofl.side_effect = Exception
+        dsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
+        out, err = capsys.readouterr()
+        assert 'threw an exception' in out 
+
+def test_dsm_rememberme_logout(
+        default_security_manager, mock_remember_me_manager, monkeypatch):
     """
-    unit tested:
+    unit tested:  remember_me_logout
 
     test case:
+    when a remember_me_manager is set, it's on_logout is called
     """
-#def test_dsm_rememberme_logout_warned(capsys,
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+
+    with mock.patch.object(MockRememberMeManager,
+                           'on_logout') as mrmm_ol:
+        mrmm_ol.return_value = None
+        dsm.remember_me_logout('subject')
+        mrmm_ol.assert_called_once_with('subject')
+
+def test_dsm_rememberme_logout_warned(
+        default_security_manager, mock_remember_me_manager, monkeypatch, 
+        capsys):
     """
-    unit tested:
+    unit tested:  remember_me_logout
 
     test case:
+    prints a warning when remember_me_manager raises an exception
     """
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
 
+    class MockSubject:
+        def __init__(self):
+            self.identifiers = {'username': 'username'}
+
+    with mock.patch.object(MockRememberMeManager,
+                           'on_logout') as mrmm_ol:
+        mrmm_ol.side_effect = Exception
+        dsm.remember_me_logout(MockSubject())
+        out, err = capsys.readouterr()
+        assert 'threw an exception during on_logout' in out 
 
 

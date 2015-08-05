@@ -64,10 +64,10 @@ class MockAccountCacheHandler(realm_abcs.AccountCacheHandler):
 
 class MockAccount(account_abcs.Account):
 
-    def __init__(self, account_id, credentials={}, attributes={}):
+    def __init__(self, account_id, credentials={}, identifiers={}):
         self._account_id = account_id
         self._credentials = credentials
-        self._attributes = attributes
+        self._identifiers = identifiers
         
     @property 
     def account_id(self):
@@ -78,28 +78,28 @@ class MockAccount(account_abcs.Account):
         return self._credentials 
 
     @property 
-    def attributes(self):
-        return self._attributes 
+    def identifiers(self):
+        return self._identifiers 
 
     def __eq__(self, other):
         try:
             result = (self._account_id == other._account_id and 
                       self.credentials == other.credentials and
-                      self.attributes == other.attributes)
+                      self.identifiers == other.identifiers)
         except Exception:
             return False
         return result
 
     def __repr__(self):
-        return "<MockAccount(id={0}, credentials={1}, attributes={2})>".\
-            format(self.account_id, self.credentials, self.attributes)
+        return "<MockAccount(id={0}, credentials={1}, identifiers={2})>".\
+            format(self.account_id, self.credentials, self.identifiers)
 
     @classmethod
     def serialization_schema(cls):
         class SerializationSchema(Schema):
             account_id = fields.Str()
             credentials = fields.Nested(cls.AccountCredentialsSchema) 
-            attributes = fields.Nested(cls.AccountAttributesSchema)
+            identifiers = fields.Nested(cls.AccountAttributesSchema)
      
             def make_object(self, data):
                 mycls = MockAccount 

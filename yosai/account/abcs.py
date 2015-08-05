@@ -92,13 +92,15 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
         """
         pass
 
+    # yosai renamed "attributes" to identifiers:
     @property 
     @abstractmethod
-    def attributes(self):
+    def identifiers(self):
         """ 
-        Returns an *immutable* view of the Account's IDENTIFYING attributes 
-        accessible to the application.  Once the account is obtained, an application
-        developer can access them as desired, for example:
+        Returns an *immutable* view of the Account's IDENTIFYING attributes,
+        excluding the AccountID, accessible to the application.  Once the 
+        account is obtained, an application developer can access them as 
+        desired, for example:
         
             username = account.attributes.get('username')
             print("Welcome, " + username + "!")

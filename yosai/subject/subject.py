@@ -77,8 +77,8 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self, subject_context={}):
-        super().__init__(context_map=subject_context)
+    def __init__(self, context={}):
+        super().__init__(context)
         # yosai takes a different approach to managing key names:
         self._attributes = self.get_initial_context_attributes()
 

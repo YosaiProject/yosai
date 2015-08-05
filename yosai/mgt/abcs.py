@@ -70,7 +70,7 @@ class RememberMeManager(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def on_successful_login(self, subject, authc_token, auth_info):
+    def on_successful_login(self, subject, authc_token, account):
 
         """ 
         Reacts to a successful authentication attempt, typically saving the 
@@ -80,8 +80,8 @@ class RememberMeManager(metaclass=ABCMeta):
                         attempt
         :param token:   the authentication token submitted resulting in a 
                         successful authentication attempt
-        :param info:   the authenticationInfo returned as a result of the 
-                       successful authentication attempt
+        :param account: the account returned as a result of the 
+                        successful authentication attempt
         """
         pass
 

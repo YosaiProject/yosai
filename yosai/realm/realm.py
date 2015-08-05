@@ -45,7 +45,6 @@ class AccountStoreRealm(realm_abcs.Realm):
         self._account_cache_handler = None  # DG:  TBD
         self._authorization_cache_handler = None  # DG:  TBD
 
-    # these accessor / mutator methods exist to prevent None assignments
     @property
     def account_store(self):
         return self._account_store

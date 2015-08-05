@@ -26,11 +26,11 @@ from .session.doubles import (
 def mock_account_state():
     return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO', 
                       'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
-            'attrs': {'givenname': 'Napolean',
-                      'surname': 'Dynamite',
-                      'email': 'napoleandynamite@example.com',
-                      'username': 'napodyna',
-                      'api_key_id': '144JVZINOF5EBNCMG9EXAMPLE'}}
+            'identifiers': {'givenname': 'Napolean',
+                            'surname': 'Dynamite',
+                            'email': 'napoleandynamite@example.com',
+                            'username': 'napodyna',
+                            'api_key_id': '144JVZINOF5EBNCMG9EXAMPLE'}}
          
 
 @pytest.fixture(scope='function')
@@ -38,7 +38,7 @@ def full_mock_account(mock_account_state):
     mas = mock_account_state
     return MockAccount(account_id=8675309,
                        credentials=mas['creds'],
-                       attributes=mas['attrs'])
+                       identifiers=mas['identifiers'])
 
 
 @pytest.fixture(scope='function')

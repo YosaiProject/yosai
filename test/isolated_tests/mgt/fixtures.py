@@ -4,6 +4,9 @@ from yosai import (
 
 import pytest
 
+from .doubles import (
+    MockRememberMeManager,
+)
 
 @pytest.fixture(scope='function')
 def default_security_manager():
@@ -16,3 +19,8 @@ def dependencies_for_injection(default_security_manager):
             dsm.authenticator, dsm.authorizer,
             dsm.session_manager, dsm.subject_Store,
             dsm.subject_factory}
+
+@pytest.fixture(scope='function')
+def mock_remember_me_manager():
+    return MockRememberMeManager()
+

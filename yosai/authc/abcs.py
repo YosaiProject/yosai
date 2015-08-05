@@ -33,15 +33,15 @@ class AuthenticationListener(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def on_success(self, authc_token, authc_info):
+    def on_success(self, authc_token, account):
         """
         Callback triggered when an authentication attempt for a Subject  
         succeeds
          
         :param authc_token: the authentication token submitted during the 
                             Subject (user)'s authentication attempt
-        :param authc_info:  the authentication-related account data acquired
-                            after authentication for the corresponding Subject
+        :param account:  the authentication-related account data acquired
+                         after authentication for the corresponding Subject
         """
         pass
 
