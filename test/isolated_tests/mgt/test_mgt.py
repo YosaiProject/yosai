@@ -635,4 +635,104 @@ def test_dsm_rememberme_logout_warned(
         out, err = capsys.readouterr()
         assert 'threw an exception during on_logout' in out 
 
+def test_dsm_login_success
+    """
+    unit tested:  login
+
+    test case:
+        authenticate_account returns an account, create_subject is called,
+        on_successful_login is called, and then logged_in is returned
+    """
+
+#def test_dsm_login_raises_then_succeeds
+    """
+    unit tested:  login
+
+    test case:
+    authenticate_account raises an AuthenticationException, on_failed_login
+    succeeds, and an AuthenticationException is raised up the stack
+    """
+
+#def test_dsm_login_raises_then_raises
+    """
+    unit tested:  login
+
+    test case:
+    authenticate_account raises an AuthenticationException, on_failed_login
+    raises, a warning is emitted, and an AuthenticationException is raised up 
+    the stack
+    """
+
+#def test_on_successful_login
+    """
+    unit tested:  on_successful_login
+
+    test case:
+    passes call on to remember_me_successful_login
+    """
+
+#def test_onfailed_login
+    """
+    unit tested:  on_failed_login
+
+    test case:
+    passes call on to remember_me_failed_login
+    """
+
+#def test_before_logout
+    """
+    unit tested:  before_logout 
+
+    test case:
+    passes call on to remember_me_logout
+    """
+
+#def test_copy
+    """
+    unit tested:  copy
+
+    test case:
+    returns a new DefaultSubjectContext
+    """
+
+#def test_do_create_subject
+    """
+    unit tested:  do_create_subject
+
+    test case:
+    passes call onto subject_factory.create_subject
+    """
+
+#def test_save
+    """
+    unit tested:  save
+
+    test case:
+    passes call onto subject_store.save
+    """
+
+#def test_delete
+    """
+    unit tested:  delete 
+
+    test case:
+    passes call onto subject_store.delete
+    """
+
+#def ensure_security_manager_resolves
+    """
+    unit tested:  ensure_security_manager
+
+    test case:
+    resolve_security_manager returns the subject_context
+    """
+
+#def ensure_security_manager_doesntresolve
+    """
+    unit tested:  ensure_security_manager
+
+    test case:
+    resolve_security_manager returns None, and then ensure_security_manager
+    returns a subject_context whose security_manager is the dsm
+    """
 
