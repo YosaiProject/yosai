@@ -368,15 +368,15 @@ class Subject(metaclass=ABCMeta):
     """
 
 # moved from /mgt:
-class SubjectDAO(metaclass=ABCMeta):
+class SubjectStore(metaclass=ABCMeta):
     """
-    A SubjectDAO is responsible for persisting a Subject instance's internal
+    A SubjectStore is responsible for persisting a Subject instance's internal
     state such that the Subject instance can be recreated at a later time if
     necessary.
 
-    Shiro's default SecurityManager implementations typically use a SubjectDAO
+    Shiro's default SecurityManager implementations typically use a SubjectStore
     in conjunction with a SubjectFactory after the SubjectFactory creates a
-    Subject instance, the SubjectDAO is used to persist that subject's state
+    Subject instance, the SubjectStore is used to persist that subject's state
     such that it can be accessed later if necessary.
 
     Usage

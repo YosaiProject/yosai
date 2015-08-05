@@ -51,11 +51,11 @@ from yosai import (
 from abc import abstractmethod
 
 
-class AbstractSessionDAO(session_abcs.SessionDAO):
+class AbstractSessionStore(session_abcs.SessionStore):
     """
-    An abstract SessionDAO implementation that performs some sanity checks on
+    An abstract SessionStore implementation that performs some sanity checks on
     session creation and reading and allows for pluggable Session ID generation
-    strategies if desired.  The SessionDAO.update and SessionDAO.delete method
+    strategies if desired.  The SessionStore.update and SessionStore.delete method
     implementations are left to subclasses.
 
     Session ID Generation
@@ -123,9 +123,9 @@ class AbstractSessionDAO(session_abcs.SessionDAO):
         pass
 
 
-class MemorySessionDAO(AbstractSessionDAO):
+class MemorySessionStore(AbstractSessionStore):
     """
-    Simple memory-based implementation of the SessionDAO that stores all of its
+    Simple memory-based implementation of the SessionStore that stores all of its
     sessions in an in-memory dict.  This implementation does not page
     to disk and is therefore unsuitable for applications that could experience
     a large amount of sessions and would therefore result in MemoryError
@@ -136,10 +136,10 @@ class MemorySessionDAO(AbstractSessionDAO):
     -------------------
     If your application is expected to host many sessions beyond what can be
     stored in the memory available to the Python interpreter, it is highly 
-    recommended that you use a different SessionDAO implementation using a 
+    recommended that you use a different SessionStore implementation using a 
     more expansive or permanent backing data store.
 
-    Instead, use a custom CachingSessionDAO implementation that communicates 
+    Instead, use a custom CachingSessionStore implementation that communicates 
     with a higher-capacity data store of your choice (Redis, Memcached, 
     file system, rdbms, etc).
     """
@@ -157,7 +157,7 @@ class MemorySessionDAO(AbstractSessionDAO):
         # stores only if session doesn't already exist, returning the existing 
         # session (as default) otherwise
         if session_id is None or session is None:
-            msg = 'MemorySessionDAO.store_session invalid param passed'
+            msg = 'MemorySessionStore.store_session invalid param passed'
             raise IllegalArgumentException(msg)
 
         return self.sessions.setdefault(session_id, session)
@@ -173,10 +173,10 @@ class MemorySessionDAO(AbstractSessionDAO):
             sessionid = session.session_id
             self.sessions.pop(sessionid)
         except AttributeError: 
-            msg = 'MemorySessionDAO.delete None param passed'
+            msg = 'MemorySessionStore.delete None param passed'
             raise IllegalArgumentException(msg)
         except KeyError:
-            msg = ('MemorySessionDAO could not delete ', str(sessionid), 
+            msg = ('MemorySessionStore could not delete ', str(sessionid), 
                    'because it does not exist in memory!')
             print(msg)
             # log here
@@ -185,9 +185,9 @@ class MemorySessionDAO(AbstractSessionDAO):
         return tuple(self.sessions.values())
 
 
-class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
+class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheManagerAware):
     """
-    An CachingSessionDAO is a SessionDAO that provides a transparent caching
+    An CachingSessionStore is a SessionStore that provides a transparent caching
     layer between the components that use it and the underlying EIS
     (Enterprise Information System) session backing store (e.g.
     Redis, Memcached, filesystem, database, enterprise grid/cloud, etc).
@@ -197,7 +197,7 @@ class CachingSessionDAO(AbstractSessionDAO, cache_abcs.CacheManagerAware):
     not explicitly set, a cache manager is expected to be configured 
     to acquire the Cache instance used for the active_sessions_cache.
 
-    All SessionDAO methods are implemented by this class to employ
+    All SessionStore methods are implemented by this class to employ
     caching behavior, delegating the actual EIS operations to respective 
     'do' methods implemented by subclasses (do_create, do_read, etc).
     """
@@ -1417,23 +1417,23 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
                             cache_abcs.CacheManagerAware):
     """
     Default business-tier implementation of a ValidatingSessionManager.  
-    All session CRUD operations are delegated to an internal SessionDAO.
+    All session CRUD operations are delegated to an internal SessionStore.
     """
 
     def __init__(self): 
         self.delete_invalid_sessions = True
         self.session_factory = SimpleSessionFactory()
         self._cache_manager = None 
-        self._session_DAO = MemorySessionDAO()  # advised change to CachingSessionDAO 
+        self._session_Store = MemorySessionStore()  # advised change to CachingSessionStore 
 
     @property
-    def session_DAO(self):
-        return self._session_DAO
+    def session_Store(self):
+        return self._session_Store
 
-    @session_DAO.setter
-    def session_DAO(self, sessiondao):
-        self._session_DAO = sessiondao
-        self.apply_cache_manager_to_session_DAO()
+    @session_Store.setter
+    def session_Store(self, sessionstore):
+        self._session_Store = sessionstore
+        self.apply_cache_manager_to_session_Store()
 
     @property
     def cache_manager(self):
@@ -1442,14 +1442,14 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
     @cache_manager.setter
     def cache_manager(self, cachemanager):
         self._cache_manager = cachemanager
-        self.apply_cache_manager_to_session_DAO()
+        self.apply_cache_manager_to_session_Store()
 
-    def apply_cache_manager_to_session_DAO(self):
+    def apply_cache_manager_to_session_Store(self):
         try:
-            if isinstance(self.session_DAO, cache_abcs.CacheManagerAware):
-                self.session_DAO.cache_manager = self._cache_manager
+            if isinstance(self.session_Store, cache_abcs.CacheManagerAware):
+                self.session_Store.cache_manager = self._cache_manager
         except AttributeError:
-            msg = ("tried to set a cache manager in a SessionDAO that isn\'t"
+            msg = ("tried to set a cache manager in a SessionStore that isn\'t"
                    "defined or configured in the DefaultSessionManager")
             print(msg)
             # log warning here
@@ -1473,7 +1473,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
                format(session)) 
         print(msg)
         # log debug here
-        self.session_DAO.create(session)
+        self.session_Store.create(session)
 
     def on_stop(self, session):
         try:
@@ -1505,7 +1505,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
             self.delete(session)
 
     def on_change(self, session):
-        self.session_DAO.update(session)
+        self.session_Store.update(session)
 
     def retrieve_session(self, session_key):
         session_id = self.get_session_id(session_key)
@@ -1530,13 +1530,13 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
         return session_key.session_id
     
     def retrieve_session_from_data_source(self, session_id):
-        return self.session_DAO.read_session(session_id)
+        return self.session_Store.read_session(session_id)
 
     def delete(self, session):
-        self.session_DAO.delete(session)
+        self.session_Store.delete(session)
 
     def get_active_sessions(self):
-        active_sessions = self.session_DAO.get_active_sessions()
+        active_sessions = self.session_Store.get_active_sessions()
         if (active_sessions is not None):
             return active_sessions
         else:

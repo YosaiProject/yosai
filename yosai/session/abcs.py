@@ -653,7 +653,7 @@ class SessionValidationScheduler(metaclass=ABCMeta):
         pass
 
 
-class SessionDAO(metaclass=ABCMeta):
+class SessionStore(metaclass=ABCMeta):
     """
     Data Access Object design pattern specification to enable Session
     access to an EIS (Enterprise Information System).  It provides your four
@@ -676,7 +676,7 @@ class SessionDAO(metaclass=ABCMeta):
     def create(self, session):
         """
         Inserts a new Session record into the underling EIS (e.g. Relational
-        database, file system, persistent cache, etc, depending on the DAO
+        database, file system, persistent cache, etc, depending on the Store
         implementation).  After this method is invoked, the Session.session_id 
         property obtained from the argument must return a valid session 
         identifier.  That is, the following should always be true:

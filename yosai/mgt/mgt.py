@@ -93,7 +93,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         self.authorizer = ModularRealmAuthorizer()
         self.session_manager = None 
         self.remember_me_manager = None
-        self.subject_DAO = None 
+        self.subject_Store = None 
         self.subject_factory = None 
 
     """
@@ -225,7 +225,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     def get_dependencies_for_injection(self, ignore):
         deps = {self._event_bus, self._cache_manager, self.realms, 
                 self.authenticator, self.authorizer,
-                self.session_manager, self.subject_DAO,
+                self.session_manager, self.subject_Store,
                 self.subject_factory}
         try:
             deps.remove(ignore)
@@ -468,10 +468,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         return self.subject_factory.create_subject(subject_context)
 
     def save(self, subject):
-        self.subject_DAO.save(subject)
+        self.subject_Store.save(subject)
 
     def delete(self, subject):
-        self.subject_DAO.delete(subject)
+        self.subject_Store.delete(subject)
 
     def ensure_security_manager(self, subject_context):
         if (subject_context.resolve_security_manager() is not None):

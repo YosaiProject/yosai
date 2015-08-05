@@ -276,7 +276,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         return host
     
    
-class DefaultSubjectDAO:
+class DefaultSubjectStore:
 
     def __init__(self):
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()

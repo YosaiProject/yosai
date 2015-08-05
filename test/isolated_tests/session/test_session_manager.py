@@ -5,7 +5,7 @@ import datetime
 from .doubles import (
     MockAbstractNativeSessionManager,
     MockAbstractValidatingSessionManager,
-    MockCachingSessionDAO,
+    MockCachingSessionStore,
     MockDefaultSessionManager,
     MockSession,
     MockSessionManager,
@@ -13,14 +13,14 @@ from .doubles import (
 
 from yosai import (
     AbstractValidatingSessionManager,
-    CachingSessionDAO,
+    CachingSessionStore,
     DefaultSessionSettings,
     DelegatingSession,
     DefaultEventBus,
     ExecutorServiceSessionValidationScheduler,
     ExpiredSessionException,
     IllegalArgumentException,
-    MemorySessionDAO,
+    MemorySessionStore,
     SessionEventException,
     StoppableScheduledExecutor,
     StoppedSessionException,
@@ -1048,19 +1048,19 @@ def test_avsm_validate_sessions_allvalid(
 # DefaultSessionManager
 # ----------------------------------------------------------------------------
 
-def test_dsm_set_sessiondao(mock_default_session_manager):
+def test_dsm_set_sessionstore(mock_default_session_manager):
     """
-    unit tested:  session_DAO.setter
+    unit tested:  session_Store.setter
 
     test case:
-    the sessionDAO property sets the attribute and calls a method
+    the sessionStore property sets the attribute and calls a method
     """
     mdsm = mock_default_session_manager
     with mock.patch.object(MockDefaultSessionManager,
-                           'apply_cache_manager_to_session_DAO') as dsm_acm:
+                           'apply_cache_manager_to_session_Store') as dsm_acm:
         dsm_acm.return_value = None
 
-        mdsm.session_DAO = 'sessiondao'
+        mdsm.session_Store = 'sessionstore'
         
         dsm_acm.assert_called_once_with()
 
@@ -1073,7 +1073,7 @@ def test_dsm_set_cache_manager(mock_default_session_manager):
     """
     mdsm = mock_default_session_manager
     with mock.patch.object(MockDefaultSessionManager,
-                           'apply_cache_manager_to_session_DAO') as dsm_acm:
+                           'apply_cache_manager_to_session_Store') as dsm_acm:
         dsm_acm.return_value = None
 
         mdsm.cache_manager = 'cache_manager'
@@ -1082,33 +1082,33 @@ def test_dsm_set_cache_manager(mock_default_session_manager):
 
 
 def test_dsm_acmtsd(
-        mock_default_session_manager, monkeypatch, mock_caching_session_dao):
+        mock_default_session_manager, monkeypatch, mock_caching_session_store):
     """
-    unit tested:  apply_cache_manager_to_session_DAO
+    unit tested:  apply_cache_manager_to_session_Store
 
     test case:
-    when a sessionDAO is configured, the sessionDAO sets the cachemanager
+    when a sessionStore is configured, the sessionStore sets the cachemanager
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, '_cache_manager', 'cachemanager')
-    monkeypatch.setattr(mdsm, '_session_DAO', mock_caching_session_dao) 
-    mdsm.apply_cache_manager_to_session_DAO()
-    assert mdsm.session_DAO.cache_manager == 'cachemanager'
+    monkeypatch.setattr(mdsm, '_session_Store', mock_caching_session_store) 
+    mdsm.apply_cache_manager_to_session_Store()
+    assert mdsm.session_Store.cache_manager == 'cachemanager'
 
 
 def test_dsm_acmtsd_raises(
-        mock_default_session_manager, monkeypatch, mock_caching_session_dao):
+        mock_default_session_manager, monkeypatch, mock_caching_session_store):
     """
-    unit tested:  apply_cache_manager_to_session_DAO
+    unit tested:  apply_cache_manager_to_session_Store
 
     test case:
-    if no sessionDAO configured, will return gracefully
+    if no sessionStore configured, will return gracefully
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, '_cache_manager', 'cachemanager')
-    monkeypatch.delattr(mock_caching_session_dao, '_cache_manager')
-    monkeypatch.setattr(mdsm, '_session_DAO', mock_caching_session_dao) 
-    mdsm.apply_cache_manager_to_session_DAO()
+    monkeypatch.delattr(mock_caching_session_store, '_cache_manager')
+    monkeypatch.setattr(mdsm, '_session_Store', mock_caching_session_store) 
+    mdsm.apply_cache_manager_to_session_Store()
 
 
 def test_dsm_do_create_session(
@@ -1148,11 +1148,11 @@ def test_dsm_create(mock_default_session_manager, monkeypatch):
     unit tested:  create 
 
     test case:
-    relays session to session_DAO's create method  
+    relays session to session_Store's create method  
     """
     mdsm = mock_default_session_manager
 
-    with mock.patch.object(MemorySessionDAO, 'create') as msd_create:
+    with mock.patch.object(MemorySessionStore, 'create') as msd_create:
         msd_create.return_value = None
         mdsm.create('session')
         msd_create.assert_called_once_with('session')
@@ -1265,10 +1265,10 @@ def test_dsm_on_change(
     unit tested:  on_change 
 
     test case:
-    passthrough call to session_DAO.update 
+    passthrough call to session_Store.update 
     """
     mdsm = mock_default_session_manager
-    with mock.patch.object(MemorySessionDAO, 'update') as msd_up:
+    with mock.patch.object(MemorySessionStore, 'update') as msd_up:
         msd_up.return_value = None
 
         mdsm.on_change('session')
@@ -1355,11 +1355,11 @@ def test_dsm_rsfds(mock_default_session_manager, monkeypatch):
     unit tested:  retrieve_session_from_data_source 
 
     test case:
-    passthrough call to session_DAO.read_session
+    passthrough call to session_Store.read_session
     """
     
     mdsm = mock_default_session_manager
-    monkeypatch.setattr(mdsm.session_DAO, 'read_session', lambda x:  'session')
+    monkeypatch.setattr(mdsm.session_Store, 'read_session', lambda x:  'session')
     result = mdsm.retrieve_session_from_data_source('sessionid123')
 
     assert result == 'session'
@@ -1370,11 +1370,11 @@ def test_dsm_delete(mock_default_session_manager, monkeypatch):
     unit tested:  delete 
 
     test case:
-    passthrough call to session_DAO.delete
+    passthrough call to session_Store.delete
     """
     
     mdsm = mock_default_session_manager
-    monkeypatch.setattr(mdsm.session_DAO, 'delete', lambda x: None) 
+    monkeypatch.setattr(mdsm.session_Store, 'delete', lambda x: None) 
     result = mdsm.delete('session')
     assert result is None
 
@@ -1391,7 +1391,7 @@ def test_dsm_getactivesessions(
     returns either an empty tuple or a tuple of active sessions
     """
     mdsm = mock_default_session_manager
-    monkeypatch.setattr(mdsm.session_DAO, 'get_active_sessions', lambda: active_sessions)
+    monkeypatch.setattr(mdsm.session_Store, 'get_active_sessions', lambda: active_sessions)
     result = mdsm.get_active_sessions()
     assert result == expected
 

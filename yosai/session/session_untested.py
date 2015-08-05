@@ -25,12 +25,12 @@ class SessionTokenGenerator:
 
 
 """
-class EnterpriseCacheSessionDAO(CachingSessionDAO):
+class EnterpriseCacheSessionStore(CachingSessionStore):
 
     def __init__(self): 
         
         DG:  not sure how to refactor this:
-        public EnterpriseCacheSessionDAO() {
+        public EnterpriseCacheSessionStore() {
         setCacheManager(new AbstractCacheManager() {
             @Override
             protected Cache<Serializable, Session> createCache(String name) throws CacheException {

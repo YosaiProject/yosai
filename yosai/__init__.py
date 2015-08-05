@@ -216,18 +216,18 @@ from yosai.session.session_gen import(
 )
 
 from yosai.session.session import (
-    AbstractSessionDAO,
+    AbstractSessionStore,
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
-    CachingSessionDAO,
+    CachingSessionStore,
     DefaultSessionContext,  
     DefaultSessionKey,
     DefaultSessionManager,
     DelegatingSession,
     DefaultSessionStorageEvaluator,
     ExecutorServiceSessionValidationScheduler,
-    # EnterpriseCacheSessionDAO,
-    MemorySessionDAO,
+    # EnterpriseCacheSessionStore,
+    MemorySessionStore,
     ImmutableProxiedSession,
     ProxiedSession,
     # SessionTokenGenerator,
@@ -237,7 +237,7 @@ from yosai.session.session import (
 
 from yosai.subject.subject import(
     DefaultSubjectContext,
-    DefaultSubjectDAO,
+    DefaultSubjectStore,
     DefaultSubjectFactory,
     # DelegatingSubject,
     # StoppingAwareProxiedSession,

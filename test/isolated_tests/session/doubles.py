@@ -1,9 +1,9 @@
 import datetime
 from yosai import (
     AbstractNativeSessionManager,
-    AbstractSessionDAO,
+    AbstractSessionStore,
     AbstractValidatingSessionManager,
-    CachingSessionDAO,
+    CachingSessionStore,
     DefaultSessionManager,
     session_abcs,
 )
@@ -179,7 +179,7 @@ class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
         pass
 
 
-class MockAbstractSessionDAO(AbstractSessionDAO):
+class MockAbstractSessionStore(AbstractSessionStore):
 
     def __init__(self):
         super().__init__()
@@ -197,7 +197,7 @@ class MockAbstractSessionDAO(AbstractSessionDAO):
         pass
 
 
-class MockCachingSessionDAO(CachingSessionDAO):
+class MockCachingSessionStore(CachingSessionStore):
    
     def do_create(self, session):
         pass

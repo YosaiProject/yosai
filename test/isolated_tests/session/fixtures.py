@@ -3,23 +3,23 @@ import pytest
 from yosai import (
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
-    CachingSessionDAO,
+    CachingSessionStore,
     DefaultSessionContext,
     DefaultSessionSettings,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
     ImmutableProxiedSession,
-    MemorySessionDAO,
+    MemorySessionStore,
     ProxiedSession,
     SimpleSession,
 )
 
 from .doubles import (
     MockAbstractNativeSessionManager,
-    MockAbstractSessionDAO,
+    MockAbstractSessionStore,
     MockAbstractValidatingSessionManager,
-    MockCachingSessionDAO,
+    MockCachingSessionStore,
     MockSession,
     MockSessionManager,
 )
@@ -82,16 +82,16 @@ def default_session_context():
                                               'attr3': 'attributeThree'})
 
 @pytest.fixture(scope='function')
-def mock_abstract_session_dao():
-    return MockAbstractSessionDAO()
+def mock_abstract_session_store():
+    return MockAbstractSessionStore()
 
 @pytest.fixture(scope='function')
-def memory_session_dao():
-    return MemorySessionDAO()
+def memory_session_store():
+    return MemorySessionStore()
 
 @pytest.fixture(scope='function')
-def mock_caching_session_dao():
-    return MockCachingSessionDAO()
+def mock_caching_session_store():
+    return MockCachingSessionStore()
 
 @pytest.fixture(scope='function')
 def default_session_storage_evaluator():
