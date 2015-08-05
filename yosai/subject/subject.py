@@ -102,11 +102,11 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @property
     def security_manager(self):
-        return self.context.get(self._attributes['SECURITY_MANAGER'])
+        return self.get(self._attributes['SECURITY_MANAGER'])
 
     @security_manager.setter
     def security_manager(self, securitymanager):
-        self.context.none_safe_put(
+        self.none_safe_put(
             self._attributes['SECURITY_MANAGER'], securitymanager)
     
     def resolve_security_manager(self): 
@@ -131,27 +131,27 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @property
     def session_id(self):
-        return self.context.get(self._attributes['SESSION_ID'])
+        return self.get(self._attributes['SESSION_ID'])
    
     @session_id.setter
     def session_id(self, session_id):
-        self.context.none_safe_put(self._attributes['SESSION_ID'], session_id)
+        self.none_safe_put(self._attributes['SESSION_ID'], session_id)
 
     @property 
     def subject(self):
-        return self.context.get(self._attributes['SUBJECT'])
+        return self.get(self._attributes['SUBJECT'])
 
     @subject.setter
     def subject(self, subject):
-            self.context.none_safe_put(self._attributes['SUBJECT'], subject)
+            self.none_safe_put(self._attributes['SUBJECT'], subject)
 
     @property
     def principals(self):
-        return self.context.get(self._attributes['PRINCIPALS'])
+        return self.get(self._attributes['PRINCIPALS'])
         
     @principals.setter
     def principals(self, principals):
-        self.context.none_safe_put(self._attributes['PRINCIPALS'], principals)
+        self.none_safe_put(self._attributes['PRINCIPALS'], principals)
 
     def resolve_principals(self):
         principals = self.principals 
@@ -179,11 +179,11 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @property
     def session(self):
-        return self.context.get(self._attributes['SESSION'])
+        return self.get(self._attributes['SESSION'])
 
     @session.setter
     def session(self, session):
-        self.context.none_safe_put(self._attributes['SESSION'], session)
+        self.none_safe_put(self._attributes['SESSION'], session)
 
     def resolve_session(self):
         session = self.session
@@ -197,22 +197,22 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     # yosai renamed so to match property accessor with mutator:
     @property
     def session_creation_enabled(self):
-        val = self.context.get(self._attributes['SESSION_CREATION_ENABLED'])
+        val = self.get(self._attributes['SESSION_CREATION_ENABLED'])
         return (val is None or val)
 
     @session_creation_enabled.setter
     def session_creation_enabled(self, enabled):
-        self.context.none_safe_put(
+        self.none_safe_put(
             self._attributes['SESSION_CREATION_ENABLED'], enabled)
     
     @property
     def authenticated(self):
-        authc = self.context.get(self._attributes['AUTHENTICATED'])
+        authc = self.get(self._attributes['AUTHENTICATED'])
         return bool(authc)
 
     @authenticated.setter
     def authenticated(self, authc):
-        self.context.put(self._attributes['AUTHENTICATED'], authc)
+        self.put(self._attributes['AUTHENTICATED'], authc)
 
     def resolve_authenticated(self):
         authc = self.authenticated  # a bool
@@ -232,29 +232,29 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @property
     def account(self):
-        return self.context.get(self._attributes['ACCOUNT'])
+        return self.get(self._attributes['ACCOUNT'])
 
     @account.setter
     def account(self, account):
-        self.context.none_safe_put(self._attributes['ACCOUNT'], account)
+        self.none_safe_put(self._attributes['ACCOUNT'], account)
 
     @property
     def authentication_token(self):
-        return self.context.get(
+        return self.get(
             self._attributes['AUTHENTICATION_TOKEN'])
 
     @authentication_token.setter
     def authentication_token(self, token):
-        self.context.none_safe_put(
+        self.none_safe_put(
             self._attributes['AUTHENTICATION_TOKEN'], token)
 
     @property
     def host(self):
-        return self.context.get(self._attributes['HOST'])
+        return self.get(self._attributes['HOST'])
 
     @host.setter
     def host(self, host):
-        self.context.put(self._attributes['HOST'], host)
+        self.put(self._attributes['HOST'], host)
 
     def resolve_host(self):
         host = self.host
@@ -850,9 +850,9 @@ class DelegatingSubject:
                 msg = "Subject context map key cannot be null."
                 raise IllegalArgumentException(msg) 
             elif (not attribute_value):
-                self.context.remove(attribute_key)
+                self.remove(attribute_key)
             else:
-                self.context.put(attribute_key, attribute_value)
+                self.put(attribute_key, attribute_value)
             return self
 
         def build_subject(self):

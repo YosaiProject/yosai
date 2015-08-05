@@ -467,7 +467,6 @@ def test_dsm_create_subject_wo_context(default_security_manager):
 
                         assert result == 'subject'
 
-
 #def test_dsm_create_subject_w_context
     """
     unit tested
