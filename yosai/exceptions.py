@@ -263,6 +263,13 @@ class ClearCacheAccountException(AccountCacheHandlerException):
 # ---- Security Management Exceptions
 # ---------------------------------------------------------------------------
 
+class SecurityManagerException(YosaiException):
+    pass
+
+
+class CannotSaveSubjectException(SecurityManagerException):
+    pass
+
 
 class IncorrectAttributeException(YosaiException):
     pass

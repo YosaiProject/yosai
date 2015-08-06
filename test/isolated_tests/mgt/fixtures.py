@@ -17,7 +17,7 @@ def dependencies_for_injection(default_security_manager):
     dsm = default_security_manager
     return {dsm._event_bus, dsm._cache_manager, dsm.realms, 
             dsm.authenticator, dsm.authorizer,
-            dsm.session_manager, dsm.subject_Store,
+            dsm.session_manager, dsm.subject_store,
             dsm.subject_factory}
 
 @pytest.fixture(scope='function')

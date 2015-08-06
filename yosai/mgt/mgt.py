@@ -33,6 +33,7 @@ from yosai import(
     InvalidSessionException,
     LogManager,
     ModularRealmAuthorizer,
+    CannotSaveSubjectException,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
     mgt_abcs,
@@ -434,7 +435,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" + 
                        rmm.__class__.__name__ + "] threw an exception during "
-                       "on_logout for subject with identifiers [{identifiers}]".\
+                       "on_logout for subject with identifiers [{identifiers}]".
                        format(identifiers=subject.identifiers if subject else None))
                 print(msg)
                 # log warn, including exc_info = ex
@@ -446,7 +447,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             try:
                 self.on_failed_login(authc_token, authc_ex, subject) 
             except Exception as ex:
-                msg = ("on_failed_login method threw an exception.  Logging "
+                msg = ("on_failed_login method raised an exception.  Logging "
                        "and propagating original AuthenticationException.", ex)
                 print(msg)
                 # log info here, including exc_info=ex 
@@ -459,7 +460,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     def on_successful_login(self, authc_token, account, subject):
         self.remember_me_successful_login(authc_token, account, subject)
     
-    def onfailed_login(self, authc_token, authc_exc, subject):
+    def on_failed_login(self, authc_token, authc_exc, subject):
         self.remember_me_failed_login(authc_token, authc_exc, subject)
 
     def before_logout(self, subject):
@@ -472,7 +473,13 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         return self.subject_factory.create_subject(subject_context)
 
     def save(self, subject):
-        self.subject_store.save(subject)
+        try:
+            self.subject_store.save(subject)
+        except AttributeError:
+            msg = "no subject_store is defined, so cannot save subject"
+            print(msg)
+            # log here
+            raise CannotSaveSubjectException(msg)
 
     def delete(self, subject):
         self.subject_store.delete(subject)

@@ -2,6 +2,8 @@ import pytest
 from unittest import mock 
 
 from yosai import (
+    AuthenticationException,
+    CannotSaveSubjectException,
     DefaultAuthenticator,
     DefaultSecurityManager,
     DefaultSubjectContext,
@@ -635,7 +637,7 @@ def test_dsm_rememberme_logout_warned(
         out, err = capsys.readouterr()
         assert 'threw an exception during on_logout' in out 
 
-def test_dsm_login_success
+def test_dsm_login_success(default_security_manager):
     """
     unit tested:  login
 
@@ -643,8 +645,27 @@ def test_dsm_login_success
         authenticate_account returns an account, create_subject is called,
         on_successful_login is called, and then logged_in is returned
     """
+    dsm = default_security_manager
+    with mock.patch.object(DefaultSecurityManager, 
+                           'authenticate_account') as dsm_ac:
+        dsm_ac.return_value = 'account' 
 
-#def test_dsm_login_raises_then_succeeds
+        with mock.patch.object(DefaultSecurityManager, 
+                               'create_subject') as dsm_cs:
+            dsm_cs.return_value = 'logged_in'
+            with mock.patch.object(DefaultSecurityManager, 
+                                   'on_successful_login') as dsm_osl:
+                dsm_osl.return_value = None
+
+                result = dsm.login('subject', 'authc_token')
+
+                dsm_ac.assert_called_once_with('authc_token')
+                dsm_cs.assert_called_once_with('authc_token','account','subject')
+                dsm_osl.assert_called_once_with('authc_token','account','logged_in')
+
+                assert result == 'logged_in'
+
+def test_dsm_login_raises_then_succeeds(default_security_manager):
     """
     unit tested:  login
 
@@ -652,8 +673,23 @@ def test_dsm_login_success
     authenticate_account raises an AuthenticationException, on_failed_login
     succeeds, and an AuthenticationException is raised up the stack
     """
+    dsm = default_security_manager
 
-#def test_dsm_login_raises_then_raises
+    with mock.patch.object(DefaultSecurityManager, 
+                           'authenticate_account') as dsm_ac:
+        dsm_ac.side_effect = AuthenticationException
+
+        with mock.patch.object(DefaultSecurityManager,
+                               'on_failed_login') as dsm_ofl:
+            dsm_ofl.return_value = None
+
+            with pytest.raises(AuthenticationException):
+                dsm.login('subject', 'authc_token')
+                dsm_ac.assert_called_once_with('authc_token')
+                dsm_ofl.assert_called_once_with(
+                    'authc_token', AuthenticationException, 'subject')
+
+def test_dsm_login_raises_then_raises(default_security_manager, capsys):
     """
     unit tested:  login
 
@@ -662,62 +698,142 @@ def test_dsm_login_success
     raises, a warning is emitted, and an AuthenticationException is raised up 
     the stack
     """
+    dsm = default_security_manager
+    
+    with mock.patch.object(DefaultSecurityManager, 
+                           'authenticate_account') as dsm_ac:
+        dsm_ac.side_effect = AuthenticationException
 
-#def test_on_successful_login
+        with mock.patch.object(DefaultSecurityManager,
+                               'on_failed_login') as dsm_ofl:
+            dsm_ofl.side_effect = Exception
+
+            with pytest.raises(AuthenticationException):
+                dsm.login('subject', 'authc_token')
+                dsm_ac.assert_called_once_with('authc_token')
+                dsm_ofl.assert_called_once_with(
+                    'authc_token', AuthenticationException, 'subject')
+
+                out, err = capsys.readouterr()
+                assert 'on_failed_login method raised' in out
+
+def test_on_successful_login(default_security_manager):
     """
     unit tested:  on_successful_login
 
     test case:
     passes call on to remember_me_successful_login
     """
+    dsm = default_security_manager
 
-#def test_onfailed_login
+    with mock.patch.object(DefaultSecurityManager,
+                           'remember_me_successful_login') as dsm_rmsl:
+        dsm_rmsl.return_value = None
+
+        dsm.on_successful_login('authc_token', 'account', 'subject')
+
+        dsm_rmsl.assert_called_once_with('authc_token', 'account', 'subject')
+
+def test_onfailed_login(default_security_manager):
     """
     unit tested:  on_failed_login
 
     test case:
     passes call on to remember_me_failed_login
     """
+    dsm = default_security_manager
+    with mock.patch.object(DefaultSecurityManager,
+                           'remember_me_failed_login') as dsm_rmfl:
+        dsm_rmfl.return_value = None
+        dsm.on_failed_login('authc_token', 'authc_exc', 'subject')
+        dsm_rmfl.assert_called_once_with('authc_token', 'authc_exc', 'subject')
 
-#def test_before_logout
+
+def test_before_logout(default_security_manager):
     """
     unit tested:  before_logout 
 
     test case:
     passes call on to remember_me_logout
     """
+    dsm = default_security_manager
+    with mock.patch.object(DefaultSecurityManager,
+                           'remember_me_logout') as dsm_rml:
+        dsm_rml.return_value = None
 
-#def test_copy
+        dsm.before_logout('subject')
+
+        dsm_rml.assert_called_once_with('subject')
+
+
+def test_copy(default_security_manager):
     """
     unit tested:  copy
 
     test case:
     returns a new DefaultSubjectContext
     """
+    dsm = default_security_manager
+    
+    result = dsm.copy({'subject_context': 'subject_context'})
+    assert result == DefaultSubjectContext({'subject_context': 'subject_context'})
 
-#def test_do_create_subject
+def test_do_create_subject(default_security_manager, monkeypatch):
     """
     unit tested:  do_create_subject
 
     test case:
     passes call onto subject_factory.create_subject
     """
+    dsm = default_security_manager
 
-#def test_save
+    class DumbFactory:
+        def create_subject(self, context):
+            return 'verified'
+
+    monkeypatch.setattr(dsm, 'subject_factory', DumbFactory())
+
+    result = dsm.do_create_subject('anything')
+    assert result == 'verified'
+
+
+def test_save(default_security_manager, monkeypatch):
     """
     unit tested:  save
 
     test case:
     passes call onto subject_store.save
     """
+    dsm = default_security_manager
 
-#def test_delete
+    class DumbStore:
+        def save(self, subject): 
+            return 'saved'
+
+    monkeypatch.setattr(dsm, 'subject_store', DumbStore())
+    with mock.patch.object(DumbStore, 'save') as ds_save:
+        dsm.save('subject')
+        ds_save.assert_called_once_with('subject')
+
+def test_save_raises(default_security_manager):
+    """
+    unit tested:  save
+
+    test case:
+    passes call onto None, raising 
+    """
+    dsm = default_security_manager
+    with pytest.raises(CannotSaveSubjectException):
+        dsm.save('subject')
+    
+#def test_delete(default_security_manager):
     """
     unit tested:  delete 
 
     test case:
     passes call onto subject_store.delete
     """
+    # dsm = default_security_manager
 
 #def ensure_security_manager_resolves
     """
@@ -726,6 +842,7 @@ def test_dsm_login_success
     test case:
     resolve_security_manager returns the subject_context
     """
+    # dsm = default_security_manager
 
 #def ensure_security_manager_doesntresolve
     """
@@ -735,4 +852,4 @@ def test_dsm_login_success
     resolve_security_manager returns None, and then ensure_security_manager
     returns a subject_context whose security_manager is the dsm
     """
-
+    # dsm = default_security_manager
