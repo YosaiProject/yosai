@@ -34,11 +34,16 @@ Serializables:  any serializable class in shiro should have its respective
                 serializable counterpart in Yosai, common sense permitting
 
 refactoring shiro thread-based concurrency to an appropriate concurrency 
-solution in python  (greenlets?  asyncio coroutines?)
+solution in python
 
 add eventbus functionality to the ModularRealmAuthorizor, and inject the 
 eventbus from the DefaultSecurityManager into the MRA
 
 implementing the /crypto API, using the cryptography library as its backend
- - needed for RememberMe
+ - this is required to support RememberMe
+
+port mgt/AbstractRememberMeManager and unit test 
+
+write unit tests for remaining /session/session_untested classes, and migrate
+the classes to session.py
 

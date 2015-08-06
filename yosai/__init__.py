@@ -39,11 +39,11 @@ from .exceptions import (
     CacheException,
     CacheAccountException,
     CacheKeyRemovalException,
-    CannotSaveSubjectException,
     ClearCacheAccountException,
     ConcurrentAccessException,
     CredentialsException,
     CryptContextException,
+    DeleteSubjectException,
     DisabledAccountException,
     DisabledSessionException,
     EventBusMessageDataException,
@@ -82,6 +82,7 @@ from .exceptions import (
     PrimaryIdentifierIntegrityException,
     RealmAttributesException,
     RealmMisconfiguredException,
+    SaveSubjectException,
     SecurityManagerException,
     SerializationException,
     SessionDeleteException,
@@ -243,6 +244,10 @@ from yosai.subject.subject import(
     DefaultSubjectFactory,
     # DelegatingSubject,
     # StoppingAwareProxiedSession,
+)
+
+from yosai.subject.identifier import (
+    SimpleIdentifierCollection,
 )
 
 from yosai.mgt.mgt import (

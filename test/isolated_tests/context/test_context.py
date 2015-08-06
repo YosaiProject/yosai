@@ -1,5 +1,6 @@
 import pytest
 from yosai import (
+    IllegalArgumentException,
     MapContext,
 )
 
@@ -40,4 +41,18 @@ def test_mapcontext_getattr(default_map_context):
 def test_mapcontext_delattr(default_map_context):
     default_map_context.remove('attr1')
     assert default_map_context.context.get('attr1', 'nope') == 'nope'
+
+def test_put_all(default_map_context):
+    test_context = MapContext({'attrX': 'attributeX',
+                               'attrY': 'attributeY'})
+
+    default_map_context.put_all(test_context)
+
+    assert 'attrY' in default_map_context
+
+def test_put_all_raises(default_map_context):
+    test_context = {'attrX': 'attributeX', 'attrY': 'attributeY'}
+
+    with pytest.raises(IllegalArgumentException):
+        default_map_context.put_all(test_context)
 

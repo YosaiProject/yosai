@@ -74,7 +74,8 @@ class SimpleIdentifierCollection:
         if (not self._primary_identifier):
             try:
                 # DG:  shiro arbitrarily selects for missing primary identifier
-                primary_identifier = next(iter(self.realm_identifiers.values())) 
+                identifiers = self.realm_identifiers.values()
+                primary_identifier = next(iter(identifiers)) 
             except:
                 print('failed to arbitrarily obtain primary identifier')
                 return None
@@ -82,6 +83,10 @@ class SimpleIdentifierCollection:
                 self._primary_identifier = primary_identifier
                 return primary_identifier
         return self._primary_identifier
+
+    @primary_identifier.setter
+    def primary_identifier(self, pi):
+        self._primary_identifier = pi
   
     def add(self, identifiers=None, realm_name=None):  # DG: includes addAll
         """

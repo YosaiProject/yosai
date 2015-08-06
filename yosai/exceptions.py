@@ -267,7 +267,11 @@ class SecurityManagerException(YosaiException):
     pass
 
 
-class CannotSaveSubjectException(SecurityManagerException):
+class SaveSubjectException(SecurityManagerException):
+    pass
+
+
+class DeleteSubjectException(SecurityManagerException):
     pass
 
 

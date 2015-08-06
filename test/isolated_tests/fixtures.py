@@ -15,6 +15,8 @@ from .doubles import (
     MockAccountStore,
     MockCache,
     MockPubSub,
+    MockSubject,
+    MockSubjectContext,
     MockToken,
 )
 
@@ -104,3 +106,12 @@ def default_authenticator(first_realm_successful_strategy, patched_event_bus):
 def mock_default_session_manager():
     return MockDefaultSessionManager()
 
+
+@pytest.fixture(scope='function')
+def mock_subject_context():
+    return MockSubjectContext()
+
+
+@pytest.fixture(scope='function')
+def mock_subject():
+    return MockSubject()

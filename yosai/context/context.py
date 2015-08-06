@@ -19,6 +19,7 @@ under the License.
 
 from yosai import (
     serialize_abcs,
+    IllegalArgumentException,
 )
 from marshmallow import Schema, fields
 
@@ -61,7 +62,14 @@ class MapContext(serialize_abcs.Serializable):
 
     # yosai omits the values-based membership version of __contains__  (TBD)
 
-    # yosai omits putAll (for now)
+    def put_all(self, contextobj):
+        try:
+            self.context.update(contextobj.context)
+        except AttributeError:
+            msg = "passed invalid argument to put_all"
+            print(msg)
+            # log exception here
+            raise IllegalArgumentException(msg)
 
     def put(self, attr, value):
         self.context[attr] = value

@@ -1,9 +1,11 @@
 from yosai import (
     CacheKeyRemovalException,
+    MapContext,
     account_abcs,
     authc_abcs,
     cache_abcs,
     realm_abcs,
+    subject_abcs,
 )
 
 from marshmallow import fields, Schema
@@ -155,3 +157,83 @@ class MockPubSub:
 
     def __repr__(self):
         return "<MockPubSub()>"
+
+
+class MockSubjectContext(MapContext):
+
+    def resolve_security_manager(self):
+        return None 
+
+    def resolve_session(self):
+        return None 
+
+    def resolve_identifiers(self):
+        return None 
+
+
+class MockSubject(subject_abcs.Subject):
+
+    def __init__(self):
+        self._identifiers = type('DumbCollection', (object,), {})()
+        self._identifiers.primary_identifier = 'attribute1'
+
+    @property
+    def identifier(self):
+        return None 
+
+    @property
+    def identifiers(self):
+        return self._identifiers 
+
+    def is_permitted(self, permissions):
+        pass 
+
+    def is_permitted_all(self, permissions):
+        pass 
+
+    def check_permission(self, permissions):
+        pass 
+
+    def has_role(self, role_identifiers):
+        pass
+
+    def has_all_roles(self, role_identifiers):
+        pass
+
+    def check_role(self, role_identifiers):
+        pass
+
+    def login(self, auth_token):
+        pass
+
+    @property
+    def is_authenticated(self):
+        pass
+
+    @property
+    def is_remembered(self):
+        pass
+
+    def get_session(self, create=None):
+        pass
+
+    def logout(self):
+        pass
+
+    def execute(self, x_able):
+        pass
+
+    def associate_with(self, x_able):
+        pass
+
+    def run_as(self, identifiers):
+        pass
+
+    def is_run_as(self):
+        pass
+
+    def get_previous_identifiers(self):
+        pass
+
+    def release_run_as(self):
+        pass

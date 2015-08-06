@@ -33,7 +33,8 @@ from yosai import(
     InvalidSessionException,
     LogManager,
     ModularRealmAuthorizer,
-    CannotSaveSubjectException,
+    DeleteSubjectException,
+    SaveSubjectException,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
     mgt_abcs,
@@ -479,24 +480,38 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             msg = "no subject_store is defined, so cannot save subject"
             print(msg)
             # log here
-            raise CannotSaveSubjectException(msg)
+            raise SaveSubjectException(msg)
 
     def delete(self, subject):
-        self.subject_store.delete(subject)
-
+        try:
+            self.subject_store.delete(subject)
+        except AttributeError:
+            msg = "no subject_store is defined, so cannot delete subject"
+            print(msg)
+            # log here
+            raise DeleteSubjectException(msg)
+        
     def ensure_security_manager(self, subject_context):
-        if (subject_context.resolve_security_manager() is not None):
-            msg = ("Subject Context already contains a security_manager "
-                   "instance. Returning.")
+        try:
+            if (subject_context.resolve_security_manager() is not None):
+                msg = ("Subject Context already contains a security_manager "
+                       "instance. Returning.")
+                print(msg)
+                # log trace here
+                return subject_context
+
+            msg = ("No security_manager found in context.  Adding self "
+                   "reference.")
             print(msg)
             # log trace here
-            return subject_context
 
-        msg = ("No security_manager found in context.  Adding self "
-               "reference.")
-        print(msg)
-        # log trace here
-        subject_context.security_manager = self
+            subject_context.security_manager = self
+
+        except AttributeError:
+            msg = 'subject_context is invalid'
+            print(msg)
+            # log exception here
+            raise IllegalArgumentException(msg)
         return subject_context
 
     def resolve_session(self, subject_context):
@@ -566,19 +581,27 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
     def create_session_context(self, subject_context):
         session_context = DefaultSessionContext() 
-        if (subject_context):
+
+        if (not subject_context.is_empty):
+            # TBD:  not sure how acquired attributes are referenced (get vs property)
             session_context.put_all(subject_context)
+
         session_id = subject_context.session_id
         if (session_id):
             session_context.session_id = session_id
+
         host = subject_context.resolve_host()
         if (host):
             session_context.host = host
+
         return session_context
 
     def logout(self, subject):
+        """
+        :type subject:  Subject
+        """
         if (subject is None):
-            msg = "Subject method argument cannot be None."
+            msg = "Subject argument cannot be None."
             raise IllegalArgumentException(msg)
 
         self.before_logout(subject)
@@ -603,8 +626,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             try:
                 self.stop_session(subject)
             except Exception as ex2:
-                msg2 = ("Unable to cleanly stop Session for Subject [" 
-                        + subject.identifier + "] " +
+                msg2 = ("Unable to cleanly stop Session for Subject. " 
                         "Ignoring (logging out).", ex2)
                 print(msg2)
                 # log debug here, including exc_info = ex 

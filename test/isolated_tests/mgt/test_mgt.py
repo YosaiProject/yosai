@@ -3,13 +3,16 @@ from unittest import mock
 
 from yosai import (
     AuthenticationException,
-    CannotSaveSubjectException,
+    SaveSubjectException,
     DefaultAuthenticator,
     DefaultSecurityManager,
+    DefaultSessionKey,
     DefaultSubjectContext,
+    DeleteSubjectException,
     IllegalArgumentException,
     ModularRealmAuthorizer,
     cache_abcs,
+    authc_abcs,
 )
 
 from ..session.doubles import (
@@ -823,28 +826,59 @@ def test_save_raises(default_security_manager):
     passes call onto None, raising 
     """
     dsm = default_security_manager
-    with pytest.raises(CannotSaveSubjectException):
+    with pytest.raises(SaveSubjectException):
         dsm.save('subject')
+
+
+def test_delete_raises(default_security_manager):
+    """
+    unit tested:  delete 
+
+    test case:
+    passes call onto None, raising 
+    """
+    dsm = default_security_manager
+    with pytest.raises(DeleteSubjectException):
+        dsm.delete('subject')
     
-#def test_delete(default_security_manager):
+def test_delete(default_security_manager, monkeypatch):
     """
     unit tested:  delete 
 
     test case:
     passes call onto subject_store.delete
     """
-    # dsm = default_security_manager
+    dsm = default_security_manager
 
-#def ensure_security_manager_resolves
+    class DumbStore:
+        def delete(self, subject): 
+            return None 
+
+    monkeypatch.setattr(dsm, 'subject_store', DumbStore())
+    with mock.patch.object(DumbStore, 'delete') as ds_delete:
+        dsm.delete('subject')
+        ds_delete.assert_called_once_with('subject')
+
+
+def test_dsm_ensure_security_manager_resolves(
+        default_security_manager, mock_subject_context, monkeypatch):
     """
     unit tested:  ensure_security_manager
 
     test case:
     resolve_security_manager returns the subject_context
     """
-    # dsm = default_security_manager
+    dsm = default_security_manager
+    msc = mock_subject_context    
+    monkeypatch.setattr(msc, 'resolve_security_manager', lambda: True)
 
-#def ensure_security_manager_doesntresolve
+    result = dsm.ensure_security_manager(msc)
+
+    assert result
+
+def test_dsm_ensure_security_manager_doesntresolve(
+        default_security_manager, mock_subject_context, monkeypatch):
+
     """
     unit tested:  ensure_security_manager
 
@@ -852,4 +886,386 @@ def test_save_raises(default_security_manager):
     resolve_security_manager returns None, and then ensure_security_manager
     returns a subject_context whose security_manager is the dsm
     """
-    # dsm = default_security_manager
+    dsm = default_security_manager
+    msc = mock_subject_context    
+    monkeypatch.setattr(msc, 'resolve_security_manager', lambda: None) 
+
+    result = dsm.ensure_security_manager(msc)
+
+    assert result.security_manager == dsm
+
+def test_dsm_ensure_security_manager_doesntresolve_raises(
+        default_security_manager, monkeypatch):
+    """
+    unit tested:  ensure_security_manager
+
+    test case:
+    resolve_security_manager returns None, and then ensure_security_manager
+    returns a subject_context whose security_manager is the dsm
+    """
+    dsm = default_security_manager
+    
+    with pytest.raises(IllegalArgumentException):
+        dsm.ensure_security_manager('subject_context')
+
+def test_dsm_resolve_session_returns_none(
+        default_security_manager, mock_subject_context, monkeypatch):
+    """
+    unit tested:  resolve_session
+
+    test case:
+    the subject_context.resolve_session returns None, implying that the 
+    context already contains a session, so returns it as is
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+    
+    monkeypatch.setattr(msc, 'resolve_session', lambda: 'session') 
+    
+    result = dsm.resolve_session(msc)
+
+    assert result == msc
+
+
+def test_dsm_resolve_session_contextsessionisnone(
+        default_security_manager, mock_subject_context, monkeypatch):
+    """
+    unit tested:  resolve_session
+
+    test case:
+    the subject_context returns and resolve_context_session returns None, 
+    subject_context.session doesn't get set
+
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+    
+    monkeypatch.setattr(msc, 'resolve_session', lambda: None) 
+
+    with mock.patch.object(DefaultSecurityManager,
+                           'resolve_context_session') as dsm_rcs:
+        dsm_rcs.return_value = None 
+        result = dsm.resolve_session(msc)
+        assert not hasattr(result, 'session')
+
+def test_dsm_resolve_context_session_nokey(
+        default_security_manager, monkeypatch):
+    """
+    unit tested:  resolve_context_session
+
+    test case:
+    get_session_key returns none , returning None
+    """
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'get_session_key', lambda x: None)
+    result = dsm.resolve_context_session('subject_context')
+    assert result is None
+
+def test_dsm_resolve_context_session(default_security_manager, monkeypatch):
+    """
+    unit tested:  resolve_context_session
+
+    test case:
+    get_session_key returns a key, so get_session called and returns
+    """
+    dsm = default_security_manager
+    monkeypatch.setattr(dsm, 'get_session_key', lambda x: 'sessionkey123')
+    monkeypatch.setattr(dsm, 'get_session', lambda x: 'session')
+
+    result = dsm.resolve_context_session('subject_context')
+    assert result == 'session'
+
+
+def test_dsm_get_session_key_w_sessionid(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  get_session_key
+
+    test case:
+
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+
+    monkeypatch.setattr(msc, 'session_id', 'sessionid123', raising=False)
+
+    result = dsm.get_session_key(msc)
+
+    assert result == DefaultSessionKey('sessionid123')
+
+def test_dsm_get_session_key_wo_sessionid(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  get_session_key
+
+    test case:
+
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+    monkeypatch.setattr(msc, 'session_id', None, raising=False) 
+    result = dsm.get_session_key(msc)
+    assert result is None
+
+def test_dsm_resolve_identifiers_incontext(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    subject_context contains identifiers, so returns it back immediately
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+    monkeypatch.setattr(msc, 'resolve_identifiers', lambda: 'identifiers')
+    result = dsm.resolve_identifiers(msc)
+
+    assert result == msc
+
+
+def test_dsm_resolve_identifiers_notincontext_remembered(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    - by default, the mock subject context's resolve_identifiers returns None
+    - obtains identifiers from remembered identity
+    """
+
+    dsm = default_security_manager
+    msc = mock_subject_context
+
+    dsm.resolve_identifiers(msc)
+
+
+def test_dsm_resolve_identifiers_notincontext_notremembered(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    - by default, the mock subject context's resolve_identifiers returns None
+    - fails to obtain identifiers from remembered identity
+    """
+
+    dsm = default_security_manager
+    msc = mock_subject_context
+    monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: None)
+    result = dsm.resolve_identifiers(msc)
+    assert not hasattr(result, 'identifiers')
+
+
+def test_dsm_resolve_identifiers_notincontext_remembered(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    - by default, the mock subject context's resolve_identifiers returns None
+    - fails to obtain identifiers from remembered identity
+    """
+
+    dsm = default_security_manager
+    msc = mock_subject_context
+    monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: 'identifiers') 
+    result = dsm.resolve_identifiers(msc)
+    assert hasattr(result, 'identifiers')
+
+
+def test_dsm_create_session_context_empty(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  create_session_context 
+
+    test case:
+    subject_context=empty,passes
+    session_id=None, passes
+    host=None, passes
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+
+    monkeypatch.setattr(msc, 'context', {}, raising=False)
+    monkeypatch.setattr(msc, 'session_id', None, raising=False)
+    monkeypatch.setattr(msc, 'resolve_host', lambda: None, raising=False)
+
+    result = dsm.create_session_context(msc)
+
+    assert result.session_id is None and result.host is None
+
+def test_dsm_create_session_context(
+        default_security_manager, monkeypatch, mock_subject_context):
+    """
+    unit tested:  create_session_context 
+
+    test case:
+    subject_context has values
+    session_id has values
+    host has values
+    """
+    dsm = default_security_manager
+    msc = mock_subject_context
+    msc.put('attrY', 'attributeY')
+
+    monkeypatch.setattr(msc, 'session_id', 'session_id', raising=False)
+    monkeypatch.setattr(msc, 'resolve_host', lambda: 'host', raising=False)
+
+    result = dsm.create_session_context(msc)
+
+    assert (result.session_id == 'session_id' and 
+            result.host == 'host' and 
+            'attrY' in result)
+
+def test_dsm_logout_raises(default_security_manager):
+    """
+    unit tested:  logout
+
+    test case:
+    a subject must be passed as an argument 
+    """
+    dsm = default_security_manager
+    with pytest.raises(IllegalArgumentException):
+        dsm.logout(None)
+
+def test_dsm_logout_succeeds(
+        default_security_manager, mock_subject, monkeypatch):
+    """
+    unit tested:  logout
+
+    test case:
+    calls before_logout, obtains identifiers from subject, calls the 
+    authenticator's on_logout method, calls delete, calls stop_session
+    """
+    dsm = default_security_manager
+    ms = mock_subject
+
+    class MockAuthenticator(authc_abcs.LogoutAware):
+        def on_logout(self, identifiers):
+            pass
+
+    monkeypatch.setattr(dsm, 'authenticator', MockAuthenticator())
+
+    with mock.patch.object(dsm, 'before_logout') as dsm_bl:
+        dsm_bl.return_value = None
+        with mock.patch.object(MockAuthenticator, 'on_logout') as ma_ol:
+            with mock.patch.object(dsm, 'delete') as dsm_delete:
+                dsm_delete.return_value = None
+                with mock.patch.object(dsm, 'stop_session') as dsm_ss:
+                    dsm_ss.return_value = None
+
+                    dsm.logout(ms)
+                    dsm_bl.assert_called_once_with(ms)
+                    ma_ol.assert_called_once_with(ms.identifiers)
+                    dsm_delete.assert_called_once_with(ms)
+                    dsm_ss.assert_called_once_with(ms)
+
+
+def test_dsm_logout_succeeds_until_delete_raises(
+        default_security_manager, mock_subject, monkeypatch, capsys):
+    """
+    unit tested:  logout
+
+    test case:
+    calls before_logout, obtains identifiers from subject, calls the 
+    authenticator's on_logout method, calls delete and raises
+    """
+    dsm = default_security_manager
+    ms = mock_subject
+
+    class MockAuthenticator(authc_abcs.LogoutAware):
+        def on_logout(self, identifiers):
+            pass
+
+    monkeypatch.setattr(dsm, 'authenticator', MockAuthenticator())
+    monkeypatch.setattr(ms, '_identifiers', None)
+
+    with mock.patch.object(dsm, 'before_logout') as dsm_bl:
+        dsm_bl.return_value = None
+        with mock.patch.object(dsm, 'delete') as dsm_delete:
+            dsm_delete.side_effect = Exception
+            with mock.patch.object(dsm, 'stop_session') as dsm_ss:
+                dsm_ss.side_effect = Exception
+
+                dsm.logout(ms)
+                dsm_bl.assert_called_once_with(ms)
+                dsm_delete.assert_called_once_with(ms)
+                dsm_ss.assert_called_once_with(ms)
+
+                out, err = capsys.readouterr()
+                assert ('Unable to cleanly unbind Subject' in out
+                        and 'Unable to cleanly stop Session' in out)
+
+def test_dsm_stop_session(default_security_manager, monkeypatch, mock_subject):
+    """
+    unit tested:  stop_session
+
+    test case:
+    gets a session and calls its stop method
+    """
+    dsm = default_security_manager
+    ms = mock_subject
+
+    class MockSession:
+        def stop():
+            pass
+
+    monkeypatch.setattr(ms, 'get_session', lambda x: MockSession(), raising=False)
+
+    with mock.patch.object(MockSession, 'stop') as ms_stop:
+        dsm.stop_session(ms)
+        ms_stop.assert_called_once_with()
+
+def test_dsm_get_remembered_identity(
+        default_security_manager, mock_remember_me_manager, monkeypatch):
+    """
+    unit tested:  get_remembered_identity
+
+    test case:
+    returns remembered identifiers from the rmm
+    """
+    dsm = default_security_manager
+    mrmm = mock_remember_me_manager
+
+    monkeypatch.setattr(dsm, 'remember_me_manager', mrmm)
+    monkeypatch.setattr(mrmm, 
+                        'get_remembered_identifiers', 
+                        lambda x: 'remembered_identifier')
+    result = dsm.get_remembered_identity('subjectcontext')
+    assert result == 'remembered_identifier'
+    
+
+def test_dsm_get_remembered_identity_not_remembered(default_security_manager):
+    """
+    unit tested:  get_remembered_identity
+
+    test case:
+    remember_me_manager by default isn't set, so None is returned
+    """
+    dsm = default_security_manager
+    result = dsm.get_remembered_identity('subject_context')
+    assert result is None
+
+
+def test_dsm_get_remembered_identity_raises(
+        default_security_manager, mock_remember_me_manager, monkeypatch,
+        capsys):
+    """
+    unit tested:  get_remembered_identity
+
+    test case:
+    raises an exception while trying to get remembered identifiers from rmm
+    """
+  
+    dsm = default_security_manager
+    mrmm = mock_remember_me_manager
+
+    monkeypatch.setattr(dsm, 'remember_me_manager', mrmm)
+    with mock.patch.object(MockRememberMeManager, 
+                           'get_remembered_identifiers') as mrmm_gri:
+        mrmm_gri.side_effect = Exception
+
+        result = dsm.get_remembered_identity('subjectcontext')
+        out, err = capsys.readouterr()
+        assert (result is None and 'raised an exception' in out)
+
