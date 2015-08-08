@@ -48,6 +48,7 @@ from yosai import (
     subject_abcs,
     mgt_abcs,
     session_abcs,
+    subject_settings,
 )
 
 # moved from /mgt, reconciled, ready to test:
@@ -80,25 +81,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     def __init__(self, context={}):
         super().__init__(context)
         # yosai takes a different approach to managing key names:
-        self._attributes = self.get_initial_context_attributes()
-
-    # new to yosai:
-    def get_initial_context_attributes(self):
-        dsc_name = self.__class__.__name__
-        return {
-            "SECURITY_MANAGER": dsc_name + ".SECURITY_MANAGER",
-            "SESSION_ID": dsc_name + ".SESSION_ID",
-            "AUTHENTICATION_TOKEN": dsc_name + ".AUTHENTICATION_TOKEN", 
-            "ACCOUNT": dsc_name + ".ACCOUNT",
-            "SUBJECT": dsc_name + ".SUBJECT",
-            "PRINCIPALS": dsc_name + ".PRINCIPALS",
-            "SESSION": dsc_name + ".SESSION", 
-            "AUTHENTICATED": dsc_name + ".AUTHENTICATED",
-            "HOST": dsc_name + ".HOST",
-            "SESSION_CREATION_ENABLED": dsc_name + ".SESSION_CREATION_ENABLED",
-            "PRINCIPALS_SESSION_KEY": dsc_name + "_PRINCIPALS_SESSION_KEY",
-            "AUTHENTICATED_SESSION_KEY": (dsc_name + 
-                                          "_AUTHENTICATED_SESSION_KEY")}
+        self._attributes = subject_settings.default_context_attribute_names 
 
     @property
     def security_manager(self):
@@ -275,17 +258,90 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
         return host
     
-   
+# migrated from /mgt:
 class DefaultSubjectStore:
+    """
+    formerly known as /mgt/DefaultSubjectDAO
+
+    This is the default SubjectStore implementation for storing Subject state.
+    The default behavior is to save Subject state into the Subject's Session.  
+    Note that the storing of the Subject state into the Session is considered
+    a default behavior of Yosai but this behavior can be disabled -- see below.  
+    
+    Once a Subject's state is stored in a Session, a Subject instance can be 
+    re-created at a later time by first acquiring the Subject's session.  A
+    Subject's session is typically acquired through interaction with a
+    SessionManager, referencing a Session by session_id or 
+    session_key, and then instantiating/building a Subject instance using 
+    Session attributes.
+
+    Controlling How Sessions are Used
+    ---------------------------------
+    Whether a Subject's Session is used to persist the Subject's state is 
+    controlled on a per-Subject basis.  This is accomplish by configuring
+    a SessionStorageEvaluator.
+
+    The default "Evaluator" is a DefaultSessionStorageEvaluator.  This evaluator
+    supports enabling or disabling session usage for Subject persistence at a 
+    global level for all subjects (and defaults to allowing sessions to be
+    used).
+
+    Disabling Session Persistence Entirely
+    --------------------------------------
+    Because the default SessionStorageEvaluator instance is a 
+    DefaultSessionStorageEvaluator, you can disable Session usage for Subject 
+    state entirely by configuring that instance directly, e.g.:
+
+        SessionStore.session_storage_evaluator.session_storage_enabled = False
+    
+    or, for example, within yosai_settings.json  (TBD)
+
+        securityManager.subjectStore.sessionStorageEvaluator.sessionStorageEnabled = False
+
+    However, *Note:* 
+    ONLY do this if your application is 100% stateless and you *DO NOT* need 
+    subjects to be remembered across remote invocations, or in a web 
+    environment across HTTP requests.
+
+    Supporting Both Stateful and Stateless Subject paradigms
+    --------------------------------------------------------
+    Perhaps your application needs to support a hybrid approach of both
+    stateful and stateless Subjects:
+
+        - Stateful: Stateful subjects might represent web end-users that need
+          their identity and authentication state to be remembered from page to
+          page.
+
+        - Stateless: Stateless subjects might represent API clients (e.g. REST
+          clients) that authenticate on every request, and therefore don't need
+          authentication state to be stored across requests in a session.
+
+    To support the hybrid *per-Subject* approach, you will need to create your 
+    own implementation of the SessionStorageEvaluator interface and configure 
+    it by setting your session_storage_evaluator property-attribute or 
+    by using a settings file such as yosai_settings.json:
+
+        myEvaluator = CustomSessionStorageEvaluator
+        securityManager.subjectStore.sessionStorageEvaluator = myEvaluator
+
+    Unless overridden, the default evaluator is a
+    DefaultSessionStorageEvaluator, which enables session usage for Subject
+    state by default.
+    """
 
     def __init__(self):
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
 
-        # DG:need 2 change DefaultSubjectContext to a dict and pass as an param
-        self.dsc_psk = 'DefaultSubjectContext_PRINCIPALS_SESSION_KEY'
-        self.dsc_ask = 'DefaultSubjectContext_AUTHENTICATED_SESSION_KEY'
+        attribute_names = subject_settings.default_context_attribute_names 
+        self.dsc_psk = attribute_names.get('PRINCIPALS_SESSION_KEY')
+        self.dsc_ask = attribute_names.get('AUTHENTICATED_SESSION_KEY')
 
     def is_session_storage_enabled(self, subject):
+        """
+        Determines whether the subject's session will be used to persist 
+        subject state.  This default implementation merely delegates to the 
+        internal DefaultSessionStorageEvaluator.
+        """
         return self.session_storage_evaluator.\
             is_session_storage_enabled(subject)
 
@@ -298,42 +354,81 @@ class DefaultSubjectStore:
         self._session_storage_evaluator = sse
 
     def save(self, subject):
+        """ 
+        Saves the subject's state to the subject's session only
+        if session storage is enabled for the subject.  If session storage is 
+        not enabled for the specific Subject, this method does nothing.
+
+        In either case, the argument Subject is returned directly (a new 
+        Subject instance is not created).
+     
+        :param subject: the Subject instance for which its state will be 
+                        created or updated
+        :returns: the same Subject passed in (a new Subject instance is 
+                  not created).
+        """
         if (self.is_session_storage_enabled(subject)):
             self.save_to_session(subject)
         else:
-            # log here
             msg = ("Session storage of subject state for Subject [{0}] has "
                    "been disabled: identity and authentication state are "
                    "expected to be initialized on every request or "
                    "invocation.".format(subject))
             print(msg)
+            # log trace here
         return subject
 
     def save_to_session(self, subject):
+
+        """ 
+        Saves the subject's state (it's identifying attributes (principals) and 
+        authentication state) to its session.  The session can be retrieved at 
+        a later time (typically from a SessionManager) and used to re-create
+        the Subject instance.
+
+        :param subject: the subject for which state will be persisted to a 
+                        session
+        """
         # performs merge logic, only updating the Subject's session if it 
         # does not match the current state:
         self.merge_identifiers(subject)
         self.merge_authentication_state(subject)
 
+    # was mergePrincipals:
     def merge_identifiers(self, subject):
         """
-        This method tries to obtain the attribute _identifiers from a 
-        DelegatingSubject object and if _identifiers is not yet set obtains
-        through through the property/method 'identifiers' which obtains the
-        identifiers off of a deque 'stack'.
+        Merges the Subject's identifying attributes with those that are 
+        saved in the Subject's session.  This method only updates the Subject's 
+        session when the session's identifiers are different than those of the 
+        Subject instance.
+     
+        :param subject: the Subject whose identifying attributes will 
+                        potentially merge with those in the Subject's session
         """
-        if (bool(subject.is_run_as) 
-           and isinstance(subject, DelegatingSubject)):
-            current_identifiers = subject._identifiers  # direct access
-        
-        if (not current_identifiers):
-            current_identifiers = subject.identifiers  # indirect, method-based
+        current_identifiers = None
+        if subject.is_run_as: 
+            try:
+                # avoid the other steps of attribute access when referencing by 
+                # property by referencing the underlying attribute directly:
+                current_identifiers = subject._identifiers
+            except Exception as ex:
+                msg = ("Unable to access DelegatingSubject identifiers"
+                       " property.")
+                print(msg)
+                # log exception here, including exc_info=ex
+                raise IllegalStateException(msg)
 
+        if not current_identifiers:
+            # if direct attribute access did not work, use the property- 
+            # decorated attribute access method:
+            current_identifiers = subject.identifiers
+        
         session = subject.get_session(False)
+
         if (not session):
             if (current_identifiers):
                 session = subject.get_session()  # True is default
-                setattr(session, self.dsc_psk, current_identifiers)
+                session.set_attribute(self.dsc_psk, current_identifiers)
             # otherwise no session and no identifiers - nothing to save
         else:
             existing_identifiers = session.get_attribute(self.dsc_psk)
@@ -343,7 +438,7 @@ class DefaultSubjectStore:
                     session.remove_attribute(self.dsc_psk)
                 # otherwise both are null or empty - no need to update session
             else:
-                if (current_identifiers == existing_identifiers):
+                if not (current_identifiers == existing_identifiers):
                     session.set_attribute(self.dsc_psk, current_identifiers)
                 # otherwise they're the same - no need to update the session
 
@@ -353,17 +448,17 @@ class DefaultSubjectStore:
         if (not session):
             if (subject.authenticated):
                 session = subject.get_session()
-                session.set_attribute(self.dsc_ask, bool(True))
+                session.set_attribute(self.dsc_ask, True)
             # otherwise no session and not authenticated - nothing to save
         else:
             existing_authc = session.get_attribute(self.dsc_ask)
 
             if (subject.authenticated):
-                if (not existing_authc):
-                    session.set_attribute(self.dsc_ask, bool(True))   
+                if (existing_authc is None):  # either doesnt exist or set None
+                    session.set_attribute(self.dsc_ask, True)   
                 # otherwise authc state matches - no need to update the session
             else:
-                if (existing_authc):
+                if (existing_authc is not None):
                     # existing doesn't match the current state - remove it:
                     session.remove_attribute(self.dsc_ask)
                 # otherwise not in the session and not authenticated and 
@@ -486,13 +581,13 @@ class DelegatingSubject:
 
     @session.setter
     def session(self, session):
-        try:
-            if isinstance(session, session_abcs.Session):
-                self._session = session
-            else:
-                raise TypeError
-        except TypeError:
-            print('DelegatingSubject.session.setter :  wrong type of object')
+        """
+        :type session:  Session object
+        """
+        if isinstance(session, session_abcs.Session):
+            self._session = session
+        else:
+            raise TypeError('must use Session object')
 
     @property
     def session_creation_enabled(self):

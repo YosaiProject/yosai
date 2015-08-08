@@ -321,7 +321,6 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheManagerAware):
             return tuple()
 
 
-
 # Yosai omits the SessionListenerAdapter class
 
 class ProxiedSession(session_abcs.Session):

@@ -84,9 +84,9 @@ Pytest unit testing coverage stats are as follows:
 | yosai/realm/__init__              | 1   | 0   | 100% |
 | yosai/realm/abcs                  | 42  | 12  | 71%  |
 | yosai/realm/realm                 | 88  | 3   | 97%  |
-| yosai/mgt/__init__                | 0   | 0   | 100% |
-| yosai/mgt/abcs                    | 22  | 22  | 0%   |
-| yosai/mgt/mgt                     | 463 | 463 | 0%   |
+| yosai/security/__init__           | 0   | 0   | 100% |
+| yosai/security/abcs               | 22  | 22  | 0%   |
+| yosai/security/security           | 463 | 463 | 0%   |
 | yosai/serialize/__init__          | 1   | 0   | 100% |
 | yosai/serialize/abcs              | 18  | 3   | 83%  |
 | yosai/serialize/serialize         | 34  | 2   | 94%  |
@@ -103,16 +103,32 @@ Pytest unit testing coverage stats are as follows:
 | yosai/utils/__init__              | 1   | 0   | 100% |
 | yosai/utils/utils                 | 53  | 19  | 64%  |
 |-----------------------------------|-----|-----|------|
-| TOTAL                             |3788 |1671 | 56%  |
+|TOTAL                              |3605 | 934 | 74%  |
+
+
+GROUP COMMUNICATION
+-----------------------------------------------------------------------
+Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
+Freenode IRC:  #yosai
 
             
 CONTACT INFORMATION
 -----------------------------------------------------------------------
-If you would like to get involved, please contact me by the email address in my github profile.  I am often
-available on FreeNode IRC under the nickname dowwie.
+If you would like to get involved, please contact me by:
+- emailing dkcdkg at the popular "G search engine" mail
+- finding me on Freenode under the nickname dowwie
 
              
 APACHE SHIRO VERSION USED
 -----------------------------------------------------------------------
+Shiro uses subversion, which features project revision numbers.
+
+Each sub-package is based on the latest Shiro revision at the time of unit testing.
+When Yosai unit testing is completed, its revision versions will be reconciled,
+using the revision that was ported and the most up to date revision.
+Any materials changes discovered from revision reconciliation will be 
+applied to Yosai, ensuring that each subpackage reflects the most recent updates
+and standarding the entire project with a common revision.
+
 Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx      
 

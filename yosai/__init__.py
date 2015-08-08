@@ -238,6 +238,13 @@ from yosai.session.session import (
     SimpleSessionFactory,
 )
 
+
+from yosai.subject.subject_settings import (
+    DefaultSubjectSettings,
+    subject_settings,
+)
+
+
 from yosai.subject.subject import(
     DefaultSubjectContext,
     DefaultSubjectStore,

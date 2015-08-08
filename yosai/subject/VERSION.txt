@@ -17,4 +17,4 @@ specific language governing permissions and limitations
 under the License.
 """
 
-the /mgt subpackage is as of shiro 2.0 revision 1693638 
+the /subject subpackage is as of shiro 2.0 revision 1693638 

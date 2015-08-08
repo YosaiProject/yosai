@@ -81,5 +81,22 @@
         },
 
         "active_sessions_cache_name": "yosai_active_session_cache"
-    }
+    },
+
+    "SUBJECT_CONFIG": {
+        "default_context": { 
+            "SECURITY_MANAGER": "DefaultSubjectContext.SECURITY_MANAGER",
+            "SESSION_ID": "DefaultSubjectContext.SESSION_ID",
+            "AUTHENTICATION_TOKEN": "DefaultSubjectContext.AUTHENTICATION_TOKEN", 
+            "ACCOUNT": "DefaultSubjectContext.ACCOUNT",
+            "SUBJECT": "DefaultSubjectContext.SUBJECT",
+            "PRINCIPALS": "DefaultSubjectContext.PRINCIPALS",
+            "SESSION": "DefaultSubjectContext.SESSION", 
+            "AUTHENTICATED": "DefaultSubjectContext.AUTHENTICATED",
+            "HOST": "DefaultSubjectContext.HOST",
+            "SESSION_CREATION_ENABLED": "DefaultSubjectContext.SESSION_CREATION_ENABLED",
+            "PRINCIPALS_SESSION_KEY": "DefaultSubjectContext_PRINCIPALS_SESSION_KEY",
+            "AUTHENTICATED_SESSION_KEY": "DefaultSubjectContext_AUTHENTICATED_SESSION_KEY"
+        }
+    }   
 }
