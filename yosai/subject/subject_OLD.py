@@ -924,48 +924,67 @@ class DelegatingSubject(subject_abcs.Subject):
                 self.clear_run_as_identities()
         return popped
 
-class SubjectBuilder:
-    
-    def __init__(self,
-                 securitymanager=SecurityUtils.security_manager,
-                 subjectcontext=DefaultSubjectContext(),
-                 host=None,
-                 sessionid=None,
-                 session=None,
-                 identifiers=None,
-                 enabled=True,
-                 authenticated=False,
-                 **context_attributes):
+    class SubjectBuilder:
         
-        self.security_manager = securitymanager
-        self.subject_context = subjectcontext 
+        def __init__(self,
+                     securitymanager=SecurityUtils.security_manager):
 
-        try:
-            self.subject_context.security_manager = self.security_manager
-        except AttributeError:
-            msg = ("Subject cannot initialize without a SecurityManager "
-                   "and a SubjectContext")
-            raise IllegalArgumentException(msg)
-    
-        self.subject_context.host = host
-        self.subject_context.session_id = sessionid
-        self.subject_context.session = session
-        self.subject_context.identifers = identifiers
-        self.subject_context.set_session_creation_enabled = enabled
-        self.subject_context.authenticated = authenticated 
-    
-        for key, val in context_attributes.items():
-            self.context_attribute(key, val)
+            if (securitymanager is None):
+                msg = "SecurityManager method argument cannot be null."
+                raise InvalidArgumentException(msg)
+            
+            self.security_manager = securitymanager
+            self.subject_context = self.newcontext_instance()
+            if (self.subject_context is None):
+                msg = ("Subject instance returned from" 
+                       "'newcontext_instance' cannot be null.")
+                raise IllegalStateException(msg)
+            self.subject_context.security_manager = securitymanager
+      
+        def newcontext_instance(self):
+                return DefaultSubjectContext()
 
-    def context_attribute(self, attribute_key, attribute_value):
-        if (not attribute_key):
-            msg = "Subject context map key cannot be null."
-            raise IllegalArgumentException(msg) 
-        if (not attribute_value):
-            self.subject_context.remove(attribute_key)
-        else:
-            self.subject_context.put(attribute_key, attribute_value)
-        return self
+        def session_id(self, session_id):
+            if (session_id):
+                self.context.session_id = session_id
+            return self
 
-    def build_subject(self):
-        return self.security_manager.create_subject(self.subject_context)
+        def host(self, host):
+            if (host):
+                self.context.host = host
+            return self
+            
+        def session(self, session):
+            if (session):
+                self.context.session = session
+            return self
+
+        def identifiers(self, identifiers):
+            if (identifiers):
+                self.context.identifiers = identifiers
+            return self
+
+        def session_creation_enabled(self, enabled):
+            if (enabled):
+                self.context.set_session_creation_enabled = enabled
+            return self
+
+        def authenticated(self, authenticated):
+            if (authenticated):
+                self.context.authenticated = authenticated
+            return self
+
+        def context_attribute(self, attribute_key, attribute_value):
+            if (not attribute_key):
+                msg = "Subject context map key cannot be null."
+                raise IllegalArgumentException(msg) 
+            elif (not attribute_value):
+                self.remove(attribute_key)
+            else:
+                self.put(attribute_key, attribute_value)
+            return self
+
+        def build_subject(self):
+            return self._security_manager.create_subject(self.subject_context)
+
+

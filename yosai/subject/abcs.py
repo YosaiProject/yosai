@@ -300,72 +300,7 @@ class Subject(metaclass=ABCMeta):
     def release_run_as(self):
         pass
 
-    # unlike Shiro, Yosai doesn't need to implement the Builder pattern
-    # because it can use keyword args
-    """
-    class Builder(object):
-
-        def __init__(self,
-                     securitymanager=SecurityUtils.get_security_manager()):
-
-            if (securitymanager is None):
-                msg = "SecurityManager method argument cannot be null."
-                raise InvalidArgumentException(msg)
-            
-            self.security_manager = securitymanager
-            self.subject_context = self.new_subject_context_instance()
-            if (self.subject_context is None):
-                msg = ("Subject instance returned from" 
-                       "'new_subject_context_instance' cannot be null.")
-                raise IllegalStateException(msg)
-            self.subject_context.security_manager = securitymanager
-
-        def new_subject_context_instance(self):
-                return DefaultSubjectContext()
-
-        def session_id(self, session_id):
-            if (session_id):
-                self.subject_context.session_id = session_id
-            return self
-
-        def host(self, host):
-            if (host):
-                self.subject_context.host = host
-            return self
-            
-        def session(self, session):
-            if (session):
-                self.subject_context.session = session
-            return self
-
-        def identifiers(self, identifiers):
-            if (identifiers):
-                self.subject_context.identifiers = identifiers
-            return self
-
-        def session_creation_enabled(self, enabled):
-            if (enabled):
-                self.subject_context.set_session_creation_enabled = enabled
-            return self
-
-        def authenticated(self, authenticated):
-            if (authenticated):
-                self.subject_context.authenticated = authenticated
-            return self
-
-        def context_attribute(self, attribute_key, attribute_value):
-            if (not attribute_key):
-                msg = "Subject context map key cannot be null."
-                raise IllegalArgumentException(msg) 
-            elif (not attribute_value):
-                self.subject_context.remove(attribute_key)
-            else:
-                self.subject_context.put(attribute_key, attribute_value)
-            return self
-
-        def build_subject(self):
-            return self._security_manager.create_subject(self.subject_context)
-    """
+    # Yosai doesn't require a SubjectBuilder, using keyword args in __init__ 
 
 # moved from /mgt:
 class SubjectStore(metaclass=ABCMeta):
