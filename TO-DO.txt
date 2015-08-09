@@ -35,6 +35,7 @@ Serializables:  any serializable class in shiro should have its respective
 
 refactoring shiro thread-based concurrency to an appropriate concurrency 
 solution in python
+    - porting callables, runnables, etc (used in DelegatingSubject)
 
 add eventbus functionality to the ModularRealmAuthorizor, and inject the 
 eventbus from the DefaultSecurityManager into the MRA
@@ -83,3 +84,6 @@ add excessive-login-attempts logic:
 
 ---------------------------------------------------------------------
 
+unit test JSON serialization
+
+confirm correct porting of List<...> collections

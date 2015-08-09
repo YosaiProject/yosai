@@ -406,8 +406,11 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     
     # new to Yosai:
     def _role_collection(self, identifiers, roleids): 
-        for roleid in roleids:
-            yield (roleid, self._has_role(identifiers, roleid))
+        if isinstance(roleids, collections.Iterable):
+            for roleid in roleids:
+                yield (roleid, self._has_role(identifiers, roleid))
+        else:
+            yield (roleids, self._has_role(identifiers, roleids))
 
     # new to Yosai:
     def _is_permitted(self, identifiers, permission):
@@ -480,7 +483,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
 
-        :returns: a List of Booleans corresponding to the permission elements
+        :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_realms_configured()
         permitted = self.is_permitted_all(identifiers, permission_s)

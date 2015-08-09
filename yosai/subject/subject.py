@@ -16,7 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
+import copy
 import collections
 #from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable, 
 #                         Thread)
@@ -515,9 +515,11 @@ class DelegatingSubject(subject_abcs.Subject):
 
         if (session is not None):
             self.session = self.decorate(session)  # shiro's decorate
+        else:
+            self.session = None
 
         self.session_creation_enabled = session_creation_enabled 
-        self._RUN_AS_PRINCIPALS_SESSION_KEY = (
+        self.run_as_principals_session_key = (
             self.__class__.__name__ + ".RUN_AS_PRINCIPALS_SESSION_KEY")
     
     def decorate(self, session):
@@ -665,45 +667,41 @@ class DelegatingSubject(subject_abcs.Subject):
         self.security_manager.check_role(self.identifers, role_ids) 
 
     def login(self, auth_token):
+
+        self.clear_run_as_identities_internal()
+        subject = self.security_manager.login(self, auth_token)
+
+        try: 
+            delegating = copy.copy(subject)
+            # we localize attributes in case there are assumed 
+            # identities --  we don't want to lose the 'real' identifiers:
+            identifiers = delegating.identifiers
+            host = delegating.host
+        except AttributeError:  # likely not working with a DelegatingSubject
+            identifiers = subject.identifiers
+
+        if not identifiers:
+            msg = ("Identifiers returned from securitymanager.login(token" +
+                   ") returned None or empty value. This value must be" +
+                   " non-None and populated with one or more elements.")
+            raise IllegalStateException(msg)
+        
+        self.identifiers = identifiers
+        self.authenticated = True
+
         try:
-            self.clear_run_as_identities_internal()
-            subject = self._security_manager.login(self, auth_token)
-
-            if (isinstance(subject, DelegatingSubject)):
-                delegating = subject
-                # we localize attributes in case there are assumed 
-                # identities --  we don't want to lose the 'real' identifiers:
-                identifiers = delegating.identifiers
-                host = delegating.host
-            else:
-                identifiers = subject.identifiers
-
-            if(not identifiers):
-                msg = ("Identifiers returned from securityManager.login(token" +
-                       ") returned a null or empty value. This value must be" +
-                       " non-null and populated with one or more elements.")
-                raise IllegalStateException(msg)
+            host = auth_token.host
+        except AttributeError:  # likely not using a HostAuthenticationToken
+            host = None
             
-            self.identifiers = identifiers
-            self.authenticated = True
+        if host:
+            self.host = host
 
-            if isinstance(auth_token, authc_abcs.HostAuthenticationToken):
-                host = auth_token.host
-
-            if (host):
-                self.host = host
-
-            session = subject.get_session(False)
-            if (session):
-                self.session = self.decorate(session)
-            else:
-                self.session = None
-
-        except IllegalStateException as ex:
-            print('login Exception:', ex)
-
-        except Exception as ex:
-            print('DelegatingSubject.login: Unhandled Exception!', ex)
+        session = subject.get_session(False)
+        if (session):
+            self.session = self.decorate(session)
+        else:
+            self.session = None
 
     @property
     def authenticated(self):
@@ -720,7 +718,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     @property
     def is_remembered(self):
-        return bool(self.identifiers) and self.authenticated
+        return (bool(self.identifiers) and (not self.authenticated))
     
     @property
     def session(self):
@@ -737,25 +735,31 @@ class DelegatingSubject(subject_abcs.Subject):
             raise TypeError('must use Session object')
 
     def get_session(self, create=True):
-        # log how you're attempting to create a session, with details
+        msg = ("attempting to get session; create = " + str(create) +
+               "; session is None = " + str(self.session is None) +
+               "; session has id = " + 
+               str(self.session is not None and bool(self.session.session_id)))
+        print(msg)
+        # log trace here
+
         if (not self.session and create):
-            try:
-                if (self.session_creation_enabled): 
-                    msg = ("Session creation has been disabled for the current" 
-                           " subject. This exception indicates that there is "
-                           "either a programming error (using a session when " 
-                           "it should never be used) or that Shiro's " 
-                           "configuration needs to be adjusted to allow " 
-                           "Sessions to be created for the current Subject.")
-                    raise DisabledSessionException(msg)
-            except DisabledSessionException as ex:
-                print('DelegatingSubject.get_session: ', ex) 
-            else:
-                # log here that you're starting session for host xyz
-                session_context = self.create_session_context()
-                session = self.security_manager.start(session_context)
-                self.session = self.decorate(session)
+            if (not self.session_creation_enabled): 
+                msg = ("Session creation has been disabled for the current" 
+                       " subject. This exception indicates that there is "
+                       "either a programming error (using a session when " 
+                       "it should never be used) or that Yosai's " 
+                       "configuration needs to be adjusted to allow " 
+                       "Sessions to be created for the current Subject.")
+                raise DisabledSessionException(msg)
         
+            msg = ("Starting session for host ", str(self.host))
+            print(msg)
+            # log trace here
+
+            session_context = self.create_session_context()
+            session = self.security_manager.start(session_context)
+            self.session = self.decorate(session)
+    
         return self.session
 
     def create_session_context(self):
@@ -767,83 +771,98 @@ class DelegatingSubject(subject_abcs.Subject):
     def clear_run_as_identities_internal(self):
         try:
             self.clear_run_as_identities()
-        except SessionException as se:
-            # log here
-            print("clearrunasidentitiesinternal: Encountered session "
-                  "exception trying to clear 'runAs' identities during "
-                  "logout.  This can generally safely be ignored.", se)
+        except SessionException as ex:
+            msg = ("clearrunasidentitiesinternal: Encountered session "
+                   "exception trying to clear 'runAs' identities during "
+                   "logout.  This can generally safely be ignored.", ex)
+            print(msg)
+            # log debug here, including exc_info=ex
 
     def logout(self):
         try:
             self.clear_run_as_identities_internal()
             self.security_manager.logout(self)
         except:
-            raise
+            pass  # TBD 
         finally:
-            # bypassing the validated setters:
             self._session = None
             self._identifiers = None
             self._authenticated = False
-            """
-            Don't set securityManager to null here - the Subject can still be
-            used, it is just considered anonymous at this point.  
-            The SecurityManager instance is necessary if the subject would 
-            log in again or acquire a new session. 
-            """
+
+            # Don't set securityManager to None here - the Subject can still be
+            # used, it is just considered anonymous at this point.  
+            # The SecurityManager instance is necessary if the subject would 
+            # log in again or acquire a new session. 
 
     def session_stopped(self):
-        # DG: bypassing validated session setter:
         self._session = None
 
+    # TBD, not sure how to port yet:
     def execute(self, _able):
-        # DG: combined execute and associatewith methods
-        try:
-            if isinstance(_able, concurrency_abcs.Callable):
-                associated = SubjectCallable(self, _able) 
+        """
+        :param _able:  a Runnable or Callable
+        """
+        associated = self.associate_with(_able)
+
+        if isinstance(_able, concurrency_abcs.Callable):
+            try:
                 return associated.call()
+            except Exception as ex:
+                raise ExecutionException(ex)
 
-            elif isinstance(_able, concurrency_abcs.Runnable):
-                if isinstance(_able, Thread):
-                    msg = ("This implementation does not support Thread args."
-                           "Instead, the method argument should be a "
-                           "non-Thread Runnable and the return value from "
-                           "this method can then be given to an "
-                           "ExecutorService or another Thread.")
-                    raise UnsupportedOperationException(msg)
-                else:
-                    associated = SubjectRunnable(self, _able) 
-                    associated.run()
-        except UnsupportedOperationException as ex:
-            print('DelegatingSubject.execute:  UnsupportedOperationException',
-                  ex)
-        except ExecutionException:
-            print('DelegatingSubject.execute:  ExecutionException')
+        elif isinstance(_able, concurrency_abcs.Runnable):
+            associated.run()
 
+    def associate_with(self, _able):
+        if isinstance(_able, Thread):
+            msg = ("This implementation does not support Thread args."
+                   "Instead, the method argument should be a "
+                   "non-Thread Runnable and the return value from "
+                   "this method can then be given to an "
+                   "ExecutorService or another Thread.")
+            raise UnsupportedOperationException(msg)
+
+        if isinstance(_able, Runnable):
+            return SubjectRunnable(self, _able) 
+
+        if isinstance(_able, Callable):
+            return SubjectCallable(self, _able)
+
+    # inner class:
+    class StoppingAwareProxiedSession(session_abcs.ProxiedSession):
+
+        def __init__(self, target_session, owning_subject): 
+            super().__init__(target_session)
+            self.owner = owning_subject
+
+        def stop(self):
+            """
+            :raises InvalidSessionException:
+            """
+            self._proxied_session.stop()
+            self._owner.session_stopped()
+
+    def run_as(self, identifiers):
+        if (not self.has_identifiers):
+            msg = ("This subject does not yet have an identity.  Assuming the "
+                   "identity of another Subject is only allowed for Subjects "
+                   "with an existing identity.  Try logging this subject in "
+                   "first, or using the DelegatingSubject.Builder "
+                   "to build ad hoc Subject instances with identities as "
+                   "necessary.")
+            raise IllegalStateException(msg)
+        self.push_identity(identifiers)
+    
     @property
     def is_run_as(self):
         return bool(self.get_run_as_identifiers_stack())
 
-    def run_as(self, identifiers):
-        if (not self.has_identifiers()):
-            msg = ("This subject does not yet have an identity.  Assuming the "
-                   "identity of another Subject is only allowed for Subjects "
-                   "with an existing identity.  Try logging this subject in "
-                   "first, or using the " + Subject.Builder.__name__ + 
-                   "to build ad hoc Subject instances with identities as "
-                   "necessary.")
-            raise IllegalStateException(msg)
-        else: 
-            self.push_identity(identifiers)
-
     def get_previous_identifiers(self):
-        stack = self.get_run_as_identifiers_stack()
-        if (not stack):
-            stack_size = 0
-        else:
-            stack_size = len(stack)
+        previous_identifiers = None
+        stack = self.get_run_as_identifiers_stack()  # TBD:  must confirm logic
 
-        if (stack_size > 0):
-            if (stack_size == 1):
+        if stack:
+            if (len(stack) == 1):
                 previous_identifiers = self.identifiers
             else:
                 # always get the one behind the current
@@ -854,45 +873,52 @@ class DelegatingSubject(subject_abcs.Subject):
         return self.pop_identity()
 
     def get_run_as_identifiers_stack(self):
+        """
+        :returns: an IdentifierCollection
+        """
         session = self.get_session(False)
-        if (session is not None):
-            """
-            expecting a List of IdentifierCollection objects:
-            """
-            return getattr(self._session, self._RUN_AS_PRINCIPALS_SESSION_KEY)
-        return None 
+        stack = collections.deque() 
+        try: 
+            rap = session.get_attribute(self.run_as_principals_session_key)
+            stack.appendleft(rap)
+        except AttributeError as ex:
+            msg = "could not session.get_attribute to build identifiers stack"
+            print(msg)
+            # log warning here, including exc_info 
+        return stack 
 
     def clear_run_as_identities(self):
         session = self.get_session(False)
         if (session is not None): 
-            delattr(session, self._RUN_AS_PRINCIPALS_SESSION_KEY)
+            session.remove_attribute(self.run_as_principals_session_key)
 
     def push_identity(self, identifiers):
-        try:
-            if (not identifiers):
-                msg = ("Specified Subject identifiers cannot be null or empty "
-                       "for 'run as' functionality.")
-                raise NullPointerException(msg)
-
-        except NullPointerException as ex:
-            print('DelegatingSubject.push_identity NullPointerException', ex)
-
-        else: 
-            stack = self.get_run_as_identifiers_stack()
-            if (not stack):
-                stack = collections.deque() 
-            stack.appendleft(identifiers)
-            session = self.get_session()  # initializes a session if one DNE
-            setattr(session, self._RUN_AS_PRINCIPALS_SESSION_KEY, stack)
-    
-    def pop_identity(self):
+        """
+        :type identifiers: IdentifierCollection
+        """
+        if (not identifiers):
+            msg = ("Specified Subject identifiers cannot be None or empty "
+                   "for 'run as' functionality.")
+            raise IllegalArgumentException(msg) 
+ 
         stack = self.get_run_as_identifiers_stack()
+        if (not stack):
+            stack = collections.deque() 
+
+        stack.appendleft(identifiers)
+        session = self.get_session()
+        session.set_attribue(self.run_as_principals_session_key, stack)
+
+    def pop_identity(self):
+        popped = None
+        stack = self.get_run_as_identifiers_stack()
+
         if (stack): 
             popped = stack.popleft()
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()
-                setattr(session, self._RUN_AS_PRINCIPALS_SESSION_KEY, stack)
+                session.set_attribute(self.run_as_principals_session_key, stack)
             else: 
                 # stack is empty, remove it from the session:
                 self.clear_run_as_identities()
@@ -961,17 +987,4 @@ class DelegatingSubject(subject_abcs.Subject):
         def build_subject(self):
             return self._security_manager.create_subject(self.subject_context)
 
-
-class StoppingAwareProxiedSession:
-
-    def __init__(self, target_session, owning_subject): 
-        self._proxied_session = ProxiedSession(target_session)
-        self._owner = owning_subject
-
-    def stop(self):
-        try:
-            self._proxied_session.stop()
-        except InvalidSessionException:
-            pass
-        self._owner.session_stopped()
 

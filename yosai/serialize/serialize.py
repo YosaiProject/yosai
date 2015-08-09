@@ -25,6 +25,7 @@ from yosai import (
 
 import msgpack
 import datetime
+import anyjson as json
 
 
 class SerializationManager:
@@ -72,6 +73,15 @@ class SerializationManager:
         except AttributeError:
             raise SerializationException('Only de-serialize Serializable objects')
 
+class JSONSerializer(serialize_abcs.Serializer):
+    
+    @classmethod
+    def serialize(self, obj):
+        return json.dumps(obj.__serialize__())
+
+    @classmethod
+    def deserialize(self, message):
+        return json.loads(message)
 
 class MSGPackSerializer(serialize_abcs.Serializer):
     
