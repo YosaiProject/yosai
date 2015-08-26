@@ -26,6 +26,7 @@ from yosai import (
 import msgpack
 import datetime
 import anyjson as json
+import pkg_resources
 
 
 class SerializationManager:
@@ -50,15 +51,22 @@ class SerializationManager:
     
     def serialize(self, obj):
         try:
+            dist_version = pkg_resources.get_distribution('yosai').version
+
+        except pkg_resources.DistributionNotFound:
+            dist_version = 'N/A'
+
+        try:
             newdict = {}
             newdict.update({'cls': obj.__class__.__name__,
+                            'dist_version': dist_version, 
                             'record_dt': datetime.datetime.utcnow().isoformat()})
             newdict.update(obj.serialize()) 
             return self.serializer.serialize(newdict)
 
         except AttributeError: 
             raise SerializationException('Only serialize Serializable objects')
-
+    
     def deserialize(self, message):
         # initially, supporting deserialization of one object at a time until 
         # support for a collection of objects is needed
