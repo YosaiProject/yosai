@@ -18,57 +18,32 @@ under the License.
 """
 
 from collections import defaultdict
-from yosai import UnrecognizedIdentifierException
+from yosai import (
+    UnrecognizedIdentifierException,
+    serialize_abcs,
+    subject_abcs,
+)
+from marshmallow import Schema, fields, post_dump, pre_load
+import copy
 
 
-class SimpleIdentifierCollection:
-    """
-    DG:
-    I excluded:
-        - asList, asSet
-        - the serialization methods, because jsonpickle does it automatically?
-    """
-    def __init__(self, realm_identifiers=None, identifiers=None, realm=None):
+class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
+                                 serialize_abcs.Serializable):
+    
+    def __init__(self, identifier_s=None, realm_name=None, 
+                 identifier_collection=None):
         """
-        You can initialize a SimpleIdentifierCollection in two ways:
-            1) by passing a realm_identifiers Dict of Sets, where realms
-               are the keys and each set contains corresponding identifiers
-            2) by instantiating a local instance of realm_identifiers using
-               realm and identifiers parameters
-
-        Input:
-            realm_identifiers = a Dict of Sets
-            identifiers = a Set
-            realm = a String
+        :type identifier_s: a Set or scalar 
+        :type realm_name: a String
+        :type identifier_collection: a SimpleIdentifierCollection
         """
-        self.realm_identifiers = defaultdict(set)  # my realmidentifiers 'map'
+        self.realm_identifiers = defaultdict(set)
+        self._primary_identifier = None
+        self.add(identifier_s, realm_name, identifier_collection)
 
-        if (realm_identifiers):
-            self.realm_identifiers = realm_identifiers  # DG: overwrites, I know
-
-        elif (realm and identifiers):
-
-            """realm_identifiers is a Dict of Sets:
-                1) realm name is the dict key
-                2) each Set contains Identifier objects
-            """
-            self.realm_identifiers[realm] = identifiers
-
-        self.primary_identifier = None
-
-    def __eq__(self, other):
-        if type(other) == type(self):
-            return (self.realm_identifiers == other.realm_identifiers)
-        return False
-
-    def __repr__(self):
-        return ','.join([str(key) + '=' + str(value) for (key, value) in 
-                        self.realm_identifiers.items()])
-
-    @property
-    def hash_code(self):  # DG:  implementing this for consistency with shiro
-        return id(self)
-
+    # yosai omits get_identifiers_lazy because it uses a defaultdict(set)
+    # yosai omits asSet, asList, and toString  -- TBD
+    
     @property
     def primary_identifier(self):
         if (not self._primary_identifier):
@@ -76,101 +51,101 @@ class SimpleIdentifierCollection:
                 # DG:  shiro arbitrarily selects for missing primary identifier
                 identifiers = self.realm_identifiers.values()
                 primary_identifier = next(iter(identifiers)) 
-            except:
-                print('failed to arbitrarily obtain primary identifier')
+            except (AttributeError, TypeError):
+                msg = "failed to arbitrarily obtain primary identifier"
+                print(msg)
+                # log warning here
                 return None
             else:
                 self._primary_identifier = primary_identifier
                 return primary_identifier
         return self._primary_identifier
 
-    @primary_identifier.setter
-    def primary_identifier(self, pi):
-        self._primary_identifier = pi
-  
-    def add(self, identifiers=None, realm_name=None):  # DG: includes addAll
+    # yosai combines add and addAll functionality:
+    def add(self, identifier_s=None, realm_name=None,
+            identifier_collection=None):
         """
-            Inputs:
-                identifiers = a Set of Identifier object(s)
-                realm_name = a String
+        :type identifier_s: a Set or scalar 
+        :type realm_name: a String
+        :type identifier_collection: a SimpleIdentifierCollection
+        """
+        if isinstance(identifier_collection, 
+                      subject_abcs.MutableIdentifierCollection):
+            new_realm_identifiers = identifier_collection.realm_identifiers
+            self.realm_identifiers.update(new_realm_identifiers)
+        elif isinstance(identifier_s, set): 
+            self.realm_identifiers[realm_name].update(identifier_s)
+        else:
+            self.realm_identifiers[realm_name].update([identifier_s])
 
-         identifiers is a defaultdict, so I can always add a identifier to 
-         a realm, even if the realm doesn't yet exist
-        """
-        if (realm_name):
-            self.realm_identifiers[realm_name].update(identifiers)
-        elif (identifiers.get_realm_names()):
-            for realm_name in identifiers.get_realm_names():
-                for identifier in identifiers.from_realm(realm_name):
-                    self.add(identifier, realm_name)
-        
+    # yosai consolidates one_by_type with by_type:
     def by_type(self, identifier_class):
-        """ returns all occurances of a type of identifier """
-        _identifiers = set() 
-        for identifier_collection in self.realm_identifiers.values():
-            for identifier in identifier_collection: 
-                if (isinstance(identifier, identifier_class)):
-                    _identifiers.update(identifier)
-        return _identifiers if _identifiers else None 
-
-    def add_realm_identifier(self, realm, principle_key, identifier):
-        self.realm_identifiers[realm].update({principle_key: identifier})
-
-    def clear(self):
-        self.realm_identifiers = None
-
-    def delete_realm_identifier(self, realm, identifier):
-        return self.realm_identifiers[realm].pop(identifier, None)
-
-    def delete_realm(self, realm):
-        return self.realm_identifiers.pop(realm, None)
+        """ 
+        returns all unique instances of a type of identifier
+        :param identifier_class: the class to match identifiers with
+        :returns: a tuple 
+        """
+        identifiers = set() 
+        for identifier in self.realm_identifiers.values():
+            if (isinstance(identifier, identifier_class)):
+                identifiers.update(identifier)
+        return tuple(identifiers)
     
     def from_realm(self, realm_name):
-        return self.realm_identifiers.get(realm_name, set())
-    
-    def get_all_identifiers(self):
-        return self.realm_identifiers
-
-    def get_identifiers_lazy(self, realm_name):
-        if (self.realm_identifiers is None): 
-            self.realm_identifiers = defaultdict(set) 
-        
-        identifiers = self.realm_identifiers.get(realm_name, None)
-        if (not identifiers):  # an empty set
-            self.realm_identifiers[realm_name].update(identifiers)
-        
-        return identifiers
+        return self.realm_identifiers.get(realm_name)
     
     def get_realm_names(self):
-        return {self.realm_identifiers.keys()}
+        return set(self.realm_identifiers.keys())
     
     def is_empty(self):
         return (not self.realm_identifiers.keys())
+ 
+    def clear(self):
+        self.realm_identifiers = None
     
-    def one_by_type(self, identifier_class):
-        """ gets the first-found identifier of a type """
-        if (not self.realm_identifiers):
-            return None
-        for identifier_collection in self.realm_identifiers.values():
-            for identifier in identifier_collection: 
-                if (isinstance(identifier, identifier_class)):
-                    return identifier
-        return None
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if isinstance(other, self.__class__):
+            return dict.__eq__(self, other)
+        return False 
 
-    def set_primary_identifier(self, identifier):
-        """ DG:  not sure whether shiro's logic makes sense for this.. 
-                they seem to grab an arbitrary identifier from any realm..
-                not sure whether my logic below will apply, either"""
-        exists = False
-        try:
-            for realm in self._identifiers.keys():
-                for _identifier in realm.keys():
-                    if (_identifier == identifier):
-                        exists = True
-            if(exists is False):
-                raise UnrecognizedIdentifierException
-        except UnrecognizedIdentifierException:
-            print('Could not locate identifier requested as primary. ')
-        else:
-            self._primary_identifier = identifier 
+    def __repr__(self):
+        return ','.join(str(key) + '=' + str(value) for (key, value) in 
+                        self.realm_identifiers.items())
 
+    # DG:  not clear whether a __hash__ implementation is needed in python 
+
+    # Note about serialization
+    # -------------------------
+    # This class was implemented using dynamic data types, for flexibility. 
+    # However, since a developer SHOULD know the realms that will
+    # always be used, consider updating this class to a more concrete
+    # implementation and consequently use a more concrete serialization schema
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+
+            # use Raw only until you convert to a concrete schema (be sure to)
+            realm_identifiers = fields.Raw()
+            
+            def make_object(self, data):
+                mycls = SimpleIdentifierCollection 
+                instance = mycls.__new__(cls)
+                instance.__dict__.update(data)
+                return instance
+
+            # prior to serializing, convert a dict of sets to a dict of lists
+            # because sets cannot be serialized
+            @post_dump
+            def convert_realms(self, data):
+                data['realm_identifiers'] = {key: list(value) for key, value in 
+                                             data['realm_identifiers'].items()}
+                return data
+
+            # revert to the original dict of sets format
+            @pre_load
+            def revert_realms(self, data):
+                data['realm_identifiers'] = {key: set(value) for key, value in 
+                                             data['realm_identifiers'].items()}
+                return data
