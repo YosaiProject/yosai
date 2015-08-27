@@ -29,17 +29,18 @@ import copy
 
 class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                                  serialize_abcs.Serializable):
-    
-    def __init__(self, identifier_s=None, realm_name=None, 
+   
+    # yosai re-ordered the argument list:
+    def __init__(self, realm_name=None, identifier_s=None,
                  identifier_collection=None):
         """
-        :type identifier_s: a Set or scalar 
         :type realm_name: a String
+        :type identifier_s: a Set or scalar 
         :type identifier_collection: a SimpleIdentifierCollection
         """
         self.realm_identifiers = defaultdict(set)
         self._primary_identifier = None
-        self.add(identifier_s, realm_name, identifier_collection)
+        self.add(realm_name, identifier_s, identifier_collection)
 
     # yosai omits get_identifiers_lazy because it uses a defaultdict(set)
     # yosai omits asSet, asList, and toString  -- TBD
@@ -62,11 +63,11 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         return self._primary_identifier
 
     # yosai combines add and addAll functionality:
-    def add(self, identifier_s=None, realm_name=None,
+    def add(self, realm_name=None, identifier_s=None,
             identifier_collection=None):
         """
-        :type identifier_s: a Set or scalar 
         :type realm_name: a String
+        :type identifier_s: a Set or scalar 
         :type identifier_collection: a SimpleIdentifierCollection
         """
         if isinstance(identifier_collection, 
@@ -75,7 +76,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             self.realm_identifiers.update(new_realm_identifiers)
         elif isinstance(identifier_s, set): 
             self.realm_identifiers[realm_name].update(identifier_s)
-        else:
+        elif identifier_s:
             self.realm_identifiers[realm_name].update([identifier_s])
 
     # yosai consolidates one_by_type with by_type:
@@ -93,15 +94,17 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
     
     def from_realm(self, realm_name):
         return self.realm_identifiers.get(realm_name)
-    
-    def get_realm_names(self):
+   
+    @property
+    def realm_names(self):
         return set(self.realm_identifiers.keys())
-    
+
+    @property
     def is_empty(self):
         return (not self.realm_identifiers.keys())
  
     def clear(self):
-        self.realm_identifiers = None
+        self.realm_identifiers = defaultdict(set) 
     
     def __eq__(self, other):
         if self is other:
@@ -111,8 +114,9 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         return False 
 
     def __repr__(self):
-        return ','.join(str(key) + '=' + str(value) for (key, value) in 
-                        self.realm_identifiers.items())
+        keyvals = ','.join(str(key) + '=' + str(value) for (key, value) in 
+                           self.realm_identifiers.items())
+        return "SimpleIdentifierCollection(" + keyvals + ")"
 
     # DG:  not clear whether a __hash__ implementation is needed in python 
 
