@@ -153,3 +153,5 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                 data['realm_identifiers'] = {key: set(value) for key, value in 
                                              data['realm_identifiers'].items()}
                 return data
+
+        return SerializationSchema

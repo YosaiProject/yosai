@@ -50,6 +50,9 @@ class SerializationManager:
             raise InvalidSerializationFormatException(msg)
     
     def serialize(self, obj):
+        """
+        :returns: an encoded, serialized object
+        """
         try:
             dist_version = pkg_resources.get_distribution('yosai').version
 
@@ -85,7 +88,7 @@ class JSONSerializer(serialize_abcs.Serializer):
     
     @classmethod
     def serialize(self, obj):
-        return json.dumps(obj.__serialize__())
+        return json.dumps(obj)
 
     @classmethod
     def deserialize(self, message):
@@ -95,7 +98,7 @@ class MSGPackSerializer(serialize_abcs.Serializer):
     
     @classmethod
     def serialize(self, obj):
-        return msgpack.packb(obj.__serialize__())
+        return msgpack.packb(obj)
 
     @classmethod
     def deserialize(self, message):

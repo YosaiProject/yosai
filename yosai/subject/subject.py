@@ -260,8 +260,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     
 # migrated from /mgt:
 class DefaultSubjectStore:
+
     """
-    formerly known as /mgt/DefaultSubjectDAO
+    This is formerly known as /mgt/DefaultSubjectDAO.
 
     This is the default SubjectStore implementation for storing Subject state.
     The default behavior is to save Subject state into the Subject's Session.  
@@ -829,7 +830,7 @@ class DelegatingSubject(subject_abcs.Subject):
             return SubjectCallable(self, _able)
 
     # inner class:
-    class StoppingAwareProxiedSession(session_abcs.ProxiedSession):
+    class StoppingAwareProxiedSession(ProxiedSession):
 
         def __init__(self, target_session, owning_subject): 
             super().__init__(target_session)

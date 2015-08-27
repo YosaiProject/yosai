@@ -114,3 +114,5 @@ class MapContext(serialize_abcs.Serializable):
                 instance = mycls.__new__(cls)
                 instance.__dict__.update(data)
                 return instance
+
+        return SerializationSchema

@@ -35,10 +35,6 @@ class IdentifierCollection(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def one_by_type(self, identifier_type):
-        pass
-
-    @abstractmethod
     def by_type(self, identifier_type):
         pass
 
@@ -60,11 +56,7 @@ class IdentifierCollection(metaclass=ABCMeta):
 class MutableIdentifierCollection(IdentifierCollection):
 
     @abstractmethod
-    def add(self, identifier, realm_name):
-        pass
-
-    @abstractmethod
-    def addAll(self, identifiers=None, realm_name=None):
+    def add(self, identifier_s, realm_name, identifier_collection):
         pass
 
     @abstractmethod

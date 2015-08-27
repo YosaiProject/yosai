@@ -43,7 +43,7 @@ class Serializable(metaclass=ABCMeta):
     @classmethod
     def deserialize(cls, data):
         """
-        :returns: a dict
+        :returns: a deserialized object 
         """
         schema = cls.serialization_schema()()
         return schema.load(data=data).data

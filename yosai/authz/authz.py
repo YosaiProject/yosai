@@ -304,6 +304,12 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     one-or-more; in English, this is expressed as '(s)', eg: duck(s)
     indicates one or more ducks
 
+
+    note:  Yosai implements a different policy than Shiro does during 
+           authorization requests in that Yosai accepts the first Boolean value
+           provided rather than continue attempting to obtain permission from
+           other realms. The first Boolean is the final word on permission. 
+
     :type realms:  Tuple 
     """
     def __init__(self, realms=None):
@@ -400,9 +406,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # new to Yosai:
     def _has_role(self, identifiers, roleid): 
         for realm in self.authorizing_realms:
-            if realm.has_role(identifiers, roleid): 
-                return True
-        return False 
+            result = realm.has_role(identifiers, roleid) 
+            if result is not None:
+                return result 
+        return None 
     
     # new to Yosai:
     def _role_collection(self, identifiers, roleids): 
@@ -415,9 +422,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # new to Yosai:
     def _is_permitted(self, identifiers, permission):
         for realm in self.authorizing_realms:
-            if realm.is_permitted(identifiers, permission):
-                return True
-        return False 
+            result = realm.is_permitted(identifiers, permission)
+            if result is not None:   # faster than checking if bool
+                return result 
+        return None 
 
     # new to Yosai:
     def _permit_collection(self, identifiers, permissions):

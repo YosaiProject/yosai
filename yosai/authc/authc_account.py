@@ -113,3 +113,4 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
             def make_object(self):
                 pass  # TBD
 
+        return SrializationSchema

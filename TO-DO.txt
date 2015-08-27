@@ -48,6 +48,8 @@ port mgt/AbstractRememberMeManager and unit test
 write unit tests for remaining /session/session_untested classes, and migrate
 the classes to session.py
 
+port-refactor /config/IniSecurityManagerFactory
+
 add versioning to Yosai
 
 add packaging to Yosai
@@ -87,3 +89,5 @@ add excessive-login-attempts logic:
 unit test JSON serialization
 
 confirm correct porting of List<...> collections
+
+add versionioning to serialization process:  see 26:30 https://www.youtube.com/watch?v=7KnfGDajDQw

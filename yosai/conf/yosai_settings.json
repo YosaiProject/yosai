@@ -98,5 +98,9 @@
             "PRINCIPALS_SESSION_KEY": "DefaultSubjectContext_PRINCIPALS_SESSION_KEY",
             "AUTHENTICATED_SESSION_KEY": "DefaultSubjectContext_AUTHENTICATED_SESSION_KEY"
         }
-    }   
+    },
+
+    "MGT_CONFIG": {
+        "DEFAULT_CIPHER_KEY": "you need to update this using the fernet keygen"
+    }
 }

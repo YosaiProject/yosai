@@ -257,6 +257,10 @@ from yosai.subject.identifier import (
     SimpleIdentifierCollection,
 )
 
+from yosai.mgt.mgt_settings import(
+    DefaultMGTSettings,
+)
+
 from yosai.mgt.mgt import (
     DefaultSecurityManager,
 )
