@@ -37,6 +37,7 @@ from yosai import(
     ModularRealmAuthorizer,
     DeleteSubjectException,
     SaveSubjectException,
+    SerializationManager,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
     mgt_abcs,
@@ -95,6 +96,10 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
     """
 
     def __init__(self):
+
+        # new to yosai:
+        self.serialization_manager = SerializationManager()
+
         self.encryption_cipher_key = None
         self.decryption_cipher_key = None
 
@@ -198,8 +203,8 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
                 msg = "Neither account nor identifiers arguments passed"
                 raise IllegalArgumentException(msg)
 
-        b_identifiers = self.convert_identifiers_to_bytes(identifiers)
-        self.remember_serialized_identity(subject, b_identifiers)
+        serialized = self.convert_identifiers_to_bytes(identifiers)
+        self.remember_serialized_identity(subject, serialized) 
 
     def convert_identifiers_to_bytes(self, identifiers):
         """
@@ -207,9 +212,155 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         the identifiers collection object to one.
 
         :type identifiers: a serializable IdentifierCollection object
+        :returns: a bytestring 
         """
-        # serialized =  
+        # convert to bytes in case serialization doesn't do so:
+        return bytes(self.serialization_manager.serialize(identifiers))
 
+    @abstractmethod
+    def remember_serialized_identity(subject, serialized):
+        """
+        Persists the identity bytes to a persistent store for retrieval 
+        later via the get_remembered_serialized_identity(SubjectContext) 
+        method.
+
+        :param subject: the Subject for whom the identity is being serialized
+        :param serialized: the serialized bytes to be persisted.
+        """
+        pass
+
+    def get_remembered_identifiers(self, subject_context):
+        identifiers = None
+        try:
+            serialized = self.get_remembered_serialized_identity(subject_context)
+
+            if serialized: 
+                identifiers = self.convert_bytes_to_identifiers(identifiers, 
+                                                                subject_context)
+        except Exception as ex:
+            identifiers = \
+                self.on_remembered_identifier_failure(ex, subject_context)
+        return identifiers 
+
+    @abstractmethod
+    def get_remembered_serialized_identity(subject_context):
+        """ 
+        Based on the given subject context data, retrieves the previously 
+        persisted serialized identity, or None if there is no available data.  
+        The context map is usually populated by a SubjectBuilder
+        implementation.  See the SubjectFactory class constants for Yosai's 
+        known map keys.
+
+        :param subject_context: the contextual data, usually provided by a 
+                                SubjectBuilder implementation, that
+                                is being used to construct a Subject instance.
+
+        :returns: the previously persisted serialized identity, or None if 
+                  no such data can be acquired for the Subject
+        """ 
+        pass
+
+    def convert_bytes_to_identifiers(self, serialized, subject_context):
+        """   
+        If a cipher_service is available, it will be used to first decrypt the 
+        serialized message.  Then, the bytes are deserialized and returned.
+     
+        :param serialized:      the bytes to decrypt if necessary and then 
+                                deserialize
+        :param subject_context: the contextual data, usually provided by a 
+                                SubjectBuilder implementation, that is being 
+                                used to construct a Subject instance
+        :returns: the de-serialized and possibly decrypted identifiers
+        """
+        # if may not be decrypted, so try but if fails continue
+        try:
+            serialized = self.decrypt(serialized)
+        except:
+            pass 
+
+        return self.serialization_manager.deserialize(serialized) 
+
+    def on_remembered_principal_failure(self, exc, subject_context):
+        """ 
+        Called when an exception is thrown while trying to retrieve principals.  
+        The default implementation logs a debug message and forgets ('unremembers') 
+        the problem identity by calling forget_identity(subject_context) and 
+        then immediately re-raises the exception to allow the calling 
+        component to react accordingly.
+
+        This method implementation never returns an object - it always rethrows, 
+        but can be overridden by subclasses for custom handling behavior.
+
+        This most commonly would be called when an encryption key is updated 
+        and old identifiers are retrieved that have been encrypted with the 
+        previous key.
+
+        :param exc: the exception that was thrown
+        :param subject_context: the contextual data, usually provided by a 
+                                SubjectBuilder implementation, that is being 
+                                used to construct a Subject instance
+        :raises:  the original Exception passed is propagated in all cases
+        """
+        msg = ("There was a failure while trying to retrieve remembered "
+               "principals.  This could be due to a configuration problem or "
+               "corrupted principals.  This could also be due to a recently " 
+               "changed encryption key.  The remembered identity will be "
+               "forgotten and not used for this request.", exc)
+        print(msg)
+        # log debug here
+
+        self.forget_identity(subject_context)
+
+        # propagate - security manager implementation will handle and warn 
+        # appropriately:
+        raise exc
+
+    def encrypt(self, serialized):
+        """
+        Encrypts the serialized message using Fernet 
+     
+        :param serialized: the serialized object to encrypt
+        :type serialized: bytes
+        :returns: an encrypted bytes returned by Fernet
+        """ 
+    
+        fernet = Fernet(self.encryption_cipher_key)
+        return fernet.encrypt(serialized)
+
+    def decrypt(self, encrypted):
+        """
+        decrypts the encrypted message using Fernet
+
+        :param encrypted: the encrypted message
+        :returns: the decrypted, serialized identifiers collection
+        """
+        fernet = Fernet(self.decryption_cipher_key)
+        return fernet.decrypt(encrypted)
+
+    def on_failed_login(self, subject, authc_token, ae):
+        """
+        Reacts to a failed login by immediately forgetting any previously 
+        remembered identity.  This is an additional security feature to prevent
+        any remenant identity data from being retained in case the 
+        authentication attempt is not being executed by the expected user.
+     
+        :param subject: the subject which executed the failed login attempt
+        :param authc_token:   the authentication token resulting in a failed 
+                              login attempt - ignored by this implementation
+        :param ae:  the exception thrown as a result of the failed login 
+                    attempt - ignored by this implementation
+        """
+        self.forget_identity(subject)
+
+    def on_logout(self, subject):
+        """
+        Reacts to a subject logging out of the application and immediately
+        forgets any previously stored identity and returns.
+        
+        :param subject: the subject logging out
+        """
+        self.forget_identity(subject)
+    
 
 # also known as ApplicationSecurityManager in Shiro 2.0 alpha:
 class DefaultSecurityManager(mgt_abcs.SecurityManager, 
