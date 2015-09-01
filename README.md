@@ -23,7 +23,7 @@ PROJECT OVERVIEW
 -----------------------------------------------------------------------
 Please, first familiarize yourself with [Apache Shiro](http://shiro.apache.org/).  It is a remarkable system.
 
-Today, no such open-sourced security framework like Shiro exists for the Python community.  There's an unmet need for one.  Shiro has been battle tested and continues to evolve.  Let's learn from history by porting the java source.  Then, we'll refactor the source using techniques and libraries available in Python and with the expertise from this great development community.
+Today, no such open-sourced security framework like Shiro exists for the Python community.  There's an unmet need for one.  Shiro has been battle tested.  Let's learn from history by porting the java source.  Then, we'll refactor the source using techniques and libraries available in Python, using expertise from this great development community.
 
 I am porting the [v2.0-alpha source code](http://svn.apache.org/repos/asf/shiro/branches/2.0-api-design-changes/)
 
@@ -113,14 +113,14 @@ GROUP COMMUNICATION
 Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
 Freenode IRC:  #yosai
 
-            
+
 CONTACT INFORMATION
 -----------------------------------------------------------------------
 If you would like to get involved, please contact me by:
 - emailing dkcdkg at the popular "G search engine" mail
 - finding me on Freenode under the nickname dowwie
 
-             
+
 APACHE SHIRO VERSION USED
 -----------------------------------------------------------------------
 Shiro uses subversion, which features project revision numbers.
@@ -128,9 +128,8 @@ Shiro uses subversion, which features project revision numbers.
 Each sub-package is based on the latest Shiro revision at the time of unit testing.
 When Yosai unit testing is completed, its revision versions will be reconciled,
 using the revision that was ported and the most up to date revision.
-Any materials changes discovered from revision reconciliation will be 
+Any materials changes discovered from revision reconciliation will be
 applied to Yosai, ensuring that each subpackage reflects the most recent updates
 and standarding the entire project with a common revision.
 
-Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx      
-
+Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx

@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -18,7 +18,7 @@ under the License.
 """
 import copy
 import collections
-#from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable, 
+#from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
 
 from yosai import (
@@ -53,7 +53,7 @@ from yosai import (
 
 # moved from /mgt, reconciled, ready to test:
 class DefaultSubjectFactory(subject_abcs.SubjectFactory):
-    
+
     def __init__(self):
         pass
 
@@ -68,12 +68,13 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         return DelegatingSubject(identifiers, authenticated, host, session,
                                  session_creation_enabled, security_manager)
 
+
 # reconciled, ready to test:
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
-    Yosai notes:  Shiro uses the getTypedValue method to validate objects 
+    Yosai notes:  Shiro uses the getTypedValue method to validate objects
                   as it obtains them from the MapContext.  I've decided that
-                  this checking is unecessary overhead in Python and to 
+                  this checking is unecessary overhead in Python and to
                   instead *assume* that objects are mapped correctly within
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
@@ -81,7 +82,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     def __init__(self, context={}):
         super().__init__(context)
         # yosai takes a different approach to managing key names:
-        self._attributes = subject_settings.default_context_attribute_names 
+        self._attributes = subject_settings.default_context_attribute_names
 
     @property
     def security_manager(self):
@@ -91,8 +92,8 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     def security_manager(self, securitymanager):
         self.none_safe_put(
             self._attributes['SECURITY_MANAGER'], securitymanager)
-    
-    def resolve_security_manager(self): 
+
+    def resolve_security_manager(self):
         security_manager = self.security_manager
         if (security_manager is None):
             msg = ("No SecurityManager available in subject context map.  " +
@@ -101,7 +102,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             print(msg)
             #  log debug here
 
-            try: 
+            try:
                 security_manager = SecurityUtils.security_manager
             except UnavailableSecurityManagerException as ex:
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
@@ -109,18 +110,18 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                        "via SecurityUtils.  Heuristics exhausted.", ex)
                 print(msg)
                 # log debug here, including exc_info=ex
-        
+
         return security_manager
 
     @property
     def session_id(self):
         return self.get(self._attributes['SESSION_ID'])
-   
+
     @session_id.setter
     def session_id(self, session_id):
         self.none_safe_put(self._attributes['SESSION_ID'], session_id)
 
-    @property 
+    @property
     def subject(self):
         return self.get(self._attributes['SUBJECT'])
 
@@ -131,13 +132,13 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     @property
     def identifiers(self):
         return self.get(self._attributes['PRINCIPALS'])
-        
+
     @identifiers.setter
     def identifiers(self, identifiers):
         self.none_safe_put(self._attributes['PRINCIPALS'], identifiers)
 
     def resolve_identifiers(self):
-        identifiers = self.identifiers 
+        identifiers = self.identifiers
 
         if not identifiers:
             # note that the sequence matters:
@@ -145,7 +146,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 try:
                     identifiers = entity.identifiers
                 except AttributeError:
-                    continue 
+                    continue
                 else:
                     break
 
@@ -154,10 +155,10 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             session = self.resolve_session()
             try:
                 identifiers = session.get_attribute(
-                    self._attributes['PRINCIPALS_SESSION_KEY']) 
+                    self._attributes['PRINCIPALS_SESSION_KEY'])
             except AttributeError:
                 pass
-            
+
         return identifiers
 
     @property
@@ -171,10 +172,10 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     def resolve_session(self):
         session = self.session
         if session is None:
-            try: 
+            try:
                 session = self.subject.get_session(False)
             except AttributeError:
-                pass 
+                pass
         return self.session
 
     # yosai renamed so to match property accessor with mutator:
@@ -187,7 +188,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     def session_creation_enabled(self, enabled):
         self.none_safe_put(
             self._attributes['SESSION_CREATION_ENABLED'], enabled)
-    
+
     @property
     def authenticated(self):
         authc = self.get(self._attributes['AUTHENTICATED'])
@@ -211,7 +212,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                     self._attributes['AUTHENTICATED_SESSION_KEY'])
                 authc = bool(session_authc)
 
-        return authc 
+        return authc
 
     @property
     def account(self):
@@ -243,7 +244,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         host = self.host
         if host is None:
             # check to see if there is an AuthenticationToken from which to
-            # retrieve it: 
+            # retrieve it:
             try:
                 host = self.authentication_token.host
             except AttributeError:
@@ -257,7 +258,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 pass
 
         return host
-    
+
 # migrated from /mgt:
 class DefaultSubjectStore:
 
@@ -265,43 +266,43 @@ class DefaultSubjectStore:
     This is formerly known as /mgt/DefaultSubjectDAO.
 
     This is the default SubjectStore implementation for storing Subject state.
-    The default behavior is to save Subject state into the Subject's Session.  
+    The default behavior is to save Subject state into the Subject's Session.
     Note that the storing of the Subject state into the Session is considered
-    a default behavior of Yosai but this behavior can be disabled -- see below.  
-    
-    Once a Subject's state is stored in a Session, a Subject instance can be 
+    a default behavior of Yosai but this behavior can be disabled -- see below.
+
+    Once a Subject's state is stored in a Session, a Subject instance can be
     re-created at a later time by first acquiring the Subject's session.  A
     Subject's session is typically acquired through interaction with a
-    SessionManager, referencing a Session by session_id or 
-    session_key, and then instantiating/building a Subject instance using 
+    SessionManager, referencing a Session by session_id or
+    session_key, and then instantiating/building a Subject instance using
     Session attributes.
 
     Controlling How Sessions are Used
     ---------------------------------
-    Whether a Subject's Session is used to persist the Subject's state is 
+    Whether a Subject's Session is used to persist the Subject's state is
     controlled on a per-Subject basis.  This is accomplish by configuring
     a SessionStorageEvaluator.
 
     The default "Evaluator" is a DefaultSessionStorageEvaluator.  This evaluator
-    supports enabling or disabling session usage for Subject persistence at a 
+    supports enabling or disabling session usage for Subject persistence at a
     global level for all subjects (and defaults to allowing sessions to be
     used).
 
     Disabling Session Persistence Entirely
     --------------------------------------
-    Because the default SessionStorageEvaluator instance is a 
-    DefaultSessionStorageEvaluator, you can disable Session usage for Subject 
+    Because the default SessionStorageEvaluator instance is a
+    DefaultSessionStorageEvaluator, you can disable Session usage for Subject
     state entirely by configuring that instance directly, e.g.:
 
         SessionStore.session_storage_evaluator.session_storage_enabled = False
-    
+
     or, for example, within yosai_settings.json  (TBD)
 
         securityManager.subjectStore.sessionStorageEvaluator.sessionStorageEnabled = False
 
-    However, *Note:* 
-    ONLY do this if your application is 100% stateless and you *DO NOT* need 
-    subjects to be remembered across remote invocations, or in a web 
+    However, *Note:*
+    ONLY do this if your application is 100% stateless and you *DO NOT* need
+    subjects to be remembered across remote invocations, or in a web
     environment across HTTP requests.
 
     Supporting Both Stateful and Stateless Subject paradigms
@@ -317,9 +318,9 @@ class DefaultSubjectStore:
           clients) that authenticate on every request, and therefore don't need
           authentication state to be stored across requests in a session.
 
-    To support the hybrid *per-Subject* approach, you will need to create your 
-    own implementation of the SessionStorageEvaluator interface and configure 
-    it by setting your session_storage_evaluator property-attribute or 
+    To support the hybrid *per-Subject* approach, you will need to create your
+    own implementation of the SessionStorageEvaluator interface and configure
+    it by setting your session_storage_evaluator property-attribute or
     by using a settings file such as yosai_settings.json:
 
         myEvaluator = CustomSessionStorageEvaluator
@@ -333,14 +334,14 @@ class DefaultSubjectStore:
     def __init__(self):
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
 
-        attribute_names = subject_settings.default_context_attribute_names 
+        attribute_names = subject_settings.default_context_attribute_names
         self.dsc_psk = attribute_names.get('PRINCIPALS_SESSION_KEY')
         self.dsc_ask = attribute_names.get('AUTHENTICATED_SESSION_KEY')
 
     def is_session_storage_enabled(self, subject):
         """
-        Determines whether the subject's session will be used to persist 
-        subject state.  This default implementation merely delegates to the 
+        Determines whether the subject's session will be used to persist
+        subject state.  This default implementation merely delegates to the
         internal DefaultSessionStorageEvaluator.
         """
         return self.session_storage_evaluator.\
@@ -355,17 +356,17 @@ class DefaultSubjectStore:
         self._session_storage_evaluator = sse
 
     def save(self, subject):
-        """ 
+        """
         Saves the subject's state to the subject's session only
-        if session storage is enabled for the subject.  If session storage is 
+        if session storage is enabled for the subject.  If session storage is
         not enabled for the specific Subject, this method does nothing.
 
-        In either case, the argument Subject is returned directly (a new 
+        In either case, the argument Subject is returned directly (a new
         Subject instance is not created).
-     
-        :param subject: the Subject instance for which its state will be 
+
+        :param subject: the Subject instance for which its state will be
                         created or updated
-        :returns: the same Subject passed in (a new Subject instance is 
+        :returns: the same Subject passed in (a new Subject instance is
                   not created).
         """
         if (self.is_session_storage_enabled(subject)):
@@ -381,16 +382,16 @@ class DefaultSubjectStore:
 
     def save_to_session(self, subject):
 
-        """ 
-        Saves the subject's state (it's identifying attributes (principals) and 
-        authentication state) to its session.  The session can be retrieved at 
+        """
+        Saves the subject's state (it's identifying attributes (principals) and
+        authentication state) to its session.  The session can be retrieved at
         a later time (typically from a SessionManager) and used to re-create
         the Subject instance.
 
-        :param subject: the subject for which state will be persisted to a 
+        :param subject: the subject for which state will be persisted to a
                         session
         """
-        # performs merge logic, only updating the Subject's session if it 
+        # performs merge logic, only updating the Subject's session if it
         # does not match the current state:
         self.merge_identifiers(subject)
         self.merge_authentication_state(subject)
@@ -398,18 +399,18 @@ class DefaultSubjectStore:
     # was mergePrincipals:
     def merge_identifiers(self, subject):
         """
-        Merges the Subject's identifying attributes with those that are 
-        saved in the Subject's session.  This method only updates the Subject's 
-        session when the session's identifiers are different than those of the 
+        Merges the Subject's identifying attributes with those that are
+        saved in the Subject's session.  This method only updates the Subject's
+        session when the session's identifiers are different than those of the
         Subject instance.
-     
-        :param subject: the Subject whose identifying attributes will 
+
+        :param subject: the Subject whose identifying attributes will
                         potentially merge with those in the Subject's session
         """
         current_identifiers = None
-        if subject.is_run_as: 
+        if subject.is_run_as:
             try:
-                # avoid the other steps of attribute access when referencing by 
+                # avoid the other steps of attribute access when referencing by
                 # property by referencing the underlying attribute directly:
                 current_identifiers = subject._identifiers
             except Exception as ex:
@@ -420,10 +421,10 @@ class DefaultSubjectStore:
                 raise IllegalStateException(msg)
 
         if not current_identifiers:
-            # if direct attribute access did not work, use the property- 
+            # if direct attribute access did not work, use the property-
             # decorated attribute access method:
             current_identifiers = subject.identifiers
-        
+
         session = subject.get_session(False)
 
         if (not session):
@@ -456,13 +457,13 @@ class DefaultSubjectStore:
 
             if (subject.authenticated):
                 if (existing_authc is None):  # either doesnt exist or set None
-                    session.set_attribute(self.dsc_ask, True)   
+                    session.set_attribute(self.dsc_ask, True)
                 # otherwise authc state matches - no need to update the session
             else:
                 if (existing_authc is not None):
                     # existing doesn't match the current state - remove it:
                     session.remove_attribute(self.dsc_ask)
-                # otherwise not in the session and not authenticated and 
+                # otherwise not in the session and not authenticated and
                 # no need to update the session
 
     def remove_from_session(self, subject):
@@ -477,52 +478,52 @@ class DefaultSubjectStore:
 
 class DelegatingSubject(subject_abcs.Subject):
     """
-    Implementation of the Subject interface that delegates method calls to an 
-    underlying SecurityManager instance for security checks.  It is essentially 
+    Implementation of the Subject interface that delegates method calls to an
+    underlying SecurityManager instance for security checks.  It is essentially
     a SecurityManager proxy.
 
-    This implementation does not maintain state such as roles and permissions 
-    (only Subject principals, such as usernames or user primary keys) for 
-    better performance in a stateless architecture.  It instead asks the 
+    This implementation does not maintain state such as roles and permissions
+    (only Subject principals, such as usernames or user primary keys) for
+    better performance in a stateless architecture.  It instead asks the
     underlying SecurityManager every time to perform the authorization check.
 
-    A common misconception in using this implementation is that an EIS resource 
-    (RDBMS, etc) would be 'hit' every time a method is called.  This is not 
-    necessarily the case and is up to the implementation of the underlying 
-    SecurityManager instance.  If caching of authorization data is desired 
-    (to eliminate EIS round trips and therefore improve database performance), 
+    A common misconception in using this implementation is that an EIS resource
+    (RDBMS, etc) would be 'hit' every time a method is called.  This is not
+    necessarily the case and is up to the implementation of the underlying
+    SecurityManager instance.  If caching of authorization data is desired
+    (to eliminate EIS round trips and therefore improve database performance),
     it is considered much more elegant to let the underlying SecurityManager
-    implementation or its delegate components manage caching, not this class.  
-    A SecurityManager is considered a business-tier component, where caching 
+    implementation or its delegate components manage caching, not this class.
+    A SecurityManager is considered a business-tier component, where caching
     strategies are better managed.
 
     Applications from large and clustered to simple and local all benefit from
-    stateless architectures.  This implementation plays a part in the stateless 
+    stateless architectures.  This implementation plays a part in the stateless
     programming paradigm and should be used whenever possible.
     """
 
-    def __init__(self, 
+    def __init__(self,
                  identifiers=None,
-                 authenticated=False, 
-                 host=None, 
+                 authenticated=False,
+                 host=None,
                  session=None,
                  session_creation_enabled=True,
                  security_manager=None):
 
-        self.security_manager = security_manager 
+        self.security_manager = security_manager
         self.identifiers = identifiers
-        self.authenticated = authenticated 
-        self.host = host 
+        self.authenticated = authenticated
+        self.host = host
 
         if (session is not None):
             self.session = self.decorate(session)  # shiro's decorate
         else:
             self.session = None
 
-        self.session_creation_enabled = session_creation_enabled 
+        self.session_creation_enabled = session_creation_enabled
         self.run_as_principals_session_key = (
             self.__class__.__name__ + ".RUN_AS_PRINCIPALS_SESSION_KEY")
-    
+
     def decorate(self, session):
         if (not session):
             msg = "DelegatingSubject.decorate: session cannot be None"
@@ -531,7 +532,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         else:
             return StoppingAwareProxiedSession(session, self)
-    
+
     @property
     def security_manager(self):
         return self._security_manager
@@ -544,7 +545,7 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = ("Can only set SecurityManager type of object to "
                    "subject.security_manager attribute")
             raise IllegalArgumentException(msg)
-    
+
     @property
     def has_identifiers(self):
         return (self._identifiers is not None)
@@ -564,7 +565,7 @@ class DelegatingSubject(subject_abcs.Subject):
         # expecting a List of IdentifierCollection objects:
         run_as_identifiers = self.get_run_as_identifiers_stack()
         if (not run_as_identifiers):
-            return self._identifiers    
+            return self._identifiers
         else:
             return run_as_identifiers[0]
 
@@ -575,14 +576,14 @@ class DelegatingSubject(subject_abcs.Subject):
         else:
             msg = "DelegatingSubject.identifiers:  invalid argument passed"
             print(msg)
-            raise IllegalArgumentException(msg) 
-        
+            raise IllegalArgumentException(msg)
+
     def is_permitted(self, permission_s):
-        """ 
+        """
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: a List of tuple(s), containing the Permission and a Boolean 
+        :returns: a List of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is         """
 
         if self.has_identifiers:
@@ -594,14 +595,14 @@ class DelegatingSubject(subject_abcs.Subject):
             return False
 
     def is_permitted_all(self, permission_s):
-        """ 
+        """
         :param permission_s:  a List of Permission objects
 
         :returns: a Boolean
         """
         return (self.has_identifiers and
-                self.security_manager.is_permitted_all(self.identifiers, 
-                                                       permission_s)) 
+                self.security_manager.is_permitted_all(self.identifiers,
+                                                       permission_s))
 
     def assert_authz_check_possible(self):
         if (self.identifiers):
@@ -611,7 +612,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 "required an identity to check against.  A Subject " +
                 "instance will acquire these identifying identifiers " +
                 "automatically after a successful login is performed be " +
-                "executing " + self.__class__.__name__ + 
+                "executing " + self.__class__.__name__ +
                 ".login(AuthenticationToken) or when 'Remember Me' " +
                 "functionality is enabled by the SecurityManager.  " +
                 "This exception can also occur when a previously " +
@@ -634,14 +635,14 @@ class DelegatingSubject(subject_abcs.Subject):
     def has_role(self, roleid_s):
         """
         :param roleid_s: 1..N role identifiers (string)
-        :type roleid_s:  a String or List of Strings 
+        :type roleid_s:  a String or List of Strings
 
-        :returns: a tuple containing the roleid and a boolean indicating 
+        :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
         """
 
         if self.has_identifiers:
-            return (self.security_manager.has_role(self.identifiers, roleid_s)) 
+            return (self.security_manager.has_role(self.identifiers, roleid_s))
         else:
             if isinstance(roleid_s, collections.Iterable):
                 return [(False, roleid) for roleid in roleid_s]
@@ -650,11 +651,11 @@ class DelegatingSubject(subject_abcs.Subject):
     def has_all_roles(self, roleid_s):
         """
         :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings 
+        :type roleid_s:  a String or List of Strings
 
         :returns: a Boolean
         """
-        return (self.has_identifiers and 
+        return (self.has_identifiers and
                 self.security_manager.has_all_roles(self.identifiers, roleid_s))
 
     def check_role(self, role_ids):
@@ -665,16 +666,16 @@ class DelegatingSubject(subject_abcs.Subject):
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         role_ids = []
-        self.security_manager.check_role(self.identifers, role_ids) 
+        self.security_manager.check_role(self.identifers, role_ids)
 
     def login(self, auth_token):
 
         self.clear_run_as_identities_internal()
         subject = self.security_manager.login(self, auth_token)
 
-        try: 
+        try:
             delegating = copy.copy(subject)
-            # we localize attributes in case there are assumed 
+            # we localize attributes in case there are assumed
             # identities --  we don't want to lose the 'real' identifiers:
             identifiers = delegating.identifiers
             host = delegating.host
@@ -686,7 +687,7 @@ class DelegatingSubject(subject_abcs.Subject):
                    ") returned None or empty value. This value must be" +
                    " non-None and populated with one or more elements.")
             raise IllegalStateException(msg)
-        
+
         self.identifiers = identifiers
         self.authenticated = True
 
@@ -694,7 +695,7 @@ class DelegatingSubject(subject_abcs.Subject):
             host = auth_token.host
         except AttributeError:  # likely not using a HostAuthenticationToken
             host = None
-            
+
         if host:
             self.host = host
 
@@ -707,20 +708,20 @@ class DelegatingSubject(subject_abcs.Subject):
     @property
     def authenticated(self):
         return self._authenticated
-    
+
     @authenticated.setter
     def authenticated(self, authc):
-        if isinstance(authc, bool): 
-            self._authenticated = authc    
+        if isinstance(authc, bool):
+            self._authenticated = authc
         else:
             msg = ('DelegatingSubject.authenticated.setter:  wrong objtype')
             print(msg)
-            raise IllegalArgumentException(msg) 
+            raise IllegalArgumentException(msg)
 
     @property
     def is_remembered(self):
         return (bool(self.identifiers) and (not self.authenticated))
-    
+
     @property
     def session(self):
         return self._session
@@ -738,21 +739,21 @@ class DelegatingSubject(subject_abcs.Subject):
     def get_session(self, create=True):
         msg = ("attempting to get session; create = " + str(create) +
                "; session is None = " + str(self.session is None) +
-               "; session has id = " + 
+               "; session has id = " +
                str(self.session is not None and bool(self.session.session_id)))
         print(msg)
         # log trace here
 
         if (not self.session and create):
-            if (not self.session_creation_enabled): 
-                msg = ("Session creation has been disabled for the current" 
+            if (not self.session_creation_enabled):
+                msg = ("Session creation has been disabled for the current"
                        " subject. This exception indicates that there is "
-                       "either a programming error (using a session when " 
-                       "it should never be used) or that Yosai's " 
-                       "configuration needs to be adjusted to allow " 
+                       "either a programming error (using a session when "
+                       "it should never be used) or that Yosai's "
+                       "configuration needs to be adjusted to allow "
                        "Sessions to be created for the current Subject.")
                 raise DisabledSessionException(msg)
-        
+
             msg = ("Starting session for host ", str(self.host))
             print(msg)
             # log trace here
@@ -760,7 +761,7 @@ class DelegatingSubject(subject_abcs.Subject):
             session_context = self.create_session_context()
             session = self.security_manager.start(session_context)
             self.session = self.decorate(session)
-    
+
         return self.session
 
     def create_session_context(self):
@@ -784,16 +785,16 @@ class DelegatingSubject(subject_abcs.Subject):
             self.clear_run_as_identities_internal()
             self.security_manager.logout(self)
         except:
-            pass  # TBD 
+            pass  # TBD
         finally:
             self._session = None
             self._identifiers = None
             self._authenticated = False
 
             # Don't set securityManager to None here - the Subject can still be
-            # used, it is just considered anonymous at this point.  
-            # The SecurityManager instance is necessary if the subject would 
-            # log in again or acquire a new session. 
+            # used, it is just considered anonymous at this point.
+            # The SecurityManager instance is necessary if the subject would
+            # log in again or acquire a new session.
 
     def session_stopped(self):
         self._session = None
@@ -824,7 +825,7 @@ class DelegatingSubject(subject_abcs.Subject):
             raise UnsupportedOperationException(msg)
 
         if isinstance(_able, Runnable):
-            return SubjectRunnable(self, _able) 
+            return SubjectRunnable(self, _able)
 
         if isinstance(_able, Callable):
             return SubjectCallable(self, _able)
@@ -832,7 +833,7 @@ class DelegatingSubject(subject_abcs.Subject):
     # inner class:
     class StoppingAwareProxiedSession(ProxiedSession):
 
-        def __init__(self, target_session, owning_subject): 
+        def __init__(self, target_session, owning_subject):
             super().__init__(target_session)
             self.owner = owning_subject
 
@@ -853,7 +854,7 @@ class DelegatingSubject(subject_abcs.Subject):
                    "necessary.")
             raise IllegalStateException(msg)
         self.push_identity(identifiers)
-    
+
     @property
     def is_run_as(self):
         return bool(self.get_run_as_identifiers_stack())
@@ -878,19 +879,19 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: an IdentifierCollection
         """
         session = self.get_session(False)
-        stack = collections.deque() 
-        try: 
+        stack = collections.deque()
+        try:
             rap = session.get_attribute(self.run_as_principals_session_key)
             stack.appendleft(rap)
         except AttributeError as ex:
             msg = "could not session.get_attribute to build identifiers stack"
             print(msg)
-            # log warning here, including exc_info 
-        return stack 
+            # log warning here, including exc_info
+        return stack
 
     def clear_run_as_identities(self):
         session = self.get_session(False)
-        if (session is not None): 
+        if (session is not None):
             session.remove_attribute(self.run_as_principals_session_key)
 
     def push_identity(self, identifiers):
@@ -900,11 +901,11 @@ class DelegatingSubject(subject_abcs.Subject):
         if (not identifiers):
             msg = ("Specified Subject identifiers cannot be None or empty "
                    "for 'run as' functionality.")
-            raise IllegalArgumentException(msg) 
- 
+            raise IllegalArgumentException(msg)
+
         stack = self.get_run_as_identifiers_stack()
         if (not stack):
-            stack = collections.deque() 
+            stack = collections.deque()
 
         stack.appendleft(identifiers)
         session = self.get_session()
@@ -914,19 +915,19 @@ class DelegatingSubject(subject_abcs.Subject):
         popped = None
         stack = self.get_run_as_identifiers_stack()
 
-        if (stack): 
+        if (stack):
             popped = stack.popleft()
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()
                 session.set_attribute(self.run_as_principals_session_key, stack)
-            else: 
+            else:
                 # stack is empty, remove it from the session:
                 self.clear_run_as_identities()
         return popped
 
 class SubjectBuilder:
-    
+
     def __init__(self,
                  securitymanager=SecurityUtils.security_manager,
                  subjectcontext=DefaultSubjectContext(),
@@ -937,9 +938,9 @@ class SubjectBuilder:
                  enabled=True,
                  authenticated=False,
                  **context_attributes):
-        
+
         self.security_manager = securitymanager
-        self.subject_context = subjectcontext 
+        self.subject_context = subjectcontext
 
         try:
             self.subject_context.security_manager = self.security_manager
@@ -947,21 +948,21 @@ class SubjectBuilder:
             msg = ("Subject cannot initialize without a SecurityManager "
                    "and a SubjectContext")
             raise IllegalArgumentException(msg)
-    
+
         self.subject_context.host = host
         self.subject_context.session_id = sessionid
         self.subject_context.session = session
         self.subject_context.identifers = identifiers
         self.subject_context.set_session_creation_enabled = enabled
-        self.subject_context.authenticated = authenticated 
-    
+        self.subject_context.authenticated = authenticated
+
         for key, val in context_attributes.items():
             self.context_attribute(key, val)
 
     def context_attribute(self, attribute_key, attribute_value):
         if (not attribute_key):
             msg = "Subject context map key cannot be null."
-            raise IllegalArgumentException(msg) 
+            raise IllegalArgumentException(msg)
         if (not attribute_value):
             self.subject_context.remove(attribute_key)
         else:

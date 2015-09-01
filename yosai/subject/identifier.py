@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -19,23 +19,21 @@ under the License.
 
 from collections import defaultdict
 from yosai import (
-    UnrecognizedIdentifierException,
     serialize_abcs,
     subject_abcs,
 )
 from marshmallow import Schema, fields, post_dump, pre_load
-import copy
 
 
 class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                                  serialize_abcs.Serializable):
-   
+
     # yosai re-ordered the argument list:
     def __init__(self, realm_name=None, identifier_s=None,
                  identifier_collection=None):
         """
         :type realm_name: a String
-        :type identifier_s: a Set or scalar 
+        :type identifier_s: a Set or scalar
         :type identifier_collection: a SimpleIdentifierCollection
         """
         self.realm_identifiers = defaultdict(set)
@@ -44,14 +42,14 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
 
     # yosai omits get_identifiers_lazy because it uses a defaultdict(set)
     # yosai omits asSet, asList, and toString  -- TBD
-    
+
     @property
     def primary_identifier(self):
         if (not self._primary_identifier):
             try:
                 # DG:  shiro arbitrarily selects for missing primary identifier
                 identifiers = self.realm_identifiers.values()
-                primary_identifier = next(iter(identifiers)) 
+                primary_identifier = next(iter(next(iter(identifiers))))
             except (AttributeError, TypeError):
                 msg = "failed to arbitrarily obtain primary identifier"
                 print(msg)
@@ -62,67 +60,71 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                 return primary_identifier
         return self._primary_identifier
 
+    # there is no primary_identifier setter because it should not be manually
+    # set
+
     # yosai combines add and addAll functionality:
     def add(self, realm_name=None, identifier_s=None,
             identifier_collection=None):
         """
         :type realm_name: a String
-        :type identifier_s: a Set or scalar 
+        :type identifier_s: a Set or scalar
         :type identifier_collection: a SimpleIdentifierCollection
         """
-        if isinstance(identifier_collection, 
+        if isinstance(identifier_collection,
                       subject_abcs.MutableIdentifierCollection):
             new_realm_identifiers = identifier_collection.realm_identifiers
             self.realm_identifiers.update(new_realm_identifiers)
-        elif isinstance(identifier_s, set): 
+        elif isinstance(identifier_s, set):
             self.realm_identifiers[realm_name].update(identifier_s)
         elif identifier_s:
             self.realm_identifiers[realm_name].update([identifier_s])
 
     # yosai consolidates one_by_type with by_type:
     def by_type(self, identifier_class):
-        """ 
+        """
         returns all unique instances of a type of identifier
         :param identifier_class: the class to match identifiers with
-        :returns: a tuple 
+        :returns: a tuple
         """
-        identifiers = set() 
-        for identifier in self.realm_identifiers.values():
-            if (isinstance(identifier, identifier_class)):
-                identifiers.update(identifier)
+        identifiers = set()
+        for identifier_s in self.realm_identifiers.values():
+            for identifier in identifier_s:
+                if (isinstance(identifier, identifier_class)):
+                    identifiers.update([identifier])
         return tuple(identifiers)
-    
+
     def from_realm(self, realm_name):
         return self.realm_identifiers.get(realm_name)
-   
+
     @property
     def realm_names(self):
-        return set(self.realm_identifiers.keys())
+        return tuple(self.realm_identifiers.keys())  # make immutable
 
     @property
     def is_empty(self):
         return (not self.realm_identifiers.keys())
- 
+
     def clear(self):
-        self.realm_identifiers = defaultdict(set) 
-    
+        self.realm_identifiers = defaultdict(set)
+
     def __eq__(self, other):
         if self is other:
             return True
-        if isinstance(other, self.__class__):
-            return dict.__eq__(self, other)
-        return False 
+
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__)
 
     def __repr__(self):
-        keyvals = ','.join(str(key) + '=' + str(value) for (key, value) in 
+        keyvals = ','.join(str(key) + '=' + str(value) for (key, value) in
                            self.realm_identifiers.items())
         return "SimpleIdentifierCollection(" + keyvals + ")"
 
-    # DG:  not clear whether a __hash__ implementation is needed in python 
+    # DG:  not clear whether a __hash__ implementation is needed in python
 
     # Note about serialization
     # -------------------------
-    # This class was implemented using dynamic data types, for flexibility. 
+    # This class was implemented using dynamic data types, for flexibility.
     # However, since a developer SHOULD know the realms that will
     # always be used, consider updating this class to a more concrete
     # implementation and consequently use a more concrete serialization schema
@@ -132,9 +134,9 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
 
             # use Raw only until you convert to a concrete schema (be sure to)
             realm_identifiers = fields.Raw()
-            
+
             def make_object(self, data):
-                mycls = SimpleIdentifierCollection 
+                mycls = SimpleIdentifierCollection
                 instance = mycls.__new__(cls)
                 instance.__dict__.update(data)
                 return instance
@@ -143,14 +145,14 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             # because sets cannot be serialized
             @post_dump
             def convert_realms(self, data):
-                data['realm_identifiers'] = {key: list(value) for key, value in 
+                data['realm_identifiers'] = {key: list(value) for key, value in
                                              data['realm_identifiers'].items()}
                 return data
 
             # revert to the original dict of sets format
             @pre_load
             def revert_realms(self, data):
-                data['realm_identifiers'] = {key: set(value) for key, value in 
+                data['realm_identifiers'] = {key: set(value) for key, value in
                                              data['realm_identifiers'].items()}
                 return data
 
