@@ -49,9 +49,13 @@ class Serializable(metaclass=ABCMeta):
         return schema.load(data=data).data
 
     def __eq__(self, other):
-        return (isinstance(other, self.__class__) and
-                self.__dict__ == other.__dict__ and
-                self.serialization_schema() == other.serialization_schema())
+        if self is other:
+            return True
+
+        if isinstance(other, Serializable):
+            return (self.__dict__ == other.__dict__ and
+                    self.serialization_schema() == other.serialization_schema())
+        return False
 
 
 class Serializer(metaclass=ABCMeta):
