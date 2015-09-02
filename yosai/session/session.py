@@ -730,7 +730,7 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
             
             def make_object(self, data):
                 mycls = SimpleSession 
-                instance = mycls.__new__(cls)
+                instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
                 return instance
 

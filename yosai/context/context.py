@@ -111,7 +111,7 @@ class MapContext(serialize_abcs.Serializable):
 
             def make_object(self, data):
                 mycls = MapContext 
-                instance = mycls.__new__(cls)
+                instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
                 return instance
 

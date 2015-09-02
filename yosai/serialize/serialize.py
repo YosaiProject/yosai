@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -32,7 +32,7 @@ import pkg_resources
 class SerializationManager:
     """
     SerializationManager proxies serialization requests.  It is non-opinionated,
-    designed so as to support multiple serialization methods.  MSGPack is 
+    designed so as to support multiple serialization methods.  MSGPack is
     the default encoding scheme.
 
     TO-DO:  configure serialization scheme from yosai settings json
@@ -48,7 +48,7 @@ class SerializationManager:
         except KeyError:
             msg = ('Could not locate serialization format: ', format)
             raise InvalidSerializationFormatException(msg)
-    
+
     def serialize(self, obj):
         """
         :returns: an encoded, serialized object
@@ -61,31 +61,35 @@ class SerializationManager:
 
         try:
             newdict = {}
-            newdict.update({'cls': obj.__class__.__name__,
-                            'dist_version': dist_version, 
-                            'record_dt': datetime.datetime.utcnow().isoformat()})
-            newdict.update(obj.serialize()) 
+            now = datetime.datetime.utcnow().isoformat()
+            serialization_attrs = {'serialized_cls': obj.__class__.__name__,
+                                   'serialized_dist_version': dist_version,
+                                   'serialized_record_dt': now}
+            newdict.update(serialization_attrs)
+            newdict.update(obj.serialize())
             return self.serializer.serialize(newdict)
 
-        except AttributeError: 
+        except AttributeError:
             raise SerializationException('Only serialize Serializable objects')
-    
+
     def deserialize(self, message):
-        # initially, supporting deserialization of one object at a time until 
-        # support for a collection of objects is needed
+        # TBD:  initially, supporting deserialization of one object at a time
+        # until support for a collection of objects is required 
 
         # NOTE:  unpacked is expected to be a dict
 
         try:
             unpacked = self.serializer.deserialize(message)
             yosai = __import__('yosai')
-            cls = getattr(yosai, unpacked['cls'])
-            return cls.deserialize(unpacked)
+            cls = getattr(yosai, unpacked['serialized_cls'])
+            return cls.deserialize(unpacked)  # only serializables wont raise
         except AttributeError:
-            raise SerializationException('Only de-serialize Serializable objects')
+            msg = ('Only de-serialize Serializable objects')
+            raise SerializationException(msg)
+
 
 class JSONSerializer(serialize_abcs.Serializer):
-    
+
     @classmethod
     def serialize(self, obj):
         return json.dumps(obj)
@@ -94,8 +98,9 @@ class JSONSerializer(serialize_abcs.Serializer):
     def deserialize(self, message):
         return json.loads(message)
 
+
 class MSGPackSerializer(serialize_abcs.Serializer):
-    
+
     @classmethod
     def serialize(self, obj):
         return msgpack.packb(obj)

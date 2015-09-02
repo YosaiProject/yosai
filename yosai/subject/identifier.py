@@ -137,7 +137,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
 
             def make_object(self, data):
                 mycls = SimpleIdentifierCollection
-                instance = mycls.__new__(cls)
+                instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
                 return instance
 

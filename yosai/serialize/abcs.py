@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -32,7 +32,7 @@ class Serializable(metaclass=ABCMeta):
         :returns: a SerializationSchema class
         """
         pass
-    
+
     def serialize(self):
         """
         :returns: a dict
@@ -43,10 +43,15 @@ class Serializable(metaclass=ABCMeta):
     @classmethod
     def deserialize(cls, data):
         """
-        :returns: a deserialized object 
+        :returns: a deserialized object
         """
         schema = cls.serialization_schema()()
         return schema.load(data=data).data
+
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__ and
+                self.serialization_schema() == other.serialization_schema())
 
 
 class Serializer(metaclass=ABCMeta):
