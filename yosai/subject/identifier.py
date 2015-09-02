@@ -108,13 +108,6 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
     def clear(self):
         self.realm_identifiers = defaultdict(set)
 
-    def __eq__(self, other):
-        if self is other:
-            return True
-
-        return (isinstance(other, self.__class__) and
-                self.__dict__ == other.__dict__)
-
     def __repr__(self):
         keyvals = ','.join(str(key) + '=' + str(value) for (key, value) in
                            self.realm_identifiers.items())

@@ -52,10 +52,8 @@ class Serializable(metaclass=ABCMeta):
         if self is other:
             return True
 
-        if isinstance(other, Serializable):
-            return (self.__dict__ == other.__dict__ and
-                    self.serialization_schema() == other.serialization_schema())
-        return False
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__)
 
 
 class Serializer(metaclass=ABCMeta):
