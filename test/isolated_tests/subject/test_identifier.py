@@ -151,3 +151,28 @@ def test_sic_eq(simple_identifier_collection, myself, other, boolcheck):
     sic = simple_identifier_collection
     result = (myself == other)
     assert result == boolcheck
+
+
+def test_sic_serialize(sic_serialized, simple_identifier_collection):
+    """
+    unit tested:  serialize
+
+    test case:
+    serializing a SIC results in a dict consisting of the serialized attributes
+    """
+    sic = simple_identifier_collection
+    serialized = sic.serialize()
+    assert sic_serialized == serialized
+
+
+def test_sic_deserialize(sic_serialized, simple_identifier_collection):
+    """
+    unit tested:  deserialize
+
+    test case:
+    deserializing a serialized SIC results in a new SIC instance
+    """
+
+    sic = simple_identifier_collection
+    deserialized = SimpleIdentifierCollection.deserialize(sic_serialized)
+    assert deserialized.realm_identifiers == sic.realm_identifiers

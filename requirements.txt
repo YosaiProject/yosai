@@ -2,7 +2,7 @@ anyjson==0.3.3
 cffi==1.1.2
 cryptography==0.9.3
 idna==2.0
-marshmallow==1.2.6
+marshmallow==2.0.0b5
 passlib==1.6.2
 py-bcrypt==0.4
 pyasn1==0.1.8

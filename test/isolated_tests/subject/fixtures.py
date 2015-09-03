@@ -1,4 +1,5 @@
 import pytest
+from collections import defaultdict
 
 from yosai import (
     DefaultSubjectContext,
@@ -21,4 +22,8 @@ def default_subject_context(subject_context):
 def simple_identifier_collection():
     return SimpleIdentifierCollection(realm_name='realm1',
                                       identifier_s='username')
-                                  
+
+
+@pytest.fixture(scope='function')
+def sic_serialized():
+    return {'realm_identifiers': {'realm1': ['username']}}

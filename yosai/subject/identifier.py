@@ -23,7 +23,7 @@ from yosai import (
     subject_abcs,
 )
 from marshmallow import Schema, fields, post_dump, pre_load
-
+import copy
 
 class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                                  serialize_abcs.Serializable):
@@ -138,15 +138,23 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             # because sets cannot be serialized
             @post_dump
             def convert_realms(self, data):
-                data['realm_identifiers'] = {key: list(value) for key, value in
-                                             data['realm_identifiers'].items()}
+                # serializing using Raw() format requires conv from defaultdict
+                # to dict:
+                data['realm_identifiers'] = dict(data['realm_identifiers'])
+
+                for realm, identifiers in data['realm_identifiers'].items():
+                    data['realm_identifiers'][realm] = list(identifiers)
                 return data
 
             # revert to the original dict of sets format
             @pre_load
             def revert_realms(self, data):
-                data['realm_identifiers'] = {key: set(value) for key, value in
-                                             data['realm_identifiers'].items()}
-                return data
+                olddata = copy.copy(data)
+                newdata = dict(realm_identifiers=defaultdict(set))
+
+                for realm, identifiers in olddata['realm_identifiers'].items():
+                    newdata['realm_identifiers'][realm] = set(identifiers)
+
+                return newdata
 
         return SerializationSchema
