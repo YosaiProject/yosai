@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from yosai import (
     DefaultSubjectContext,
+    DefaultSubjectSettings,
     SimpleIdentifierCollection,
 )
 
@@ -27,3 +28,8 @@ def simple_identifier_collection():
 @pytest.fixture(scope='function')
 def sic_serialized():
     return {'realm_identifiers': {'realm1': ['username']}}
+
+
+@pytest.fixture(scope='function')
+def default_subject_settings():
+    return DefaultSubjectSettings()

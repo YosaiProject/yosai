@@ -136,19 +136,19 @@ def test_sic_clear(simple_identifier_collection):
     assert sic.is_empty
 
 sictest = SimpleIdentifierCollection('realm1', 'identifier1')
+
+
 @pytest.mark.parametrize('myself,other,boolcheck',
                          [(SimpleIdentifierCollection('realm1', 'identifier1'),
                            SimpleIdentifierCollection('realm1', 'identifier1'),
                            True),
                           (SimpleIdentifierCollection('realm1', 'identifier1'),
                            SimpleIdentifierCollection('realm2', 'identifier1'),
-                           False),
-                           (sictest, sictest, True)])
+                           False), (sictest, sictest, True)])
 def test_sic_eq(simple_identifier_collection, myself, other, boolcheck):
     """
     unit tested:  __eq__
     """
-    sic = simple_identifier_collection
     result = (myself == other)
     assert result == boolcheck
 
@@ -176,3 +176,17 @@ def test_sic_deserialize(sic_serialized, simple_identifier_collection):
     sic = simple_identifier_collection
     deserialized = SimpleIdentifierCollection.deserialize(sic_serialized)
     assert deserialized.realm_identifiers == sic.realm_identifiers
+
+
+def test_default_subject_settings(default_subject_settings):
+    """
+    unit tested:  default context names
+
+    test case:
+    when subject settings are properly configured, a dict of context names will
+    be available through the default_context_names attribute
+    """
+    dss = default_subject_settings
+    context_names = dss.default_context_names
+    assert context_names.get('AUTHENTICATION_TOKEN') ==\
+        "DefaultSubjectContext.AUTHENTICATION_TOKEN"
