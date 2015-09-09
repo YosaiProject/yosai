@@ -4,6 +4,7 @@ from unittest import mock
 from yosai import (
     DefaultSubjectContext,
     MapContext,
+    security_utils,
 )
 
 # ------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ def test_dsc_init(subject_context, default_subject_context):
     Verify that the two subject contexts used for testing are initialized as
     expected
     """
-    dsc = DefaultSubjectContext()
+    dsc = DefaultSubjectContext(security_utils)
     assert (not dsc.attributes and
             'DefaultSubjectContext.AUTHENTICATION_TOKEN' in
             default_subject_context.attribute_keys)

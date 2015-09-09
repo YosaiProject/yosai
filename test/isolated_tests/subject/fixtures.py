@@ -5,6 +5,7 @@ from yosai import (
     DefaultSubjectContext,
     DefaultSubjectSettings,
     SimpleIdentifierCollection,
+    security_utils,
 )
 
 @pytest.fixture(scope='function')
@@ -21,7 +22,7 @@ def subject_context(default_subject_settings):
 @pytest.fixture(scope='function')
 def default_subject_context(subject_context):
     context = {value: 'value_'+value for key, value in subject_context.items()}
-    return DefaultSubjectContext(context)
+    return DefaultSubjectContext(security_utils, context)
 
 
 @pytest.fixture(scope='function')

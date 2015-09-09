@@ -8,7 +8,7 @@ from yosai import (
 
 class SecurityUtils:
     def __init__(self):
-        self._security_manager = DefaultSecurityManager()
+        self._security_manager = DefaultSecurityManager(self)
         self.subject_builder = SubjectBuilder(self, self._security_manager)
 
     def get_subject(self):
