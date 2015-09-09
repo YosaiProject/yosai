@@ -18,7 +18,7 @@ under the License.
 """
 import copy
 import collections
-#from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
+# from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
 
 from yosai import (
@@ -29,47 +29,23 @@ from yosai import (
     ExecutionException,
     IllegalArgumentException,
     IllegalStateException,
-    InvalidArgumentException,
     InvalidSessionException,
     LogManager,
-    NullPointerException,
     ProxiedSession,
-    PrimaryIdentifierIntegrityException,
-    SecurityUtils,
     SessionException,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
-    UnrecognizedIdentifierException,
     UnsupportedOperationException,
     concurrency_abcs,
-    subject_abcs,
     account_abcs,
     authc_abcs,
-    subject_abcs,
     mgt_abcs,
     session_abcs,
+    subject_abcs,
     subject_settings,
 )
 
-# moved from /mgt, reconciled, ready to test:
-class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 
-    def __init__(self):
-        pass
-
-    def create_subject(self, subject_context):
-        security_manager = subject_context.resolve_security_manager()
-        session = subject_context.resolve_session()
-        session_creation_enabled = subject_context.session_creation_enabled
-        identifiers = subject_context.resolve_identifiers()
-        authenticated = subject_context.resolve_authenticated()
-        host = subject_context.resolve_host()
-
-        return DelegatingSubject(identifiers, authenticated, host, session,
-                                 session_creation_enabled, security_manager)
-
-
-# reconciled, ready to test:
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
     Yosai notes:  Shiro uses the getTypedValue method to validate objects
@@ -81,17 +57,18 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
     def __init__(self, context={}):
         super().__init__(context)
-        # yosai takes a different approach to managing key names:
-        self._attributes = subject_settings.default_context_attribute_names
+
+    # new to yosai is this helper method:
+    def get_key(self, key):
+        return subject_settings.get_key(key)
 
     @property
     def security_manager(self):
-        return self.get(self._attributes['SECURITY_MANAGER'])
+        return self.get(self.get_key('SECURITY_MANAGER'))
 
     @security_manager.setter
     def security_manager(self, securitymanager):
-        self.none_safe_put(
-            self._attributes['SECURITY_MANAGER'], securitymanager)
+        self.none_safe_put(self.get_key('SECURITY_MANAGER'), securitymanager)
 
     def resolve_security_manager(self):
         security_manager = self.security_manager
@@ -103,7 +80,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             #  log debug here
 
             try:
-                security_manager = SecurityUtils.security_manager
+                security_manager = security_utils.security_manager
             except UnavailableSecurityManagerException as ex:
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
                        "obtain security_manager! No SecurityManager available "
@@ -115,27 +92,27 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @property
     def session_id(self):
-        return self.get(self._attributes['SESSION_ID'])
+        return self.get(self.get_key('SESSION_ID'))
 
     @session_id.setter
     def session_id(self, session_id):
-        self.none_safe_put(self._attributes['SESSION_ID'], session_id)
+        self.none_safe_put(self.get_key('SESSION_ID'), session_id)
 
     @property
     def subject(self):
-        return self.get(self._attributes['SUBJECT'])
+        return self.get(self.get_key('SUBJECT'))
 
     @subject.setter
     def subject(self, subject):
-            self.none_safe_put(self._attributes['SUBJECT'], subject)
+            self.none_safe_put(self.get_key('SUBJECT'), subject)
 
     @property
     def identifiers(self):
-        return self.get(self._attributes['PRINCIPALS'])
+        return self.get(self.get_key('IDENTIFIERS'))
 
     @identifiers.setter
     def identifiers(self, identifiers):
-        self.none_safe_put(self._attributes['PRINCIPALS'], identifiers)
+        self.none_safe_put(self.get_key('IDENTIFIERS'), identifiers)
 
     def resolve_identifiers(self):
         identifiers = self.identifiers
@@ -155,7 +132,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             session = self.resolve_session()
             try:
                 identifiers = session.get_attribute(
-                    self._attributes['PRINCIPALS_SESSION_KEY'])
+                    self.get_key('IDENTIFIERS_SESSION_KEY'))
             except AttributeError:
                 pass
 
@@ -163,11 +140,11 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @property
     def session(self):
-        return self.get(self._attributes['SESSION'])
+        return self.get(self.get_key('SESSION'))
 
     @session.setter
     def session(self, session):
-        self.none_safe_put(self._attributes['SESSION'], session)
+        self.none_safe_put(self.get_key('SESSION'), session)
 
     def resolve_session(self):
         session = self.session
@@ -181,22 +158,23 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     # yosai renamed so to match property accessor with mutator:
     @property
     def session_creation_enabled(self):
-        val = self.get(self._attributes['SESSION_CREATION_ENABLED'])
+        val = self.get(self.get_key('SESSION_CREATION_ENABLED'))
         return (val is None or val)
 
     @session_creation_enabled.setter
     def session_creation_enabled(self, enabled):
         self.none_safe_put(
-            self._attributes['SESSION_CREATION_ENABLED'], enabled)
+            self.get_key('SESSION_CREATION_ENABLED'), enabled)
 
+    # yosai renamed from is_authenticated:
     @property
     def authenticated(self):
-        authc = self.get(self._attributes['AUTHENTICATED'])
+        authc = self.get(self.get_key('AUTHENTICATED'))
         return bool(authc)
 
     @authenticated.setter
     def authenticated(self, authc):
-        self.put(self._attributes['AUTHENTICATED'], authc)
+        self.put(self.get_key('AUTHENTICATED'), authc)
 
     def resolve_authenticated(self):
         authc = self.authenticated  # a bool
@@ -209,36 +187,35 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             session = self.resolve_session()
             if (session is not None):
                 session_authc = session.get_attribute(
-                    self._attributes['AUTHENTICATED_SESSION_KEY'])
+                    self.get_key('AUTHENTICATED_SESSION_KEY'))
                 authc = bool(session_authc)
 
         return authc
 
+    # yosai renamed AuthenticationInfo to Account:
     @property
     def account(self):
-        return self.get(self._attributes['ACCOUNT'])
+        return self.get(self.get_key('ACCOUNT'))
 
     @account.setter
     def account(self, account):
-        self.none_safe_put(self._attributes['ACCOUNT'], account)
+        self.none_safe_put(self.get_key('ACCOUNT'), account)
 
     @property
     def authentication_token(self):
-        return self.get(
-            self._attributes['AUTHENTICATION_TOKEN'])
+        return self.get(self.get_key('AUTHENTICATION_TOKEN'))
 
     @authentication_token.setter
     def authentication_token(self, token):
-        self.none_safe_put(
-            self._attributes['AUTHENTICATION_TOKEN'], token)
+        self.none_safe_put(self.get_key('AUTHENTICATION_TOKEN'), token)
 
     @property
     def host(self):
-        return self.get(self._attributes['HOST'])
+        return self.get(self.get_key('HOST'))
 
     @host.setter
     def host(self, host):
-        self.put(self._attributes['HOST'], host)
+        self.put(self.get_key('HOST'), host)
 
     def resolve_host(self):
         host = self.host
@@ -258,6 +235,8 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 pass
 
         return host
+
+
 
 # migrated from /mgt:
 class DefaultSubjectStore:
@@ -334,9 +313,9 @@ class DefaultSubjectStore:
     def __init__(self):
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
 
-        attribute_names = subject_settings.default_context_attribute_names
-        self.dsc_psk = attribute_names.get('PRINCIPALS_SESSION_KEY')
-        self.dsc_ask = attribute_names.get('AUTHENTICATED_SESSION_KEY')
+        ss = subject_settings
+        self.dsc_psk = ss.get_key('IDENTIFIERS_SESSION_KEY')
+        self.dsc_ask = ss.get_key('AUTHENTICATED_SESSION_KEY')
 
     def is_session_storage_enabled(self, subject):
         """
@@ -522,7 +501,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         self.session_creation_enabled = session_creation_enabled
         self.run_as_principals_session_key = (
-            self.__class__.__name__ + ".RUN_AS_PRINCIPALS_SESSION_KEY")
+            self.__class__.__name__ + ".RUN_AS_IDENTIFIERS_SESSION_KEY")
 
     def decorate(self, session):
         if (not session):
@@ -926,20 +905,42 @@ class DelegatingSubject(subject_abcs.Subject):
                 self.clear_run_as_identities()
         return popped
 
+
+# moved from /mgt, reconciled, ready to test:
+class DefaultSubjectFactory(subject_abcs.SubjectFactory):
+
+    def __init__(self):
+        pass
+
+    def create_subject(self, subject_context):
+        security_manager = subject_context.resolve_security_manager()
+        session = subject_context.resolve_session()
+        session_creation_enabled = subject_context.session_creation_enabled
+        identifiers = subject_context.resolve_identifiers()
+        authenticated = subject_context.resolve_authenticated()
+        host = subject_context.resolve_host()
+
+        return DelegatingSubject(identifiers, authenticated, host, session,
+                                 session_creation_enabled, security_manager)
+
+
 class SubjectBuilder:
 
     def __init__(self,
-                 securitymanager=SecurityUtils.security_manager,
+                 securitymanager=None,
                  subjectcontext=DefaultSubjectContext(),
                  host=None,
                  sessionid=None,
                  session=None,
                  identifiers=None,
-                 enabled=True,
+                 session_creation_enabled=True,
                  authenticated=False,
                  **context_attributes):
+        if securitymanager is not None:
+            self.security_manager = securitymanager
+        else:
+            self.security_manager = security_utils.security_manager
 
-        self.security_manager = securitymanager
         self.subject_context = subjectcontext
 
         try:
@@ -953,21 +954,42 @@ class SubjectBuilder:
         self.subject_context.session_id = sessionid
         self.subject_context.session = session
         self.subject_context.identifers = identifiers
-        self.subject_context.set_session_creation_enabled = enabled
+        self.subject_context.set_session_creation_enabled = session_creation_enabled
         self.subject_context.authenticated = authenticated
 
         for key, val in context_attributes.items():
             self.context_attribute(key, val)
 
     def context_attribute(self, attribute_key, attribute_value):
+
+        """
+        Allows custom attributes to be added to the underlying context Map used
+        to construct the Subject instance.
+
+        A None key throws an IllegalArgumentException.
+        A None value effectively removes any previously stored attribute under
+        the given key from the context map.
+
+        NOTE: This method is only useful when configuring Yosai with a custom
+        SubjectFactory implementation.  This method allows end-users to append
+        additional data to the context map which the SubjectFactory
+        implementation can use when building custom Subject instances. As such,
+        this method is only useful when a custom SubjectFactory implementation
+        has been configured.
+
+        :param attribute_key:  the key under which the corresponding value will
+                               be stored in the context Map
+        :param attribute_value: the value to store in the context map under the
+                                specified attribute_key
+        :raises IllegalArgumentException: if the attribute_key is None
+        """
         if (not attribute_key):
-            msg = "Subject context map key cannot be null."
+            msg = "Subject context map key cannot be None"
             raise IllegalArgumentException(msg)
         if (not attribute_value):
             self.subject_context.remove(attribute_key)
         else:
             self.subject_context.put(attribute_key, attribute_value)
-        return self
 
     def build_subject(self):
         return self.security_manager.create_subject(self.subject_context)

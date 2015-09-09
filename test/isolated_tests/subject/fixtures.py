@@ -7,16 +7,21 @@ from yosai import (
     SimpleIdentifierCollection,
 )
 
+@pytest.fixture(scope='function')
+def default_subject_settings():
+    return DefaultSubjectSettings()
+
 
 @pytest.fixture(scope='function')
-def subject_context():
-    mydict = {'attr1': 'attribute1'}
-    return mydict
+def subject_context(default_subject_settings):
+    dss = default_subject_settings
+    return dss.context
 
 
 @pytest.fixture(scope='function')
 def default_subject_context(subject_context):
-    return DefaultSubjectContext(subject_context)
+    context = {value: 'value_'+value for key, value in subject_context.items()}
+    return DefaultSubjectContext(context)
 
 
 @pytest.fixture(scope='function')
@@ -28,8 +33,3 @@ def simple_identifier_collection():
 @pytest.fixture(scope='function')
 def sic_serialized():
     return {'realm_identifiers': {'realm1': ['username']}}
-
-
-@pytest.fixture(scope='function')
-def default_subject_settings():
-    return DefaultSubjectSettings()

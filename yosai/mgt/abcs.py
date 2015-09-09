@@ -138,7 +138,7 @@ class SecurityManager(authc_abcs.Authenticator, authz_abcs.Authorizer,
     In actuality, the large majority of application programmers won't interact 
     with a SecurityManager very often, if at all.  *Most* application
     programmers only care about security operations for the currently executing
-    user, usually obtained from the SecurityUtils.subject attribute.
+    user, usually obtained from the security_utils.subject attribute.
 
     Framework developers, however, might find working directly with a 
     SecurityManager useful.
@@ -155,7 +155,7 @@ class SecurityManager(authc_abcs.Authenticator, authz_abcs.Authorizer,
         Note that most application developers should probably not call this
         method directly unless they have a good reason for doing so.  The
         preferred way to log in a Subject is to call subject.login(authc_token) 
-        after acquiring the Subject from SecurityUtils.subject.
+        after acquiring the Subject from security_utils.subject.
 
         Framework developers, however, may find that directly calling this 
         method useful in certain cases.

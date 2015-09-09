@@ -23,7 +23,6 @@ from yosai import (
     InvalidArgumentException, 
     IllegalArgumentException,
     IllegalStateException,
-    SecurityUtils,
 )
 
 
@@ -310,7 +309,7 @@ class SubjectStore(metaclass=ABCMeta):
     --------
     Note that this component is used by SecurityManager implementations to
     manage Subject state persistence.  It does *not* make Subject instances
-    accessible to the application (e.g. via SecurityUtils.getSubject()).
+    accessible to the application (e.g. via security_utils.subject).
     """
     @abstractmethod
     def save(self, subject):

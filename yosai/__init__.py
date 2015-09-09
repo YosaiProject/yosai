@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -102,10 +102,6 @@ from .exceptions import (
     YosaiException,
 )
 
-from yosai.security_utils import (
-    SecurityUtils,    
-)
-
 from yosai.serialize import abcs as serialize_abcs
 from yosai.concurrency import abcs as concurrency_abcs
 from yosai.event import abcs as event_abcs
@@ -127,6 +123,7 @@ from yosai.conf.yosaisettings import (
 
 from yosai.concurrency.concurrency import (
     StoppableScheduledExecutor,
+    ThreadContext,
 )
 
 
@@ -223,7 +220,7 @@ from yosai.session.session import (
     AbstractNativeSessionManager,
     AbstractValidatingSessionManager,
     CachingSessionStore,
-    DefaultSessionContext,  
+    DefaultSessionContext,
     DefaultSessionKey,
     DefaultSessionManager,
     DelegatingSession,
@@ -244,15 +241,6 @@ from yosai.subject.subject_settings import (
     subject_settings,
 )
 
-
-from yosai.subject.subject import(
-    DefaultSubjectContext,
-    DefaultSubjectStore,
-    DefaultSubjectFactory,
-    # DelegatingSubject,
-    # StoppingAwareProxiedSession,
-)
-
 from yosai.subject.identifier import (
     SimpleIdentifierCollection,
 )
@@ -261,7 +249,21 @@ from yosai.mgt.mgt_settings import(
     DefaultMGTSettings,
 )
 
+from yosai.subject.subject import(
+    DefaultSubjectContext,
+    DefaultSubjectStore,
+    DefaultSubjectFactory,
+    DelegatingSubject,
+)
+
 from yosai.mgt.mgt import (
     DefaultSecurityManager,
 )
 
+from yosai.subject.subject_builder import(
+    SubjectBuilder,
+)
+
+from yosai.security_utils import (
+    SecurityUtils,
+)

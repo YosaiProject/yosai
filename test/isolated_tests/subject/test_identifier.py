@@ -176,17 +176,3 @@ def test_sic_deserialize(sic_serialized, simple_identifier_collection):
     sic = simple_identifier_collection
     deserialized = SimpleIdentifierCollection.deserialize(sic_serialized)
     assert deserialized.realm_identifiers == sic.realm_identifiers
-
-
-def test_default_subject_settings(default_subject_settings):
-    """
-    unit tested:  default context names
-
-    test case:
-    when subject settings are properly configured, a dict of context names will
-    be available through the default_context_names attribute
-    """
-    dss = default_subject_settings
-    context_names = dss.default_context_names
-    assert context_names.get('AUTHENTICATION_TOKEN') ==\
-        "DefaultSubjectContext.AUTHENTICATION_TOKEN"

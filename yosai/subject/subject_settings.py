@@ -14,14 +14,19 @@ class DefaultSubjectSettings:
         # omitted millisecond conversions
 
         subject_config = settings.SUBJECT_CONFIG
-        self.default_context_names = subject_config.get('default_context')
 
-    @property
-    def default_context_attribute_names(self):
-        return self.default_context_names 
+        # default_context resolves aliases to their fully qualified key names
+        self.context = subject_config.get('default_context')
+        self.keys = self.context.values()
+
+    def get_key(self, name):
+        """
+        returns the fully qualified key name from settings
+        """
+        return self.context.get(name)
 
     def __repr__(self):
-        return ("SubjectSettings({0})".format(self.default_context))
+        return ("SubjectSettings({0})".format(self.context))
 
 # initalize module-level settings:
 subject_settings = DefaultSubjectSettings()

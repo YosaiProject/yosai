@@ -37,3 +37,8 @@ class StoppableScheduledExecutor(threading.Thread):
             self.my_func() 
             if self.event.wait(self.interval):
                 return
+
+# TBD:
+class ThreadContext:
+    pass
+
