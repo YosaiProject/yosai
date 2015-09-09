@@ -55,7 +55,8 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self, context={}):
+    def __init__(self, security_utils, context={}):
+        self.security_utils = security_utils
         super().__init__(context)
 
     # new to yosai is this helper method:
@@ -80,7 +81,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             #  log debug here
 
             try:
-                security_manager = security_utils.security_manager
+                security_manager = self.security_utils.security_manager
             except UnavailableSecurityManagerException as ex:
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
                        "obtain security_manager! No SecurityManager available "
@@ -927,8 +928,9 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 class SubjectBuilder:
 
     def __init__(self,
-                 securitymanager=None,
-                 subjectcontext=DefaultSubjectContext(),
+                 securityutils,
+                 securitymanager,
+                 subjectcontext=None,
                  host=None,
                  sessionid=None,
                  session=None,
@@ -936,12 +938,11 @@ class SubjectBuilder:
                  session_creation_enabled=True,
                  authenticated=False,
                  **context_attributes):
-        if securitymanager is not None:
-            self.security_manager = securitymanager
-        else:
-            self.security_manager = security_utils.security_manager
 
-        self.subject_context = subjectcontext
+        self.security_manager = securitymanager
+
+        if subjectcontext is None:
+            self.subject_context = DefaultSubjectContext(securityutils)
 
         try:
             self.subject_context.security_manager = self.security_manager

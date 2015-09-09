@@ -8,8 +8,8 @@ from yosai import (
 
 class SecurityUtils:
     def __init__(self):
-        self._security_manager = DefaultSecurityManager() 
-        self.subject_builder = SubjectBuilder(self._security_manager) 
+        self._security_manager = DefaultSecurityManager()
+        self.subject_builder = SubjectBuilder(self, self._security_manager)
 
     def get_subject(self):
         subject = ThreadContext.subject
@@ -29,3 +29,6 @@ class SecurityUtils:
     @security_manager.setter
     def security_manager(self, security_manager):
         self._security_manager = security_manager
+
+
+security_utils = SecurityUtils()

@@ -205,15 +205,18 @@ from yosai.context.context import (
     MapContext,
 )
 
+
 from yosai.session.session_settings import (
     DefaultSessionSettings,
     session_settings,
 )
 
+
 from yosai.session.session_gen import(
     RandomSessionIDGenerator,
     UUIDSessionIDGenerator,
 )
+
 
 from yosai.session.session import (
     AbstractSessionStore,
@@ -241,29 +244,32 @@ from yosai.subject.subject_settings import (
     subject_settings,
 )
 
+
 from yosai.subject.identifier import (
     SimpleIdentifierCollection,
 )
 
+
 from yosai.mgt.mgt_settings import(
     DefaultMGTSettings,
 )
+
 
 from yosai.subject.subject import(
     DefaultSubjectContext,
     DefaultSubjectStore,
     DefaultSubjectFactory,
     DelegatingSubject,
+    SubjectBuilder,
 )
+
 
 from yosai.mgt.mgt import (
     DefaultSecurityManager,
 )
 
-from yosai.subject.subject_builder import(
-    SubjectBuilder,
-)
 
 from yosai.security_utils import (
     SecurityUtils,
+    security_utils
 )
