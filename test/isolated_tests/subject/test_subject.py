@@ -4,7 +4,10 @@ from unittest import mock
 from yosai import (
     DefaultSubjectContext,
     MapContext,
+    SecurityUtils,
     security_utils,
+    ThreadContext,
+    UnavailableSecurityManagerException,
 )
 
 # ------------------------------------------------------------------------------
@@ -87,8 +90,12 @@ def test_dsc_resolve_security_manager_exists(default_subject_context):
     resolves first to a security manager that already exists
     """
     dsc = default_subject_context
+    result = dsc.resolve_security_manager()
+    assert result == dsc.security_manager and bool(result)
 
-def test_dsc_resolve_security_manager_none(default_subject_context):
+
+def test_dsc_resolve_security_manager_none(
+        default_subject_context, monkeypatch, capsys):
     """
     unit tested:  resolve_security_manager
 
@@ -97,9 +104,15 @@ def test_dsc_resolve_security_manager_none(default_subject_context):
     SecurityUtils
     """
     dsc = default_subject_context
+    monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
+    monkeypatch.setattr(ThreadContext, 'security_manager', 'mysecuritymanager', raising=False)
+    result = dsc.resolve_security_manager()
+    out, err = capsys.readouterr()
+    assert ("No SecurityManager available" in out and
+            result == 'mysecuritymanager')
 
-
-def test_dsc_resolve_security_manager_none_raises(default_subject_context):
+def test_dsc_resolve_security_manager_none_raises(
+        default_subject_context, monkeypatch, capsys):
     """
     unit tested:  resolve_security_manager
 
@@ -107,10 +120,102 @@ def test_dsc_resolve_security_manager_none_raises(default_subject_context):
     no security manager attribute exists, SecurityUtils raises an exception
     because it doesn't have a security manager either
     """
+
+    dsc = default_subject_context
+    monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
+    monkeypatch.setattr(ThreadContext, 'security_manager', None, raising=False)
+    result = dsc.resolve_security_manager()
+    out, err = capsys.readouterr()
+    assert ("No SecurityManager available via SecurityUtils" in out and
+            result is None)
+
+def test_dsc_resolve_identifiers_exists(default_subject_context):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    resolves to the dsc's identifiers attribute when it is set
+    """
+    dsc = default_subject_context
+    result = dsc.resolve_identifiers()
+    assert result == dsc.identifiers and bool(result)
+
+def test_dsc_resolve_identifiers_none_accountreturns(
+        default_subject_context, monkeypatch, subject_context):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    when the dsc doesn't have an identifiers attribute set, but the subject attr
+    does, the subject's identifiers is returned
+    """
     dsc = default_subject_context
 
-# def test_dsc_resolve_identifiers
-# def test_dsc_resolve_session
+    class DumbSubject:
+        def __init__(self):
+            self.identifiers = 'subjectidentifier'
+
+    monkeypatch.setitem(dsc.context, subject_context['IDENTIFIERS'], None)
+    monkeypatch.setitem(dsc.context, subject_context['ACCOUNT'], None)
+    monkeypatch.setitem(dsc.context, subject_context['SUBJECT'], DumbSubject())
+
+    result = dsc.resolve_identifiers()
+    assert result == 'subjectidentifier'
+
+
+def test_dsc_resolve_identifiers_none_sessionreturns(
+        default_subject_context, monkeypatch):
+    """
+    unit tested:  resolve_identifiers
+
+    test case:
+    when the dsc doesn't have an identifiers attribute set, and neither account
+    nor subject has identifiers, resolve_session is called to obtain a session,
+    and then the session's identifiers is obtained
+    """
+    dsc = default_subject_context
+    class DumbSession:
+        def get_attribute(self, key):
+            return 'identifier'
+
+    monkeypatch.setattr(dsc, 'get', lambda x: None)
+    monkeypatch.setattr(dsc, 'resolve_session', lambda: DumbSession())
+    result = dsc.resolve_identifiers()
+    assert result == 'identifier'
+
+
+def test_dsc_resolve_session_exists(default_subject_context):
+    """
+    unit tested:  resolve_session
+
+    test case:
+    when a session attribute is set in the dsc, it is returned
+    """
+    dsc = default_subject_context
+    result = dsc.resolve_session()
+    assert result == dsc.session
+
+
+def test_dsc_resolve_session_notexists(
+        default_subject_context, monkeypatch, subject_context):
+    """
+    unit tested:  resolve_session
+
+    test case:
+    when a session attribute is NOT set in the dsc, resolve_session tries to
+    obtain the session from the subject attribute
+    """
+    dsc = default_subject_context
+
+    class DumbSubject:
+        def get_session(self, mybool):
+            return 'subjectsession'
+
+    monkeypatch.setitem(dsc.context, subject_context['SESSION'], None)
+    monkeypatch.setitem(dsc.context, subject_context['SUBJECT'], DumbSubject())
+
+    result = dsc.resolve_session()
+
 # def test_dsc_resolve_authenticated
 # def test_dsc_resolve_host
 
