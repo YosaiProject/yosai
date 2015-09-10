@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -27,18 +27,17 @@ class StoppableScheduledExecutor(threading.Thread):
         self.event = threading.Event()
         self.my_func = my_func
         self.interval = interval  # in seconds
-        
+
     def stop(self):
         self.event.set()
         self.join()
 
     def run(self):
         while True:
-            self.my_func() 
+            self.my_func()
             if self.event.wait(self.interval):
                 return
 
 # TBD:
 class ThreadContext:
     pass
-

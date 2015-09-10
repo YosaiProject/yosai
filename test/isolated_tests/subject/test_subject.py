@@ -216,8 +216,110 @@ def test_dsc_resolve_session_notexists(
 
     result = dsc.resolve_session()
 
-# def test_dsc_resolve_authenticated
-# def test_dsc_resolve_host
+
+def test_dsc_resolve_authenticated(default_subject_context):
+    """
+    unit tested:  resolve_authenticated
+
+    test case:
+    when the dsc's authenticated attribute is set, it is returned
+    """
+    dsc = default_subject_context
+    result = dsc.resolve_authenticated()
+    assert result == bool(dsc.authenticated)
+
+
+def test_dsc_resolve_authenticated_usingaccount(
+        default_subject_context, monkeypatch, subject_context):
+    """
+    unit tested:  resolve_authenticated
+
+    test case:
+    when the dsc's authenticated attribute is NOT set, but an Account attribute
+    exists, authentication is True
+    """
+    dsc = default_subject_context
+
+    monkeypatch.setitem(dsc.context, subject_context['AUTHENTICATED'], None)
+    assert dsc.account
+    result = dsc.resolve_authenticated()
+    assert result is True
+
+
+def test_dsc_resolve_authenticated_usingsession(
+        default_subject_context, monkeypatch, subject_context):
+    """
+    unit tested:  resolve_authenticated
+
+    test case:
+    when the dsc's authenticated attribute is NOT set, no Account attribute
+    exists, but a session exists and has proof of authentication, returns True
+    """
+    dsc = default_subject_context
+
+    class DumbSession:
+        def get_attribute(self, key):
+            return 'AUTHC'
+
+    monkeypatch.setitem(dsc.context, subject_context['AUTHENTICATED'], None)
+    monkeypatch.setitem(dsc.context, subject_context['ACCOUNT'], None)
+    monkeypatch.setattr(dsc, 'resolve_session', lambda: DumbSession())
+
+    result = dsc.resolve_authenticated()
+    assert result is True
+
+
+def test_dsc_resolve_host_exists(default_subject_context):
+    """
+    unit tested:   resolve_host
+
+    test case:
+    when a host attribute exists, it is returned
+    """
+    dsc = default_subject_context
+    result = dsc.resolve_host()
+    assert result == dsc.host
+
+
+def test_dsc_resolve_host_notexists_token(
+        default_subject_context, monkeypatch, subject_context):
+    """
+    unit tested:   resolve_host
+
+    test case:
+    no host attribute exists, so token's host is returned
+    """
+    dsc = default_subject_context
+
+    class DumbToken:
+        def __init__(self):
+            self.host = 'tokenhost'
+
+    monkeypatch.setitem(dsc.context, subject_context['HOST'], None)
+    monkeypatch.setattr(dsc, 'resolve_session', lambda: DumbToken())
+    result = dsc.resolve_host()
+    assert result == 'tokenhost'
+
+
+def test_dsc_resolve_host_notexists_session(
+        default_subject_context, monkeypatch, subject_context):
+    """
+    unit tested:   resolve_host
+
+    test case:
+    no host attribute exists, no token host, session's host is returned
+    """
+    dsc = default_subject_context
+    class DumbSession:
+        def __init__(self):
+            self.host = 'sessionhost'
+
+    monkeypatch.setitem(dsc.context, subject_context['HOST'], None)
+    monkeypatch.setitem(dsc.context, subject_context['AUTHENTICATION_TOKEN'], None)
+    monkeypatch.setattr(dsc, 'resolve_session', lambda: DumbSession())
+
+    result = dsc.resolve_host()
+    assert result == 'sessionhost'
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore

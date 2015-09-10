@@ -127,7 +127,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                     continue
                 else:
                     break
-
         # otherwise, use the session key as the identifier:
         if not identifiers:
             session = self.resolve_session()
@@ -170,28 +169,30 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     # yosai renamed from is_authenticated:
     @property
     def authenticated(self):
+        """
+        :returns: Boolean
+        """
         authc = self.get(self.get_key('AUTHENTICATED'))
-        return bool(authc)
+        return authc
 
     @authenticated.setter
     def authenticated(self, authc):
         self.put(self.get_key('AUTHENTICATED'), authc)
 
     def resolve_authenticated(self):
-        authc = self.authenticated  # a bool
+        authc = self.authenticated
         if authc is None:
-            #  see if there is an AuthenticationInfo object.  If so, the very
             #  presence of one indicates a successful authentication attempt:
-            authc = (self.account is not None)
-        if (not authc):
+            #  See whethere there is an Account object.  If one exists, the very
+            authc = self.account
+        if authc is None:
             #  fall back to a session check:
             session = self.resolve_session()
             if (session is not None):
-                session_authc = session.get_attribute(
+                authc = session.get_attribute(
                     self.get_key('AUTHENTICATED_SESSION_KEY'))
-                authc = bool(session_authc)
 
-        return authc
+        return bool(authc)
 
     # yosai renamed AuthenticationInfo to Account:
     @property
