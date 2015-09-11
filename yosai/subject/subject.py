@@ -27,6 +27,7 @@ from yosai import (
     DefaultSessionStorageEvaluator,
     DisabledSessionException,
     ExecutionException,
+    IdentifiersNotSetException,
     IllegalArgumentException,
     IllegalStateException,
     InvalidSessionException,
@@ -340,7 +341,7 @@ class DelegatingSubject(subject_abcs.Subject):
     @identifiers.setter
     def identifiers(self, identifiers):
         if (isinstance(identifiers, subject_abcs.IdentifierCollection) or
-            identifiers is None):
+                identifiers is None):
             self._identifiers = identifiers
 
     def is_permitted(self, permission_s):
@@ -355,10 +356,9 @@ class DelegatingSubject(subject_abcs.Subject):
             self.check_security_manager()
             return (self.security_manager.is_permitted(
                     self.identifiers, permission_s))
-        else:
-            if isinstance(permission_s, collections.Iterable):
-                return [(False, permission) for permission in permission_s]
-            return False
+
+        msg = 'Cannot check permission when identifiers aren\'t set!'
+        raise IdentifiersNotSetException(msg)
 
     def is_permitted_all(self, permission_s):
         """
@@ -366,12 +366,15 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :returns: a Boolean
         """
-        return (self.has_identifiers and
-                self.security_manager.is_permitted_all(self.identifiers,
-                                                       permission_s))
+        if self.has_identifiers:
+            return self.security_manager.is_permitted_all(self.identifiers,
+                                                          permission_s)
+
+        msg = 'Cannot check permission when identifiers aren\'t set!'
+        raise IdentifiersNotSetException(msg)
 
     def assert_authz_check_possible(self):
-        if (self.identifiers):
+        if not self.identifiers:
             msg = (
                 "This subject is anonymous - it does not have any " +
                 "identifying identifiers and authorization operations " +
@@ -379,7 +382,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 "instance will acquire these identifying identifiers " +
                 "automatically after a successful login is performed be " +
                 "executing " + self.__class__.__name__ +
-                ".login(AuthenticationToken) or when 'Remember Me' " +
+                ".login(Account) or when 'Remember Me' " +
                 "functionality is enabled by the SecurityManager.  " +
                 "This exception can also occur when a previously " +
                 "logged-in Subject has logged out which makes it " +
@@ -396,7 +399,11 @@ class DelegatingSubject(subject_abcs.Subject):
         :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_authz_check_possible()
-        self.security_manager.check_permission(self.identifiers, permission_s)
+        if self.has_identifiers:
+            self.security_manager.check_permission(self.identifiers, permission_s)
+        else:
+            msg = 'Cannot check permission when identifiers aren\'t set!'
+            raise IdentifiersNotSetException(msg)
 
     def has_role(self, roleid_s):
         """
@@ -409,10 +416,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
         if self.has_identifiers:
             return (self.security_manager.has_role(self.identifiers, roleid_s))
-        else:
-            if isinstance(roleid_s, collections.Iterable):
-                return [(False, roleid) for roleid in roleid_s]
-            return False
+        msg = 'Cannot check roles when identifiers aren\'t set!'
+        raise IdentifiersNotSetException(msg)
 
     def has_all_roles(self, roleid_s):
         """
@@ -421,8 +426,12 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :returns: a Boolean
         """
-        return (self.has_identifiers and
-                self.security_manager.has_all_roles(self.identifiers, roleid_s))
+        if self.has_identifiers:
+            return (self.has_identifiers and
+                    self.security_manager.has_all_roles(self.identifiers, roleid_s))
+        else:
+            msg = 'Cannot check roles when identifiers aren\'t set!'
+            raise IdentifiersNotSetException(msg)
 
     def check_role(self, role_ids):
         """
@@ -431,8 +440,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
-        role_ids = []
-        self.security_manager.check_role(self.identifers, role_ids)
+        if self.has_identifiers:
+            self.security_manager.check_role(self.identifers, role_ids)
 
     def login(self, auth_token):
 

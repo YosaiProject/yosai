@@ -4,11 +4,17 @@ from unittest import mock
 from yosai import (
     DefaultSubjectContext,
     DelegatingSubject,
+    IdentifiersNotSetException,
     MapContext,
     SecurityUtils,
     security_utils,
     ThreadContext,
+    UnauthenticatedException,
     UnavailableSecurityManagerException,
+)
+
+from ..doubles import (
+    MockSecurityManager,
 )
 
 # ------------------------------------------------------------------------------
@@ -401,6 +407,7 @@ def test_ds_identifiers_type(delegating_subject, monkeypatch):
     only object of type IdentifierCollection may be set to the identifiers attribute
     """
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
     ds.identifiers = 'identifiers'
     assert ds._identifiers is None
@@ -416,10 +423,124 @@ def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
     """
 
     ds = delegating_subject
-    print('security_manager: ', ds.security_manager)
     monkeypatch.setattr(ds.security_manager, 'is_permitted', lambda x,y: 'sm_permitted')
     result = ds.is_permitted('permission')
     assert result == 'sm_permitted'
+
+
+def test_ds_is_permitted_withoutidentifiers(delegating_subject, monkeypatch):
+    """
+    unit test:  is_permitted
+
+    test case:
+    when no identifiers attribute is set, no permission can be determined and
+    so an exception raises
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IdentifiersNotSetException, "ds.is_permitted('anything')")
+
+def test_ds_is_permitted_all(delegating_subject):
+    """
+    unit tested:  is_permitted_all
+
+    test case:
+        given a DS with identifiers attribute:
+            calls security_manager's method, which is a verified double whose
+            return value is hard coded True
+
+        otherwise, raises
+    """
+    ds = delegating_subject
+    result = ds.is_permitted_all('permission_s')
+    assert result is True
+
+
+def test_ds_is_permitted_all_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  is_permitted_all
+
+    test case:
+        given a DS with identifiers attribute:
+            calls security_manager's method, which is a verified double whose
+            return value is hard coded True
+
+        otherwise, raises
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IdentifiersNotSetException, "ds.is_permitted_all('permission_s')")
+
+
+def test_ds_assert_authz_check_possible(delegating_subject, monkeypatch):
+    """
+    unit tested:  assert_authz_check_possible
+
+    test case:
+    raises an exception when identifiers attribute isn't set
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.delattr(ds, '_identifiers')
+    pytest.raises(UnauthenticatedException, "ds.assert_authz_check_possible()")
+
+
+def test_ds_check_permission(delegating_subject, monkeypatch):
+    """
+    unit tested:  check_permission
+
+    test case:
+    delegates call to security_manager
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds,'assert_authz_check_possible', lambda: None)
+    with mock.patch.object(MockSecurityManager, 'check_permission') as mock_cp:
+        mock_cp.return_value = None
+        ds.check_permission('arbitrary')
+        assert mock_cp.called
+
+
+def test_ds_check_permission_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  check_permission
+
+    test case:
+    requires the identifiers attribute, raising if it doesn't exist
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'assert_authz_check_possible', lambda: None)
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IdentifiersNotSetException, "ds.check_permission('anything')")
+
+
+def test_ds_has_role(delegating_subject, monkeypatch):
+    """
+    unit tested:  has_role
+
+    test case:
+    delegates call to security_manager
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'has_role', lambda x,y: 'yup')
+    result = ds.has_role('roleid123')
+    assert result == 'yup'
+
+def test_ds_has_role_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  has_role
+
+    test case:
+    when the identifiers attribute isn't set, an exception is raised
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IdentifiersNotSetException, "ds.has_role('role123')")
+
+
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore

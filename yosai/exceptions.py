@@ -340,6 +340,10 @@ class SubjectException(YosaiException):
     pass
 
 
+class IdentifiersNotSetException(SubjectException):
+    pass
+
+
 class SecurityManagerNotSetException(SubjectException):
     pass
 

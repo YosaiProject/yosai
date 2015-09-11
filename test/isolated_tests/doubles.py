@@ -252,7 +252,7 @@ class MockSecurityManager(mgt_abcs.SecurityManager):
         pass
 
     def is_permitted_all(self, identifiers, permission_s):
-        pass
+        return True 
 
     def check_permission(self, identifiers, permission_s):
         pass

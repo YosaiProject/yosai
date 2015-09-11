@@ -57,6 +57,7 @@ from .exceptions import (
     GenericException,
     GetCachedAccountException,
     HostUnauthorizedException,
+    IdentifiersNotSetException,
     IllegalArgumentException,
     IllegalStateException,
     IncorrectCredentialsException,
