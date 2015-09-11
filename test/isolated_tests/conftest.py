@@ -9,6 +9,8 @@ from .fixtures import (
     mock_cache,
     mock_default_session_manager,
     mock_pubsub,
+    mock_security_manager,
+    mock_session,
     mock_subject,
     mock_subject_context,
     mock_token,

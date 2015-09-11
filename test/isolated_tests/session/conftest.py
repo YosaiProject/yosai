@@ -9,7 +9,6 @@ from .fixtures import (
     memory_session_store,
     mock_abstract_session_store,
     mock_caching_session_store,
-    mock_session,
     patched_abstract_native_session_manager,
     patched_delegating_session,
     simple_session,

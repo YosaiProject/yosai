@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -20,7 +20,7 @@ under the License.
 
 from abc import ABCMeta, abstractmethod
 from yosai import (
-    InvalidArgumentException, 
+    InvalidArgumentException,
     IllegalArgumentException,
     IllegalStateException,
 )
@@ -126,7 +126,7 @@ class SubjectContext(metaclass=ABCMeta):
     @abstractmethod
     def identifiers(self):
         pass
-    
+
     @identifiers.setter
     @abstractmethod
     def identifiers(self, identifiers):
@@ -154,7 +154,7 @@ class SubjectContext(metaclass=ABCMeta):
     @abstractmethod
     def authenticated(self):
         pass
-    
+
     @authenticated.setter
     @abstractmethod
     def authenticated(self, authc):
@@ -251,7 +251,7 @@ class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def is_authenticated(self):
+    def authenticated(self):
         pass
 
     @property
@@ -291,7 +291,7 @@ class Subject(metaclass=ABCMeta):
     def release_run_as(self):
         pass
 
-    # Yosai doesn't require a SubjectBuilder, using keyword args in __init__ 
+    # Yosai doesn't require a SubjectBuilder, using keyword args in __init__
 
 # moved from /mgt:
 class SubjectStore(metaclass=ABCMeta):
@@ -314,17 +314,17 @@ class SubjectStore(metaclass=ABCMeta):
     @abstractmethod
     def save(self, subject):
         """
-        Persists the specified Subject's state for later access.  If there is 
+        Persists the specified Subject's state for later access.  If there is
         a no existing state persisted, this persists it if possible (i.e. a
-        create operation).  If there is existing state for the specified 
-        Subject, this method updates the existing state to reflect the 
+        create operation).  If there is existing state for the specified
+        Subject, this method updates the existing state to reflect the
         current state (i.e. an update operation).
-       
+
         :param subject: the Subject instance for which its state will be
                         created or updated
         :returns: the Subject instance to use after persistence is complete
-                  - this can be the same as the method argument if the 
-                    underlying implementation does not need to make any Subject 
+                  - this can be the same as the method argument if the
+                    underlying implementation does not need to make any Subject
                     changes
         """
         pass
@@ -337,7 +337,7 @@ class SubjectStore(metaclass=ABCMeta):
         accessible at a later time.
 
         :param subject: the Subject instance for which any persistent state
-                        should be deleted 
+                        should be deleted
         """
         pass
 
@@ -345,22 +345,22 @@ class SubjectStore(metaclass=ABCMeta):
 # moved from /mgt:
 class SubjectFactory(metaclass=ABCMeta):
     """
-    A SubjectFactory is responsible for constructing Subject instances as 
+    A SubjectFactory is responsible for constructing Subject instances as
     needed
     """
 
     def create_subject(self, context):
         """
-        Creates a new Subject instance reflecting the state of the specified 
-        contextual data.  The data would be anything required to required to 
+        Creates a new Subject instance reflecting the state of the specified
+        contextual data.  The data would be anything required to required to
         construct a Subject instance and its contents can vary based on
         environment.
 
-        Any data supported by Shiro core will be accessible by one of the 
-        SubjectContext(s) accessor properties or methods.  All other data is 
+        Any data supported by Shiro core will be accessible by one of the
+        SubjectContext(s) accessor properties or methods.  All other data is
         available as map attributes.
 
-        :param context: the contextual data to be used by the implementation 
+        :param context: the contextual data to be used by the implementation
                         to construct an appropriate Subject instance
         :returns: a Subject instance created based on the specified context
         """

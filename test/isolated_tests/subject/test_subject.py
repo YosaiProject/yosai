@@ -3,6 +3,7 @@ from unittest import mock
 
 from yosai import (
     DefaultSubjectContext,
+    DelegatingSubject,
     MapContext,
     SecurityUtils,
     security_utils,
@@ -322,13 +323,107 @@ def test_dsc_resolve_host_notexists_session(
     assert result == 'sessionhost'
 
 # ------------------------------------------------------------------------------
-# DefaultSubjectStore
-# ------------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------------
 # DelegatingSubject
 # ------------------------------------------------------------------------------
 
+
+def test_ds_init(delegating_subject):
+    """
+    unit tested:  __init__
+
+    test case:
+    a session passed as an argument into init should be wrapped by a SAPS
+    - also exercises the decorate method code path
+    """
+    ds = delegating_subject
+    assert isinstance(ds.session, DelegatingSubject.StoppingAwareProxiedSession)
+
+
+def test_ds_decorate_type_check(delegating_subject):
+    """
+    unit tested: decorate
+
+    test case:
+    only objects implementing the Session interface may be wrapped by the SAPS
+    """
+    ds = delegating_subject
+    result = ds.decorate('session')
+    assert result is None
+
+
+def test_security_manager_typecheck(delegating_subject, mock_security_manager):
+    """
+    unit tested security_manager.setter
+
+    test case:
+    only objects implementing the SecurityManager interface may be assigned
+    """
+    ds = delegating_subject
+
+    DumbSecurityManager = type("DumbSecurityManager", (), {})
+    ds.security_manager = DumbSecurityManager()  # shouldn't set
+    assert ds.security_manager == mock_security_manager
+
+
+def test_ds_identifiers_fromstack(delegating_subject, monkeypatch):
+    """
+    unit tested:  identifiers
+
+    test case:
+    first tries to obtain identifiers from get_run_as_identifiers_stack
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: ['identifier1'] )
+    result = ds.identifiers
+    assert result == 'identifier1'
+
+
+def test_ds_identifiers_fromidentifiers(
+        delegating_subject, monkeypatch, simple_identifier_collection):
+    """
+    unit tested:  identifiers
+
+    test case:
+    first tries to obtain identifiers from get_run_as_identifiers_stack, fails,
+    and reverts to _identifiers attribute
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    result = ds.identifiers
+    assert result == simple_identifier_collection
+
+
+def test_ds_identifiers_type(delegating_subject, monkeypatch):
+    """
+    unit tested:  identifiers.setter
+
+    test case:
+    only object of type IdentifierCollection may be set to the identifiers attribute
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, '_identifiers', None)
+    ds.identifiers = 'identifiers'
+    assert ds._identifiers is None
+
+
+def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
+    """
+    unit test:  is_permitted
+
+    test case:
+    the identifiers attribute is set for the fixture and is passed on as an
+    argument to the security manager
+    """
+
+    ds = delegating_subject
+    print('security_manager: ', ds.security_manager)
+    monkeypatch.setattr(ds.security_manager, 'is_permitted', lambda x,y: 'sm_permitted')
+    result = ds.is_permitted('permission')
+    assert result == 'sm_permitted'
+
+# ------------------------------------------------------------------------------
+# DefaultSubjectStore
+# ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # SubjectBuilder

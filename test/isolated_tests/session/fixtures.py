@@ -20,15 +20,8 @@ from .doubles import (
     MockAbstractSessionStore,
     MockAbstractValidatingSessionManager,
     MockCachingSessionStore,
-    MockSession,
     MockSessionManager,
 )
-
-
-@pytest.fixture(scope='function')
-def mock_session():
-    return MockSession()
-
 
 @pytest.fixture(scope='function')
 def default_proxied_session(mock_session):

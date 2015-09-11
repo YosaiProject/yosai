@@ -15,6 +15,7 @@ from .doubles import (
     MockAccountStore,
     MockCache,
     MockPubSub,
+    MockSecurityManager,
     MockSubject,
     MockSubjectContext,
     MockToken,
@@ -22,18 +23,19 @@ from .doubles import (
 
 from .session.doubles import (
     MockDefaultSessionManager,
+    MockSession,
 )
 
 @pytest.fixture(scope='function')
 def mock_account_state():
-    return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO', 
+    return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO',
                       'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
             'identifiers': {'givenname': 'Napolean',
                             'surname': 'Dynamite',
                             'email': 'napoleandynamite@example.com',
                             'username': 'napodyna',
                             'api_key_id': '144JVZINOF5EBNCMG9EXAMPLE'}}
-         
+
 
 @pytest.fixture(scope='function')
 def full_mock_account(mock_account_state):
@@ -54,10 +56,10 @@ def default_accountstorerealm():
 
 @pytest.fixture(scope='function')
 def username_password_token():
-    return UsernamePasswordToken(username='user123', 
+    return UsernamePasswordToken(username='user123',
                                  password='secret',
-                                 remember_me=False, 
-                                 host='127.0.0.1') 
+                                 remember_me=False,
+                                 host='127.0.0.1')
 
 
 @pytest.fixture(scope='function')
@@ -98,7 +100,7 @@ def first_realm_successful_strategy():
 
 @pytest.fixture(scope='function')
 def default_authenticator(first_realm_successful_strategy, patched_event_bus):
-    return DefaultAuthenticator(patched_event_bus, 
+    return DefaultAuthenticator(patched_event_bus,
                                 first_realm_successful_strategy)
 
 
@@ -115,3 +117,13 @@ def mock_subject_context():
 @pytest.fixture(scope='function')
 def mock_subject():
     return MockSubject()
+
+
+@pytest.fixture(scope='function')
+def mock_session():
+    return MockSession()
+
+
+@pytest.fixture(scope='function')
+def mock_security_manager():
+    return MockSecurityManager()

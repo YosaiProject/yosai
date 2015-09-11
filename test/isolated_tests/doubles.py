@@ -3,29 +3,33 @@ from yosai import (
     MapContext,
     account_abcs,
     authc_abcs,
+    authz_abcs,
     cache_abcs,
+    mgt_abcs,
     realm_abcs,
+    session_abcs,
     subject_abcs,
 )
 
 from marshmallow import fields, Schema
 
+
 class MockCache(cache_abcs.Cache):
-    
+
     def __init__(self, keyvals={}):
         # keyvals is a dict
         self.kvstore = {}
         self.kvstore.update(keyvals)
-    
+
     @property
     def values(self):
         return self.kvstore.values()
 
     def get(self, key):
-        return self.kvstore.get(key, None) 
+        return self.kvstore.get(key, None)
 
     def put(self, key, value):
-        self.kvstore[key] = value 
+        self.kvstore[key] = value
 
     def remove(self, key):
         try:
@@ -38,7 +42,7 @@ class MockCacheManager(cache_abcs.CacheManager):
 
     def __init__(self, cache):
         self.cache = cache
-   
+
     def get_cache(self, name):
         # regardless of the name, return the stock cache
         return self.cache
@@ -59,9 +63,9 @@ class MockAccountCacheHandler(realm_abcs.AccountCacheHandler):
 
     def __init__(self, account):
         self.account = account
-   
+
     def get_cached_account(self, account):
-        return self.account  # always returns the initialized account 
+        return self.account  # always returns the initialized account
 
 
 class MockAccount(account_abcs.Account):
@@ -70,22 +74,22 @@ class MockAccount(account_abcs.Account):
         self._account_id = account_id
         self._credentials = credentials
         self._identifiers = identifiers
-        
-    @property 
+
+    @property
     def account_id(self):
-        return self._account_id 
+        return self._account_id
 
-    @property 
+    @property
     def credentials(self):
-        return self._credentials 
+        return self._credentials
 
-    @property 
+    @property
     def identifiers(self):
-        return self._identifiers 
+        return self._identifiers
 
     def __eq__(self, other):
         try:
-            result = (self._account_id == other._account_id and 
+            result = (self._account_id == other._account_id and
                       self.credentials == other.credentials and
                       self.identifiers == other.identifiers)
         except Exception:
@@ -100,11 +104,11 @@ class MockAccount(account_abcs.Account):
     def serialization_schema(cls):
         class SerializationSchema(Schema):
             account_id = fields.Str()
-            credentials = fields.Nested(cls.AccountCredentialsSchema) 
+            credentials = fields.Nested(cls.AccountCredentialsSchema)
             identifiers = fields.Nested(cls.AccountAttributesSchema)
-     
+
             def make_object(self, data):
-                mycls = MockAccount 
+                mycls = MockAccount
                 instance = mycls.__new__(cls)
                 instance.__dict__.update(data)
                 return instance
@@ -114,7 +118,7 @@ class MockAccount(account_abcs.Account):
     class AccountCredentialsSchema(Schema):
         password = fields.Str()
         api_key_secret = fields.Str()
-        
+
         def make_object(self, data):
             return dict(data)
 
@@ -130,7 +134,7 @@ class MockAccount(account_abcs.Account):
 
 
 class MockAccountStore(account_abcs.AccountStore):
-    
+
     def __init__(self, account=MockAccount(account_id='MAS123')):
         self.account = account
 
@@ -141,19 +145,19 @@ class MockAccountStore(account_abcs.AccountStore):
 class MockPubSub:
 
     def isSubscribed(self, listener, topic_name):
-        return True 
+        return True
 
     def sendMessage(self, topic_name, **kwargs):
-        pass  # True   just for testing, otherwise returns None in production 
+        pass  # True   just for testing, otherwise returns None in production
 
     def subscribe(self, _callable, topic_name):
         return _callable, True
 
     def unsubscribe(self, listener, topic_name):
-        return listener 
+        return listener
 
     def unsubAll(self):
-        return [] 
+        return []
 
     def __repr__(self):
         return "<MockPubSub()>"
@@ -162,13 +166,13 @@ class MockPubSub:
 class MockSubjectContext(MapContext):
 
     def resolve_security_manager(self):
-        return None 
+        return None
 
     def resolve_session(self):
-        return None 
+        return None
 
     def resolve_identifiers(self):
-        return None 
+        return None
 
 
 class MockSubject(subject_abcs.Subject):
@@ -179,20 +183,20 @@ class MockSubject(subject_abcs.Subject):
 
     @property
     def identifier(self):
-        return None 
+        return None
 
     @property
     def identifiers(self):
-        return self._identifiers 
+        return self._identifiers
 
     def is_permitted(self, permissions):
-        pass 
+        pass
 
     def is_permitted_all(self, permissions):
-        pass 
+        pass
 
     def check_permission(self, permissions):
-        pass 
+        pass
 
     def has_role(self, role_identifiers):
         pass
@@ -237,3 +241,45 @@ class MockSubject(subject_abcs.Subject):
 
     def release_run_as(self):
         pass
+
+# verified double due to use of interfaces:
+class MockSecurityManager(mgt_abcs.SecurityManager):
+
+    def authenticate_account(self, authc_token):
+        pass
+
+    def is_permitted(self, identifiers, permission_s):
+        pass
+
+    def is_permitted_all(self, identifiers, permission_s):
+        pass
+
+    def check_permission(self, identifiers, permission_s):
+        pass
+
+    def has_role(self, identifiers, roleid_s):
+        pass
+
+    def has_all_roles(self, identifiers, roleid_s):
+        pass
+
+    def check_role(self, identifiers, role_s):
+        pass
+
+    def login(self, subject, authc_token):
+        pass
+
+    def logout(self, subject):
+        pass
+
+    def create_subject(self, subject_context):
+        pass
+
+    def start(self, session_context):
+        pass
+
+    def get_session(self, session_key):
+        pass
+
+    def __repr__(self):
+        return "MockSecurityManager()"

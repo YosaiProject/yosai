@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -144,12 +144,12 @@ class MissingPrivateSaltException(YosaiException):
 class MultiRealmAuthenticationException(AuthenticationException):
 
     def __init__(self, realm_errors):
-        msg = ("Multiple authentication problems across various realms.  " 
+        msg = ("Multiple authentication problems across various realms.  "
                "Only the first discovered exception will be shown as the cause"
                "; call get_realm_exceptions() to access all of them.")
         super().__init__(msg, next(iter(realm_errors.values())))
         self.realm_errors = realm_errors
-    
+
     def get_realm_exceptions(self):
         return self.realm_errors
 
@@ -336,26 +336,25 @@ class UncacheSessionException(SessionException):
 # ---------------------------------------------------------------------------
 
 
-class ExecutionException(YosaiException):
+class SubjectException(YosaiException):
     pass
 
 
-class DisabledSessionException(YosaiException):
+class SecurityManagerNotSetException(SubjectException):
     pass
 
 
-class NullPointerException(YosaiException):
+class ExecutionException(SubjectException):
     pass
 
 
-class PrimaryIdentifierIntegrityException(YosaiException):
+class DisabledSessionException(SubjectException):
     pass
 
 
-class UnrecognizedIdentifierException(YosaiException):
+class UnrecognizedIdentifierException(SubjectException):
     pass
 
 
-class UnsupportedOperationException(YosaiException):
+class UnsupportedOperationException(SubjectException):
     pass
-
