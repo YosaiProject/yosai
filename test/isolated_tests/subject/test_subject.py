@@ -5,7 +5,6 @@ from yosai import (
     DefaultSubjectContext,
     DelegatingSubject,
     IdentifiersNotSetException,
-    MapContext,
     SecurityUtils,
     security_utils,
     ThreadContext,
@@ -222,6 +221,7 @@ def test_dsc_resolve_session_notexists(
     monkeypatch.setitem(dsc.context, subject_context['SUBJECT'], DumbSubject())
 
     result = dsc.resolve_session()
+    assert result is None
 
 
 def test_dsc_resolve_authenticated(default_subject_context):
@@ -599,7 +599,7 @@ def test_check_role_raises(delegating_subject, monkeypatch):
 
 def test_ds_login_succeeds(
         delegating_subject, monkeypatch, mock_subject,
-        simple_identifier_collection):
+        simple_identifier_collection, mock_session):
     """
     unit tested:  login
 
@@ -614,10 +614,28 @@ def test_ds_login_succeeds(
       to the DS's session attributee
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
+    sic = simple_identifier_collection
+    monkeypatch.setattr(mock_subject, '_identifiers', sic)
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
+    monkeypatch.setattr(mock_subject, 'get_session', lambda x: mock_session)
+
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
         mock_crii.return_value = None
 
+        with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
+            mock_smlogin.return_value = mock_subject
+
+            with mock.patch.object(DelegatingSubject, 'decorate') as mock_dec:
+                mock_dec.return_value = mock_session
+
+                ds.login('dumb_authc_token')
+
+                mock_smlogin.assert_called_once_with(subject=ds, authc_token='dumb_authc_token')
+                mock_dec.assert_called_once_with(mock_session)
+
+                assert (ds.session == mock_session and
+                        ds.host == mock_subject.host and
+                        ds._identifiers == simple_identifier_collection)
 
 # def test_ds_login_raises(delegating_subject, monkeypatch)
     """
@@ -626,22 +644,14 @@ def test_ds_login_succeeds(
     test case:
 
     """
-    ds = delegating_subject
-    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
-    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
-        mock_crii.return_value = None
 
-# def test_ds_login_noidentifiers_raises(delegating_subject, monkeypatch)
+    # def test_ds_login_noidentifiers_raises(delegating_subject, monkeypatch)
     """
     unit tested:  login
 
     test case:
 
     """
-    ds = delegating_subject
-    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
-    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
-        mock_crii.return_value = None
 
 # def test_ds_login_nohost(delegating_subject, monkeypatch)
     """
@@ -650,10 +660,6 @@ def test_ds_login_succeeds(
     test case:
 
     """
-    ds = delegating_subject
-    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
-    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
-        mock_crii.return_value = None
 
 
 # def test_ds_login_nosession(delegating_subject, monkeypatch)
@@ -663,10 +669,6 @@ def test_ds_login_succeeds(
     test case:
 
     """
-    ds = delegating_subject
-    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
-    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
-        mock_crii.return_value = None
 
 
 

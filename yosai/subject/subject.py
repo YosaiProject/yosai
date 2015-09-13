@@ -451,7 +451,8 @@ class DelegatingSubject(subject_abcs.Subject):
         self.clear_run_as_identities_internal()
 
         # login raises an AuthenticationException if it fails to authenticate:
-        subject = self.security_manager.login(self, authc_token)
+        subject = self.security_manager.login(subject=self,
+                                              authc_token=authc_token)
 
         identifiers = subject.identifiers
         host = subject.host
@@ -637,6 +638,7 @@ class DelegatingSubject(subject_abcs.Subject):
     def release_run_as(self):
         return self.pop_identity()
 
+    # TBD:  not clear whether this should have been ported:
     def get_run_as_identifiers_stack(self):
         """
         :returns: an IdentifierCollection
