@@ -128,3 +128,11 @@ def mock_session():
 @pytest.fixture(scope='function')
 def mock_security_manager():
     return MockSecurityManager()
+
+
+@pytest.fixture(scope='function')
+def default_session_context():
+    return DefaultSessionContext(context_map={'attr1': 'attributeOne',
+                                              'attr2': 'attributeTwo',
+                                              'attr3': 'attributeThree'})
+

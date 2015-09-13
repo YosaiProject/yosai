@@ -2,6 +2,7 @@ from .fixtures import (
     default_accountstorerealm,
     default_authenticator,
     default_password_matcher,
+    default_session_context,
     first_realm_successful_strategy,
     full_mock_account,
     mock_account_state,

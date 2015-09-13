@@ -2,7 +2,6 @@ from .fixtures import (
     abstract_native_session_manager,
     abstract_validating_session_manager,
     default_proxied_session,
-    default_session_context,
     default_session_storage_evaluator,
     executor_session_validation_scheduler,
     immutable_proxied_session,

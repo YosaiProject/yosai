@@ -3,8 +3,10 @@ from unittest import mock
 
 from yosai import (
     AuthenticationException,
+    DefaultSessionContext,
     DefaultSubjectContext,
     DelegatingSubject,
+    DisabledSessionException,
     IdentifiersNotSetException,
     IllegalArgumentException,
     IllegalStateException,
@@ -757,7 +759,7 @@ def test_get_session_withsessionattribute_succeeds(
     result = ds.get_session()
 
     expected = DelegatingSubject.StoppingAwareProxiedSession(mock_session, ds)
-    assert result == expected 
+    assert result == expected
 
 
 def test_get_session_withoutsessionattribute_createfalse(
@@ -773,21 +775,70 @@ def test_get_session_withoutsessionattribute_createfalse(
     result = ds.get_session(False)
     assert result is None
 
-#def test_get_session_withoutsessionattribute_raises
+
+def test_get_session_withoutsessionattribute_raises(
+        delegating_subject, monkeypatch):
     """
     unit tested:  get_session
 
     test case:
-
+    if no session attribute exists and  session_creation_enabled is False, an
+    exception raises
     """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'session', None)
+    monkeypatch.setattr(ds, 'session_creation_enabled', False)
+    pytest.raises(DisabledSessionException, "ds.get_session()")
 
-#def test_get_session_withoutsessionattribute_createsnew
+
+def test_get_session_withoutsessionattribute_createsnew(
+        delegating_subject, monkeypatch, mock_session):
     """
     unit tested:  get_session
 
     test case:
-
+    no session attribute, creation enabled, results in creation of a new session
+    attribute
     """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'session', None)
+    monkeypatch.setattr(ds, 'create_session_context', lambda: 'sessioncontext')
+    with mock.patch.object(MockSecurityManager, 'start') as mock_start:
+        mock_start.return_value = 'startedsession'
+        with mock.patch.object(DelegatingSubject, 'decorate') as mock_decorate:
+            mock_decorate.return_value = mock_session
+
+            result = ds.get_session()
+
+            mock_start.assert_called_once_with('sessioncontext')
+            mock_decorate.assert_called_once_with('startedsession')
+            assert result == mock_session
+
+
+def test_create_session_context_without_host(delegating_subject, monkeypatch):
+    """
+    unit tested:  create_session_context
+
+    test case:
+    creates a new session context and does not set host
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'host', None)
+    result = ds.create_session_context()
+    assert isinstance(result, DefaultSessionContext) and result.host is None
+
+
+def test_create_session_context_with_host(delegating_subject, monkeypatch):
+    """
+    unit tested:  create_session_context
+
+    test case:
+    creates a new session context and sets host
+    """
+    ds = delegating_subject
+    result = ds.create_session_context()
+    assert (isinstance(result, DefaultSessionContext) and
+            result.host == ds.host)
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore
