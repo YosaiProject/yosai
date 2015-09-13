@@ -4,8 +4,11 @@ import datetime
 
 from .doubles import (
     MockAbstractNativeSessionManager,
-    MockSession,
     MockSessionManager,
+)
+
+from ..doubles import (
+    MockSession,
 )
 
 from yosai import (

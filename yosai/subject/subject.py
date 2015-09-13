@@ -441,24 +441,23 @@ class DelegatingSubject(subject_abcs.Subject):
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         if self.has_identifiers:
-            self.security_manager.check_role(self.identifers, role_ids)
+            self.security_manager.check_role(self.identifiers, role_ids)
+        else:
+            msg = 'Cannot check roles when identifiers aren\'t set!'
+            raise IdentifiersNotSetException(msg)
 
-    def login(self, auth_token):
+    def login(self, authc_token):
 
         self.clear_run_as_identities_internal()
-        subject = self.security_manager.login(self, auth_token)
 
-        try:
-            delegating = copy.copy(subject)
-            # we localize attributes in case there are assumed
-            # identities --  we don't want to lose the 'real' identifiers:
-            identifiers = delegating.identifiers
-            host = delegating.host
-        except AttributeError:  # likely not working with a DelegatingSubject
-            identifiers = subject.identifiers
+        # login raises an AuthenticationException if it fails to authenticate:
+        subject = self.security_manager.login(self, authc_token)
+
+        identifiers = subject.identifiers
+        host = subject.host
 
         if not identifiers:
-            msg = ("Identifiers returned from securitymanager.login(token" +
+            msg = ("Identifiers returned from security_manager.login(authc_token" +
                    ") returned None or empty value. This value must be" +
                    " non-None and populated with one or more elements.")
             raise IllegalStateException(msg)
@@ -466,16 +465,15 @@ class DelegatingSubject(subject_abcs.Subject):
         self.identifiers = identifiers
         self.authenticated = True
 
-        try:
-            host = auth_token.host
-        except AttributeError:  # likely not using a HostAuthenticationToken
-            host = None
-
-        if host:
-            self.host = host
+        if not host:
+            try:
+                host = authc_token.host
+            except AttributeError:  # likely not using a HostAuthenticationToken
+                host = None
+        self.host = host
 
         session = subject.get_session(False)
-        if (session):
+        if session:
             self.session = self.decorate(session)
         else:
             self.session = None
@@ -609,20 +607,6 @@ class DelegatingSubject(subject_abcs.Subject):
         if isinstance(_able, Callable):
             return SubjectCallable(self, _able)
 
-    # inner class:
-    class StoppingAwareProxiedSession(ProxiedSession):
-
-        def __init__(self, target_session, owning_subject):
-            super().__init__(target_session)
-            self.owner = owning_subject
-
-        def stop(self):
-            """
-            :raises InvalidSessionException:
-            """
-            self._proxied_session.stop()
-            self._owner.session_stopped()
-
     def run_as(self, identifiers):
         if (not self.has_identifiers):
             msg = ("This subject does not yet have an identity.  Assuming the "
@@ -704,6 +688,20 @@ class DelegatingSubject(subject_abcs.Subject):
                 # stack is empty, remove it from the session:
                 self.clear_run_as_identities()
         return popped
+
+    # inner class:
+    class StoppingAwareProxiedSession(ProxiedSession):
+
+        def __init__(self, target_session, owning_subject):
+            super().__init__(target_session)
+            self.owner = owning_subject
+
+        def stop(self):
+            """
+            :raises InvalidSessionException:
+            """
+            self._proxied_session.stop()
+            self._owner.session_stopped()
 
 
 # moved from /mgt, reconciled, ready to test:

@@ -7,8 +7,11 @@ from .doubles import (
     MockAbstractValidatingSessionManager,
     MockCachingSessionStore,
     MockDefaultSessionManager,
-    MockSession,
     MockSessionManager,
+)
+
+from ..doubles import (
+    MockSession,
 )
 
 from yosai import (

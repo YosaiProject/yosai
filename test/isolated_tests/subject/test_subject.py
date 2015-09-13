@@ -528,6 +528,7 @@ def test_ds_has_role(delegating_subject, monkeypatch):
     result = ds.has_role('roleid123')
     assert result == 'yup'
 
+
 def test_ds_has_role_raises(delegating_subject, monkeypatch):
     """
     unit tested:  has_role
@@ -539,6 +540,133 @@ def test_ds_has_role_raises(delegating_subject, monkeypatch):
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
     pytest.raises(IdentifiersNotSetException, "ds.has_role('role123')")
+
+
+def test_has_all_roles(delegating_subject, monkeypatch):
+    """
+    unit tested:  has_all_roles
+
+    test case:
+    has identifiers and so delegates to security_master
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'has_all_roles', lambda x,y: 'yup')
+    result = ds.has_all_roles('roleid123')
+    assert result == 'yup'
+
+
+
+def test_ds_has_all_roles_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  has_all_roles
+
+    test case:
+    when the identifiers attribute isn't set, an exception is raised
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IdentifiersNotSetException, "ds.has_all_roles('role123')")
+
+
+def test_check_role(delegating_subject):
+    """
+    unit tested:  check_role
+
+    test case:
+    when identifiers attribute exists, delegates request to
+    security_manager.check_role
+    """
+    ds = delegating_subject
+    with mock.patch.object(MockSecurityManager, 'check_role') as mock_cr:
+        ds.check_role('roleid123')
+        assert mock_cr.called
+
+
+def test_check_role_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  check_role
+
+    test case:
+    when the identifiers attribute isn't set, an exception is raised
+    """
+
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IdentifiersNotSetException, "ds.check_role('role123')")
+
+
+def test_ds_login_succeeds(
+        delegating_subject, monkeypatch, mock_subject,
+        simple_identifier_collection):
+    """
+    unit tested:  login
+
+    test case:
+    Login Succeeds.
+    - uses a MockSecurityManager, which is patched to return a MockSubject when
+      login is called
+    - obtains a mocksubject from security_manager.login, which includes
+      identifiers and host attributes (patched in), both of which are assigned
+      to the DS
+    - patch the subject's get_session to return a "session", and assigns that
+      to the DS's session attributee
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+
+# def test_ds_login_raises(delegating_subject, monkeypatch)
+    """
+    unit tested:  login
+
+    test case:
+
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+# def test_ds_login_noidentifiers_raises(delegating_subject, monkeypatch)
+    """
+    unit tested:  login
+
+    test case:
+
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+# def test_ds_login_nohost(delegating_subject, monkeypatch)
+    """
+    unit tested:  login
+
+    test case:
+
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+
+# def test_ds_login_nosession(delegating_subject, monkeypatch)
+    """
+    unit tested:  login
+
+    test case:
+
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds.security_manager, 'login', lambda x: mock_subject)
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
 
 
 

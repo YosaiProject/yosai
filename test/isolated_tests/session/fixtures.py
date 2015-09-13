@@ -23,6 +23,10 @@ from .doubles import (
     MockSessionManager,
 )
 
+from ..doubles import (
+    MockSession,
+)
+
 @pytest.fixture(scope='function')
 def default_proxied_session(mock_session):
     return ProxiedSession(mock_session)

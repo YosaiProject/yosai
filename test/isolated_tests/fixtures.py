@@ -16,6 +16,7 @@ from .doubles import (
     MockCache,
     MockPubSub,
     MockSecurityManager,
+    MockSession,
     MockSubject,
     MockSubjectContext,
     MockToken,
@@ -23,8 +24,8 @@ from .doubles import (
 
 from .session.doubles import (
     MockDefaultSessionManager,
-    MockSession,
 )
+
 
 @pytest.fixture(scope='function')
 def mock_account_state():

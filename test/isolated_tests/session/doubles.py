@@ -8,75 +8,6 @@ from yosai import (
     session_abcs,
 )
 
-class MockSession(session_abcs.ValidatingSession, object):
-
-    def __init__(self):
-        self.session = {'attr1': 1, 'attr2': 2, 'attr3': 3}
-        self._idle_timeout = datetime.timedelta(minutes=15)
-        self._absolute_timeout = datetime.timedelta(minutes=60) 
-        self._isvalid = True  # only used for testing
-
-    @property
-    def attribute_keys(self):
-        return self.session.keys() 
-    
-    @property
-    def host(self):
-        return '127.0.0.1' 
-    
-    @property
-    def is_valid(self):
-        return self._isvalid 
-
-    def validate(self, session):
-        pass
-
-    @property
-    def session_id(self):
-        return 'MockSession12345'
-    
-    @property
-    def last_access_time(self):
-        return datetime.datetime(2015, 6, 17, 19, 45, 51, 818810) 
-
-    @property
-    def start_timestamp(self):
-        return datetime.datetime(2015, 6, 17, 19, 43, 51, 818810) 
-
-    @property
-    def idle_timeout(self):
-        return self._idle_timeout 
- 
-    @idle_timeout.setter
-    def idle_timeout(self, idle_timeout):
-        self._idle_timeout = idle_timeout 
-   
-    @property
-    def absolute_timeout(self):
-        return self._absolute_timeout 
-
-    @absolute_timeout.setter
-    def absolute_timeout(self, absolute_timeout):
-        self._absolute_timeout = absolute_timeout
-
-    def get_attribute(self, key):
-        return 'attrX' 
-    
-    def remove_attribute(self, key):
-        return self.session.pop(key, None) 
-    
-    def set_attribute(self, key, value):
-        self.session[key] = value 
-
-    def stop(self):
-        pass
-
-    def touch(self):
-        pass 
-
-    def validate(self):
-        pass
-
 
 class MockSessionManager:
 
@@ -125,9 +56,9 @@ class MockAbstractNativeSessionManager(AbstractNativeSessionManager):
     def __init__(self, event_bus):
         super().__init__(event_bus)
         self.listeners = []
-    
+
     def create_session(self, session_context):
-        pass 
+        pass
 
     def on_start(self, session, session_context):
         pass
@@ -150,7 +81,7 @@ class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
     def __init__(self, event_bus):
         super().__init__(event_bus)
         self.listeners = []
-    
+
     def on_start(self, session, session_context):
         pass
 
@@ -159,10 +90,10 @@ class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
 
     def on_change(self, session):
         pass
-    
+
     def retrieve_session(self, session_key):
         pass
-    
+
     def do_create_session(self, session_context):
         pass
 
@@ -198,7 +129,7 @@ class MockAbstractSessionStore(AbstractSessionStore):
 
 
 class MockCachingSessionStore(CachingSessionStore):
-   
+
     def do_create(self, session):
         pass
 
@@ -216,9 +147,9 @@ class MockDefaultSessionManager(DefaultSessionManager):
 
     def after_session_validation_enabled(self):
         pass
-    
+
     def before_session_validation_disabled(self):
         pass
-        
-    def on_start(self, session, session_context):  
+
+    def on_start(self, session, session_context):
         pass
