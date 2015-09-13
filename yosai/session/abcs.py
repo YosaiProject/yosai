@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -26,14 +26,14 @@ import uuid
 
 class Session(metaclass=ABCMeta):
     """
-    A Session is a stateful data context associated with a single 
-    Subject's (user, daemon process, etc) interaction with a software system 
+    A Session is a stateful data context associated with a single
+    Subject's (user, daemon process, etc) interaction with a software system
     over a period of time.
 
     A Session is intended to be managed by the business tier and accessible via
     other tiers without being tied to any given client technology.  This is a
-    great benefit to Python systems, since until now the only viable session 
-    mechanisms were those highly-coupled and deeply embedded in web application 
+    great benefit to Python systems, since until now the only viable session
+    mechanisms were those highly-coupled and deeply embedded in web application
     frameworks.
     """
 
@@ -44,12 +44,12 @@ class Session(metaclass=ABCMeta):
         The unique identifier assigned by the system upon session creation.
         """
         pass
-    
+
     @property
     @abstractmethod
     def start_timestamp(self):
-        """ 
-        The time that the session started (the time that the system created 
+        """
+        The time that the session started (the time that the system created
         the instance )
         """
         pass
@@ -57,9 +57,9 @@ class Session(metaclass=ABCMeta):
     @property
     @abstractmethod
     def last_access_time(self):
-        """ 
-        Returns the last time the application received a request or method 
-        invocation from THE USER associated with this session.  Application 
+        """
+        Returns the last time the application received a request or method
+        invocation from THE USER associated with this session.  Application
         calls to this method do not affect this access time.
         """
         pass
@@ -67,17 +67,17 @@ class Session(metaclass=ABCMeta):
     @property
     @abstractmethod
     def absolute_timeout(self):
-        """ 
-        Returns the time, in milliseconds, that the session may 
+        """
+        Returns the time, in milliseconds, that the session may
         exist before it expires
-        """    
+        """
         pass
 
     @absolute_timeout.setter
     @abstractmethod
-    def absolute_timeout(self, abs_timeout): 
-        """ 
-        Sets the time in milliseconds that the session may exist 
+    def absolute_timeout(self, abs_timeout):
+        """
+        Sets the time in milliseconds that the session may exist
         before expiring.
 
         - A negative value means the session will never expire
@@ -89,17 +89,17 @@ class Session(metaclass=ABCMeta):
     @property
     @abstractmethod
     def idle_timeout(self):
-        """ 
-        Returns the time, in milliseconds, that the session may 
+        """
+        Returns the time, in milliseconds, that the session may
         remain idle before it expires
-        """    
+        """
         pass
 
     @idle_timeout.setter
     @abstractmethod
-    def idle_timeout(self, idle_timeout): 
-        """ 
-        Sets the time in milliseconds that the session may remain idle 
+    def idle_timeout(self, idle_timeout):
+        """
+        Sets the time in milliseconds that the session may remain idle
         before expiring.
 
         - A negative value means the session will never expire
@@ -130,7 +130,7 @@ class Session(metaclass=ABCMeta):
     def stop(self):
         """
         Explicitly stops (invalidates) this session and releases all associated
-        resources.  
+        resources.
         """
         pass
 
@@ -156,8 +156,8 @@ class Session(metaclass=ABCMeta):
         """
         Binds the specified value to this session, uniquely identified by the
         specifed key name.  If there is already an object bound under
-        the key name, that existing object will be replaced by the new 
-        value.  
+        the key name, that existing object will be replaced by the new
+        value.
         """
         pass
 
@@ -165,9 +165,16 @@ class Session(metaclass=ABCMeta):
     def remove_attribute(self, key):
         """
         Removes (unbinds) the object bound to this session under the specified
-        key name.  
+        key name.
         """
         pass
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__)
 
 
 class SessionListener(metaclass=ABCMeta):
@@ -180,21 +187,21 @@ class SessionListener(metaclass=ABCMeta):
     def on_start(self, session):
         """
         Notification callback that occurs when the corresponding Session has
-        started.  
-        
+        started.
+
         :param session: the session that has started
         """
         pass
 
     @abstractmethod
     def on_stop(self, session):
-        """ 
+        """
         Notification callback that occurs when the corresponding Session has
         stopped, either programmatically via {@link Session#stop} or
         automatically upon a subject logging out.
 
         :param session: the session that has stopped
-        """ 
+        """
         pass
 
     @abstractmethod
@@ -202,7 +209,7 @@ class SessionListener(metaclass=ABCMeta):
         """
         Notification callback that occurs when the corresponding Session has
         expired.
- 
+
         Note: this method is almost never called at the exact instant that the
         Session expires.  Almost all session management systems, including
         Yosai's implementations, lazily validate sessions - either when they
@@ -213,7 +220,7 @@ class SessionListener(metaclass=ABCMeta):
         If you need to perform time-based logic when a session expires, it
         is best to write it based on the session's last_access_time and
         NOT the time when this method is called.
-     
+
         :param session: the session that has expired
         """
         pass
@@ -235,7 +242,7 @@ class SessionStorageEvaluator(metaclass=ABCMeta):
 
     However, in purely stateless applications, such as some REST applications
     or those where every request is authenticated, it is usually not needed or
-    desirable to use Sessions to store this state (since it is in fact 
+    desirable to use Sessions to store this state (since it is in fact
     re-created on every request).  In these applications, sessions would never
     be used.
 
@@ -243,8 +250,8 @@ class SessionStorageEvaluator(metaclass=ABCMeta):
     might be used or not to store Subject state on a *per-Subject* basis.
 
     If you simply wish to enable or disable session usage at a global level for
-    all Subject(s), the DefaultSessionStorageEvaluator should be sufficient.  
-    Per-subject behavior should be performed in custom implementations of this 
+    all Subject(s), the DefaultSessionStorageEvaluator should be sufficient.
+    Per-subject behavior should be performed in custom implementations of this
     interface.
     """
 
@@ -277,12 +284,12 @@ class SessionFactory(metaclass=ABCMeta):
     @abstractmethod
     def create_session(self, init_data):
         """
-        Creates a new Session instance based on the specified contextual 
+        Creates a new Session instance based on the specified contextual
         initialization data.
-     
-        :param init_data: the initialization data to be used during 
+
+        :param init_data: the initialization data to be used during
                           Session creation.
-        :type init_data: SessionContext 
+        :type init_data: SessionContext
         :returns: a new Session instance
         """
         pass
@@ -297,11 +304,11 @@ class SessionIDGenerator(metaclass=ABCMeta):
 
 
 class SessionManager(metaclass=ABCMeta):
-    """ 
+    """
     A SessionManager manages the creation, maintenance, and clean-up of all
     application Sessions
     """
-    
+
     @abstractmethod
     def start(self, session_context):
         pass
@@ -310,7 +317,7 @@ class SessionManager(metaclass=ABCMeta):
         data, which can be used by the underlying implementation to determine
         how exactly to create the internal Session instance.
         """
-     
+
     @abstractmethod
     def get_session(self, session_key):
         """
@@ -331,7 +338,7 @@ class NativeSessionManager(SessionManager):
 
     @abstractmethod
     def get_start_timestamp(self, session_key):
-        """ 
+        """
         Returns the time the associated Session started (was created).
         """
         pass
@@ -340,25 +347,25 @@ class NativeSessionManager(SessionManager):
     def get_last_access_time(self, session_key):
         """
         Returns the time the associated {@code Session} last interacted with
-        the system.  
+        the system.
         """
         pass
 
     @abstractmethod
     def is_valid(self, session_key):
         """
-        Returns True if the associated session is valid (it exists and is 
+        Returns True if the associated session is valid (it exists and is
         not stopped nor expired), False otherwise.
         """
         pass
 
     @abstractmethod
     def check_valid(self, session_key):
-        """ 
+        """
         Returns quietly if the associated session is valid (it exists and is
-        not stopped or expired) or raises an InvalidSessionException 
-        indicating that the session_id is invalid.  This might be preferred 
-        to be used instead of is_valid since any exception thrown will 
+        not stopped or expired) or raises an InvalidSessionException
+        indicating that the session_id is invalid.  This might be preferred
+        to be used instead of is_valid since any exception thrown will
         definitively explain the reason for invalidation.
         """
         pass
@@ -366,22 +373,22 @@ class NativeSessionManager(SessionManager):
     @abstractmethod
     def get_idle_timeout(self, session_key):
         """
-        Returns the time that the associated session may remain idle before 
+        Returns the time that the associated session may remain idle before
         expiring.
 
         - A negative return value means the session will never expire.
-        - A non-negative return value (0 or greater) means the session 
+        - A non-negative return value (0 or greater) means the session
           expiration will occur if idle for that length of time.
 
-        raises InvalidSessionException if the session has been stopped or 
+        raises InvalidSessionException if the session has been stopped or
         expired prior to calling this method
         """
         pass
 
     @abstractmethod
     def get_absolute_timeout(self, session_key):
-        """ 
-        Returns the time that the associated session may remain idle before 
+        """
+        Returns the time that the associated session may remain idle before
         expiring.
         """
         pass
@@ -391,12 +398,12 @@ class NativeSessionManager(SessionManager):
         """
         Sets the time, as a datetime.timedelta, that the associated session may
         remain idle before expiring.
-        
+
         - A negative return value means the session will never expire.
         - A non-negative return value (0 or greater) means the session
           expiration will occur if idle for that * length of time.
 
-        raises InvalidSessionException if the session has been stopped or 
+        raises InvalidSessionException if the session has been stopped or
         expired prior to calling this method
         """
         pass
@@ -406,8 +413,8 @@ class NativeSessionManager(SessionManager):
         """
         Sets the time, as a datetime.timedelta, that the associated session may
         exist before expiring.
-        
-        raises InvalidSessionException if the session has been stopped or 
+
+        raises InvalidSessionException if the session has been stopped or
         expired prior to calling this method
         """
         pass
@@ -418,8 +425,8 @@ class NativeSessionManager(SessionManager):
         Updates the last accessed time of the session identified by
         session_id.  This can be used to explicitly ensure that a
         session does not time out.
-        
-        raises InvalidSessionException if the session has been stopped or 
+
+        raises InvalidSessionException if the session has been stopped or
         expired prior to calling this method
         """
         pass
@@ -429,7 +436,7 @@ class NativeSessionManager(SessionManager):
         """
         Returns the host name or IP string of the host where the session was
         started, if known.  If no host name or IP was specified when starting
-        the session, this method returns None 
+        the session, this method returns None
         """
         pass
 
@@ -437,7 +444,7 @@ class NativeSessionManager(SessionManager):
     def stop(self, session_key):
         """
         Explicitly stops the associated session, thereby releasing all of its
-        resources.  
+        resources.
         """
         pass
 
@@ -445,8 +452,8 @@ class NativeSessionManager(SessionManager):
     def get_attribute_keys(self, session_key):
         """
         Returns all attribute keys maintained by the target session or an empty
-        collection if there are no attributes.  
-     
+        collection if there are no attributes.
+
         raises InvalidSessionException if the associated session has stopped or
         expired prior to calling this method
         """
@@ -458,10 +465,10 @@ class NativeSessionManager(SessionManager):
         Returns the object bound to the associated session identified by the
         specified attribute key.  If there is no object bound under the
         attribute key for the given session, None is returned.
-        
-        raises InvalidSessionException if the specified session has stopped 
+
+        raises InvalidSessionException if the specified session has stopped
         or expired prior to calling this method
-        """ 
+        """
         pass
 
     @abstractmethod
@@ -471,10 +478,10 @@ class NativeSessionManager(SessionManager):
         by the attribute_key.  If there is already a session attribute
         bound under the attribute_key, that existing object will be
         replaced by the new value.
-        
+
         If the value parameter is None, it has the same effect as if the
         remove_attribute(session_key, attribute_key) method was called.
-        
+
         raises InvalidSessionException if the specified session has stopped or
         expired prior to calling this method
         """
@@ -483,23 +490,23 @@ class NativeSessionManager(SessionManager):
     @abstractmethod
     def remove_attribute(self, session_key, attribute_key):
         """
-        Removes (unbinds) the object bound to associated Session under 
+        Removes (unbinds) the object bound to associated Session under
         the given attribute_key
 
-        raises InvalidSessionException if the specified session has stopped 
+        raises InvalidSessionException if the specified session has stopped
         or expired prior to calling this method
-        """ 
+        """
         pass
 
 
 class SessionContext(metaclass=ABCMeta):
     """
-    A SessionContext is a 'bucket' of data presented to a SessionFactory, which 
-    interprets its contents to construct Session instances.  It is essentially 
-    a map of data with a few additional methods for easy retrieval of 
+    A SessionContext is a 'bucket' of data presented to a SessionFactory, which
+    interprets its contents to construct Session instances.  It is essentially
+    a map of data with a few additional methods for easy retrieval of
     objects commonly used to construct Subject instances.
     """
-    
+
     @property
     @abstractmethod
     def host(self):
@@ -507,9 +514,9 @@ class SessionContext(metaclass=ABCMeta):
         Returns the originating host name or IP address (as a String) from
         where the Subject is initiating the Session.
 
-        :returns: the originating host name or IP address (as a String) from 
+        :returns: the originating host name or IP address (as a String) from
                   where the Subject is initiating the Session
-        """ 
+        """
         pass
 
     @host.setter
@@ -519,28 +526,28 @@ class SessionContext(metaclass=ABCMeta):
         Sets the originating host name or IP address (as a String) from where
         the Subject is initiating the Session.
 
-        In web-based systems, this host can be inferred from the incoming 
+        In web-based systems, this host can be inferred from the incoming
         request, or in socket-based systems, it can be obtained via inspecting
         the socket initiator's host IP.
 
-        Most secure environments *should* specify a valid, non-None host, 
-        since knowing the host allows for more flexibility when securing a 
-        system: by requiring an host, access control policies can also ensure 
-        access is restricted to specific client *locations* in addition to 
+        Most secure environments *should* specify a valid, non-None host,
+        since knowing the host allows for more flexibility when securing a
+        system: by requiring an host, access control policies can also ensure
+        access is restricted to specific client *locations* in addition to
         Subject identifiers, if so desired.
 
-        Caveat - if clients to your system are on a public network (as would 
+        Caveat - if clients to your system are on a public network (as would
         be the case for a public web site), odds are high the clients can be
         behind a NAT (Network Address Translation) router or HTTP proxy server.
-        If so, all clients accessing your system behind that router or proxy 
-        will have the same originating host.  If your system is configured to 
-        allow only one session per host, then the next request from a different 
-        NAT or proxy client will fail and access will be denied for that client.  
-        Just be aware that host-based security policies are best utilized 
-        in LAN or private WAN environments when you can be ensure clients 
+        If so, all clients accessing your system behind that router or proxy
+        will have the same originating host.  If your system is configured to
+        allow only one session per host, then the next request from a different
+        NAT or proxy client will fail and access will be denied for that client.
+        Just be aware that host-based security policies are best utilized
+        in LAN or private WAN environments when you can be ensure clients
         will not share IPs or be behind such NAT routers or proxy servers.
-     
-        :param host: the originating host name or IP address (as a String) 
+
+        :param host: the originating host name or IP address (as a String)
                      from where the Subject is initiating the Session
         """
         pass
@@ -582,14 +589,14 @@ class ValidatingSessionManager(SessionManager):
         (those that have not been stopped or expired), and validates each one.
         If a session is found to be invalid (e.g. it has expired), it is
         updated and saved to the EIS.
- 
+
         This method is necessary in order to handle orphaned sessions and is
         expected to be run at a regular interval, such as once an hour, once a
         day or once a week, etc.  The &quot;best&quot; frequency to run this
         method is entirely dependent upon the application and would be based on
         factors such as performance, average number of active users, hours of
         least activity, and other things.
-  
+
         Most enterprise applications use a request/response programming model.
         This is obvious in the case of web applications due to the HTTP
         protocol, but it is equally true of remote client applications making
@@ -599,20 +606,20 @@ class ValidatingSessionManager(SessionManager):
         system only has to validate a session during those cases.  Such
         *lazy* behavior enables the system to lie stateless and/or idle and
         only incur overhead for session validation when necessary.
-   
+
         However, if a client forgets to log-out, or in the event of a server
         failure, it is possible for sessions to be orphaned since no further
         requests would utilize that session.  Because of these
         lower-probability cases, it might be required to regularly clean-up the
         sessions maintained by the system, especially if sessions are backed by
         a persistent data store.
-    
+
         Even in applications that aren't primarily based on a request/response
         model, such as those that use enterprise asynchronous messaging (where
         data is pushed to a client without first receiving a client request),
         it is almost always acceptable to utilize this lazy approach and run
         this method at defined interval.
-     
+
         Systems that want to proactively validate individual sessions may
         simply call the get_session(session_key) method on any
         ValidatingSessionManager instance as that method is expected to
@@ -620,11 +627,11 @@ class ValidatingSessionManager(SessionManager):
         proactive calls to get_session, this validate_sessions
         method should be invoked regularly anyway to *guarantee* no
         orphans exist.
-      
+
         Note:
         Yosai supports automatic execution of this method at a regular interval
-        by using SessionValidationScheduler(s).  The Yosai default 
-        SecurityManager implementations needing session validation will 
+        by using SessionValidationScheduler(s).  The Yosai default
+        SecurityManager implementations needing session validation will
         create and use one by default if one is not provided by the
         application configuration.
         """
@@ -632,18 +639,18 @@ class ValidatingSessionManager(SessionManager):
 
 class SessionValidationScheduler(metaclass=ABCMeta):
 
-    """ 
+    """
     Returns True if this Scheduler is enabled and ready to begin validation at
     the appropriate time, False otherwise.
-    
+
     It does *not* indicate if the validation is actually executing at that
     instant - only that it is prepared to do so at the appropriate time.
-    """ 
+    """
     @property
     @abstractmethod
     def is_enabled(self):
         pass
-    
+
     @abstractmethod
     def enable_session_validation(self):
         pass
@@ -664,21 +671,21 @@ class SessionStore(metaclass=ABCMeta):
         - delete(Session)
 
     The remaining get_active_sessions() method exists as a support
-    mechanism to pre-emptively orphaned sessions, typically by 
+    mechanism to pre-emptively orphaned sessions, typically by
     ValidatingSessionManager(s), and should be as efficient as possible,
     especially if there are thousands of active sessions.  Large scale/high
     performance implementations will often return a subset of the total active
     sessions and perform validation a little more frequently, rather than
     return a massive set and infrequently validate.
-    """ 
+    """
 
     @abstractmethod
     def create(self, session):
         """
         Inserts a new Session record into the underling EIS (e.g. Relational
         database, file system, persistent cache, etc, depending on the Store
-        implementation).  After this method is invoked, the Session.session_id 
-        property obtained from the argument must return a valid session 
+        implementation).  After this method is invoked, the Session.session_id
+        property obtained from the argument must return a valid session
         identifier.  That is, the following should always be true:
 
             session_id = create(session)
@@ -686,11 +693,11 @@ class SessionStore(metaclass=ABCMeta):
 
         Implementations are free to throw any exceptions that might occur due
         to integrity violation constraints or other EIS related errors.
-     
+
         :param session: the Session object to create in the EIS
-        :returns: the EIS id (e.g. primary key) of the created 
+        :returns: the EIS id (e.g. primary key) of the created
                   Session object
-        """     
+        """
         pass
 
     @abstractmethod
@@ -698,13 +705,13 @@ class SessionStore(metaclass=ABCMeta):
         """
         Retrieves the session from the EIS uniquely identified by the specified
         session_id
-         
-        :param session_id: the system-wide unique identifier of the Session 
+
+        :param session_id: the system-wide unique identifier of the Session
                            object to retrieve from the EIS
         :returns: the persisted session in the EIS identified by session_id
-        :raises UnknownSessionException: if there is no EIS record for any 
+        :raises UnknownSessionException: if there is no EIS record for any
                  session with the specified session_id
-        """     
+        """
         pass
 
     @abstractmethod
@@ -713,16 +720,16 @@ class SessionStore(metaclass=ABCMeta):
         Updates (persists) data from a previously created Session instance in
         the EIS identified by session.session_id.  This effectively propagates
         the data in the argument to the EIS record previously saved.
-        
-        In addition to UnknownSessionException, implementations are free to 
+
+        In addition to UnknownSessionException, implementations are free to
         raise any other exceptions that might occur due to integrity violation
         constraints or other EIS related errors.
 
         :param session: the Session to update
-        :raises UnknownSessionException: if no existing EIS session record 
-                                         exists with the identifier of 
+        :raises UnknownSessionException: if no existing EIS session record
+                                         exists with the identifier of
                                          session.session_id
-        """ 
+        """
         pass
 
     @abstractmethod
@@ -731,7 +738,7 @@ class SessionStore(metaclass=ABCMeta):
         Deletes the associated EIS record of the specified session.  If there
         never existed a session EIS record with the identifier of
         session.session_id, then this method does nothing.
-        
+
         :param session: the session to delete
         """
         pass
@@ -743,8 +750,8 @@ class SessionStore(metaclass=ABCMeta):
         validate potential orphans.
 
         If there are no active sessions in the EIS, this method may return an
-        empty collection or None.  
-        
+        empty collection or None.
+
         Performance
         -----------
         This method should be as efficient as possible, especially in larger
@@ -759,18 +766,18 @@ class SessionStore(metaclass=ABCMeta):
         -------------
         *Ideally*, this method would only return active sessions that the EIS
         was certain should be invalided.  Typically that is any session that is
-        not stopped and where its last_access_timestamp is older than either 
+        not stopped and where its last_access_timestamp is older than either
         session timeout (idle or absolute).
-     
+
         For example, if sessions were backed by a relational database or SQL-92
         'query-able' enterprise cache, you might return something similar to
-        the results returned by this query (assuming SimpleSession(s) were 
+        the results returned by this query (assuming SimpleSession(s) were
         being stored):
 
-            SELECT * 
-            FROM sessions s 
-            WHERE s.lastAccessTimestamp < {idle_timeout} and 
-                  s.lastAccessTimestamp < {absolute_timeout} and 
+            SELECT *
+            FROM sessions s
+            WHERE s.lastAccessTimestamp < {idle_timeout} and
+                  s.lastAccessTimestamp < {absolute_timeout} and
                   s.stopTimestamp is null
 
         :returns: a Collection of session(s) that are considered active, or an

@@ -6,6 +6,7 @@ from yosai import (
     DefaultSubjectContext,
     DelegatingSubject,
     IdentifiersNotSetException,
+    IllegalArgumentException,
     IllegalStateException,
     SecurityUtils,
     security_utils,
@@ -359,20 +360,6 @@ def test_ds_decorate_type_check(delegating_subject):
     assert result is None
 
 
-def test_security_manager_typecheck(delegating_subject, mock_security_manager):
-    """
-    unit tested security_manager.setter
-
-    test case:
-    only objects implementing the SecurityManager interface may be assigned
-    """
-    ds = delegating_subject
-
-    DumbSecurityManager = type("DumbSecurityManager", (), {})
-    ds.security_manager = DumbSecurityManager()  # shouldn't set
-    assert ds.security_manager == mock_security_manager
-
-
 def test_ds_identifiers_fromstack(delegating_subject, monkeypatch):
     """
     unit tested:  identifiers
@@ -399,20 +386,6 @@ def test_ds_identifiers_fromidentifiers(
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     result = ds.identifiers
     assert result == simple_identifier_collection
-
-
-def test_ds_identifiers_type(delegating_subject, monkeypatch):
-    """
-    unit tested:  identifiers.setter
-
-    test case:
-    only object of type IdentifierCollection may be set to the identifiers attribute
-    """
-    ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
-    ds.identifiers = 'identifiers'
-    assert ds._identifiers is None
 
 
 def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
@@ -755,6 +728,66 @@ def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
             assert (ds.session is None and
                     ds.host == mock_subject.host and
                     ds._identifiers == simple_identifier_collection)
+
+
+@pytest.mark.parametrize('attr',
+                         ['security_manager', 'identifiers', 'session',
+                          'authenticated'])
+def test_ds_attribute_type_raises(delegating_subject, attr, monkeypatch):
+    """
+    unit tested:  every property mutator that validates
+
+    test case:
+    any unacceptable type raises an exception
+    """
+    ds = delegating_subject
+    with pytest.raises(IllegalArgumentException):
+        setattr(ds, attr, 'wrongvalue')
+
+
+def test_get_session_withsessionattribute_succeeds(
+        delegating_subject, monkeypatch, mock_session):
+    """
+    unit tested:  get_session
+
+    test case:
+    the DS includes a MockSession attributes and so it is returned
+    """
+    ds = delegating_subject
+    result = ds.get_session()
+
+    expected = DelegatingSubject.StoppingAwareProxiedSession(mock_session, ds)
+    assert result == expected 
+
+
+def test_get_session_withoutsessionattribute_createfalse(
+        delegating_subject, monkeypatch):
+    """
+    unit tested:  get_session
+
+    test case:
+    when no session attribute is set and create=False returns None
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'session', None)
+    result = ds.get_session(False)
+    assert result is None
+
+#def test_get_session_withoutsessionattribute_raises
+    """
+    unit tested:  get_session
+
+    test case:
+
+    """
+
+#def test_get_session_withoutsessionattribute_createsnew
+    """
+    unit tested:  get_session
+
+    test case:
+
+    """
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore

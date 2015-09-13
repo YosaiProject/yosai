@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import copy
 import collections
 # from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
@@ -39,8 +38,6 @@ from yosai import (
     UnavailableSecurityManagerException,
     UnsupportedOperationException,
     concurrency_abcs,
-    account_abcs,
-    authc_abcs,
     mgt_abcs,
     session_abcs,
     subject_abcs,
@@ -311,8 +308,10 @@ class DelegatingSubject(subject_abcs.Subject):
     @security_manager.setter
     def security_manager(self, security_manager):
         if (isinstance(security_manager, mgt_abcs.SecurityManager) or
-            security_manager is None):
+                security_manager is None):
             self._security_manager = security_manager
+        else:
+            raise IllegalArgumentException('must use SecurityManager')
 
     # new to yosai:
     # security_manager is required for certain operations
@@ -351,6 +350,8 @@ class DelegatingSubject(subject_abcs.Subject):
         if (isinstance(identifiers, subject_abcs.IdentifierCollection) or
                 identifiers is None):
             self._identifiers = identifiers
+        else:
+            raise IllegalArgumentException('must use IdentifierCollection')
 
     def is_permitted(self, permission_s):
         """
@@ -718,6 +719,9 @@ class DelegatingSubject(subject_abcs.Subject):
             """
             self._proxied_session.stop()
             self._owner.session_stopped()
+
+    def __repr__(self):
+        return "DelegatingSubject()"
 
 
 # moved from /mgt, reconciled, ready to test:

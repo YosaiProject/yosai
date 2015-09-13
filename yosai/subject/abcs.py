@@ -51,6 +51,13 @@ class IdentifierCollection(metaclass=ABCMeta):
     def is_empty(self):
         pass
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__)
+
 
 class MutableIdentifierCollection(IdentifierCollection):
 
@@ -208,6 +215,14 @@ class SubjectContext(metaclass=ABCMeta):
     def resolve_host(self):
         pass
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__)
+
+
 
 class Subject(metaclass=ABCMeta):
 
@@ -291,7 +306,12 @@ class Subject(metaclass=ABCMeta):
     def release_run_as(self):
         pass
 
-    # Yosai doesn't require a SubjectBuilder, using keyword args in __init__
+    def __eq__(self, other):
+        if self is other:
+            return True
+
+        return (isinstance(other, self.__class__) and
+                self.__dict__ == other.__dict__)
 
 # moved from /mgt:
 class SubjectStore(metaclass=ABCMeta):
