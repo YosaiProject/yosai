@@ -2,9 +2,11 @@ import pytest
 from unittest import mock
 
 from yosai import (
+    AuthenticationException,
     DefaultSubjectContext,
     DelegatingSubject,
     IdentifiersNotSetException,
+    IllegalStateException,
     SecurityUtils,
     security_utils,
     ThreadContext,
@@ -637,40 +639,122 @@ def test_ds_login_succeeds(
                         ds.host == mock_subject.host and
                         ds._identifiers == simple_identifier_collection)
 
-# def test_ds_login_raises(delegating_subject, monkeypatch)
+def test_ds_login_raises(delegating_subject, monkeypatch):
     """
     unit tested:  login
 
     test case:
-
+    login fails, raising an Authentication exception up the stack
     """
+    ds = delegating_subject
 
-    # def test_ds_login_noidentifiers_raises(delegating_subject, monkeypatch)
-    """
-    unit tested:  login
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
 
-    test case:
+        with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
+            mock_smlogin.side_effect = AuthenticationException
 
-    """
-
-# def test_ds_login_nohost(delegating_subject, monkeypatch)
-    """
-    unit tested:  login
-
-    test case:
-
-    """
+            pytest.raises(AuthenticationException, "ds.login('dumb_authc_token')")
 
 
-# def test_ds_login_nosession(delegating_subject, monkeypatch)
+def test_ds_login_noidentifiers_raises(
+        delegating_subject, monkeypatch, mock_subject):
     """
     unit tested:  login
 
     test case:
+    Login Succeeds but no Identifiers returned = Exception
+    - uses a MockSecurityManager, which is patched to return a MockSubject when
+      login is called
+    - obtains a mocksubject from security_manager.login, which DOES NOT include
+      an identifiers attribute
+    - an identitifers attribute is required, so an exception is raised
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(mock_subject, '_identifiers', None)
 
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+        with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
+            mock_smlogin.return_value = mock_subject
+
+            pytest.raises(IllegalStateException, "ds.login('dumb_authc_token')")
+
+
+def test_ds_login_nohost(
+        delegating_subject, monkeypatch, mock_subject,
+        simple_identifier_collection, mock_session, username_password_token):
+    """
+    unit tested:  login
+
+    test case:
+    Login Succeeds.
+    - uses a MockSecurityManager, which is patched to return a MockSubject when
+      login is called
+    - obtains a mocksubject from security_manager.login, which includes
+      identifiers but NO host attribute
+    - since no host attribute is available from the subject, login obtains
+      a host from the authc_token
+    - patch the subject's get_session to return a "session", and assigns that
+      to the DS's session attributee
+    """
+    ds = delegating_subject
+    sic = simple_identifier_collection
+    monkeypatch.setattr(mock_subject, '_identifiers', sic)
+    monkeypatch.setattr(mock_subject, 'host', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
+    monkeypatch.setattr(mock_subject, 'get_session', lambda x: mock_session)
+
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+        with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
+            mock_smlogin.return_value = mock_subject
+
+            with mock.patch.object(DelegatingSubject, 'decorate') as mock_dec:
+                mock_dec.return_value = mock_session
+
+                ds.login(username_password_token)
+
+                mock_smlogin.assert_called_once_with(subject=ds,
+                                                     authc_token=username_password_token)
+                mock_dec.assert_called_once_with(mock_session)
+
+                assert (ds.session == mock_session and
+                        ds.host == username_password_token.host and
+                        ds._identifiers == simple_identifier_collection)
+
+
+def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
+                            simple_identifier_collection):
+    """
+    unit tested:  login
+
+    test case:
+    login succeeds but no session is available from the subject, therefore
+    session is None
     """
 
+    ds = delegating_subject
+    sic = simple_identifier_collection
+    monkeypatch.setattr(mock_subject, '_identifiers', sic)
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
+    monkeypatch.setattr(mock_subject, 'get_session', lambda x: None)
 
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
+        mock_crii.return_value = None
+
+        with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
+            mock_smlogin.return_value = mock_subject
+
+            ds.login('dumb_authc_token')
+
+            mock_smlogin.assert_called_once_with(subject=ds, authc_token='dumb_authc_token')
+
+            assert (ds.session is None and
+                    ds.host == mock_subject.host and
+                    ds._identifiers == simple_identifier_collection)
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore

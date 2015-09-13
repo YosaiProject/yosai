@@ -265,6 +265,14 @@ class DelegatingSubject(subject_abcs.Subject):
     Applications from large and clustered to simple and local all benefit from
     stateless architectures.  This implementation plays a part in the stateless
     programming paradigm and should be used whenever possible.
+
+    Run-As
+    --------
+    Yosai includes 'Run-As' functionality.  A Run-As scenario is one where
+    a user, such as an Admin or Developer, assumes the identity of another
+    user so that the Admin/Developer may experience Yosai as the target user
+    would (as if the target had logged in).  This helps w/ customer support or
+    debugging, etc.
     """
 
     def __init__(self,
@@ -453,9 +461,15 @@ class DelegatingSubject(subject_abcs.Subject):
         # login raises an AuthenticationException if it fails to authenticate:
         subject = self.security_manager.login(subject=self,
                                               authc_token=authc_token)
-
-        identifiers = subject.identifiers
-        host = subject.host
+        identifiers = None
+        host = None
+        if isinstance(subject, DelegatingSubject):
+            # directly reference the attributes in case there are assumed
+            # identities (Run-As) -- we don't want to lose the 'real' identifiers
+            identifiers = subject._identifiers
+            host = subject.host
+        else:
+            identifiers = subject.identifiers  # use the property accessor
 
         if not identifiers:
             msg = ("Identifiers returned from security_manager.login(authc_token" +
@@ -638,7 +652,7 @@ class DelegatingSubject(subject_abcs.Subject):
     def release_run_as(self):
         return self.pop_identity()
 
-    # TBD:  not clear whether this should have been ported:
+    # TBD
     def get_run_as_identifiers_stack(self):
         """
         :returns: an IdentifierCollection

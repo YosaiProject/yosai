@@ -1,5 +1,6 @@
 from yosai import (
     CacheKeyRemovalException,
+    DelegatingSubject,
     MapContext,
     account_abcs,
     authc_abcs,
@@ -246,7 +247,7 @@ class MockSubjectContext(MapContext):
         return None
 
 
-class MockSubject(subject_abcs.Subject):
+class MockSubject(DelegatingSubject):
 
     def __init__(self):
         self._identifiers = type('DumbCollection', (object,), {})()
