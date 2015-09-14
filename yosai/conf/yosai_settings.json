@@ -83,23 +83,6 @@
         "active_sessions_cache_name": "yosai_active_session_cache"
     },
 
-    "SUBJECT_CONFIG": {
-        "default_context": {
-            "SECURITY_MANAGER": "DefaultSubjectContext.SECURITY_MANAGER",
-            "SESSION_ID": "DefaultSubjectContext.SESSION_ID",
-            "AUTHENTICATION_TOKEN": "DefaultSubjectContext.AUTHENTICATION_TOKEN",
-            "ACCOUNT": "DefaultSubjectContext.ACCOUNT",
-            "SUBJECT": "DefaultSubjectContext.SUBJECT",
-            "IDENTIFIERS": "DefaultSubjectContext.IDENTIFIERS",
-            "SESSION": "DefaultSubjectContext.SESSION",
-            "AUTHENTICATED": "DefaultSubjectContext.AUTHENTICATED",
-            "HOST": "DefaultSubjectContext.HOST",
-            "SESSION_CREATION_ENABLED": "DefaultSubjectContext.SESSION_CREATION_ENABLED",
-            "IDENTIFIERS_SESSION_KEY": "DefaultSubjectContext_IDENTIFIERS_SESSION_KEY",
-            "AUTHENTICATED_SESSION_KEY": "DefaultSubjectContext_AUTHENTICATED_SESSION_KEY"
-        }
-    },
-
     "MGT_CONFIG": {
         "DEFAULT_CIPHER_KEY": "you need to update this using the fernet keygen"
     }

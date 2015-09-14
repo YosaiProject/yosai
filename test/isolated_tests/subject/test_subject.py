@@ -1,4 +1,5 @@
 import pytest
+import collections
 from unittest import mock
 
 from yosai import (
@@ -11,6 +12,7 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     SecurityUtils,
+    SessionException,
     security_utils,
     ThreadContext,
     UnauthenticatedException,
@@ -22,24 +24,6 @@ from ..doubles import (
 )
 
 # ------------------------------------------------------------------------------
-# DefaultSubjectSettings
-# ------------------------------------------------------------------------------
-
-
-def test_default_subject_settings(default_subject_settings):
-    """
-    unit tested:  default context names
-
-    test case:
-    when subject settings are properly configured, a dict of context keys will
-    be available through the context attribute
-    """
-    dss = default_subject_settings
-    context = dss.context
-    assert context.get('AUTHENTICATION_TOKEN') ==\
-        "DefaultSubjectContext.AUTHENTICATION_TOKEN"
-
-# ------------------------------------------------------------------------------
 # DefaultSubjectContext
 # ------------------------------------------------------------------------------
 
@@ -49,7 +33,6 @@ def test_dsc_init(subject_context, default_subject_context):
     unit tested:  __init__
 
     test case:
-    When initialized, context attribute names are obtained from yosai settings.
     Verify that the two subject contexts used for testing are initialized as
     expected
     """
@@ -839,6 +822,160 @@ def test_create_session_context_with_host(delegating_subject, monkeypatch):
     result = ds.create_session_context()
     assert (isinstance(result, DefaultSessionContext) and
             result.host == ds.host)
+
+
+def test_clear_run_as_identities_internal_with_warning(
+        delegating_subject, capsys):
+    """
+    unit tested:  clear_run_as_identities_internal
+
+    test case:
+    calls clear_run_as_identities, raising an exception-warning
+    """
+    ds = delegating_subject
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities') as mock_cri:
+        mock_cri.side_effect = SessionException
+        ds.clear_run_as_identities_internal()
+        out, err = capsys.readouterr()
+        assert 'Encountered session exception' in out
+
+
+def test_logout(delegating_subject):
+    """
+    unit tested:  logout
+
+    test case:
+
+    """
+    ds = delegating_subject
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_clear:
+        mock_clear.return_value = None
+
+        with mock.patch.object(MockSecurityManager, 'logout') as mocksm_logout:
+            mocksm_logout.return_value = None
+
+            ds.logout()
+
+            mock_clear.assert_called_once_with()
+            mocksm_logout.assert_called_once_with(ds)
+            assert (ds._session is None and ds._identifiers is None and
+                    ds._authenticated == False)
+
+
+def test_ds_run_as(delegating_subject):
+    """
+    unit tested:  run_as
+
+    test case:
+    pushes the current delegating subject's identifiers onto the run_as stack
+    """
+    ds = delegating_subject
+    with mock.patch.object(DelegatingSubject, 'push_identity') as mock_pi:
+        mock_pi.return_value = None
+        ds.run_as('myidentifiers')
+        mock_pi.assert_called_once_with('myidentifiers')
+
+
+def test_ds_run_as_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  run_as
+
+    test case:
+    without the identifiers attribute, an exception is raised
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifiers', None)
+    pytest.raises(IllegalStateException, "ds.run_as('dumb_identifiers')")
+
+
+@pytest.mark.parametrize('stack, expected',
+                         [(collections.deque(['identifiers']), True),
+                          (collections.deque(), False)])
+def test_ds_is_run_as_accessor(delegating_subject, stack, expected, monkeypatch):
+    """
+    unit tested:  is_run_as property
+
+    test case:
+    bools an empty deque or deque with identifiers
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: stack)
+    ds.is_run_as == expected
+
+def test_ds_get_previous_identifiers_wo_stack(delegating_subject, monkeypatch):
+    """
+    unit tested:  get_previous_identifiers
+
+    test case:
+    when no stack exists, None is returned
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    result = ds.get_previous_identifiers()
+    assert result is None
+
+
+def test_ds_get_previous_identifiers_w_singlestack(delegating_subject, monkeypatch):
+    """
+    unit tested:  get_previous_identifiers
+
+    test case:
+    when a single-element stack is obtained, previous_identifiers == self.identifiers
+    """
+    ds = delegating_subject
+    stack = collections.deque(['one'])
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: stack)
+    result = ds.get_previous_identifiers()
+    assert result == ds.identifiers
+
+
+def test_ds_get_previous_identifiers_w_multistack(delegating_subject, monkeypatch):
+    """
+    unit tested:  get_previous_identifiers
+
+    test case:
+    when a multi-element stack is obtained, returns the second element from the
+    top of the stack
+    """
+    ds = delegating_subject
+    stack = collections.deque(['two', 'one'])
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: stack)
+    result = ds.get_previous_identifiers()
+    assert result == 'one'
+
+
+def test_ds_release_run_as(delegating_subject, monkeypatch):
+    """
+    unit test:  release_run_as
+
+    test case:
+    calls pop_identity
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'pop_identity', lambda: 'popped')
+    result = ds.release_run_as()
+    assert result == 'popped'
+
+@pytest.mark.parametrize('key, expected',
+                         [('key', collections.deque(['key'])),
+                          (None, collections.deque([]))])
+def test_ds_get_run_as_identifiers_stack(
+        delegating_subject, key, expected, monkeypatch, mock_session):
+    """
+    unit tested:  get_run_as_identifiers_stack
+
+    test case:
+    returns a either a deque containing the key or as empty
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(mock_session, 'get_attribute', lambda x: key)
+    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
+    result = ds.get_run_as_identifiers_stack()
+    assert result == expected
+
+#def test_ds_clear_run_as_identities
+
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore

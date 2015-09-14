@@ -3,22 +3,27 @@ from collections import defaultdict
 
 from yosai import (
     DefaultSubjectContext,
-    DefaultSubjectSettings,
     DefaultSubjectStore,
     DelegatingSubject,
     SimpleIdentifierCollection,
     security_utils,
 )
 
-@pytest.fixture(scope='function')
-def default_subject_settings():
-    return DefaultSubjectSettings()
-
 
 @pytest.fixture(scope='function')
-def subject_context(default_subject_settings):
-    dss = default_subject_settings
-    return dss.context
+def subject_context():
+    return {"SECURITY_MANAGER": "DefaultSubjectContext.SECURITY_MANAGER",
+            "SESSION_ID": "DefaultSubjectContext.SESSION_ID",
+            "AUTHENTICATION_TOKEN": "DefaultSubjectContext.AUTHENTICATION_TOKEN",
+            "ACCOUNT": "DefaultSubjectContext.ACCOUNT",
+            "SUBJECT": "DefaultSubjectContext.SUBJECT",
+            "IDENTIFIERS": "DefaultSubjectContext.IDENTIFIERS",
+            "SESSION": "DefaultSubjectContext.SESSION",
+            "AUTHENTICATED": "DefaultSubjectContext.AUTHENTICATED",
+            "HOST": "DefaultSubjectContext.HOST",
+            "SESSION_CREATION_ENABLED": "DefaultSubjectContext.SESSION_CREATION_ENABLED",
+            "IDENTIFIERS_SESSION_KEY": "DefaultSubjectContext_IDENTIFIERS_SESSION_KEY",
+            "AUTHENTICATED_SESSION_KEY": "DefaultSubjectContext_AUTHENTICATED_SESSION_KEY"}
 
 
 @pytest.fixture(scope='function')

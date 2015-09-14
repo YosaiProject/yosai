@@ -19,7 +19,7 @@ under the License.
 
 import logging
 import logging.config
-import anyjson as json
+import rapidjson 
 import os
 import structlog
 import socket
@@ -84,7 +84,7 @@ class JSONFormatter(logging.Formatter):
         """
 
         if fmt is not None:
-            self._fmt = json.loads(fmt)
+            self._fmt = rapidjson.loads(fmt)
         else:
             self._fmt = {}
 
@@ -153,7 +153,7 @@ class JSONFormatter(logging.Formatter):
                      '@source_host': self.source_host,
                      '@fields': self._build_fields(logr, fields)})
 
-        return json.dumps(logr, default=self.json_default, cls=self.json_cls)
+        return rapidjson.dumps(logr, default=self.json_default, cls=self.json_cls)
 
     def _build_fields(self, defaults, fields):
         """Return provided fields including any in defaults

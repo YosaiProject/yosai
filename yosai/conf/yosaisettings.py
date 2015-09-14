@@ -30,7 +30,7 @@ This design is inspired by, or a copy of, source code written for Django.
 
 import os
 from yosai import FileNotFoundException, MisconfiguredException
-import anyjson as json
+import rapidjson 
 
 ENV_VAR = "YOSAI_SETTINGS_MODULE"
 empty = object()
@@ -97,7 +97,7 @@ class Settings:
     def get_config(self, filepath):
         if os.path.exists(filepath):
             with open(filepath) as conf_file:
-                config = json.loads(conf_file.read())
+                config = rapidjson.loads(conf_file.read())
         else:
             raise FileNotFoundException('could not locate: ' + str(filepath)) 
         return config

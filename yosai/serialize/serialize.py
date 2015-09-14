@@ -25,7 +25,7 @@ from yosai import (
 
 import msgpack
 import datetime
-import anyjson as json
+import rapidjson
 import pkg_resources
 
 
@@ -74,7 +74,7 @@ class SerializationManager:
 
     def deserialize(self, message):
         # TBD:  initially, supporting deserialization of one object at a time
-        # until support for a collection of objects is required 
+        # until support for a collection of objects is required
 
         # NOTE:  unpacked is expected to be a dict
 
@@ -92,11 +92,11 @@ class JSONSerializer(serialize_abcs.Serializer):
 
     @classmethod
     def serialize(self, obj):
-        return json.dumps(obj)
+        return rapidjson.dumps(obj)
 
     @classmethod
     def deserialize(self, message):
-        return json.loads(message)
+        return rapidjson.loads(message)
 
 
 class MSGPackSerializer(serialize_abcs.Serializer):

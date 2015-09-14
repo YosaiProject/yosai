@@ -240,12 +240,6 @@ from yosai.session.session import (
 )
 
 
-from yosai.subject.subject_settings import (
-    DefaultSubjectSettings,
-    subject_settings,
-)
-
-
 from yosai.subject.identifier import (
     SimpleIdentifierCollection,
 )

@@ -1,6 +1,5 @@
 from .fixtures import (
     default_subject_context,
-    default_subject_settings,
     default_subject_store,
     delegating_subject,
     subject_context,

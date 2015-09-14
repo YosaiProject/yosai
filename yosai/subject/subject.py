@@ -17,6 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 import collections
+
+# Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
 # from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
 
@@ -41,7 +43,6 @@ from yosai import (
     mgt_abcs,
     session_abcs,
     subject_abcs,
-    subject_settings,
 )
 
 
@@ -60,7 +61,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     # new to yosai is this helper method:
     def get_key(self, key):
-        return subject_settings.get_key(key)
+        return "{0}.{1}".format(self.__class__.__name__, key)
 
     @property
     def security_manager(self):
@@ -245,7 +246,7 @@ class DelegatingSubject(subject_abcs.Subject):
     a SecurityManager proxy.
 
     This implementation does not maintain state such as roles and permissions
-    (only Subject principals, such as usernames or user primary keys) for
+    (only Subject identifiers, such as usernames or user primary keys) for
     better performance in a stateless architecture.  It instead asks the
     underlying SecurityManager every time to perform the authorization check.
 
@@ -270,6 +271,12 @@ class DelegatingSubject(subject_abcs.Subject):
     user so that the Admin/Developer may experience Yosai as the target user
     would (as if the target had logged in).  This helps w/ customer support or
     debugging, etc.
+
+    Concurrency
+    -------------
+    Shiro uses multithreading.  Yosai's approach to concurrency will be decided
+    once CPU and IO statistics have been collected from the synchronous version.
+    Until then, I've commented out the ported multithreading-related methods.
     """
 
     def __init__(self,
@@ -291,7 +298,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.session = None
 
         self.session_creation_enabled = session_creation_enabled
-        self.run_as_principals_session_key = (
+        self.run_as_identifiers_session_key = (
             self.__class__.__name__ + ".RUN_AS_IDENTIFIERS_SESSION_KEY")
 
     def decorate(self, session):
@@ -324,9 +331,9 @@ class DelegatingSubject(subject_abcs.Subject):
     def has_identifiers(self):
         return (self._identifiers is not None)
 
-    def get_primary_identifier(self, principals):
+    def get_primary_identifier(self, identifiers):
         try:
-            return principals.primary_identifier
+            return identifiers.primary_identifier
         except:
             return None
 
@@ -577,8 +584,6 @@ class DelegatingSubject(subject_abcs.Subject):
         try:
             self.clear_run_as_identities_internal()
             self.security_manager.logout(self)
-        except:
-            pass  # TBD
         finally:
             self._session = None
             self._identifiers = None
@@ -592,36 +597,41 @@ class DelegatingSubject(subject_abcs.Subject):
     def session_stopped(self):
         self._session = None
 
-    # TBD, not sure how to port yet:
-    def execute(self, _able):
-        """
-        :param _able:  a Runnable or Callable
-        """
-        associated = self.associate_with(_able)
+    # --------------------------------------------------------------------------
+    # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
+    # --------------------------------------------------------------------------
+    # def execute(self, _able):
+    #    """
+    #    :param _able:  a Runnable or Callable
+    #    """
+    #    associated = self.associate_with(_able)
+    #
+    #    if isinstance(_able, concurrency_abcs.Callable):
+    #        try:
+    #            return associated.call()
+    #        except Exception as ex:
+    #            raise ExecutionException(ex)
+    #
+    #    elif isinstance(_able, concurrency_abcs.Runnable):
+    #        associated.run()
 
-        if isinstance(_able, concurrency_abcs.Callable):
-            try:
-                return associated.call()
-            except Exception as ex:
-                raise ExecutionException(ex)
-
-        elif isinstance(_able, concurrency_abcs.Runnable):
-            associated.run()
-
-    def associate_with(self, _able):
-        if isinstance(_able, Thread):
-            msg = ("This implementation does not support Thread args."
-                   "Instead, the method argument should be a "
-                   "non-Thread Runnable and the return value from "
-                   "this method can then be given to an "
-                   "ExecutorService or another Thread.")
-            raise UnsupportedOperationException(msg)
-
-        if isinstance(_able, Runnable):
-            return SubjectRunnable(self, _able)
-
-        if isinstance(_able, Callable):
-            return SubjectCallable(self, _able)
+    # --------------------------------------------------------------------------
+    # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
+    # --------------------------------------------------------------------------
+    # def associate_with(self, _able):
+    #    if isinstance(_able, Thread):
+    #        msg = ("This implementation does not support Thread args."
+    #               "Instead, the method argument should be a "
+    #               "non-Thread Runnable and the return value from "
+    #               "this method can then be given to an "
+    #               "ExecutorService or another Thread.")
+    #        raise UnsupportedOperationException(msg)
+    #
+    #    if isinstance(_able, Runnable):
+    #        return SubjectRunnable(self, _able)
+    #
+    #    if isinstance(_able, Callable):
+    #        return SubjectCallable(self, _able)
 
     def run_as(self, identifiers):
         if (not self.has_identifiers):
@@ -653,26 +663,23 @@ class DelegatingSubject(subject_abcs.Subject):
     def release_run_as(self):
         return self.pop_identity()
 
-    # TBD
     def get_run_as_identifiers_stack(self):
         """
         :returns: an IdentifierCollection
         """
         session = self.get_session(False)
         stack = collections.deque()
-        try:
-            rap = session.get_attribute(self.run_as_principals_session_key)
-            stack.appendleft(rap)
-        except AttributeError as ex:
-            msg = "could not session.get_attribute to build identifiers stack"
-            print(msg)
-            # log warning here, including exc_info
+        rapkey = session.get_attribute(self.run_as_identifiers_session_key)
+
+        if rapkey:  # don't insert None
+            stack.appendleft(rapkey)
+
         return stack
 
     def clear_run_as_identities(self):
         session = self.get_session(False)
         if (session is not None):
-            session.remove_attribute(self.run_as_principals_session_key)
+            session.remove_attribute(self.run_as_identifiers_session_key)
 
     def push_identity(self, identifiers):
         """
@@ -689,7 +696,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         stack.appendleft(identifiers)
         session = self.get_session()
-        session.set_attribue(self.run_as_principals_session_key, stack)
+        session.set_attribue(self.run_as_identifiers_session_key, stack)
 
     def pop_identity(self):
         popped = None
@@ -700,7 +707,7 @@ class DelegatingSubject(subject_abcs.Subject):
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()
-                session.set_attribute(self.run_as_principals_session_key, stack)
+                session.set_attribute(self.run_as_identifiers_session_key, stack)
             else:
                 # stack is empty, remove it from the session:
                 self.clear_run_as_identities()
@@ -866,7 +873,7 @@ class DefaultSubjectStore:
     def save_to_session(self, subject):
 
         """
-        Saves the subject's state (it's identifying attributes (principals) and
+        Saves the subject's state (it's identifying attributes (identifiers) and
         authentication state) to its session.  The session can be retrieved at
         a later time (typically from a SessionManager) and used to re-create
         the Subject instance.

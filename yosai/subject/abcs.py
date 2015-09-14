@@ -282,13 +282,15 @@ class Subject(metaclass=ABCMeta):
     def logout(self):
         pass
 
-    @abstractmethod
-    def execute(self, x_able):
-        pass
+    # TBD:  commenting out until concurrency is decided:
+    # @abstractmethod
+    # def execute(self, x_able):
+    #    pass
 
-    @abstractmethod
-    def associate_with(self, x_able):
-        pass
+    # TBD:  commenting out until concurrency is decided:
+    # @abstractmethod
+    # def associate_with(self, x_able):
+    #    pass
 
     @abstractmethod
     def run_as(self, identifiers):
