@@ -21,6 +21,7 @@ from yosai import (
 
 from ..doubles import (
     MockSecurityManager,
+    MockSession,
 )
 
 # ------------------------------------------------------------------------------
@@ -974,8 +975,21 @@ def test_ds_get_run_as_identifiers_stack(
     result = ds.get_run_as_identifiers_stack()
     assert result == expected
 
-#def test_ds_clear_run_as_identities
 
+def test_ds_clear_run_as_identities(
+        delegating_subject, mock_session, monkeypatch):
+    """
+    unit tested:  clear_run_as_identities
+
+    test case:
+    when a session attribute exists, the key attribute is removed from it
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
+    with mock.patch.object(MockSession, 'remove_attribute') as mock_ra:
+        mock_ra.return_value = None
+        ds.clear_run_as_identities()
+        mock_ra.assert_called_once_with(ds.run_as_identifiers_session_key)
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore
