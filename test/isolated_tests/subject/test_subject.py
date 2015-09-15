@@ -1069,6 +1069,7 @@ def test_ds_pop_identity_withsinglestack(delegating_subject, monkeypatch):
         result = ds.pop_identity()
 
         mock_crai.assert_called_once_with()
+        assert result == 'collection1'
 
 
 def test_ds_pop_identity_withmultistack(
@@ -1090,6 +1091,21 @@ def test_ds_pop_identity_withmultistack(
     assert (result == 'collection2' and
             session_stack == collections.deque(['collection1']))
 
+def test_ds_stoppingawareproxiedsession_stop(delegating_subject, mock_session):
+    """
+    unit tested:  StoppingAwareProxiedSession.stop
+
+    test case:
+    stops a session and notifies the owning subject
+    """
+
+    ds = delegating_subject
+    saps = ds.StoppingAwareProxiedSession(mock_session, ds)
+
+    with mock.patch.object(MockSession, 'stop') as mock_stop:
+        saps.stop()
+        mock_stop.assert_called_once_with()
+        assert ds.session is None
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore

@@ -725,8 +725,8 @@ class DelegatingSubject(subject_abcs.Subject):
             """
             :raises InvalidSessionException:
             """
-            self._proxied_session.stop()
-            self._owner.session_stopped()
+            super().stop()
+            self.owner.session_stopped()
 
     def __repr__(self):
         return "DelegatingSubject()"
