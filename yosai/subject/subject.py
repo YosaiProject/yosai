@@ -731,25 +731,6 @@ class DelegatingSubject(subject_abcs.Subject):
     def __repr__(self):
         return "DelegatingSubject()"
 
-
-# moved from /mgt, reconciled, ready to test:
-class DefaultSubjectFactory(subject_abcs.SubjectFactory):
-
-    def __init__(self):
-        pass
-
-    def create_subject(self, subject_context):
-        security_manager = subject_context.resolve_security_manager()
-        session = subject_context.resolve_session()
-        session_creation_enabled = subject_context.session_creation_enabled
-        identifiers = subject_context.resolve_identifiers()
-        authenticated = subject_context.resolve_authenticated()
-        host = subject_context.resolve_host()
-
-        return DelegatingSubject(identifiers, authenticated, host, session,
-                                 session_creation_enabled, security_manager)
-
-
 # migrated from /mgt:
 class DefaultSubjectStore:
 
@@ -1028,3 +1009,21 @@ class SubjectBuilder:
 
     def build_subject(self):
         return self.security_manager.create_subject(self.subject_context)
+
+
+# moved from /mgt, reconciled, ready to test:
+class DefaultSubjectFactory(subject_abcs.SubjectFactory):
+
+    def __init__(self):
+        pass
+
+    def create_subject(self, subject_context):
+        security_manager = subject_context.resolve_security_manager()
+        session = subject_context.resolve_session()
+        session_creation_enabled = subject_context.session_creation_enabled
+        identifiers = subject_context.resolve_identifiers()
+        authenticated = subject_context.resolve_authenticated()
+        host = subject_context.resolve_host()
+
+        return DelegatingSubject(identifiers, authenticated, host, session,
+                                 session_creation_enabled, security_manager)

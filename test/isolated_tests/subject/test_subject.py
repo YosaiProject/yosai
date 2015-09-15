@@ -1238,7 +1238,7 @@ def test_dss_merge_identifiers_notrunas_withoutsession(
         mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifiers)
 
 
-def test_ds_merge_authentication_state_case1(
+def test_dss_merge_authentication_state_case1(
         default_subject_store, monkeypatch, delegating_subject, mock_session):
     """
     unit tested:  merge_authentication_state
@@ -1266,7 +1266,7 @@ def test_ds_merge_authentication_state_case1(
             assert not ms_remove.called
 
 
-def test_ds_merge_authentication_state_case2(
+def test_dss_merge_authentication_state_case2(
         default_subject_store, monkeypatch, delegating_subject, mock_session):
     """
     unit tested:  merge_authentication_state
@@ -1294,7 +1294,7 @@ def test_ds_merge_authentication_state_case2(
             ms_remove.assert_called_once_with(dss.dsc_ask)
 
 
-def test_ds_merge_authentication_state_case3(
+def test_dss_merge_authentication_state_case3(
         default_subject_store, monkeypatch, delegating_subject, mock_session):
     """
     unit tested:  merge_authentication_state
@@ -1323,7 +1323,8 @@ def test_ds_merge_authentication_state_case3(
             mock_sa.assert_called_once_with(dss.dsc_ask, True)
 
 
-def test_ds_merge_authentication_state_case4
+def test_dss_merge_authentication_state_case4(
+        delegating_subject, default_subject_store, mock_session, monkeypatch):
     """
     unit tested:  merge_authentication_state
 
@@ -1335,8 +1336,50 @@ def test_ds_merge_authentication_state_case4
     dss = default_subject_store
     ds = delegating_subject
 
-    monkeypatch.setattr(ds, 'get_session', lambda x: None): 
     monkeypatch.setattr(ds, '_authenticated', True)
+
+    with mock.patch.object(DelegatingSubject, 'get_session') as ds_gs:
+        ds_gs.return_value = mock_session
+
+        with mock.patch.object(MockSession, 'set_attribute') as ms_sa:
+            ms_sa.return_value = None
+
+            dss.merge_authentication_state(ds)
+
+            ms_sa.assert_called_once_with(dss.dsc_ask, True)
+            ds_gs.assert_called_once_with(False)
+
+
+def test_dss_remove_from_session(
+        default_subject_store, delegating_subject, monkeypatch, mock_session):
+    """
+    unit tested:  remove_from session
+
+    test case:
+        removes both key attributes from the session
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+
+    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
+    with mock.patch.object(MockSession, 'remove_attribute') as ms_ra:
+        dss.remove_from_session(ds)
+        calls = [mock.call(dss.dsc_ask), mock.call(dss.dsc_isk)]
+        ms_ra.assert_has_calls(calls, any_order=True)
+
+def test_dss_delete(default_subject_store):
+    """
+    unit tested:  delete
+
+    test case:
+    calls remove_from_session
+    """
+    dss = default_subject_store
+    with mock.patch.object(DefaultSubjectStore, 'remove_from_session') as dss_rfs:
+        dss_rfs.return_value = None
+        dss.delete('subject')
+        dss_rfs.assert_called_once_with('subject')
+
 
 # ------------------------------------------------------------------------------
 # SubjectBuilder
