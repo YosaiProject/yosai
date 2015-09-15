@@ -5,7 +5,9 @@ from unittest import mock
 from yosai import (
     AuthenticationException,
     DefaultSessionContext,
+    DefaultSessionStorageEvaluator,
     DefaultSubjectContext,
+    DefaultSubjectStore,
     DelegatingSubject,
     DisabledSessionException,
     IdentifiersNotSetException,
@@ -1107,9 +1109,234 @@ def test_ds_stoppingawareproxiedsession_stop(delegating_subject, mock_session):
         mock_stop.assert_called_once_with()
         assert ds.session is None
 
+
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore
 # ------------------------------------------------------------------------------
+
+def test_dss_is_sse(default_subject_store, monkeypatch):
+    """
+    unit tested:  is_session_storage_enabled
+
+    test case:
+    delegates call to the sse's method
+    """
+    dss = default_subject_store
+    with mock.patch.object(DefaultSessionStorageEvaluator,
+                           'is_session_storage_enabled') as dsse_isse:
+        dsse_isse.return_value = 'yup'
+        result = dss.is_session_storage_enabled('subject')
+        assert result == 'yup'
+
+
+def test_dss_save_with_sse(default_subject_store, monkeypatch):
+    """
+    unit tested:  save
+
+    test case:
+
+    """
+    dss = default_subject_store
+    monkeypatch.setattr(dss, 'is_session_storage_enabled', lambda x: True)
+    with mock.patch.object(DefaultSubjectStore, 'save_to_session') as dss_sts:
+        dss_sts.return_value = None
+        dss.save('dummysubject')
+        dss_sts.assert_called_once_with('dummysubject')
+
+
+def test_dss_save_without_sse(default_subject_store, monkeypatch, capsys):
+    """
+    unit tested:  save
+
+    test case:
+
+    """
+    dss = default_subject_store
+    monkeypatch.setattr(dss, 'is_session_storage_enabled', lambda x: False)
+    with mock.patch.object(DefaultSubjectStore, 'save_to_session') as dss_sts:
+        dss_sts.return_value = None
+        dss.save('dummysubject')
+
+        out, err = capsys.readouterr()
+        assert (not dss_sts.called and
+                'has been disabled' in out)
+
+
+def test_dss_save_to_session(default_subject_store):
+    """
+    unit tested:  save_to_session
+
+    test case:
+    merges identifiers and authentication state
+    """
+    dss = default_subject_store
+    with mock.patch.object(DefaultSubjectStore, 'merge_identifiers') as dss_mi:
+        dss_mi.return_value = None
+        with mock.patch.object(DefaultSubjectStore, 'merge_authentication_state') as dss_mas:
+            dss_mas.return_value = None
+            dss.save_to_session('subject')
+            dss_mi.assert_called_once_with('subject')
+            dss_mas.assert_called_once_with('subject')
+
+
+def test_dss_merge_identifiers_runas(
+        default_subject_store, delegating_subject, monkeypatch):
+    """
+    unit tested:  merge_identifiers
+
+    test case:
+    with run_as set for the DS, current_identifiers is obtained directly from
+    the _identifiers attribute (bypassing the property logic), and then the
+    current_identifiers are saved to the session
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+    monkeypatch.setitem(ds.session._delegate.session, dss.dsc_isk, 'old_key')
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: True)
+    with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
+        mock_sa.return_value = None
+        dss.merge_identifiers(ds)
+        mock_sa.assert_called_once_with(dss.dsc_isk, ds._identifiers)
+
+
+def test_dss_merge_identifiers_notrunas_withsession(
+        default_subject_store, delegating_subject, monkeypatch):
+    """
+    unit tested:  merge_identifiers
+
+    test case:
+    with run_as NOT set for the DS, current_identifiers is obtained from
+    the identifiers property, and then the current_identifiers are saved to the
+    session
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+    monkeypatch.setitem(ds.session._delegate.session, dss.dsc_isk, 'old_key')
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: False)
+    with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
+        mock_sa.return_value = None
+        dss.merge_identifiers(ds)
+        mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifiers)
+
+
+def test_dss_merge_identifiers_notrunas_withoutsession(
+        default_subject_store, delegating_subject, monkeypatch, mock_session):
+    """
+    unit tested:  merge_identifiers
+
+    test case:
+
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'session', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: False)
+    monkeypatch.setattr(ds, 'decorate', lambda x: mock_session)
+    with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
+        mock_sa.return_value = None
+        dss.merge_identifiers(ds)
+        mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifiers)
+
+
+def test_ds_merge_authentication_state_case1(
+        default_subject_store, monkeypatch, delegating_subject, mock_session):
+    """
+    unit tested:  merge_authentication_state
+
+    test case:
+    - subject has a session
+    - subject not authenticated
+    - existing_authc is None
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+
+    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
+    monkeypatch.setattr(ds, '_authenticated', False)
+
+    with mock.patch.object(MockSession, 'remove_attribute') as ms_remove:
+        ms_remove.return_value = None
+
+        with mock.patch.object(MockSession, 'get_attribute') as mock_ga:
+            mock_ga.return_value = None
+
+            dss.merge_authentication_state(ds)
+
+            mock_ga.assert_called_once_with(dss.dsc_ask)
+            assert not ms_remove.called
+
+
+def test_ds_merge_authentication_state_case2(
+        default_subject_store, monkeypatch, delegating_subject, mock_session):
+    """
+    unit tested:  merge_authentication_state
+
+    test case:
+    - subject has a session
+    - subject not authenticated
+    - existing_authc is True
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+
+    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
+    monkeypatch.setattr(ds, '_authenticated', False)
+
+    with mock.patch.object(MockSession, 'remove_attribute') as ms_remove:
+        ms_remove.return_value = None
+
+        with mock.patch.object(MockSession, 'get_attribute') as mock_ga:
+            mock_ga.return_value = True
+
+            dss.merge_authentication_state(ds)
+
+            mock_ga.assert_called_once_with(dss.dsc_ask)
+            ms_remove.assert_called_once_with(dss.dsc_ask)
+
+
+def test_ds_merge_authentication_state_case3(
+        default_subject_store, monkeypatch, delegating_subject, mock_session):
+    """
+    unit tested:  merge_authentication_state
+
+    test case:
+    - subject has a session
+    - subject is authenticated
+    - existing_authc is None
+
+    """
+    dss = default_subject_store
+    ds = delegating_subject
+
+    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
+    monkeypatch.setattr(ds, '_authenticated', True)
+
+    with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
+        mock_sa.return_value = None
+
+        with mock.patch.object(MockSession, 'get_attribute') as mock_ga:
+            mock_ga.return_value = None
+
+            dss.merge_authentication_state(ds)
+
+            mock_ga.assert_called_once_with(dss.dsc_ask)
+            mock_sa.assert_called_once_with(dss.dsc_ask, True)
+
+
+def test_ds_merge_authentication_state_case4
+    """
+    unit tested:  merge_authentication_state
+
+    test case:
+    subject has no session
+    subject is authenticated
+    """
+
+    dss = default_subject_store
+    ds = delegating_subject
+
+    monkeypatch.setattr(ds, 'get_session', lambda x: None): 
+    monkeypatch.setattr(ds, '_authenticated', True)
 
 # ------------------------------------------------------------------------------
 # SubjectBuilder

@@ -825,9 +825,8 @@ class DefaultSubjectStore:
     def __init__(self):
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
 
-        ss = subject_settings
-        self.dsc_psk = ss.get_key('IDENTIFIERS_SESSION_KEY')
-        self.dsc_ask = ss.get_key('AUTHENTICATED_SESSION_KEY')
+        self.dsc_isk = 'DefaultSubjectContext.IDENTIFIERS_SESSION_KEY'
+        self.dsc_ask = 'DefaultSubjectContext.AUTHENTICATED_SESSION_KEY'
 
     def is_session_storage_enabled(self, subject):
         """
@@ -900,16 +899,9 @@ class DefaultSubjectStore:
         """
         current_identifiers = None
         if subject.is_run_as:
-            try:
-                # avoid the other steps of attribute access when referencing by
-                # property by referencing the underlying attribute directly:
-                current_identifiers = subject._identifiers
-            except Exception as ex:
-                msg = ("Unable to access DelegatingSubject identifiers"
-                       " property.")
-                print(msg)
-                # log exception here, including exc_info=ex
-                raise IllegalStateException(msg)
+            # avoid the other steps of attribute access when referencing by
+            # property by referencing the underlying attribute directly:
+            current_identifiers = subject._identifiers
 
         if not current_identifiers:
             # if direct attribute access did not work, use the property-
@@ -920,19 +912,19 @@ class DefaultSubjectStore:
 
         if (not session):
             if (current_identifiers):
-                session = subject.get_session()  # True is default
-                session.set_attribute(self.dsc_psk, current_identifiers)
+                session = subject.get_session(True)
+                session.set_attribute(self.dsc_isk, current_identifiers)
             # otherwise no session and no identifiers - nothing to save
         else:
-            existing_identifiers = session.get_attribute(self.dsc_psk)
+            existing_identifiers = session.get_attribute(self.dsc_isk)
 
             if (not current_identifiers):
                 if (existing_identifiers):
-                    session.remove_attribute(self.dsc_psk)
+                    session.remove_attribute(self.dsc_isk)
                 # otherwise both are null or empty - no need to update session
             else:
                 if not (current_identifiers == existing_identifiers):
-                    session.set_attribute(self.dsc_psk, current_identifiers)
+                    session.set_attribute(self.dsc_isk, current_identifiers)
                 # otherwise they're the same - no need to update the session
 
     def merge_authentication_state(self, subject):
@@ -961,7 +953,7 @@ class DefaultSubjectStore:
         session = subject.get_session(False)
         if (session):
             session.remove_attribute(self.dsc_ask)
-            session.remove_attribute(self.dsc_psk)
+            session.remove_attribute(self.dsc_isk)
 
     def delete(self, subject):
         self.remove_from_session(subject)
