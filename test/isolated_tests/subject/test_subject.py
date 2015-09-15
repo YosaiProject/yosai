@@ -991,6 +991,54 @@ def test_ds_clear_run_as_identities(
         ds.clear_run_as_identities()
         mock_ra.assert_called_once_with(ds.run_as_identifiers_session_key)
 
+def test_ds_push_identity_raises(delegating_subject, monkeypatch):
+    """
+    unit tested:  push_identity
+
+    test case:
+    when no identifiers argument is passed, an exception is raised
+    """
+    ds = delegating_subject
+    pytest.raises(IllegalArgumentException,
+                  "ds.push_identity(None)")
+
+
+def test_ds_push_identity_withstack(
+        delegating_subject, monkeypatch, simple_identifier_collection,
+        mock_session):
+    """
+    unit tested:  push_identity
+
+    test case:
+    adds the identifiers argument to the existing stack
+    """
+    ds = delegating_subject
+    sic = simple_identifier_collection
+    newstack = collections.deque(['collection1'])
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: newstack)
+    monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
+    ds.push_identity(sic)
+    assert (mock_session.session[ds.run_as_identifiers_session_key] ==
+        collections.deque([sic, 'collection1']))
+
+
+def test_ds_push_identity_withoutstack(
+        delegating_subject, monkeypatch, simple_identifier_collection,
+        mock_session):
+    """
+    unit tested:  push_identity
+
+    test case:
+    creates a new stack and adds the identifiers argument to it
+    """
+    ds = delegating_subject
+    sic = simple_identifier_collection
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
+    ds.push_identity(sic)
+    assert (mock_session.session[ds.run_as_identifiers_session_key] ==
+        collections.deque([sic]))
+
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore
 # ------------------------------------------------------------------------------

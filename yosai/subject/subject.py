@@ -696,7 +696,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         stack.appendleft(identifiers)
         session = self.get_session()
-        session.set_attribue(self.run_as_identifiers_session_key, stack)
+        session.set_attribute(self.run_as_identifiers_session_key, stack)
 
     def pop_identity(self):
         popped = None
