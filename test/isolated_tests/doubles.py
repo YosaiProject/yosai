@@ -68,7 +68,7 @@ class MockSession(session_abcs.ValidatingSession, object):
         self._absolute_timeout = absolute_timeout
 
     def get_attribute(self, key):
-        return 'attrX'
+        return self.session.get(key)
 
     def remove_attribute(self, key):
         return self.session.pop(key, None)
@@ -84,6 +84,11 @@ class MockSession(session_abcs.ValidatingSession, object):
 
     def validate(self):
         pass
+
+    def __repr__(self):
+        attrs = ','.join([str(key) + ':' + str(value) for key, value in 
+                          self.session.items()])
+        return "MockSession(" + attrs + ")"
 
 
 class MockCache(cache_abcs.Cache):

@@ -708,6 +708,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 # persist the changed stack to the session
                 session = self.get_session()
                 session.set_attribute(self.run_as_identifiers_session_key, stack)
+
             else:
                 # stack is empty, remove it from the session:
                 self.clear_run_as_identities()

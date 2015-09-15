@@ -1037,7 +1037,59 @@ def test_ds_push_identity_withoutstack(
     monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
     ds.push_identity(sic)
     assert (mock_session.session[ds.run_as_identifiers_session_key] ==
-        collections.deque([sic]))
+            collections.deque([sic]))
+
+
+def test_ds_pop_identity_withoutstack(delegating_subject, monkeypatch):
+    """
+    unit tested:  pop_identity
+
+    test case:
+    if there is an empty run-as stack, this method returns None
+    """
+    ds = delegating_subject
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    result = ds.pop_identity()
+    assert result is None
+
+
+def test_ds_pop_identity_withsinglestack(delegating_subject, monkeypatch):
+    """
+    unit tested:  pop_identity
+
+    test case:
+    a run-as stack containing only one element is cleared
+    """
+    ds = delegating_subject
+    newstack = collections.deque(['collection1'])
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: newstack)
+    with mock.patch.object(DelegatingSubject, 'clear_run_as_identities') as mock_crai:
+        mock_crai.return_value
+
+        result = ds.pop_identity()
+
+        mock_crai.assert_called_once_with()
+
+
+def test_ds_pop_identity_withmultistack(
+        delegating_subject, monkeypatch, mock_session):
+    """
+    unit tested:  pop_identity
+
+    test case:
+    a run-as stack containing two elements pops/returns the top element and sets
+    the run-as session key to the next element in the stack
+    """
+    ds = delegating_subject
+    newstack = collections.deque(['collection2', 'collection1'])
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: newstack)
+    monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
+
+    result = ds.pop_identity()
+    session_stack = mock_session.get_attribute(ds.run_as_identifiers_session_key)
+    assert (result == 'collection2' and
+            session_stack == collections.deque(['collection1']))
+
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore
