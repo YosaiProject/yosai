@@ -44,6 +44,7 @@ from yosai import (
     session_abcs,
     subject_abcs,
 )
+import copy
 
 
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
@@ -56,8 +57,20 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                   call stack should a mapping be incorrect.
     """
     def __init__(self, security_utils, context={}):
+        """
+        :param context: context's schema of reserved attributes must be named
+                        according to the property names below
+        """
+
         self.security_utils = security_utils
+
+        # to set reserved attributes correctly (using the property setters),
+        # context must be set accordingly:
         super().__init__(context)
+        for key, value in self.context.items():
+            if hasattr(self, key):
+                setattr(self, key, value)  # uses the property setters
+                self.context.pop(key)
 
     # new to yosai is this helper method:
     def get_key(self, key):
@@ -941,42 +954,50 @@ class DefaultSubjectStore:
 
 
 class SubjectBuilder:
+    """
+    Shiro uses the Builder design pattern for this class, including it as an
+    inner class of the Subject interface.  Unlike Shiro, Yosai separates the
+    SubjectBuilder from the Subject abc -- it is independent of the other.
+    Further, Yosai uses python's support for default keyword arguments to provide
+    the same flexibility in Subject creation as provided by the Builder pattern.
+    """
 
     def __init__(self,
-                 securityutils,
-                 securitymanager,
-                 subjectcontext=None,
+                 security_utils,
+                 security_manager=None,
+                 subject_context=None,
                  host=None,
-                 sessionid=None,
+                 session_id=None,
                  session=None,
                  identifiers=None,
                  session_creation_enabled=True,
                  authenticated=False,
                  **context_attributes):
+        """
+        :type subject_context:  DefaultSubjectContext
+        """
 
-        self.security_manager = securitymanager
+        if security_manager is None:
+            self.security_manager = security_utils.security_manager
+        else:
+            self.security_manager = security_manager
 
-        if subjectcontext is None:
-            self.subject_context = DefaultSubjectContext(securityutils)
-
-        try:
+        if subject_context is None:
+            self.subject_context = DefaultSubjectContext(security_utils)
             self.subject_context.security_manager = self.security_manager
-        except AttributeError:
-            msg = ("Subject cannot initialize without a SecurityManager "
-                   "and a SubjectContext")
-            raise IllegalArgumentException(msg)
+            self.subject_context.host = host
+            self.subject_context.session_id = session_id
+            self.subject_context.session = session
+            self.subject_context.identifiers = identifiers
+            self.subject_context.session_creation_enabled = session_creation_enabled
+            self.subject_context.authenticated = authenticated
 
-        self.subject_context.host = host
-        self.subject_context.session_id = sessionid
-        self.subject_context.session = session
-        self.subject_context.identifers = identifiers
-        self.subject_context.set_session_creation_enabled = session_creation_enabled
-        self.subject_context.authenticated = authenticated
+            for key, val in context_attributes.items():
+                self.context_attribute(key, val)
+        else:
+            self.subject_context = subject_context
 
-        for key, val in context_attributes.items():
-            self.context_attribute(key, val)
-
-    def context_attribute(self, attribute_key, attribute_value):
+    def context_attribute(self, attribute_key, attribute_value=None):
 
         """
         Allows custom attributes to be added to the underlying context Map used

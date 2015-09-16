@@ -1,0 +1,173 @@
+============================= test session starts ==============================
+platform linux -- Python 3.4.2 -- py-1.4.30 -- pytest-2.7.2 -- /usr/bin/python3
+rootdir: /home/dowwie/yosai/yosai/test/isolated_tests/subject, inifile: 
+plugins: cov
+collecting ... collected 117 items
+
+subject/test_identifier.py::test_sic_primary_identifier_property PASSED
+subject/test_identifier.py::test_sic_primary_identifier_property_exists PASSED
+subject/test_identifier.py::test_sic_primary_identifier_property_raises PASSED
+subject/test_identifier.py::test_sic_add[realm1-identifier1-None] PASSED
+subject/test_identifier.py::test_sic_add[realm1-identifier_s1-None] PASSED
+subject/test_identifier.py::test_sic_add[None-None-collection2] PASSED
+subject/test_identifier.py::test_sic_by_type PASSED
+subject/test_identifier.py::test_sic_from_realm PASSED
+subject/test_identifier.py::test_sic_realm_names PASSED
+subject/test_identifier.py::test_sic_is_empty PASSED
+subject/test_identifier.py::test_sic_clear PASSED
+subject/test_identifier.py::test_sic_eq[myself0-other0-True] PASSED
+subject/test_identifier.py::test_sic_eq[myself1-other1-False] PASSED
+subject/test_identifier.py::test_sic_eq[myself2-other2-True] PASSED
+subject/test_identifier.py::test_sic_serialize PASSED
+subject/test_identifier.py::test_sic_deserialize PASSED
+subject/test_subject.py::test_dsc_init PASSED
+subject/test_subject.py::test_dsc_property_accessors[security_manager] PASSED
+subject/test_subject.py::test_dsc_property_accessors[session_id] PASSED
+subject/test_subject.py::test_dsc_property_accessors[subject] PASSED
+subject/test_subject.py::test_dsc_property_accessors[identifiers] PASSED
+subject/test_subject.py::test_dsc_property_accessors[session] PASSED
+subject/test_subject.py::test_dsc_property_accessors[session_creation_enabled] PASSED
+subject/test_subject.py::test_dsc_property_accessors[account] PASSED
+subject/test_subject.py::test_dsc_property_accessors[authentication_token] PASSED
+subject/test_subject.py::test_dsc_property_accessors[host] PASSED
+subject/test_subject.py::test_dsc_property_mutator[security_manager] PASSED
+subject/test_subject.py::test_dsc_property_mutator[session_id] PASSED
+subject/test_subject.py::test_dsc_property_mutator[subject] PASSED
+subject/test_subject.py::test_dsc_property_mutator[identifiers] PASSED
+subject/test_subject.py::test_dsc_property_mutator[session] PASSED
+subject/test_subject.py::test_dsc_property_mutator[session_creation_enabled] PASSED
+subject/test_subject.py::test_dsc_property_mutator[account] PASSED
+subject/test_subject.py::test_dsc_property_mutator[authentication_token] PASSED
+subject/test_subject.py::test_dsc_property_mutator[host] PASSED
+subject/test_subject.py::test_dsc_resolve_security_manager_exists PASSED
+subject/test_subject.py::test_dsc_resolve_security_manager_none PASSED
+subject/test_subject.py::test_dsc_resolve_security_manager_none_raises PASSED
+subject/test_subject.py::test_dsc_resolve_identifiers_exists PASSED
+subject/test_subject.py::test_dsc_resolve_identifiers_none_accountreturns PASSED
+subject/test_subject.py::test_dsc_resolve_identifiers_none_sessionreturns PASSED
+subject/test_subject.py::test_dsc_resolve_session_exists PASSED
+subject/test_subject.py::test_dsc_resolve_session_notexists PASSED
+subject/test_subject.py::test_dsc_resolve_authenticated PASSED
+subject/test_subject.py::test_dsc_resolve_authenticated_usingaccount PASSED
+subject/test_subject.py::test_dsc_resolve_authenticated_usingsession PASSED
+subject/test_subject.py::test_dsc_resolve_host_exists PASSED
+subject/test_subject.py::test_dsc_resolve_host_notexists_token PASSED
+subject/test_subject.py::test_dsc_resolve_host_notexists_session PASSED
+subject/test_subject.py::test_ds_init PASSED
+subject/test_subject.py::test_ds_decorate_type_check PASSED
+subject/test_subject.py::test_ds_identifiers_fromstack PASSED
+subject/test_subject.py::test_ds_identifiers_fromidentifiers PASSED
+subject/test_subject.py::test_ds_is_permitted_withidentifiers attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_ds_is_permitted_withoutidentifiers PASSED
+subject/test_subject.py::test_ds_is_permitted_all attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_ds_is_permitted_all_raises PASSED
+subject/test_subject.py::test_ds_assert_authz_check_possible PASSED
+subject/test_subject.py::test_ds_check_permission attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_ds_check_permission_raises PASSED
+subject/test_subject.py::test_ds_has_role attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_ds_has_role_raises PASSED
+subject/test_subject.py::test_has_all_roles attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_ds_has_all_roles_raises PASSED
+subject/test_subject.py::test_check_role attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_check_role_raises PASSED
+subject/test_subject.py::test_ds_login_succeeds PASSED
+subject/test_subject.py::test_ds_login_raises PASSED
+subject/test_subject.py::test_ds_login_noidentifiers_raises PASSED
+subject/test_subject.py::test_ds_login_nohost PASSED
+subject/test_subject.py::test_ds_login_nosession PASSED
+subject/test_subject.py::test_ds_attribute_type_raises[security_manager] PASSED
+subject/test_subject.py::test_ds_attribute_type_raises[identifiers] PASSED
+subject/test_subject.py::test_ds_attribute_type_raises[session] PASSED
+subject/test_subject.py::test_ds_attribute_type_raises[authenticated] DelegatingSubject.authenticated.setter:  wrong objtype
+PASSED
+subject/test_subject.py::test_get_session_withsessionattribute_succeeds attempting to get session; create = True; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_get_session_withoutsessionattribute_createfalse attempting to get session; create = False; 'session is None' = True; 'session has id' = False
+PASSED
+subject/test_subject.py::test_get_session_withoutsessionattribute_raises attempting to get session; create = True; 'session is None' = True; 'session has id' = False
+PASSED
+subject/test_subject.py::test_get_session_withoutsessionattribute_createsnew attempting to get session; create = True; 'session is None' = True; 'session has id' = False
+('Starting session for host ', '127.0.0.1')
+PASSED
+subject/test_subject.py::test_create_session_context_without_host PASSED
+subject/test_subject.py::test_create_session_context_with_host PASSED
+subject/test_subject.py::test_clear_run_as_identities_internal_with_warning PASSED
+subject/test_subject.py::test_logout PASSED
+subject/test_subject.py::test_ds_run_as PASSED
+subject/test_subject.py::test_ds_run_as_raises PASSED
+subject/test_subject.py::test_ds_is_run_as_accessor[stack0-True] PASSED
+subject/test_subject.py::test_ds_is_run_as_accessor[stack1-False] PASSED
+subject/test_subject.py::test_ds_get_previous_identifiers_wo_stack PASSED
+subject/test_subject.py::test_ds_get_previous_identifiers_w_singlestack PASSED
+subject/test_subject.py::test_ds_get_previous_identifiers_w_multistack PASSED
+subject/test_subject.py::test_ds_release_run_as PASSED
+subject/test_subject.py::test_ds_get_run_as_identifiers_stack[key-expected0] PASSED
+subject/test_subject.py::test_ds_get_run_as_identifiers_stack[None-expected1] PASSED
+subject/test_subject.py::test_ds_clear_run_as_identities PASSED
+subject/test_subject.py::test_ds_push_identity_raises PASSED
+subject/test_subject.py::test_ds_push_identity_withstack PASSED
+subject/test_subject.py::test_ds_push_identity_withoutstack PASSED
+subject/test_subject.py::test_ds_pop_identity_withoutstack PASSED
+subject/test_subject.py::test_ds_pop_identity_withsinglestack PASSED
+subject/test_subject.py::test_ds_pop_identity_withmultistack PASSED
+subject/test_subject.py::test_ds_stoppingawareproxiedsession_stop PASSED
+subject/test_subject.py::test_dss_is_sse PASSED
+subject/test_subject.py::test_dss_save_with_sse PASSED
+subject/test_subject.py::test_dss_save_without_sse PASSED
+subject/test_subject.py::test_dss_save_to_session PASSED
+subject/test_subject.py::test_dss_merge_identifiers_runas attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_dss_merge_identifiers_notrunas_withsession attempting to get session; create = False; 'session is None' = False; 'session has id' = True
+PASSED
+subject/test_subject.py::test_dss_merge_identifiers_notrunas_withoutsession attempting to get session; create = False; 'session is None' = True; 'session has id' = False
+attempting to get session; create = True; 'session is None' = True; 'session has id' = False
+('Starting session for host ', '127.0.0.1')
+PASSED
+subject/test_subject.py::test_dss_merge_authentication_state_case1 PASSED
+subject/test_subject.py::test_dss_merge_authentication_state_case2 PASSED
+subject/test_subject.py::test_dss_merge_authentication_state_case3 PASSED
+subject/test_subject.py::test_dss_merge_authentication_state_case4 PASSED
+subject/test_subject.py::test_dss_remove_from_session PASSED
+subject/test_subject.py::test_dss_delete PASSED
+subject/test_subject.py::test_sb_init_verify_argument_context 
+
+sb.subject_context
+ <DefaultSubjectContext(DefaultSubjectContext.AUTHENTICATED: True, DefaultSubjectContext.SECURITY_MANAGER: MockSecurityManager(), DefaultSubjectContext.SESSION: MockSession(attr2:2,attr3:3,attr1:1), attribute1: attribute1, DefaultSubjectContext.HOST: 127.0.0.1, DefaultSubjectContext.SESSION_ID: sessionid123, DefaultSubjectContext.SESSION_CREATION_ENABLED: True, attribute2: attribute2)>
+
+
+mycontext
+ <DefaultSubjectContext(sessionid: sessionid123, session: MockSession(attr2:2,attr3:3,attr1:1), authenticated: True, session_creation_enabled: True, host: 127.0.0.1, attribute1: attribute1, securitymanager: MockSecurityManager(), identifiers: SimpleIdentifierCollection(realm1={'username'}), attribute2: attribute2)>
+FAILED
+subject/test_subject.py::test_sb_init_verify_generated_context PASSED
+subject/test_subject.py::test_sb_build_subject PASSED
+
+=================================== FAILURES ===================================
+_____________________ test_sb_init_verify_argument_context _____________________
+
+subject_builder_context = {'attribute1': 'attribute1', 'attribute2': 'attribute2', 'authenticated': True, 'host': '127.0.0.1', ...}
+
+    def test_sb_init_verify_argument_context(subject_builder_context):
+        """
+        unit tested:  __init__
+    
+        test case:
+        when a subject_context argument is passed into init, any context attribute
+        arguments aren't used by init
+        """
+        sbc = subject_builder_context
+        sb = SubjectBuilder(security_utils, **sbc)
+        mycontext = DefaultSubjectContext(security_utils, sbc)
+        print ('\n\nsb.subject_context\n', sb.subject_context)
+        print ('\n\nmycontext\n', mycontext)
+>       assert (sb.subject_context == mycontext)
+E       assert <DefaultSubjectContext(DefaultSubjectContext.AUTHENTICATED: True, DefaultSubjectContext.SECURITY_MANAGER: MockSecurity...SubjectContext.SESSION_ID: sessionid123, DefaultSubjectContext.SESSION_CREATION_ENABLED: True, attribute2: attribute2)> == <DefaultSubjectContext(sessionid: sessionid123, session: MockSession(attr2:2,attr3:3,attr1:1), authenticated: True, se...ymanager: MockSecurityManager(), identifiers: SimpleIdentifierCollection(realm1={'username'}), attribute2: attribute2)>
+E        +  where <DefaultSubjectContext(DefaultSubjectContext.AUTHENTICATED: True, DefaultSubjectContext.SECURITY_MANAGER: MockSecurity...SubjectContext.SESSION_ID: sessionid123, DefaultSubjectContext.SESSION_CREATION_ENABLED: True, attribute2: attribute2)> = <yosai.subject.subject.SubjectBuilder object at 0x7f78e07532e8>.subject_context
+
+subject/test_subject.py:1403: AssertionError
+===================== 1 failed, 116 passed in 0.13 seconds =====================

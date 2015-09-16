@@ -6,6 +6,7 @@ from yosai import (
     DefaultSubjectStore,
     DelegatingSubject,
     SimpleIdentifierCollection,
+    SubjectBuilder,
     security_utils,
 )
 
@@ -57,3 +58,22 @@ def delegating_subject(
                              session=mock_session,
                              session_creation_enabled=True,
                              security_manager=mock_security_manager)
+
+# mock_session and mock_security_manager obtained from ../conftest:
+@pytest.fixture(scope='function')
+def subject_builder_context(
+        simple_identifier_collection, mock_session, mock_security_manager):
+    return dict(security_manager=mock_security_manager,
+                host='127.0.0.1',
+                session_id='sessionid123',
+                session=mock_session,
+                identifiers=simple_identifier_collection,
+                session_creation_enabled=True,
+                authenticated=True,
+                attribute1='attribute1',
+                attribute2='attribute2')
+
+@pytest.fixture(scope='function')
+def subject_builder(subject_builder_context):
+    return SubjectBuilder(security_utils,
+                          **subject_builder_context)

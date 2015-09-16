@@ -15,6 +15,7 @@ from yosai import (
     IllegalStateException,
     SecurityUtils,
     SessionException,
+    SubjectBuilder,
     security_utils,
     ThreadContext,
     UnauthenticatedException,
@@ -1367,6 +1368,7 @@ def test_dss_remove_from_session(
         calls = [mock.call(dss.dsc_ask), mock.call(dss.dsc_isk)]
         ms_ra.assert_has_calls(calls, any_order=True)
 
+
 def test_dss_delete(default_subject_store):
     """
     unit tested:  delete
@@ -1385,7 +1387,70 @@ def test_dss_delete(default_subject_store):
 # SubjectBuilder
 # ------------------------------------------------------------------------------
 
+def test_sb_init_verify_argument_context(subject_builder_context):
+    """
+    unit tested:  __init__ and context_attribute
 
+    test case:
+    when a subject_context argument is passed into init, any context attribute
+    arguments aren't used by init
+    """
+    sbc = subject_builder_context
+    mycontext = DefaultSubjectContext(security_utils, sbc)
+    sb = SubjectBuilder(security_utils, subject_context=mycontext, **sbc)
+    assert (sb.subject_context == mycontext)
+
+
+def test_sb_init_verify_generated_context(subject_builder_context):
+    """
+    unit tested:  __init__
+
+    test case:
+    confirm that the subject context created by init reflects the arguments
+    passed to the builder
+    """
+    sbc = subject_builder_context
+    sb = SubjectBuilder(security_utils, **sbc)
+    mycontext = DefaultSubjectContext(security_utils, sbc)
+    assert (sb.subject_context == mycontext)
+
+
+def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager):
+    """
+    unit tested:  build_subject
+
+    test case:
+    build_subject defers to the security_manager's create_subject
+    """
+    sb = subject_builder
+
+    monkeypatch.setattr(sb, 'security_manager', mock_security_manager)
+    monkeypatch.setattr(sb.security_manager, 'create_subject', lambda x: 'subject')
+    result = sb.build_subject()
+    assert result == 'subject'
+
+def test_sb_context_attribute_raises(subject_builder, monkeypatch):
+    """
+    unit tested: context_attribute
+
+    test case:
+    key cannot be None
+    """
+    sb = subject_builder
+    pytest.raises(IllegalArgumentException, "sb.context_attribute(None)")
+
+
+def test_sb_context_attribute_removes(subject_builder):
+    """
+    unit tested: context_attribute
+
+    test case:
+    passing a key but no value will remove the key from the context
+    """
+    sb = subject_builder
+    assert sb.subject_context.get('attribute1')
+    sb.context_attribute('attribute1')
+    assert sb.subject_context.get('attribute1') is None
 
 # ------------------------------------------------------------------------------
 # DefaultSubjectFactory
