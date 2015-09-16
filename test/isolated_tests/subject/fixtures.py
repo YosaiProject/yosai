@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from yosai import (
     DefaultSubjectContext,
+    DefaultSubjectFactory,
     DefaultSubjectStore,
     DelegatingSubject,
     SimpleIdentifierCollection,
@@ -77,3 +78,7 @@ def subject_builder_context(
 def subject_builder(subject_builder_context):
     return SubjectBuilder(security_utils,
                           **subject_builder_context)
+
+@pytest.fixture(scope='function')
+def default_subject_factory():
+    return DefaultSubjectFactory()

@@ -1455,3 +1455,18 @@ def test_sb_context_attribute_removes(subject_builder):
 # ------------------------------------------------------------------------------
 # DefaultSubjectFactory
 # ------------------------------------------------------------------------------
+
+def test_dsf_create_subject(
+        default_subject_factory, default_subject_context, mock_security_manager,
+        simple_identifier_collection):
+    """
+    unit tested:  create_subject
+
+    test case:
+    returns a new DelegatingSubject instance based on the subject_context arg
+    """
+    default_subject_context.security_manager = mock_security_manager
+    default_subject_context.identifiers = simple_identifier_collection
+    dsf = default_subject_factory
+    result = dsf.create_subject(default_subject_context)
+    assert isinstance(result, DelegatingSubject)
