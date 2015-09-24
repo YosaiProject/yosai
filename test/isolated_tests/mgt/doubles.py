@@ -1,8 +1,9 @@
 from yosai import (
-    mgt_abcs,
+    AbstractRememberMeManager,
 )
 
-class MockRememberMeManager(mgt_abcs.RememberMeManager):
+
+class MockRememberMeManager(AbstractRememberMeManager):
 
     def get_remembered_identifiers(self, subject_context):
         pass
@@ -17,6 +18,12 @@ class MockRememberMeManager(mgt_abcs.RememberMeManager):
         pass
 
     def on_logout(self, subject):
+        pass
+
+    def remember_serialized_identity(subject, serialized):
+        pass
+
+    def get_remembered_serialized_identity(subject_context):
         pass
 
 

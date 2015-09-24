@@ -17,9 +17,6 @@ specific language governing permissions and limitations
 under the License.
 """
 
-within /subject/support:
-    note sure how to port SubjectRunnable, SubjectCallable, SubjectThreadState
-
 there are several methods that make local copies of a mutable parameter and
 I think I haven't accounted for their mutability by making a copy.copy of 
 them
@@ -29,13 +26,6 @@ authc
   `--- authc.py
        interfaces.py
        abstracts.py
-
-Note on Cryptography and Hashing -- Yosai uses Passlib, which aggregates
-the best libraries available for cryptography and 
-Yosai replaces the hash-management "crypto" sub-package in Shiro with 
-the hash management functionality in passlib library,
-which not only handles hash management (as Shiro's crypto subpackage does)
-but also higher-level functionality such as password matching.
 
 It's not yet clear how/where the cacheManager is used by the DefaultAccountCacheHandler.
 The cacheManager is inherited from the AbstractCacheHandler.
@@ -49,7 +39,5 @@ LBYL or EAFP in these circumstances..
 Shiro uses a LinkedHashSet to preserve order
 
 not yet clear as to whether I need to be as concerned about hash codes as Shiro is..(sessions?)
-
-would Colander be useful with serialization?
 
 general rule is to use no more than 1 level of inheritance

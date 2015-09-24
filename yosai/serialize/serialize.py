@@ -92,11 +92,11 @@ class JSONSerializer(serialize_abcs.Serializer):
 
     @classmethod
     def serialize(self, obj):
-        return rapidjson.dumps(obj)
+        return bytes(rapidjson.dumps(obj), 'utf-8')
 
     @classmethod
     def deserialize(self, message):
-        return rapidjson.loads(message)
+        return rapidjson.loads(message, encoding='utf-8')
 
 
 class MSGPackSerializer(serialize_abcs.Serializer):

@@ -247,6 +247,7 @@ from yosai.subject.identifier import (
 
 from yosai.mgt.mgt_settings import(
     DefaultMGTSettings,
+    mgt_settings,
 )
 
 
@@ -260,6 +261,7 @@ from yosai.subject.subject import(
 
 
 from yosai.mgt.mgt import (
+    AbstractRememberMeManager,
     DefaultSecurityManager,
 )
 

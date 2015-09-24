@@ -40,9 +40,6 @@ solution in python
 add eventbus functionality to the ModularRealmAuthorizor, and inject the 
 eventbus from the DefaultSecurityManager into the MRA
 
-implementing the /crypto API, using the cryptography library as its backend
- - this is required to support RememberMe
-
 port mgt/AbstractRememberMeManager and unit test 
 
 write unit tests for remaining /session/session_untested classes, and migrate
@@ -91,5 +88,3 @@ add excessive-login-attempts logic:
 unit test JSON serialization
 
 confirm correct porting of List<...> collections
-
-add versionioning to serialization process:  see 26:30 https://www.youtube.com/watch?v=7KnfGDajDQw

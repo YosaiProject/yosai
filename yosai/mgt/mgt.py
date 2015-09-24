@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 
+from cryptography.exceptions import InvalidToken
 from cryptography.fernet import Fernet
 from abc import ABCMeta, abstractmethod
 import copy
@@ -40,6 +41,7 @@ from yosai import(
     SerializationManager,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
+    mgt_settings,
     mgt_abcs,
     authc_abcs,
     event_abcs,
@@ -103,22 +105,26 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         self.encryption_cipher_key = None
         self.decryption_cipher_key = None
 
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!i!!!!!!!!
         # !!!
         # !!!                    HEY  YOU!
-        # !!! Generate your own key using the instructions above and update
-        # !!! your config file to include it.  The code below references it.
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        self.set_cipher_key(DefaultMGTSettings.default_cipher_key)
+        # !!! Generate your own cipher key using the instructions above and
+        # !!! update your yosai settings file to include it.  The code below
+        # !!! references this key.  Yosai does not include a default key.
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    def set_cipher_key(self, cipher_key):
+        # as default, the encryption key == decryption key:
+        default_key = mgt_settings.default_cipher_key
+
+        self.set_cipher_key(encrypt_key=default_key, decrypt_key=default_key)
+
+    def set_cipher_key(self, encrypt_key, decrypt_key):
         """
         :param cipher_key: the private key used to encrypt and decrypt
         :type cipher_key: a string
         """
-        cipher_key = bytes(cipher_key, 'utf-8')
-        self.encryption_cipher_key = cipher_key
-        self.decryption_cipher_key = cipher_key
+        self.encryption_cipher_key = bytes(encrypt_key, 'utf-8')
+        self.decryption_cipher_key = bytes(decrypt_key, 'utf-8')
 
     @abstractmethod
     def forget_identity(self, subject):
@@ -134,22 +140,18 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
     def is_remember_me(self, authc_token):
         """
         Determines whether remember me services should be performed for the
-        specified token.  This method returns True iff:
-
-        - The authc_token is not None and
-        - The authc_token is an instance of RememberMeAuthenticationToken and
-        - authc_token.is_remember_me is True
+        specified token.
 
         :param authc_token: the authentication token submitted during the
                             successful authentication attempt
         :returns: True if remember me services should be performed as a
                   result of the successful authentication attempt
         """
-
-        return ((authc_token is not None) and
-                (isinstance(authc_token,
-                            authc_abcs.RememberMeAuthenticationToken)) and
-                (authc_token.is_remember_me))
+        # Yosai uses a more implicit check:
+        try:
+            return authc_token.is_remember_me
+        except AttributeError:
+            return False
 
     def on_successful_login(self, subject, authc_token, account):
         """
@@ -214,8 +216,9 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :type identifiers: a serializable IdentifierCollection object
         :returns: a bytestring
         """
-        # convert to bytes in case serialization doesn't do so:
-        return bytes(self.serialization_manager.serialize(identifiers))
+
+        # serializes to bytes by default:
+        return self.serialization_manager.serialize(identifiers)
 
     @abstractmethod
     def remember_serialized_identity(subject, serialized):
@@ -265,20 +268,17 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         If a cipher_service is available, it will be used to first decrypt the
         serialized message.  Then, the bytes are deserialized and returned.
 
-        :param serialized:      the bytes to decrypt if necessary and then
-                                deserialize
+        :param serialized:      the bytes to decrypt and then deserialize
         :param subject_context: the contextual data, usually provided by a
                                 SubjectBuilder implementation, that is being
                                 used to construct a Subject instance
-        :returns: the de-serialized and possibly decrypted identifiers
+        :returns: the de-serialized identifiers
         """
-        # if may not be decrypted, so try but if fails continue
-        try:
-            serialized = self.decrypt(serialized)
-        except:
-            pass
 
-        return self.serialization_manager.deserialize(serialized)
+        # unlike Shiro, Yosai assumes that the message is encrypted:
+        decrypted = self.decrypt(serialized)
+
+        return self.serialization_manager.deserialize(decrypted)
 
     def on_remembered_principal_failure(self, exc, subject_context):
         """
