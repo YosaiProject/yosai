@@ -216,7 +216,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :param account: the account resulting from the successful authentication attempt
         :returns: the IdentifierCollection to remember
         """
-        return account.principals
+        return account.identifiers
 
     def convert_identifiers_to_bytes(self, identifiers):
         """
@@ -246,13 +246,13 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         identifiers = None
         try:
             serialized = self.get_remembered_serialized_identity(subject_context)
-
             if serialized:
                 identifiers = self.convert_bytes_to_identifiers(identifiers,
                                                                 subject_context)
         except Exception as ex:
             identifiers = \
                 self.on_remembered_identifier_failure(ex, subject_context)
+
         return identifiers
 
     @abstractmethod
@@ -290,9 +290,9 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
         return self.serialization_manager.deserialize(decrypted)
 
-    def on_remembered_principal_failure(self, exc, subject_context):
+    def on_remembered_identifier_failure(self, exc, subject_context):
         """
-        Called when an exception is thrown while trying to retrieve principals.
+        Called when an exception is thrown while trying to retrieve identifiers.
         The default implementation logs a debug message and forgets ('unremembers')
         the problem identity by calling forget_identity(subject_context) and
         then immediately re-raises the exception to allow the calling
@@ -312,8 +312,8 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :raises:  the original Exception passed is propagated in all cases
         """
         msg = ("There was a failure while trying to retrieve remembered "
-               "principals.  This could be due to a configuration problem or "
-               "corrupted principals.  This could also be due to a recently "
+               "identifiers.  This could be due to a configuration problem or "
+               "corrupted identifiers.  This could also be due to a recently "
                "changed encryption key.  The remembered identity will be "
                "forgotten and not used for this request.", exc)
         print(msg)

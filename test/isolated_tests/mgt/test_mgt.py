@@ -1,5 +1,6 @@
 import pytest
 from unittest import mock
+from cryptography.fernet import Fernet
 
 from yosai import (
     AuthenticationException,
@@ -11,6 +12,7 @@ from yosai import (
     DeleteSubjectException,
     IllegalArgumentException,
     ModularRealmAuthorizer,
+    SerializationManager,
     UsernamePasswordToken,
     cache_abcs,
     authc_abcs,
@@ -1385,7 +1387,9 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
         pytest.raises(IllegalArgumentException,
                       "mrmm.remember_identity('subject', identifiers=None, account=None)")
 
-# def test_armm_remember_identity_wo_identitiersarg(mock_remember_me_manager):
+
+def test_armm_remember_identity_wo_identitiersarg(
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  remember_identity
 
@@ -1394,10 +1398,23 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     - calls remember_serialized_identity using serialized identifier collection
       and subject
     """
-    pass
+    mrmm = mock_remember_me_manager
+
+    monkeypatch.setattr(mrmm, 'get_identity_to_remember', lambda x,y: 'identifiers')
+
+    with mock.patch.object(MockRememberMeManager, 'convert_identifiers_to_bytes') as citb:
+        citb.return_value = 'serialized'
+
+        with mock.patch.object(MockRememberMeManager, 'remember_serialized_identity') as rsi:
+            rsi.return_value = None
+
+            mrmm.remember_identity('subject', identifiers=None, account='account')
+
+            citb.assert_called_once_with('identifiers')
+            rsi.assert_called_once_with('subject', 'serialized')
 
 
-# def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
+def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
     """
     unit tested:  remember_identity
 
@@ -1405,31 +1422,74 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     calls remember_serialized_identity using serialized identifier collection and
     subject
     """
-    pass
+    mrmm = mock_remember_me_manager
+
+    with mock.patch.object(MockRememberMeManager,
+                           'convert_identifiers_to_bytes') as citb:
+        citb.return_value = 'serialized'
+
+        with mock.patch.object(MockRememberMeManager,
+                               'remember_serialized_identity') as rsi:
+            rsi.return_value = None
+
+            mrmm.remember_identity('subject',
+                                   identifiers='identifiers',
+                                   account='account')
+
+            citb.assert_called_once_with('identifiers')
+            rsi.assert_called_once_with('subject', 'serialized')
+
+def test_armm_get_identity_to_remember(
+        mock_remember_me_manager, full_mock_account):
+    """
+    unit tested:  get_identity_to_remember
+
+    test case:
+    returns account.identifiers
+    """
+    mrmm = mock_remember_me_manager
+    result = mrmm.get_identity_to_remember('subject', full_mock_account)
+    assert result == full_mock_account.identifiers
 
 
-# def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager):
+def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager):
     """
     unit tested:  convert_identifiers_to_bytes
 
     test case:
     returns a byte string encoded serialized identifiers collection
     """
-    pass
+    mrmm = mock_remember_me_manager
+    with mock.patch.object(SerializationManager, 'serialize') as sm_ser:
+        sm_ser.return_value = 'serialized'
+        result = mrmm.convert_identifiers_to_bytes('identifiers')
+        sm_ser.assert_called_once_with('identifiers')
 
 
-# def test_armm_get_remembered_identifiers_raises(mock_remember_me_manager):
+def test_armm_get_remembered_identifiers_raises(
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  get_remembered_identifiers
 
     test case:
     - get_remembered_serialized_identity raises an exception
         - on_remembered_identifier_failure is called as a result
-    - None is returned
+    - backup identifiers from o.r.i.f are returned
     """
+    mrmm = mock_remember_me_manager
+
+    monkeypatch.setattr(mrmm, 'on_remembered_identifier_failure',
+                        lambda x, y: 'identifiers')
+
+    with mock.patch.object(MockRememberMeManager,
+                           'get_remembered_serialized_identity') as grsi:
+        grsi.side_effect = AttributeError
+        result = mrmm.get_remembered_identifiers('subject_context')
+        assert result == 'identifiers'
 
 
-# def test_armm_get_remembered_identifiers_serialized(mock_remember_me_manager):
+def test_armm_get_remembered_identifiers_serialized(
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  get_remembered_identifiers
 
@@ -1437,62 +1497,114 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     - obtains a remembered serialized identitifiers
     - returns deserialized identitifiers
     """
+    mrmm = mock_remember_me_manager
+
+    monkeypatch.setattr(mrmm, 'convert_bytes_to_identifiers',
+                        lambda x, y: 'identifiers')
+
+    with mock.patch.object(MockRememberMeManager,
+                           'get_remembered_serialized_identity') as grsi:
+        grsi.return_value = 'serialized_identity'
+        result = mrmm.get_remembered_identifiers('subject_context')
+        assert result == 'identifiers'
 
 
-# def test_armm_convert_bytes_to_identifiers(mock_remember_me_manager):
+def test_armm_convert_bytes_to_identifiers(
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  convert_bytes_to_identifiers
 
     test case:
     first calls decrypt method and then returns deserialized object
     """
-    pass
+    mrmm = mock_remember_me_manager
+
+    monkeypatch.setattr(mrmm, 'decrypt', lambda x: 'decrypted')
+
+    with mock.patch.object(SerializationManager, 'deserialize') as sm_deserialize:
+        sm_deserialize.return_value = 'deserialized'
+        result = mrmm.convert_bytes_to_identifiers('serialized', 'subject_context')
+        sm_deserialize.assert_called_with('decrypted')
+        assert result == 'deserialized'
 
 
-#def test_armm_on_remembered_principal_failure(mock_remember_me_manager):
+def test_armm_on_remembered_identifier_failure(mock_remember_me_manager):
     """
-    unit tested:  on_remembered_principal_failure
+    unit tested:  on_remembered_identifier_failure
 
     test case:
     logs, calls forget_identity, and then propagates the exception
     """
-    pass
+    mrmm = mock_remember_me_manager
+    exc = AttributeError()
+    with mock.patch.object(MockRememberMeManager, 'forget_identity') as fi:
+        fi.return_value = None
+        with pytest.raises(AttributeError):
+            mrmm.on_remembered_identifier_failure(exc, 'subject_context')
+            fi.assert_called_once_with('subject_context')
 
 
-#def test_armm_encrypt(mock_remember_me_manager):
+def test_armm_encrypt(mock_remember_me_manager, monkeypatch):
     """
     unit tested:  encrypt
 
     test case:
     passes call to fernet.encrypt
     """
-    pass
+    mrmm = mock_remember_me_manager
+    key = Fernet.generate_key()
+    monkeypatch.setattr(mrmm, 'encryption_cipher_key', key)
+    with mock.patch.object(Fernet, 'encrypt') as fernet_encrypt:
+        fernet_encrypt.return_value = 'encrypted'
+        result = mrmm.encrypt('serialized')
+        fernet_encrypt.assert_called_once_with('serialized')
+        assert result == 'encrypted'
 
 
-# def test_armm_decrypt(mock_remember_me_manager):
+def test_armm_decrypt(mock_remember_me_manager, monkeypatch):
     """
     unit tested:  decrypt
 
     test case:
     passes call to fernet.decrypt
     """
-    pass
+    mrmm = mock_remember_me_manager
+    key = Fernet.generate_key()
+    monkeypatch.setattr(mrmm, 'decryption_cipher_key', key)
+    with mock.patch.object(Fernet, 'decrypt') as fernet_decrypt:
+        fernet_decrypt.return_value = 'decrypted'
+        result = mrmm.decrypt('serialized')
+        fernet_decrypt.assert_called_once_with('serialized')
+        assert result == 'decrypted'
 
-# def test_armm_on_failed_login(mock_remember_me_manager):
+
+def test_armm_on_failed_login(mock_remember_me_manager):
     """
     unit tested:  on_failed_login
 
     test case:
     calls forget_identity
     """
-    pass
+    mrmm = mock_remember_me_manager
+    with mock.patch.object(MockRememberMeManager, 'forget_identity') as fi:
+        fi.return_value = None
+
+        mrmm.on_failed_login('subject', 'token', 'exception')
+
+        fi.assert_called_once_with('subject')
 
 
-# def test_armm_on_logout(mock_remember_me_manager):
+def test_armm_on_logout(mock_remember_me_manager):
     """
     unit tested:  on_logout
 
     test case:
     calls forget_identity
     """
-    pass
+    mrmm = mock_remember_me_manager
+    with mock.patch.object(MockRememberMeManager, 'forget_identity') as fi:
+        fi.return_value = None
+
+        mrmm.on_logout('subject')
+
+        fi.assert_called_once_with('subject')
