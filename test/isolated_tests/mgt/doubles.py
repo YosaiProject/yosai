@@ -11,9 +11,6 @@ class MockRememberMeManager(AbstractRememberMeManager):
     def forget_identity(self, subject_context):
         pass
 
-    def on_successful_login(self, subject, authc_token, account):
-        pass
-
     def on_failed_login(self, subject, token, auth_exc):
         pass
 

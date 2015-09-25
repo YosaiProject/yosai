@@ -1329,36 +1329,61 @@ def test_armm_is_remember_me(mock_remember_me_manager, authc_token, expected):
     assert result == expected
 
 
-# def test_armm_on_successful_login_isrememberme(mock_remember_me_manager):
+def test_armm_on_successful_login_isrememberme(
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  on_successful_login
 
     test case:
     the subject identity is forgotten and then remembered
     """
-    pass
+    mrmm = mock_remember_me_manager
+    monkeypatch.setattr(mrmm, 'is_remember_me', lambda x: True)
+
+    with mock.patch.object(MockRememberMeManager, 'forget_identity') as mrmm_fi:
+        mrmm_fi.return_value = None
+
+        with mock.patch.object(MockRememberMeManager, 'remember_identity') as mrmm_ri:
+            mrmm_ri.return_value = None
+            mrmm.on_successful_login('subject', 'authc_token', 'account')
+            mrmm_fi.assert_called_once_with('subject')
+            mrmm_ri.assert_called_once_with('subject', 'authc_token', 'account')
 
 
-# def test_armm_on_successful_login_isnotrememberme(mock_remember_me_manager):
+def test_armm_on_successful_login_isnotrememberme(
+        mock_remember_me_manager, monkeypatch, capsys):
     """
     unit tested:  on_successful_login
 
     test case:
     the subject identity is forgotten and then debug output is printed
     """
-    pass
+    mrmm = mock_remember_me_manager
+    monkeypatch.setattr(mrmm, 'is_remember_me', lambda x: False)
+
+    with mock.patch.object(MockRememberMeManager, 'forget_identity') as mrmm_fi:
+        mrmm_fi.return_value = None
+
+        mrmm.on_successful_login('subject', 'authc_token', 'account')
+        out, err = capsys.readouterr()
+
+        mrmm_fi.assert_called_once_with('subject')
+        assert "AuthenticationToken did not indicate" in out
 
 
-# def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
+def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     """
     unit tested:  remember_identity
 
     test case:
-    if identifiers cannot be obtained as an argument nor through calling
-    get_identity_to_remember, an exception is raised
+    if identifiers cannot be obtained as an argument, and when calling
+    get_identity_to_remember an exception is raised, an exception is raised
     """
-    pass
-
+    mrmm = mock_remember_me_manager
+    with mock.patch.object(MockRememberMeManager, 'get_identity_to_remember') as gitr:
+        gitr.side_effect = AttributeError
+        pytest.raises(IllegalArgumentException,
+                      "mrmm.remember_identity('subject', identifiers=None, account=None)")
 
 # def test_armm_remember_identity_wo_identitiersarg(mock_remember_me_manager):
     """

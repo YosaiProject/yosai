@@ -208,6 +208,16 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         serialized = self.convert_identifiers_to_bytes(identifiers)
         self.remember_serialized_identity(subject, serialized)
 
+    def get_identity_to_remember(self, subject, account):
+        """
+        Returns the account's identifiers and ignores the subject argument
+
+        :param subject: the subject whose identifiers are remembered
+        :param account: the account resulting from the successful authentication attempt
+        :returns: the IdentifierCollection to remember
+        """
+        return account.principals
+
     def convert_identifiers_to_bytes(self, identifiers):
         """
         Encryption requires a binary type as input, so this method converts
