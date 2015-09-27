@@ -53,9 +53,9 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
     Requires two (marshmallow) Schemas:
         1) the default SerializationSchema 
         2) AccountCredentialsSchema:
-            - its make_object method should return a newly populated dict
+            - its @post_load make_object method should return a newly populated dict
         3) AccountAttributesSchema:  
-            - its make_object method should return a newly populated dict
+            - its @post_load make_object method should return a newly populated dict
     """ 
 
     @property 

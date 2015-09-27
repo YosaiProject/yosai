@@ -27,7 +27,7 @@ class Serializable(metaclass=ABCMeta):
     def serialization_schema(cls):
         """
         Each serializable class must define its respective Schema (marshmallow)
-        and its make_object method.
+        and its @post_load 'make_object' method.
 
         :returns: a SerializationSchema class
         """

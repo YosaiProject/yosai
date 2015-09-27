@@ -21,7 +21,7 @@ import datetime
 import threading
 import time
 from abc import ABCMeta, abstractmethod
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load
 
 from yosai import (
     AbstractMethodException,
@@ -53,7 +53,7 @@ from abc import abstractmethod
 
 class AbstractSessionStore(session_abcs.SessionStore):
     """
-    An abstract SessionStore implementation that performs some sanity checks on
+    An abstract SessionStore implementation performs some sanity checks on
     session creation and reading and allows for pluggable Session ID generation
     strategies if desired.  The SessionStore.update and SessionStore.delete method
     implementations are left to subclasses.
@@ -432,7 +432,7 @@ class ImmutableProxiedSession(ProxiedSession):
 class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable):
 
     # Yosai omits:
-    #    - the manual class version control process (too policy-reliant)
+    #    - the manually-managed class version control process (too policy-reliant)
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
     def __init__(self, host=None):
@@ -690,7 +690,7 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
             return self.attributes.pop(key, None)
 
     # deleted on_equals as it is unecessary in python
-    # deleted hashcode method as python's __hash__ is fine
+    # deleted hashcode method as python's __hash__ may be fine -- TBD!
 
     # omitting the bit-flagging methods:
     #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
@@ -712,7 +712,8 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
         #  attribute1 = fields.Str()
         pass
 
-        def make_object(self, data):
+        @post_load
+        def make_ss_attributes(self, data):
             return dict(data)
 
     @classmethod
@@ -726,9 +727,15 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
             absolute_timeout = fields.TimeDelta()
             is_expired = fields.Boolean()
             host = fields.Str()
-            attributes = fields.Nested(cls.SimpleSessionAttributesSchema)
 
-            def make_object(self, data):
+            # NOTE:  After you've defined your SimpleSessionAttributesSchema,
+            #        the Raw() fields assignment below should be replaced by
+            #        the Schema line that follows it
+            attributes = fields.Raw()
+            # attributes = fields.Nested(cls.SimpleSessionAttributesSchema)
+
+            @post_load
+            def make_simple_session(self, data):
                 mycls = SimpleSession
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)

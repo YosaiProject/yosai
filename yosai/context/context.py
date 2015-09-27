@@ -21,7 +21,7 @@ from yosai import (
     serialize_abcs,
     IllegalArgumentException,
 )
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load
 
 
 class MapContext(serialize_abcs.Serializable):
@@ -106,7 +106,8 @@ class MapContext(serialize_abcs.Serializable):
         # Define key/value here for the dictionary
         pass
 
-        def make_object(self, data):
+        @post_load
+        def make_context(self, data):
             return dict(data)
 
     @classmethod
@@ -114,7 +115,8 @@ class MapContext(serialize_abcs.Serializable):
         class SerializationSchema(Schema):
             context = fields.Nested(cls.ContextSchema)
 
-            def make_object(self, data):
+            @post_load
+            def make_mapcontext(self, data):
                 mycls = MapContext
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)

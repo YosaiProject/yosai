@@ -24,7 +24,7 @@ from yosai import (
     authc_abcs,
 )
 
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load
 
 
 class DefaultCompositeAccountId(authc_abcs.CompositeAccountId):
@@ -110,7 +110,8 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
         class SerializationSchema(Schema):
             pass  # TBD
 
-            def make_object(self):
+            @post_load
+            def make_dc_accountid(self):
                 pass  # TBD
 
         return SrializationSchema

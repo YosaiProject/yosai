@@ -22,7 +22,7 @@ from yosai import (
     serialize_abcs,
     subject_abcs,
 )
-from marshmallow import Schema, fields, post_dump, pre_load
+from marshmallow import Schema, fields, post_dump, pre_load, post_load
 import copy
 
 class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
@@ -128,7 +128,8 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             # use Raw only until you convert to a concrete schema (be sure to)
             realm_identifiers = fields.Raw()
 
-            def make_object(self, data):
+            @post_load
+            def make_simple_identifier_collection(self, data):
                 mycls = SimpleIdentifierCollection
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)

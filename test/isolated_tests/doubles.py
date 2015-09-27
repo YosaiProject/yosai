@@ -12,7 +12,7 @@ from yosai import (
     subject_abcs,
 )
 
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, post_load
 import datetime
 
 
@@ -184,7 +184,8 @@ class MockAccount(account_abcs.Account):
             credentials = fields.Nested(cls.AccountCredentialsSchema)
             identifiers = fields.Nested(cls.AccountAttributesSchema)
 
-            def make_object(self, data):
+            @post_load
+            def make_account(self, data):
                 mycls = MockAccount
                 instance = mycls.__new__(cls)
                 instance.__dict__.update(data)
@@ -196,7 +197,8 @@ class MockAccount(account_abcs.Account):
         password = fields.Str()
         api_key_secret = fields.Str()
 
-        def make_object(self, data):
+        @post_load
+        def make_account_credentials(self, data):
             return dict(data)
 
     class AccountAttributesSchema(Schema):
@@ -206,7 +208,8 @@ class MockAccount(account_abcs.Account):
         username = fields.Str()
         api_key_id = fields.Str()
 
-        def make_object(self, data):
+        @post_load
+        def make_acct_attributes(self, data):
             return dict(data)
 
 
