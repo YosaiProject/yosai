@@ -1,5 +1,6 @@
 import pytest
 import msgpack
+import datetime
 from unittest import mock
 
 from .doubles import (
@@ -165,26 +166,57 @@ def test_serializable_deserialize():
 # Serializable Tests
 # ----------------------------------------------------------------------------
 
-def test_serializable_serializes(serializable_classes):
-"""
-unit tested:  deserialize
+def test_confirm_serializables_tested(
+        serializable_classes, serializeds):
+    """
+    unit tested:  N/A
 
-test case:
-    converts a serialized object to a deserialized object instance
-    according to its Schema specifications (marshmallow)
-"""
+    test case:
+    confirms that every Serializable class in Yosai is unit tested
+    """
+    eligible = set(serializable_classes.keys())
+    actual = set([x['serialized_cls'] for x in serializeds])
+    assert eligible == actual
 
 
-"""
-unit tested:  serialize
+def test_deserialize(serializable_classes, serializeds):
+    """
+    unit tested:  deserialize
+
+    test case:
+        converts a serialized object to a deserialized object instance
+        according to its Schema specifications (marshmallow) and then
+        confirms that all attributes are accounted for in new instance
+    """
+    sc = serializable_classes
+
+    for serialized in serializeds:
+        alleged_class = serialized['serialized_cls']
+        klass = sc.get(alleged_class)
+        deserialized = klass.deserialize(serialized)
+        for attribute, value in serialized.items():
+            if attribute not in ('serialized_cls', 'serialized_record_dt',
+                                 'serialized_dist_version') and value is not None:
+                assert hasattr(deserialized, attribute)
+
+
+def test_serialize(serializable_classes, serializeds):
+    """
+    unit tested:  serialize
+
+    test case:
     serializes an object according to its Schema specifications (marshmallow)
-"""
+    and confirms that all serialized attributes are accounted for
+    """
+    sc = serializable_classes
 
-# SimpleSession
-# DelegatingSession
-# DefaultSessionKey
-# SimpleAccount
-# MapContext
-# SimpleRole
-# AllPermission
-# WildcardPermission
+    for serialized in serializeds:
+        alleged_class = serialized['serialized_cls']
+        klass = sc.get(alleged_class)
+        deserialized = klass.deserialize(serialized)
+        reserialized = deserialized.serialize()
+
+        for attribute, value in serialized.items():
+            if attribute not in ('serialized_cls', 'serialized_record_dt',
+                                 'serialized_dist_version') and value is not None:
+            assert attribute in reserialized.keys()

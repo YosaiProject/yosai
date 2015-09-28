@@ -546,7 +546,10 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
 
     @property
     def stop_timestamp(self):
+        if not hasattr(self, '_stop_timestamp'):
+            self._stop_timestamp = None
         return self._stop_timestamp
+
 
     @stop_timestamp.setter
     def stop_timestamp(self, stop_ts):
@@ -703,8 +706,13 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
         return result
 
     def __repr__(self):
-        return "SimpleSession(start_timestamp={0}, last_access_time={1})".\
-            format(self.start_timestamp, self.last_access_time)
+        return ("SimpleSession(session_id: {0}, start_timestamp: {1}, "
+                "stop_timestamp: {2}, last_access_time: {3},"
+                "idle_timeout: {4}, absolute_timeout: {5}, is_expired: {6},"
+                "host: {7})".format(self.session_id, self.start_timestamp,
+                                  self.stop_timestamp, self.last_access_time,
+                                  self.idle_timeout, self.absolute_timeout,
+                                  self.is_expired, self.host))
 
     class SimpleSessionAttributesSchema(Schema):
         # Define key/value here for the attributes dictionary
@@ -719,14 +727,14 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
     @classmethod
     def serialization_schema(cls):
         class SerializationSchema(Schema):
-            session_id = fields.Str()
-            start_timestamp = fields.DateTime()  # iso is default
-            stop_timestamp = fields.DateTime()  # iso is default
-            last_access_time = fields.DateTime()  # iso is default
-            idle_timeout = fields.TimeDelta()
-            absolute_timeout = fields.TimeDelta()
-            is_expired = fields.Boolean()
-            host = fields.Str()
+            _session_id = fields.Str()
+            _start_timestamp = fields.DateTime()  # iso is default
+            _stop_timestamp = fields.DateTime()  # iso is default
+            _last_access_time = fields.DateTime()  # iso is default
+            _idle_timeout = fields.TimeDelta()
+            _absolute_timeout = fields.TimeDelta()
+            _is_expired = fields.Boolean()
+            _host = fields.Str()
 
             # NOTE:  After you've defined your SimpleSessionAttributesSchema,
             #        the Raw() fields assignment below should be replaced by
