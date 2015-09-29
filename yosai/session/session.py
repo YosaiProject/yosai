@@ -710,9 +710,9 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
                 "stop_timestamp: {2}, last_access_time: {3},"
                 "idle_timeout: {4}, absolute_timeout: {5}, is_expired: {6},"
                 "host: {7})".format(self.session_id, self.start_timestamp,
-                                  self.stop_timestamp, self.last_access_time,
-                                  self.idle_timeout, self.absolute_timeout,
-                                  self.is_expired, self.host))
+                                    self.stop_timestamp, self.last_access_time,
+                                    self.idle_timeout, self.absolute_timeout,
+                                    self.is_expired, self.host))
 
     class SimpleSessionAttributesSchema(Schema):
         # Define key/value here for the attributes dictionary
@@ -773,6 +773,8 @@ class DelegatingSession(session_abcs.Session):
     as might be the case in a web-based application where the web classes
     and server-side business objects exist in the same namespace, a remote
     method call will not be incurred.
+
+    Note:  Shiro makes DelegatingSession Serializable where as Yosai doesn't
     """
 
     def __init__(self, session_manager, key):
@@ -841,6 +843,15 @@ class DelegatingSession(session_abcs.Session):
 
     def remove_attribute(self, attribute_key):
         return self.session_manager.remove_attribute(self.key, attribute_key)
+
+    def __repr__(self):
+        return ("DelegatingSubject(session_id: {0}, start_timestamp: {1}, "
+                "stop_timestamp: {2}, last_access_time: {3},"
+                "idle_timeout: {4}, absolute_timeout: {5}, host: {6}, "
+                "key: {7})".format(self.session_id, self.start_timestamp,
+                                   self.stop_timestamp, self.last_access_time,
+                                   self.idle_timeout, self.absolute_timeout,
+                                   self.host, self.key))
 
 
 class DefaultSessionKey(session_abcs.SessionKey):

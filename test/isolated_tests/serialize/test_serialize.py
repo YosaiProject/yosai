@@ -179,44 +179,23 @@ def test_confirm_serializables_tested(
     assert eligible == actual
 
 
-def test_deserialize(serializable_classes, serializeds):
+def test_serialization_schemas(serializable_classes, serialized):
     """
-    unit tested:  deserialize
+    unit tested:  deserialize and serialize (entire serialization process)
 
     test case:
-        converts a serialized object to a deserialized object instance
-        according to its Schema specifications (marshmallow) and then
-        confirms that all attributes are accounted for in new instance
+    - this validates each serialization Schema
+    - serializes an object according to its Schema specifications (marshmallow)
+      and confirms that the expected serialized attributes are accounted for
     """
     sc = serializable_classes
 
-    for serialized in serializeds:
-        alleged_class = serialized['serialized_cls']
-        klass = sc.get(alleged_class)
-        deserialized = klass.deserialize(serialized)
-        for attribute, value in serialized.items():
-            if attribute not in ('serialized_cls', 'serialized_record_dt',
-                                 'serialized_dist_version') and value is not None:
-                assert hasattr(deserialized, attribute)
+    alleged_class = serialized['serialized_cls']
+    klass = sc.get(alleged_class)
+    deserialized = klass.deserialize(serialized)
+    reserialized = deserialized.serialize()
 
-
-def test_serialize(serializable_classes, serializeds):
-    """
-    unit tested:  serialize
-
-    test case:
-    serializes an object according to its Schema specifications (marshmallow)
-    and confirms that all serialized attributes are accounted for
-    """
-    sc = serializable_classes
-
-    for serialized in serializeds:
-        alleged_class = serialized['serialized_cls']
-        klass = sc.get(alleged_class)
-        deserialized = klass.deserialize(serialized)
-        reserialized = deserialized.serialize()
-
-        for attribute, value in serialized.items():
-            if attribute not in ('serialized_cls', 'serialized_record_dt',
-                                 'serialized_dist_version') and value is not None:
+    for attribute, value in serialized.items():
+        if attribute not in ('serialized_cls', 'serialized_record_dt',
+                             'serialized_dist_version') and value is not None:
             assert attribute in reserialized.keys()

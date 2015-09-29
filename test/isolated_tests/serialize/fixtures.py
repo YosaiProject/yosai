@@ -44,10 +44,41 @@ def serialized_simple_session():
 
 
 @pytest.fixture(scope='function')
-def serializeds(serialized_simple_session):
-    return [serialized_simple_session]
+def serialized_simple_identifier_collection():
+    return {'serialized_cls': 'SimpleIdentifierCollection',
+            'serialized_dist_version': '0.1.0',
+            'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+            'realm_identifiers': {'realm1': ['identifier1', 'identifier2'],
+                                  'realm2': ['identifier1', 'identifier2']}}
 
-# SimpleSession
+@pytest.fixture(scope='function',
+                params= [{'serialized_cls': 'SimpleSession',
+                          'serialized_dist_version': '0.1.0',
+                          'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+                          '_session_id': 'sessionid123',
+                          '_start_timestamp': '2015-09-28T11:37:05.446732+00:00',
+                          '_stop_timestamp': None,
+                          '_last_access_time': '2015-09-28T11:39:00.000000+00:00',
+                          '_idle_timeout': 900,
+                          '_absolute_timeout': 1800,
+                          '_is_expired': False,
+                          '_host': '127.0.0.1'},
+                         {'serialized_cls': 'SimpleIdentifierCollection',
+                          'serialized_dist_version': '0.1.0',
+                          'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+                          'realm_identifiers': {'realm1': ['identifier1', 'identifier2'],
+                                                'realm2': ['identifier1', 'identifier2']}}])
+def serialized(request):
+    return request.param
+
+
+@pytest.fixture(scope='function')
+def serializeds(serialized_simple_session,
+                serialized_simple_identifier_collection):
+    return [serialized_simple_session,
+            serialized_simple_identifier_collection]
+
+
 # DelegatingSession
 # DefaultSessionKey
 # SimpleAccount
