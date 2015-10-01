@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -18,7 +18,7 @@ under the License.
 """
 
 from yosai import (
-    AuthorizationException, 
+    AuthorizationException,
     HostUnauthorizedException,
     IllegalArgumentException,
     IllegalStateException,
@@ -27,6 +27,7 @@ from yosai import (
     UnauthenticatedException,
     UnauthorizedException,
     authz_abcs,
+    serialize_abcs,
 )
 
 import copy
@@ -39,10 +40,10 @@ class AllPermission:
         pass
 
     def implies(self, permission):
-        return True 
+        return True
 
 
-class WildcardPermission:
+class WildcardPermission(serialize_abcs.Serializable):
     """
     The standardized permission wildcard syntax is:  DOMAIN:ACTION:INSTANCE
 
@@ -54,17 +55,17 @@ class WildcardPermission:
     WILDCARD_TOKEN = '*'
     PART_DIVIDER_TOKEN = ':'
     SUBPART_DIVIDER_TOKEN = ','
-    DEFAULT_CASE_SENSITIVE = False 
+    DEFAULT_CASE_SENSITIVE = False
 
-    def __init__(self, wildcard_string=None, 
+    def __init__(self, wildcard_string=None,
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
 
         self.case_sensitive = case_sensitive
-        self.parts = collections.OrderedDict() 
+        self.parts = {}
         if wildcard_string:
             self.set_parts(wildcard_string, case_sensitive)
-                  
-    def set_parts(self, wildcard_string, 
+
+    def set_parts(self, wildcard_string,
                   case_sensitive=DEFAULT_CASE_SENSITIVE):
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
@@ -81,25 +82,27 @@ class WildcardPermission:
             print(msg)
             raise IllegalArgumentException(msg)
 
-        if (not self.case_sensitive): 
+        if (not self.case_sensitive):
             wildcard_string = wildcard_string.lower()
 
         parts = wildcard_string.split(self.PART_DIVIDER_TOKEN)
-       
+
         part_indices = {0: 'domain', 1: 'actions', 2: 'targets'}
 
         for index, part in enumerate(parts):
-            if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part): 
+            if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part):
                 msg = ("Wildcard string cannot contain parts consisting JUST "
                        "of sub-part dividers. Make sure permission strings "
                        "are properly formatted.")
                 print(msg)
                 raise IllegalArgumentException(msg)
             subparts = part.split(self.SUBPART_DIVIDER_TOKEN)
-            # default key is the index value -- this should NOT set under
-            # normal, expected behavior
-            myindex = part_indices.get(index, index)
-            self.parts[myindex] = OrderedSet()
+            myindex = part_indices.get(index)
+
+            # NOTE:  Shiro uses LinkedHashSet objects to maintain order and
+            #        Uniqueness. Unlike Shiro, Yosai disregards order as it
+            #        presents seemingly unecessary additional overhead (TBD)
+            self.parts[myindex] = set()
             for sp in subparts:
                 self.parts[myindex].add(sp)
 
@@ -110,51 +113,71 @@ class WildcardPermission:
         # By default only supports comparisons with other WildcardPermissions
         if (not isinstance(permission, WildcardPermission)):
             return False
-       
-        myparts = [token for token in 
+
+        myparts = [token for token in
                    [self.parts.get('domain', None),
                     self.parts.get('actions', None),
-                    self.parts.get('targets', None)] if token] 
+                    self.parts.get('targets', None)] if token]
 
-        otherparts = [token for token in 
+        otherparts = [token for token in
                       [permission.parts.get('domain', None),
                        permission.parts.get('actions', None),
-                       permission.parts.get('targets', None)] if token] 
+                       permission.parts.get('targets', None)] if token]
 
         index = 0
 
         for other_part in otherparts:
             # If this permission has less parts than the other permission,
-            # everything after the number of parts contained in this 
+            # everything after the number of parts contained in this
             # permission is automatically implied, so return true
             if (len(myparts) - 1 < index):
                 return True
-            else: 
+            else:
                 part = myparts[index]  # each subpart is an OrderedSet
                 if ((self.WILDCARD_TOKEN not in part) and
                    not (other_part <= part)):  # not(part contains otherpart)
                     return False
                 index += 1
-                
-        # If this permission has more parts than the other parts, 
+
+        # If this permission has more parts than the other parts,
         # only imply it if all of the other parts are wildcards
         for i in range(index, len(myparts)):
-            if (self.WILDCARD_TOKEN not in myparts[i]): 
+            if (self.WILDCARD_TOKEN not in myparts[i]):
                 return False
 
         return True
 
-    def __repr__(self): 
+    def __repr__(self):
         return ':'.join([str(value) for key, value in self.parts.items()])
 
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
             return self.parts == other.parts
-        
+
         return False
 
     def hash_code(self):
         return id(self.parts)
+
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+
+            @post_load
+            def make_wildcard_permission(self, data):
+                mycls = WildcardPermission
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+                return instance
+
+            # prior to serialization, must convert an OrderedDict to serializable
+            # primitives-- OrderedDicts aren't supported by marshmallow
+            @post_dump
+
+            @pre_load
+
+        return SerializationSchema
+
 
 
 class WildcardPermissionResolver:
@@ -169,10 +192,10 @@ class DomainPermission(WildcardPermission):
     """
     note:  Yosai significantly refactored DomainPermission
 
-    Provides a base Permission class from which domain-specific subclasses 
+    Provides a base Permission class from which domain-specific subclasses
     may extend.  Can be used as a base class for ORM-persisted (SQLAlchemy)
-    permission model(s).  The ORM model maps the parts of a permission 
-    string to separate table columns (e.g. 'domain', 'actions' and 'targets' 
+    permission model(s).  The ORM model maps the parts of a permission
+    string to separate table columns (e.g. 'domain', 'actions' and 'targets'
     columns) and is subsequently used in querying strategies.
     """
     def __init__(self, actions=None, targets=None):
@@ -199,18 +222,18 @@ class DomainPermission(WildcardPermission):
     @domain.setter
     def domain(self, inst):
         self._domain = self.get_domain(inst.__class__)
-        self.set_parts(domain=self._domain, 
+        self.set_parts(domain=self._domain,
                        actions=getattr(self, '_actions', None),
                        targets=getattr(self, '_targets', None))
-   
+
     @property
     def actions(self):
         return self._actions
 
     @actions.setter
     def actions(self, actions):
-        self.set_parts(domain=self._domain, 
-                       actions=actions, 
+        self.set_parts(domain=self._domain,
+                       actions=actions,
                        targets=getattr(self, '_targets', None))
         self._actions = self.parts.get('actions', None)
 
@@ -220,7 +243,7 @@ class DomainPermission(WildcardPermission):
 
     @targets.setter
     def targets(self, targets):
-        self.set_parts(domain=self._domain, 
+        self.set_parts(domain=self._domain,
                        actions=getattr(self, '_actions', None),
                        targets=targets)
         self._targets = self.parts.get('targets', None)
@@ -235,19 +258,20 @@ class DomainPermission(WildcardPermission):
         :type targets: a subpart-delimeted str
         """
 
-        # Yosai sets None to Wildcard 
+        # Yosai sets None to Wildcard
         permission = self.PART_DIVIDER_TOKEN.join(
             x if x is not None else self.WILDCARD_TOKEN
             for x in [domain, actions, targets])
 
-        return permission 
-    
+        return permission
+
+    # overrides WildcardPermission.set_parts:
     def set_parts(self, domain, actions, targets):
         """
-        Shiro uses method overloading to determine as to whether to call 
+        Shiro uses method overloading to determine as to whether to call
         either this set_parts or that of the parent WildcardPermission.  The
         closest that I will accomodate that design is with default parameter
-        values and the first condition below.  
+        values and the first condition below.
 
         The control flow is as follow:
             If wildcard_string is passed, call super's set_parts
@@ -256,27 +280,27 @@ class DomainPermission(WildcardPermission):
         :type actions:  either an OrderedSet of strings or a subpart-delimeted string
         :type targets:  an OrderedSet of Strings or a subpart-delimeted string
         """
-            
+
         # default values
-        actions_string = actions 
-        targets_string = targets 
-        if isinstance(actions, OrderedSet): 
+        actions_string = actions
+        targets_string = targets
+        if isinstance(actions, OrderedSet):
             actions_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in actions])
 
         if isinstance(targets, OrderedSet):
             targets_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in targets])
-        
+
         permission = self.encode_parts(domain=domain,
                                        actions=actions_string,
                                        targets=targets_string)
-        
+
         super().set_parts(wildcard_string=permission)
 
     def get_domain(self, clazz=None):
         """
-        Permission classes are named using a 'Domain' prefix and 
+        Permission classes are named using a 'Domain' prefix and
         'Permission' suffix convention. The class name, consequently,
         describes the domain that is managed.
         """
@@ -287,7 +311,7 @@ class DomainPermission(WildcardPermission):
         # strip any trailing 'permission' text from the name (as all subclasses
         # should have been named):
         suffix = 'permission'
-        if domain.endswith(suffix): 
+        if domain.endswith(suffix):
             domain = domain[:-len(suffix)]   # e.g.: SomePermission -> some
             return domain
         return self._domain  # shouldn't be returned unless using the wrong clazz
@@ -295,27 +319,27 @@ class DomainPermission(WildcardPermission):
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
                              authz_abcs.PermissionResolverAware,
                              authz_abcs.RolePermissionResolverAware):
-                             
+
     """
-    A ModularRealmAuthorizer is an Authorizer implementation that consults 
+    A ModularRealmAuthorizer is an Authorizer implementation that consults
     one or more configured Realms during an authorization operation.
 
-    the funky naming convention where a parameter ends with '_s' denotes 
+    the funky naming convention where a parameter ends with '_s' denotes
     one-or-more; in English, this is expressed as '(s)', eg: duck(s)
     indicates one or more ducks
 
 
-    note:  Yosai implements a different policy than Shiro does during 
+    note:  Yosai implements a different policy than Shiro does during
            authorization requests in that Yosai accepts the first Boolean value
            provided rather than continue attempting to obtain permission from
-           other realms. The first Boolean is the final word on permission. 
+           other realms. The first Boolean is the final word on permission.
 
-    :type realms:  Tuple 
+    :type realms:  Tuple
     """
     def __init__(self, realms=None):
-        self._realms = tuple() 
-        self._permission_resolver = None 
-        self._role_permission_resolver = None 
+        self._realms = tuple()
+        self._permission_resolver = None
+        self._role_permission_resolver = None
 
     @property
     def realms(self):
@@ -324,48 +348,48 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     @realms.setter
     def realms(self, realms):
         """
-        :type realms: Tuple 
+        :type realms: Tuple
         """
         self._realms = realms
         self.apply_permission_resolver_to_realms()
         self.apply_role_permission_resolver_to_realms()
-   
+
     @property
     def authorizing_realms(self):
-        """ 
-        new to Yosai: a generator expression filters out non-authz realms 
         """
-        return (realm for realm in self._realms 
+        new to Yosai: a generator expression filters out non-authz realms
+        """
+        return (realm for realm in self._realms
                 if isinstance(realm, authz_abcs.Authorizer))
 
     @property
     def permission_resolver(self):
-        """ 
+        """
         This is the permission resolver that is used on EVERY configured
-        realm wrapped by the ModularRealmAuthorizer.  A permission_resolver 
-        equal to None indicates that each individual realm is accountable for 
+        realm wrapped by the ModularRealmAuthorizer.  A permission_resolver
+        equal to None indicates that each individual realm is accountable for
         configuring its permission resolver.
         """
         return self._permission_resolver
-    
+
     @permission_resolver.setter
     def permission_resolver(self, resolver):
-        """ 
+        """
         the permission resolver set here is applied to EVERY realm that is
         wrapped by the ModularRealmAuthorizer
         """
-        self._permission_resolver = resolver 
+        self._permission_resolver = resolver
         self.apply_permission_resolver_to_realms()
-    
+
     def apply_permission_resolver_to_realms(self):
         resolver = copy.copy(self._permission_resolver)
         realms = copy.copy(self._realms)
         if (resolver and realms):
-            for realm in realms: 
-                # interface contract validation: 
+            for realm in realms:
+                # interface contract validation:
                 if isinstance(realm, authz_abcs.PermissionResolverAware):
                     realm.permission_resolver = resolver
-            self._realms = realms 
+            self._realms = realms
 
     @property
     def role_permission_resolver(self):
@@ -373,7 +397,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
     @role_permission_resolver.setter
     def role_permission_resolver(self, resolver):
-        self._role_permission_resolver = resolver 
+        self._role_permission_resolver = resolver
         self.apply_role_permission_resolver_to_realms()
 
     def apply_role_permission_resolver_to_realms(self):
@@ -381,15 +405,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         This method is called after setting a role_permission_resolver
         attribute in this ModularRealmAuthorizer.  It is also called after
         setting the self.realms attribute, giving the newly available realms
-        the role_permission_resolver already in use by self. 
+        the role_permission_resolver already in use by self.
         """
         role_perm_resolver = self.role_permission_resolver
         realms = copy.copy(self._realms)
-        if (role_perm_resolver and realms): 
-            for realm in realms: 
+        if (role_perm_resolver and realms):
+            for realm in realms:
                 if isinstance(realm, authz_abcs.RolePermissionResolverAware):
                     realm.role_permission_resolver = role_perm_resolver
-            self._realms = realms 
+            self._realms = realms
 
     def assert_realms_configured(self):
         if (not self.realms):
@@ -400,19 +424,19 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # log here
             raise IllegalStateException(msg)
 
-    # Yosai refactors isPermitted and hasRole extensively, making use of 
-    # generators so as to optimize processing and improve readability 
-   
+    # Yosai refactors isPermitted and hasRole extensively, making use of
+    # generators so as to optimize processing and improve readability
+
     # new to Yosai:
-    def _has_role(self, identifiers, roleid): 
+    def _has_role(self, identifiers, roleid):
         for realm in self.authorizing_realms:
-            result = realm.has_role(identifiers, roleid) 
+            result = realm.has_role(identifiers, roleid)
             if result is not None:
-                return result 
-        return None 
-    
+                return result
+        return None
+
     # new to Yosai:
-    def _role_collection(self, identifiers, roleids): 
+    def _role_collection(self, identifiers, roleids):
         if isinstance(roleids, collections.Iterable):
             for roleid in roleids:
                 yield (roleid, self._has_role(identifiers, roleid))
@@ -424,20 +448,20 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         for realm in self.authorizing_realms:
             result = realm.is_permitted(identifiers, permission)
             if result is not None:   # faster than checking if bool
-                return result 
-        return None 
+                return result
+        return None
 
     # new to Yosai:
     def _permit_collection(self, identifiers, permissions):
         for permission in permissions:
             yield (permission, self._is_permitted(identifiers, permission))
-    
+
     def is_permitted(self, identifiers, permission_s):
         """
-        Yosai differs from Shiro in how it handles String-typed Permission 
-        parameters.  Rather than supporting *args of String-typed Permissions, 
+        Yosai differs from Shiro in how it handles String-typed Permission
+        parameters.  Rather than supporting *args of String-typed Permissions,
         Yosai supports a list of Strings.  Yosai remains true to Shiro's API
-        while determining permissions a bit more pythonically.  This may 
+        while determining permissions a bit more pythonically.  This may
         be refactored later.
 
         :param identifiers: a collection of identifiers
@@ -446,14 +470,14 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: a List of tuple(s), containing the Permission and a Boolean 
+        :returns: a List of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted
         """
 
         self.assert_realms_configured()
 
         if isinstance(permission_s, collections.Iterable):
-            return [(permission, permit) for (permission, permit) in 
+            return [(permission, permit) for (permission, permit) in
                     self._permit_collection(identifiers, permission_s)]
 
         return [permission_s, self._is_permitted(identifiers, permission_s)]
@@ -475,13 +499,13 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                     return False
             return True
 
-        # else:    
+        # else:
         return self._is_permitted(identifiers, permission_s)  # 1 Bool
 
     # yosai consolidates check_permission functionality to one method:
     def check_permission(self, identifiers, permission_s):
         """
-        like Yosai's authentication process, the authorization process will 
+        like Yosai's authentication process, the authorization process will
         raise an Exception to halt further authz checking once Yosai determines
         that a Subject is unauthorized to receive the requested permission
 
@@ -500,7 +524,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             print(msg)
             # log here
             raise UnauthorizedException(msg)
-    
+
     # yosai consolidates has_role functionality to one method:
     def has_role(self, identifiers, roleid_s):
         """
@@ -508,15 +532,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings 
+        :type roleid_s:  a String or List of Strings
 
-        :returns: a tuple containing the roleid and a boolean indicating 
+        :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
         """
         self.assert_realms_configured()
 
         if isinstance(roleid_s, collections.Iterable):
-            return [(roleid, hasrole) for (roleid, hasrole) in 
+            return [(roleid, hasrole) for (roleid, hasrole) in
                     self._role_collection(identifiers, roleid_s)]
 
         return [(roleid_s, self._has_role(identifiers, roleid_s))]
@@ -527,7 +551,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings 
+        :type roleid_s:  a String or List of Strings
 
         :returns: a Boolean
         """
@@ -535,7 +559,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         for (roleid, hasrole) in \
                 self._role_collection(identifiers, roleid_s):
-            if not hasrole: 
+            if not hasrole:
                 return False
         return True
 
@@ -545,80 +569,80 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings 
+        :type roleid_s:  a String or List of Strings
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         self.assert_realms_configured()
-        has_role_s = self.has_all_roles(identifiers, roleid_s) 
-        if not has_role_s: 
-            msg = "Subject does not have role(s)" 
+        has_role_s = self.has_all_roles(identifiers, roleid_s)
+        if not has_role_s:
+            msg = "Subject does not have role(s)"
             print(msg)
             # log here
             raise UnauthorizedException(msg)
-    
+
 
 class SimpleAuthorizationInfo:
-    """ 
-    Simple implementation of the authz_abcs.AuthorizationInfo interface that stores 
+    """
+    Simple implementation of the authz_abcs.AuthorizationInfo interface that stores
     roles and permissions as internal attributes.
     """
 
     def __init__(self, roles=OrderedSet()):
         """
-        :type roles: OrderedSet 
+        :type roles: OrderedSet
         """
-        self.roles = roles  
-        self.string_permissions = OrderedSet() 
+        self.roles = roles
+        self.string_permissions = OrderedSet()
         self.object_permissions = OrderedSet()
 
     # yosai combines add_role with add_roles
-    def add_role(self, role_s): 
+    def add_role(self, role_s):
         """
-        :type role_s: OrderedSet 
+        :type role_s: OrderedSet
         """
         if (self.roles is None):
-            self.roles = OrderedSet() 
-       
+            self.roles = OrderedSet()
+
         for item in role_s:
             self.roles.add(item)  # adds in order received
 
     # yosai combines add_string_permission with add_string_permissions
     def add_string_permission(self, permission_s):
         """
-        :type permission_s: OrderedSet of string-based permissions 
+        :type permission_s: OrderedSet of string-based permissions
         """
         if (self.string_permissions is None):
-            self.string_permissions = OrderedSet() 
-        
+            self.string_permissions = OrderedSet()
+
         for item in permission_s:
             self.string_permissions.add(item)  # adds in order received
 
     # yosai combines add_object_permission with add_object_permissions
     def add_object_permission(self, permission_s):
         """
-        :type permission_s: OrderedSet of Permission objects 
+        :type permission_s: OrderedSet of Permission objects
         """
         if (self.object_permissions is None):
-            self.object_permissions = OrderedSet() 
-        
+            self.object_permissions = OrderedSet()
+
         for item in permission_s:
             self.object_permissions.add(item)  # adds in order received
 
 
 class SimpleRole:
 
-    def __init__(self, name=None, permissions=OrderedSet()): 
+    def __init__(self, name=None, permissions=OrderedSet()):
         self.name = name
-        self.permissions = permissions 
+        self.permissions = permissions
 
     def add(self, permission):
         """
         :type permission: a Permission object
         """
         permissions = self.permissions
-        if (permissions is None): 
-            self.permissions = OrderedSet() 
+        if (permissions is None):
+            self.permissions = OrderedSet()
         self.permissions.add(permission)
 
     def add_all(self, permissions):
@@ -626,8 +650,8 @@ class SimpleRole:
         :type permissions: an OrderedSet of Permission objects
         """
         if (self.permissions is None):
-            self.permissions = OrderedSet() 
-        
+            self.permissions = OrderedSet()
+
         for item in permissions:
             self.permissions.add(item)  # adds in order received
 
@@ -638,7 +662,7 @@ class SimpleRole:
         if (self.permissions):
             for perm in self.permissions:
                 if (perm.implies(permission)):
-                    return True 
+                    return True
         return False
 
     def hash_code(self):
@@ -648,11 +672,11 @@ class SimpleRole:
         return 0
 
     def __eq__(self, other):
-        
+
         if (isinstance(other, SimpleRole)):
             return self.name == other.name
-        
+
         return False
-    
+
     def __repr__(self):
         return self.name

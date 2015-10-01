@@ -30,17 +30,12 @@ to change among the datastores used.  Requiring Concrete Implementations:
 
 Porting annotations to python decorators
 
-Serializables:  any serializable class in shiro should have its respective
-                serializable counterpart in Yosai, common sense permitting
-
 refactoring shiro thread-based concurrency to an appropriate concurrency 
 solution in python
     - porting callables, runnables, etc (used in DelegatingSubject)
 
 add eventbus functionality to the ModularRealmAuthorizor, and inject the 
 eventbus from the DefaultSecurityManager into the MRA
-
-port mgt/AbstractRememberMeManager and unit test 
 
 write unit tests for remaining /session/session_untested classes, and migrate
 the classes to session.py
