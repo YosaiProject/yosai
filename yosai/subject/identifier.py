@@ -125,8 +125,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
     def serialization_schema(cls):
         class SerializationSchema(Schema):
 
-            # use Raw only until you convert to a concrete schema (be sure to)
-            realm_identifiers = fields.Raw()
+            realm_identifiers = fields.Dict()
 
             @post_load
             def make_simple_identifier_collection(self, data):
@@ -139,8 +138,6 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             # because sets cannot be serialized
             @post_dump
             def convert_realms(self, data):
-                # serializing using Raw() format requires conv from defaultdict
-                # to dict:
                 data['realm_identifiers'] = dict(data['realm_identifiers'])
 
                 for realm, identifiers in data['realm_identifiers'].items():

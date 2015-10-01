@@ -5,7 +5,6 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     ModularRealmAuthorizer,
-    OrderedSet,
     SimpleRole,
     UnauthorizedException,
     WildcardPermission,
@@ -471,7 +470,7 @@ def test_sa_add_role_no_init_roles(simple_authz_info):
     """
     saz = simple_authz_info
     saz.add_role({'role1'})
-    assert OrderedSet(['role1']) <= saz.roles 
+    assert set(['role1']) <= saz.roles 
 
 def test_sa_add_roles_with_init_roles(simple_authz_info, monkeypatch):
     """
@@ -484,7 +483,7 @@ def test_sa_add_roles_with_init_roles(simple_authz_info, monkeypatch):
     saz = simple_authz_info
     monkeypatch.setattr(saz, 'roles', {'role1'})
     saz.add_role({'role2'})
-    assert OrderedSet(['role1', 'role2']) <= saz.roles 
+    assert set(['role1', 'role2']) <= saz.roles 
 
 def test_sa_add_string_permission_no_init_string_permission(simple_authz_info):
     """
@@ -494,7 +493,7 @@ def test_sa_add_string_permission_no_init_string_permission(simple_authz_info):
     """
     saz = simple_authz_info
     saz.add_string_permission({'permission1'})
-    assert OrderedSet(['permission1']) <= saz.string_permissions
+    assert set(['permission1']) <= saz.string_permissions
 
 def test_sa_add_string_permissions_with_init_string_permission(
         simple_authz_info, monkeypatch):
@@ -506,7 +505,7 @@ def test_sa_add_string_permissions_with_init_string_permission(
     saz = simple_authz_info
     monkeypatch.setattr(saz, 'string_permissions', {'permission1'})
     saz.add_string_permission({'permission2'})
-    assert OrderedSet(['permission1', 'permission2']) <= saz.string_permissions
+    assert set(['permission1', 'permission2']) <= saz.string_permissions
 
 def test_sa_add_object_permission_no_init_object_permission(simple_authz_info):
     """
@@ -516,7 +515,7 @@ def test_sa_add_object_permission_no_init_object_permission(simple_authz_info):
     """
     saz = simple_authz_info
     saz.add_object_permission({'permission1'})
-    assert OrderedSet(['permission1']) <= saz.object_permissions
+    assert set(['permission1']) <= saz.object_permissions
 
 def test_sa_add_object_permissions_with_init_object_permission(
         simple_authz_info, monkeypatch):
@@ -528,7 +527,7 @@ def test_sa_add_object_permissions_with_init_object_permission(
     saz = simple_authz_info
     monkeypatch.setattr(saz, 'object_permissions', {'permission1'})
     saz.add_object_permission({'permission2'})
-    assert OrderedSet(['permission1', 'permission2']) <= saz.object_permissions
+    assert set(['permission1', 'permission2']) <= saz.object_permissions
 
 
 # -----------------------------------------------------------------------------
@@ -566,7 +565,7 @@ def test_simple_role_add_all_with_existing_permissions(populated_simple_role):
     adding to an existing permissions attribute
     """
     psr = populated_simple_role
-    test_set = OrderedSet(['permission4', 'permission5', 'permission6'])
+    test_set = set(['permission4', 'permission5', 'permission6'])
     psr.add_all(test_set)
     assert all(x in psr.permissions for x in test_set)
 
@@ -580,7 +579,7 @@ def test_simple_role_add_all_without_existing_permissions(
     """
     psr = populated_simple_role
     monkeypatch.setattr(psr, 'permissions', None)
-    test_set = OrderedSet(['permission4', 'permission5', 'permission6'])
+    test_set = set(['permission4', 'permission5', 'permission6'])
     psr.add_all(test_set)
     assert all(x in psr.permissions for x in test_set)
 
@@ -607,7 +606,7 @@ def test_simple_role_is_NOT_permitted_with_existing_permissions(
     when no permissions assigned to the role imply the permission of interest
     """
     psr = populated_simple_role
-    existing_permissions = OrderedSet([MockPermission(False),
+    existing_permissions = set([MockPermission(False),
                                        MockPermission(False)])
     monkeypatch.setattr(psr, 'permissions', existing_permissions)
     new_permission = MockPermission(True)
@@ -639,7 +638,7 @@ def test_simple_role_hash_code_without_name(
 def test_simple_role_equals_other(populated_simple_role):
     psr = populated_simple_role
     name = 'SimpleRole123'
-    permissions = OrderedSet([MockPermission(False), 
+    permissions = set([MockPermission(False), 
                               MockPermission(False),
                               MockPermission(True)])
     testrole = SimpleRole(name=name, permissions=permissions)
@@ -649,7 +648,7 @@ def test_simple_role_equals_other(populated_simple_role):
 def test_simple_role_not_equals_other(populated_simple_role):
     psr = populated_simple_role
     name = 'SimpleRole1234567'
-    permissions = OrderedSet([MockPermission(False), 
+    permissions = set([MockPermission(False), 
                               MockPermission(False),
                               MockPermission(True)])
     testrole = SimpleRole(name=name, permissions=permissions)

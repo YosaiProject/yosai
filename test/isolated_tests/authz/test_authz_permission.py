@@ -7,7 +7,6 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     ModularRealmAuthorizer,
-    OrderedSet,
     SimpleRole,
     UnauthorizedException,
     WildcardPermission,
@@ -73,9 +72,9 @@ def test_wcp_set_parts_casesensitive(
     monkeypatch.setattr(wcp, 'case_sensitive', True)
     wildcardstring = "One,Two,Three:Four,Five,Six:Seven,Eight"
     wcp.set_parts(wildcard_string=wildcardstring)
-    expected_parts = {'domain': OrderedSet(['One', 'Two', 'Three']),
-                      'actions': OrderedSet(['Four', 'Five', 'Six']),
-                      'targets': OrderedSet(['Seven', 'Eight'])}
+    expected_parts = {'domain': set(['One', 'Two', 'Three']),
+                      'actions': set(['Four', 'Five', 'Six']),
+                      'targets': set(['Seven', 'Eight'])}
     assert expected_parts == wcp.parts
 
 def test_wcp_set_parts(default_wildcard_permission, monkeypatch):
@@ -90,9 +89,9 @@ def test_wcp_set_parts(default_wildcard_permission, monkeypatch):
     wildcardstring = "one,two,three:four,five,six:seven,eight"
     wcp.set_parts(wildcard_string=wildcardstring)
     expected_parts = OrderedDict()
-    expected_parts['domain'] = OrderedSet(['one', 'two', 'three'])
-    expected_parts['actions'] = OrderedSet(['four', 'five', 'six'])
-    expected_parts['targets'] = OrderedSet(['seven', 'eight'])
+    expected_parts['domain'] = set(['one', 'two', 'three'])
+    expected_parts['actions'] = set(['four', 'five', 'six'])
+    expected_parts['targets'] = set(['seven', 'eight'])
     assert expected_parts == wcp.parts
 
 def test_wcp_implies_nonwildcardpermission(default_wildcard_permission):
@@ -305,13 +304,17 @@ def test_wcpr_returns_wcp():
 # DomainPermission Tests
 # -----------------------------------------------------------------------------
 
+def test_dp_no_domain_arg_raises():
+    with pytest.raises(IllegalArgumentException):
+        DomainPermission(None, actions='actions', targets='targets')
+
 @pytest.mark.parametrize(
     "actions,targets,actionset,targetset",
-    [(None, None, OrderedSet(['*']), OrderedSet(['*'])), 
+    [(None, None, set(['*']), set(['*'])), 
      ('action1,action2', 'target1,target2', 
-      OrderedSet(['action1', 'action2']), OrderedSet(['target1', 'target2'])), 
-     (OrderedSet(['action1', 'action2']), OrderedSet(['target1', 'target2']), 
-      OrderedSet(['action1', 'action2']), OrderedSet(['target1', 'target2']))]) 
+      set(['action1', 'action2']), set(['target1', 'target2'])), 
+     (set(['action1', 'action2']), set(['target1', 'target2']), 
+      set(['action1', 'action2']), set(['target1', 'target2']))]) 
 def test_dp_normal_init(actions, targets, actionset, targetset): 
     """
     unit tested:  __init__ 
@@ -344,7 +347,7 @@ def test_dp_actions_setter_sets_parts(default_domain_permission):
 
     """
     ddp = default_domain_permission
-    dumbactions = OrderedSet(['actiona', 'actionb', 'actionc'])  
+    dumbactions = set(['actiona', 'actionb', 'actionc'])  
     ddp.actions = dumbactions
     assert ddp.actions == dumbactions
 
@@ -356,7 +359,7 @@ def test_dp_targets_setter_sets_parts(default_domain_permission):
 
     """
     ddp = default_domain_permission
-    dumbtargets = OrderedSet(['targeta', 'targetb', 'targetc'])  
+    dumbtargets = set(['targeta', 'targetb', 'targetc'])  
     ddp.targets = dumbtargets
     assert ddp.targets == dumbtargets
 
@@ -382,8 +385,8 @@ def test_dp_encode_parts_creates_permission(
     
 @pytest.mark.parametrize(
     "actions,targets,actions_string,targets_string",
-    [(OrderedSet(['*']), OrderedSet(['*']), '*', '*'), 
-     (OrderedSet(['action1', 'action2']), OrderedSet(['target1', 'target2']),
+    [(set(['*']), set(['*']), '*', '*'), 
+     (set(['action1', 'action2']), set(['target1', 'target2']),
      'action1,action2', 'target1,target2'),
      (None, None, None, None),
      ('action1,action2', 'target1,target2', 

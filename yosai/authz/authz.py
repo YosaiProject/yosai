@@ -23,7 +23,6 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     LogManager,
-    OrderedSet,
     UnauthenticatedException,
     UnauthorizedException,
     authz_abcs,
@@ -96,13 +95,15 @@ class WildcardPermission(serialize_abcs.Serializable):
                        "are properly formatted.")
                 print(msg)
                 raise IllegalArgumentException(msg)
-            subparts = part.split(self.SUBPART_DIVIDER_TOKEN)
+
             myindex = part_indices.get(index)
 
             # NOTE:  Shiro uses LinkedHashSet objects to maintain order and
             #        Uniqueness. Unlike Shiro, Yosai disregards order as it
             #        presents seemingly unecessary additional overhead (TBD)
             self.parts[myindex] = set()
+
+            subparts = part.split(self.SUBPART_DIVIDER_TOKEN)
             for sp in subparts:
                 self.parts[myindex].add(sp)
 
@@ -115,14 +116,14 @@ class WildcardPermission(serialize_abcs.Serializable):
             return False
 
         myparts = [token for token in
-                   [self.parts.get('domain', None),
-                    self.parts.get('actions', None),
-                    self.parts.get('targets', None)] if token]
+                   [self.parts.get('domain'),
+                    self.parts.get('actions'),
+                    self.parts.get('targets')] if token]
 
         otherparts = [token for token in
-                      [permission.parts.get('domain', None),
-                       permission.parts.get('actions', None),
-                       permission.parts.get('targets', None)] if token]
+                      [permission.parts.get('domain'),
+                       permission.parts.get('actions'),
+                       permission.parts.get('targets')] if token]
 
         index = 0
 
@@ -133,7 +134,7 @@ class WildcardPermission(serialize_abcs.Serializable):
             if (len(myparts) - 1 < index):
                 return True
             else:
-                part = myparts[index]  # each subpart is an OrderedSet
+                part = myparts[index]  # each subpart is a Set
                 if ((self.WILDCARD_TOKEN not in part) and
                    not (other_part <= part)):  # not(part contains otherpart)
                     return False
@@ -161,7 +162,13 @@ class WildcardPermission(serialize_abcs.Serializable):
 
     @classmethod
     def serialization_schema(cls):
+        class WildcardPartsSchema(Schema):
+                domain = fields.List(fields.Str)
+                action = fields.List(fields.Str)
+                instance = fields.List(fields.Str)
+
         class SerializationSchema(Schema):
+            parts = field.Nested(WildcardPartsSchema)
 
             @post_load
             def make_wildcard_permission(self, data):
@@ -170,14 +177,26 @@ class WildcardPermission(serialize_abcs.Serializable):
                 instance.__dict__.update(data)
                 return instance
 
-            # prior to serialization, must convert an OrderedDict to serializable
-            # primitives-- OrderedDicts aren't supported by marshmallow
+            # prior to serializing, convert a dict of sets to a dict of lists
+            # because sets cannot be serialized
             @post_dump
+            def convert_sets(self, data):
+                for attribute, value in data['parts'].items():
+                    data['parts'][attribute] = list(value)
+                return data
 
+            # revert to the original dict of sets format
             @pre_load
+            def revert_sets(self, data):
+                newdata = copy.copy(data)
+
+                for attribute, value in data['parts'].items():
+                    newdata['parts'][attribute] = set(value)
+
+                return newdata
+
 
         return SerializationSchema
-
 
 
 class WildcardPermissionResolver:
@@ -188,40 +207,50 @@ class WildcardPermissionResolver:
         return WildcardPermission(permission_string)
 
 
-class DomainPermission(WildcardPermission):
+class DefaultPermission(WildcardPermission):
     """
-    note:  Yosai significantly refactored DomainPermission
+    This class is known in Shiro as DomainPermission.  It has been renamed
+    and refactored a bit for Yosai.
 
-    Provides a base Permission class from which domain-specific subclasses
-    may extend.  Can be used as a base class for ORM-persisted (SQLAlchemy)
+    Differences include:
+    - Unlike Shiro's DomainPermission, DefaultPermission obtains its domain
+      attribute by argument (rather than by using class name (and subclassing)).
+    - Set order is removed (no OrderedSet) until it is determined that using
+      ordered set will improve performance (TBD).
+    - refactored interactions between set_parts and encode_parts
+
+    This class can be used as a base class for ORM-persisted (SQLAlchemy)
     permission model(s).  The ORM model maps the parts of a permission
     string to separate table columns (e.g. 'domain', 'actions' and 'targets'
     columns) and is subsequently used in querying strategies.
     """
-    def __init__(self, actions=None, targets=None):
+    def __init__(self, domain, actions=None, targets=None):
         """
-        :type actions: str or OrderedSet of strings
-        :type targets: str or OrderedSet of strings
+        :type domain: str
+        :type actions: str or set of strings
+        :type targets: str or set of strings
 
         After initializing, the state of a DomainPermission object includes:
             self.results = a list populated by WildcardPermission.set_results
-            self._actions = an OrderedSet, or None
-            self._targets = an OrderedSet, or None
+            self._domain = a Str
+            self._actions = a set, or None
+            self._targets = a set, or None
         """
         super().__init__()
-
-        self._domain = self.get_domain(self.__class__)
-        self.set_parts(domain=self._domain, actions=actions, targets=targets)
-        self._actions = self.parts.get('actions', None)
-        self._targets = self.parts.get('targets', None)
+        if domain is None:
+            raise IllegalArgumentException('Domain cannot be None')
+        self.set_parts(domain=domain, actions=actions, targets=targets)
+        self._domain = self.parts.get('domain')
+        self._actions = self.parts.get('actions')
+        self._targets = self.parts.get('targets')
 
     @property
     def domain(self):
         return self._domain
 
     @domain.setter
-    def domain(self, inst):
-        self._domain = self.get_domain(inst.__class__)
+    def domain(self, domain):
+        self._domain = domain
         self.set_parts(domain=self._domain,
                        actions=getattr(self, '_actions', None),
                        targets=getattr(self, '_targets', None))
@@ -277,18 +306,18 @@ class DomainPermission(WildcardPermission):
             If wildcard_string is passed, call super's set_parts
             Else process the orderedsets
 
-        :type actions:  either an OrderedSet of strings or a subpart-delimeted string
-        :type targets:  an OrderedSet of Strings or a subpart-delimeted string
+        :type actions:  either a Set of strings or a subpart-delimeted string
+        :type targets:  an Set of Strings or a subpart-delimeted string
         """
 
         # default values
         actions_string = actions
         targets_string = targets
-        if isinstance(actions, OrderedSet):
+        if isinstance(actions, set):
             actions_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in actions])
 
-        if isinstance(targets, OrderedSet):
+        if isinstance(targets, set):
             targets_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in targets])
 
@@ -298,23 +327,7 @@ class DomainPermission(WildcardPermission):
 
         super().set_parts(wildcard_string=permission)
 
-    def get_domain(self, clazz=None):
-        """
-        Permission classes are named using a 'Domain' prefix and
-        'Permission' suffix convention. The class name, consequently,
-        describes the domain that is managed.
-        """
-        if clazz is None:
-            return self._domain
-
-        domain = clazz.__name__.lower()
-        # strip any trailing 'permission' text from the name (as all subclasses
-        # should have been named):
-        suffix = 'permission'
-        if domain.endswith(suffix):
-            domain = domain[:-len(suffix)]   # e.g.: SomePermission -> some
-            return domain
-        return self._domain  # shouldn't be returned unless using the wrong clazz
+    # removed getDomain
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
                              authz_abcs.PermissionResolverAware,
@@ -588,21 +601,21 @@ class SimpleAuthorizationInfo:
     roles and permissions as internal attributes.
     """
 
-    def __init__(self, roles=OrderedSet()):
+    def __init__(self, roles=set()):
         """
-        :type roles: OrderedSet
+        :type roles: Set
         """
         self.roles = roles
-        self.string_permissions = OrderedSet()
-        self.object_permissions = OrderedSet()
+        self.string_permissions = set()
+        self.object_permissions = set()
 
     # yosai combines add_role with add_roles
     def add_role(self, role_s):
         """
-        :type role_s: OrderedSet
+        :type role_s: set
         """
         if (self.roles is None):
-            self.roles = OrderedSet()
+            self.roles = set()
 
         for item in role_s:
             self.roles.add(item)  # adds in order received
@@ -610,10 +623,10 @@ class SimpleAuthorizationInfo:
     # yosai combines add_string_permission with add_string_permissions
     def add_string_permission(self, permission_s):
         """
-        :type permission_s: OrderedSet of string-based permissions
+        :type permission_s: set of string-based permissions
         """
         if (self.string_permissions is None):
-            self.string_permissions = OrderedSet()
+            self.string_permissions = set()
 
         for item in permission_s:
             self.string_permissions.add(item)  # adds in order received
@@ -621,10 +634,10 @@ class SimpleAuthorizationInfo:
     # yosai combines add_object_permission with add_object_permissions
     def add_object_permission(self, permission_s):
         """
-        :type permission_s: OrderedSet of Permission objects
+        :type permission_s: set of Permission objects
         """
         if (self.object_permissions is None):
-            self.object_permissions = OrderedSet()
+            self.object_permissions = set()
 
         for item in permission_s:
             self.object_permissions.add(item)  # adds in order received
@@ -632,7 +645,7 @@ class SimpleAuthorizationInfo:
 
 class SimpleRole:
 
-    def __init__(self, name=None, permissions=OrderedSet()):
+    def __init__(self, name=None, permissions=set()):
         self.name = name
         self.permissions = permissions
 
@@ -642,15 +655,15 @@ class SimpleRole:
         """
         permissions = self.permissions
         if (permissions is None):
-            self.permissions = OrderedSet()
+            self.permissions = set()
         self.permissions.add(permission)
 
     def add_all(self, permissions):
         """
-        :type permissions: an OrderedSet of Permission objects
+        :type permissions: an set of Permission objects
         """
         if (self.permissions is None):
-            self.permissions = OrderedSet()
+            self.permissions = set()
 
         for item in permissions:
             self.permissions.add(item)  # adds in order received
