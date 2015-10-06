@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -43,15 +43,15 @@ class AuthorizationInfo(metaclass=ABCMeta):
         This method is a convenience mechanism that allows Realms to represent
         permissions as Strings, if specified.  When performing a security
         check, a Realm MAY first converts these strings to Permission objects
-        through a PermissionResolver and then uses the resulting Permission 
+        through a PermissionResolver and then uses the resulting Permission
         objects to verify permissions.  Converting to Permission objects first
-        is not a requirement, of course, because Realm can check security in 
+        is not a requirement, of course, because Realm can check security in
         whatever manner deemed necessary.  Nonetheless, the process of first
-        converting to Permission objects is one that most Shiro Realms 
-        execute for string-based permission checks -- it gets run one way or 
+        converting to Permission objects is one that most Shiro Realms
+        execute for string-based permission checks -- it gets run one way or
         the other.
 
-        :returns: all string-based permissions assigned to the corresponding 
+        :returns: all string-based permissions assigned to the corresponding
                   Subject
         """
         pass
@@ -59,13 +59,13 @@ class AuthorizationInfo(metaclass=ABCMeta):
     @property
     @abstractmethod
     def get_object_permissions(self):
-        """ 
-        Returns all Permissions assigned to the corresponding Subject.  The 
+        """
+        Returns all Permissions assigned to the corresponding Subject.  The
         permissions returned from this method plus any
         returned from get_string_permissions()
         represent the total set of permissions.  The aggregate set is used to
         perform a permission authorization check.
-       
+
         :returns: all Permission objects assigned to the corresponding Subject
         """
         pass
@@ -75,17 +75,17 @@ class Authorizer(metaclass=ABCMeta):
 
     """
     An Authorizer performs authorization (access control) operations
-    for any given Subject (aka 'application user').  
-    
-    Each method requires a subject identifier to perform the action for the 
-    corresponding Subject/user.  
-    
-    This identifier argument is usually an object representing a user database 
+    for any given Subject (aka 'application user').
+
+    Each method requires a subject identifier to perform the action for the
+    corresponding Subject/user.
+
+    This identifier argument is usually an object representing a user database
     primary key or a String username or something similar that uniquely
     identifies an application user.  The runtime value of the this identifier
     is application-specific and provided by the application's configured
     Realms.
-   
+
     Note that the Permission methods in this interface accept either String
     arguments or Permission instances. This provides convenience in allowing
     the caller to use a String representation of a Permission if one is so
@@ -94,14 +94,14 @@ class Authorizer(metaclass=ABCMeta):
     type-safe method.  (Yosai's default implementations do String-to-Permission
     conversion for these methods using PermissionResolver(s)
     """
-    
+
     @abstractmethod
     def is_permitted(self, identifiers, permission_s):
         """
         Returns True if the corresponding subject/user is permitted to perform
         an action or access a resource summarized by the specified permission.
 
-        More specifically, this method determines whether any Permission(s) 
+        More specifically, this method determines whether any Permission(s)
         associated with the subject imply the specified permission.
 
         :param identifiers: the application-specific subject/user identifier(s)
@@ -110,8 +110,8 @@ class Authorizer(metaclass=ABCMeta):
         :param permission_s: the permission(s) being checked
         :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: a List of tuple(s), containing the Permission and a Boolean 
-                  indicating whether the permission is granted, True if the 
+        :returns: a List of tuple(s), containing the Permission and a Boolean
+                  indicating whether the permission is granted, True if the
                   corresponding Subject/user is permitted, False otherwise
         """
         pass
@@ -199,17 +199,17 @@ class Permission(metaclass=ABCMeta):
     @abstractmethod
     def implies(self, permission):
         """
-        Returns True if this current instance implies all of the functionality 
-        and/or resource access described by the specified Permission argument, 
+        Returns True if this current instance implies all of the functionality
+        and/or resource access described by the specified Permission argument,
         returning False otherwise.
-         
+
         That is, this current instance must be exactly equal to or a
         superset of the functionalty and/or resource access described by the
         given Permission argument.  Yet another way of saying this is:
-           - If permission1 implies permission2, then any Subject granted 
-             permission1 would have ability greater than or equal to that 
+           - If permission1 implies permission2, then any Subject granted
+             permission1 would have ability greater than or equal to that
              defined by permission2.
-     
+
         :returns: bool
         """
         pass
@@ -236,7 +236,30 @@ class PermissionResolver(metaclass=ABCMeta):
 
 
 class RolePermissionResolver(metaclass=ABCMeta):
+    """
+    The RolePermissionResolver resolves roles into permissions.
 
+    A RolePermissionResolver resolves a Role, represented as a String value,
+    into a Collection of Permission instances.  A mapping of Role->Permission
+    associations is required to facilitate the role->permission resolution.
+    These Role->Permission associations are obtained from a data store, such a
+    local database, and may be cached.
+
+    The notion of converting role names to permissions is very application
+    specific.  Therefore, Yosai does NOT include a default implementation of it.
+
+    Evaluating Role Membership:
+        Let Role R1 consists of elements Permission p1, Permission p2, and Permission p3:
+         r1 = {p1, p2, p3}
+
+        Suppose that a user's permissions were obtained from an AccountStore.  If
+        and only if the collections of permissions obtained from the Store were
+        to include p1, p2, and p3 then a user would satisfy the criteria for
+        Role membership of R1.  Only one missing Permission is sufficient to
+        fail the test for membership (if, for instance the user was assigned
+        p1 and p2 but not p3).
+
+    """
     @abstractmethod
     def resolve_permissions_in_role(self, role_string):
         pass
@@ -253,4 +276,3 @@ class RolePermissionResolverAware(metaclass=ABCMeta):
     @abstractmethod
     def role_permission_resolver(self, role_permission_resolver):
         pass
-

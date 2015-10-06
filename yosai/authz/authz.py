@@ -31,7 +31,7 @@ from yosai import (
 
 import copy
 import collections
-
+from marshmallow import Schema, fields, post_load, post_dump, pre_load
 
 class AllPermission:
 
@@ -44,7 +44,7 @@ class AllPermission:
 
 class WildcardPermission(serialize_abcs.Serializable):
     """
-    The standardized permission wildcard syntax is:  DOMAIN:ACTION:INSTANCE
+    The standardized permission wildcard syntax is:  DOMAIN:ACTION:TARGET
 
     reference:  https://shiro.apache.org/permissions.html
 
@@ -86,7 +86,7 @@ class WildcardPermission(serialize_abcs.Serializable):
 
         parts = wildcard_string.split(self.PART_DIVIDER_TOKEN)
 
-        part_indices = {0: 'domain', 1: 'actions', 2: 'targets'}
+        part_indices = {0: 'domain', 1: 'action', 2: 'target'}
 
         for index, part in enumerate(parts):
             if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part):
@@ -117,13 +117,13 @@ class WildcardPermission(serialize_abcs.Serializable):
 
         myparts = [token for token in
                    [self.parts.get('domain'),
-                    self.parts.get('actions'),
-                    self.parts.get('targets')] if token]
+                    self.parts.get('action'),
+                    self.parts.get('target')] if token]
 
         otherparts = [token for token in
                       [permission.parts.get('domain'),
-                       permission.parts.get('actions'),
-                       permission.parts.get('targets')] if token]
+                       permission.parts.get('action'),
+                       permission.parts.get('target')] if token]
 
         index = 0
 
@@ -149,7 +149,9 @@ class WildcardPermission(serialize_abcs.Serializable):
         return True
 
     def __repr__(self):
-        return ':'.join([str(value) for key, value in self.parts.items()])
+        return ("{0}:{1}:{2}".format(self.parts['domain'],
+                                     self.parts['action'],
+                                     self.parts['target']))
 
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
@@ -165,16 +167,21 @@ class WildcardPermission(serialize_abcs.Serializable):
         class WildcardPartsSchema(Schema):
                 domain = fields.List(fields.Str)
                 action = fields.List(fields.Str)
-                instance = fields.List(fields.Str)
+                target = fields.List(fields.Str)
 
         class SerializationSchema(Schema):
-            parts = field.Nested(WildcardPartsSchema)
+            parts = fields.Nested(WildcardPartsSchema)
 
             @post_load
             def make_wildcard_permission(self, data):
                 mycls = WildcardPermission
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
+
+                # have to convert to set from post_load due to the
+                # WildcardPartsSchema
+                for key, val in instance.parts.items():
+                    instance.parts[key] = set(val)
                 return instance
 
             # prior to serializing, convert a dict of sets to a dict of lists
@@ -184,17 +191,6 @@ class WildcardPermission(serialize_abcs.Serializable):
                 for attribute, value in data['parts'].items():
                     data['parts'][attribute] = list(value)
                 return data
-
-            # revert to the original dict of sets format
-            @pre_load
-            def revert_sets(self, data):
-                newdata = copy.copy(data)
-
-                for attribute, value in data['parts'].items():
-                    newdata['parts'][attribute] = set(value)
-
-                return newdata
-
 
         return SerializationSchema
 
@@ -217,32 +213,32 @@ class DefaultPermission(WildcardPermission):
       attribute by argument (rather than by using class name (and subclassing)).
     - Set order is removed (no OrderedSet) until it is determined that using
       ordered set will improve performance (TBD).
-    - refactored interactions between set_parts and encode_parts
+    - refactored interaction between set_parts and encode_parts
 
     This class can be used as a base class for ORM-persisted (SQLAlchemy)
     permission model(s).  The ORM model maps the parts of a permission
-    string to separate table columns (e.g. 'domain', 'actions' and 'targets'
+    string to separate table columns (e.g. 'domain', 'action' and 'target'
     columns) and is subsequently used in querying strategies.
     """
-    def __init__(self, domain, actions=None, targets=None):
+    def __init__(self, domain, action=None, target=None):
         """
         :type domain: str
-        :type actions: str or set of strings
-        :type targets: str or set of strings
+        :type action: str or set of strings
+        :type target: str or set of strings
 
         After initializing, the state of a DomainPermission object includes:
             self.results = a list populated by WildcardPermission.set_results
             self._domain = a Str
-            self._actions = a set, or None
-            self._targets = a set, or None
+            self._action = a set, or None
+            self._target = a set, or None
         """
         super().__init__()
         if domain is None:
             raise IllegalArgumentException('Domain cannot be None')
-        self.set_parts(domain=domain, actions=actions, targets=targets)
+        self.set_parts(domain=domain, action=action, target=target)
         self._domain = self.parts.get('domain')
-        self._actions = self.parts.get('actions')
-        self._targets = self.parts.get('targets')
+        self._action = self.parts.get('action')
+        self._target = self.parts.get('target')
 
     @property
     def domain(self):
@@ -252,50 +248,50 @@ class DefaultPermission(WildcardPermission):
     def domain(self, domain):
         self._domain = domain
         self.set_parts(domain=self._domain,
-                       actions=getattr(self, '_actions', None),
-                       targets=getattr(self, '_targets', None))
+                       action=getattr(self, '_action', None),
+                       target=getattr(self, '_target', None))
 
     @property
-    def actions(self):
-        return self._actions
+    def action(self):
+        return self._action
 
-    @actions.setter
-    def actions(self, actions):
+    @action.setter
+    def action(self, action):
         self.set_parts(domain=self._domain,
-                       actions=actions,
-                       targets=getattr(self, '_targets', None))
-        self._actions = self.parts.get('actions', None)
+                       action=action,
+                       target=getattr(self, '_target', None))
+        self._action = self.parts.get('action', None)
 
     @property
-    def targets(self):
-        return self._targets
+    def target(self):
+        return self._target
 
-    @targets.setter
-    def targets(self, targets):
+    @target.setter
+    def target(self, target):
         self.set_parts(domain=self._domain,
-                       actions=getattr(self, '_actions', None),
-                       targets=targets)
-        self._targets = self.parts.get('targets', None)
+                       action=getattr(self, '_action', None),
+                       target=target)
+        self._target = self.parts.get('target', None)
 
-    def encode_parts(self, domain, actions, targets):
+    def encode_parts(self, domain, action, target):
         """
         Yosai redesigned encode_parts to return permission, rather than
         pass it to set_parts as a wildcard
 
         :type domain:  str
-        :type actions: a subpart-delimeted str
-        :type targets: a subpart-delimeted str
+        :type action: a subpart-delimeted str
+        :type target: a subpart-delimeted str
         """
 
         # Yosai sets None to Wildcard
         permission = self.PART_DIVIDER_TOKEN.join(
             x if x is not None else self.WILDCARD_TOKEN
-            for x in [domain, actions, targets])
+            for x in [domain, action, target])
 
         return permission
 
     # overrides WildcardPermission.set_parts:
-    def set_parts(self, domain, actions, targets):
+    def set_parts(self, domain, action, target):
         """
         Shiro uses method overloading to determine as to whether to call
         either this set_parts or that of the parent WildcardPermission.  The
@@ -306,24 +302,24 @@ class DefaultPermission(WildcardPermission):
             If wildcard_string is passed, call super's set_parts
             Else process the orderedsets
 
-        :type actions:  either a Set of strings or a subpart-delimeted string
-        :type targets:  an Set of Strings or a subpart-delimeted string
+        :type action:  either a Set of strings or a subpart-delimeted string
+        :type target:  an Set of Strings or a subpart-delimeted string
         """
 
         # default values
-        actions_string = actions
-        targets_string = targets
-        if isinstance(actions, set):
-            actions_string = self.SUBPART_DIVIDER_TOKEN.\
-                join([token for token in actions])
+        action_string = action
+        target_string = target
+        if isinstance(action, set):
+            action_string = self.SUBPART_DIVIDER_TOKEN.\
+                join([token for token in action])
 
-        if isinstance(targets, set):
-            targets_string = self.SUBPART_DIVIDER_TOKEN.\
-                join([token for token in targets])
+        if isinstance(target, set):
+            target_string = self.SUBPART_DIVIDER_TOKEN.\
+                join([token for token in target])
 
         permission = self.encode_parts(domain=domain,
-                                       actions=actions_string,
-                                       targets=targets_string)
+                                       action=action_string,
+                                       target=target_string)
 
         super().set_parts(wildcard_string=permission)
 

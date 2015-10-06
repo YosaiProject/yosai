@@ -8,36 +8,34 @@ from ..doubles import (
     MockCache,
 )
 
-class MockAccountCacheHandler(realm_abcs.AccountCacheHandler, object):
+class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler, object):
 
     def __init__(self, account):
         self.account = account
 
-    def get_cached_account(self, authc_token):
+    def get_cached_credentials(self, authc_token):
         return self.account 
 
-    def cache_account(self, authc_token, account):
+    def cache_credentials(self, authc_token, account):
         self.account = account 
 
-    def clear_cached_account(self, account_id):
+    def clear_cached_credentials(self, account_id):
         pass
     
 
-class MockAccountCacheResolver(realm_abcs.AccountCacheResolver, object):
+class MockCredentialsCacheResolver(realm_abcs.CacheResolver, object):
 
     def __init__(self, cache=None):
         self.cache = cache
 
-    def get_account_cache(self, authc_token=None, account=None, 
-                          account_id=None):
+    def get_cache(self, authc_token=None, account=None, account_id=None):
         return self.cache
 
 
-class MockAccountCacheKeyResolver(realm_abcs.AccountCacheKeyResolver, object):
+class MockCredentialsCacheKeyResolver(realm_abcs.CacheKeyResolver, object):
     
     def __init__(self, key=None):
         self.key = key
 
-    def get_account_cache_key(self, authc_token=None, 
-                              account=None, account_id=None):
+    def get_cache_key(self, authc_token=None, account=None, account_id=None):
         return self.key 

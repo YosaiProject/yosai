@@ -27,6 +27,7 @@ import msgpack
 import datetime
 import rapidjson
 import pkg_resources
+import copy
 
 
 class SerializationManager:
@@ -51,6 +52,7 @@ class SerializationManager:
 
     def serialize(self, obj):
         """
+        :type obj: a Serializable object or a list of Serializable objects
         :returns: an encoded, serialized object
         """
         try:
@@ -62,29 +64,50 @@ class SerializationManager:
         try:
             newdict = {}
             now = datetime.datetime.utcnow().isoformat()
-            serialization_attrs = {'serialized_cls': obj.__class__.__name__,
-                                   'serialized_dist_version': dist_version,
+            serialization_attrs = {'serialized_dist_version': dist_version,
                                    'serialized_record_dt': now}
             newdict.update(serialization_attrs)
-            newdict.update(obj.serialize())
-            return self.serializer.serialize(newdict)
+            try:
+                newdict.update(obj.serialize())
+                newdict['serialized_cls'] = obj.__class__.__name__
+                newobj = newdict
+            except AttributeError:
+                # assume that its an iterable of Serializables
+                newobj = []
+                for element in obj:
+                    mydict = copy.copy(newdict)
+                    mydict['serialized_cls'] = element.__class__.__name__
+                    mydict.update(element.serialize())
+                    newobj.append(mydict)
+
+            # at this point, newobj is either a list of dicts or a dict
+            return self.serializer.serialize(newobj)
 
         except AttributeError:
-            raise SerializationException('Only serialize Serializable objects')
+            msg = 'Only serialize Serializable objects or list of Serializables'
+            raise SerializationException(msg)
 
     def deserialize(self, message):
-        # TBD:  initially, supporting deserialization of one object at a time
-        # until support for a collection of objects is required
-
-        # NOTE:  unpacked is expected to be a dict
+        # NOTE:  unpacked is expected to be a dict or list of dicts
 
         try:
             unpacked = self.serializer.deserialize(message)
             yosai = __import__('yosai')
-            cls = getattr(yosai, unpacked['serialized_cls'])
-            return cls.deserialize(unpacked)  # only serializables wont raise
+
+            try:
+                cls = getattr(yosai, unpacked['serialized_cls'])
+                return cls.deserialize(unpacked)  # only serializables wont raise
+            except (AttributeError, TypeError):
+                # assume that its a list of Serializables
+                newlist = []
+                for element in unpacked:
+                    print(element)
+                    cls = getattr(yosai, element['serialized_cls'])
+                    newlist.append(cls.deserialize(element))
+                return newlist
+
         except AttributeError:
-            msg = ('Only de-serialize Serializable objects')
+            msg = 'Only de-serialize Serializable objects or list of Serializables'
             raise SerializationException(msg)
 
 

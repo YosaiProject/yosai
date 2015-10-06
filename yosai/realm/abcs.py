@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -24,52 +24,52 @@ from yosai import (
     authc_abcs,
 )
 
-class AccountCacheHandler(metaclass=ABCMeta):
+# yosai renamed AccountCache to CredentialsCache (shiro diff)
+
+class CredentialsCacheHandler(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_cached_account(self, authc_token):
+    def get_cached_credentials(self, authc_token):
         pass
 
     @abstractmethod
-    def cache_account(self, authc_token, account):
+    def cache_credentials(self, authc_token, account):
         pass
 
     @abstractmethod
-    def clear_cached_account(self, account_id):
+    def clear_cached_credentials(self, account_id):
         pass
 
 
-class AccountCacheKeyResolver(metaclass=ABCMeta):
+class CacheKeyResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_account_cache_key(self, authc_token=None, account=None, 
-                              account_id=None):
+    def get_cache_key(self, authc_token=None, account=None, account_id=None):
         pass
 
 
-class AccountCacheResolver(metaclass=ABCMeta):
+class CacheResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_account_cache(self, authc_token=None, 
-                          account=None, account_id=None):
+    def get_cache(self, authc_token=None, account=None, account_id=None):
         pass
 
 
-class AccountPermissionResolver(metaclass=ABCMeta):
+class PermissionResolver(metaclass=ABCMeta):
     pass
 
 
-class AccountRolePermissionResolver(metaclass=ABCMeta):
+class RolePermissionResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_account_role_permissions(self, account, role_name):
+    def get_role_permissions(self, account, role_name):
         pass
 
 
-class AccountRoleResolver(metaclass=ABCMeta):
+class RoleResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_account_role_names(self, account):
+    def get_role_names(self, account):
         pass
 
 
@@ -100,10 +100,116 @@ class RealmFactory(metaclass=ABCMeta):
         pass
 
 
-class Realm(authc_abcs.Authenticator):
-    
-    # DG:  omitted name accessor method for pythonic reasons
+# new to yosai:
+class Realm(metaclass=ABCMeta):
+
+    @abstractmethod
+    def do_clear_cache(self, identifiers):
+        pass
+
+
+# new to yosai:
+class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
+
+    @property
+    @abstractmethod
+    def credentials_matcher(self):
+        pass
+
+    @credentials_matcher.setter
+    @abstractmethod
+    def credentials_matcher(self, credentialsmatcher):
+        pass
+
+    @property
+    @abstractmethod
+    def credentials_cache_handler(self):
+        pass
+
+    @credentials_cache_handler.setter
+    @abstractmethod
+    def credentials_cache_handler(self, credentialscachehandler):
+        pass
 
     @abstractmethod
     def supports(self, authc_token):
         pass
+
+    @abstractmethod
+    def authenticate_account(self, authc_token):
+        pass
+
+    @abstractmethod
+    def assert_credentials_match(self, authc_token, account):
+        pass
+
+
+# new to yosai:
+class AuthorizingRealm(Realm):
+
+    @property
+    @abstractmethod
+    def authorization_cache_handler(self):
+        pass
+
+    @authorization_cache_handler.setter
+    @abstractmethod
+    def authorization_cache_handler(self, authzcachehandler):
+        pass
+
+    @property
+    @abstractmethod
+    def permission_resolver(self):
+        pass
+
+    @permission_resolver.setter
+    @abstractmethod
+    def permission_resolver(self, permissionresolver):
+        pass
+
+    @abstractmethod
+    def get_permissions(self, account):
+        pass
+
+    @abstractmethod
+    def resolve_permissions(self, string_perms):
+        pass
+
+    @abstractmethod
+    def is_permitted(self, identifiers, permission_s):
+        pass
+
+    @abstractmethod
+    def is_permitted_all(self, identifiers, permission_s):
+        pass
+
+    @abstractmethod
+    def check_permission(self, identifiers, permission_s):
+        pass
+
+    @abstractmethod
+    def has_role(self, identifiers, roleid_s):
+        pass
+
+    @abstractmethod
+    def has_all_roles(self, identifiers, roleid_s):
+        pass
+
+    @abstractmethod
+    def check_role(self, identifiers, roleid_s):
+        pass
+
+    # By default, Yosai does not support resolution of Role to Permission:
+    # @property
+    # @abstractmethod
+    # def role_permission_resolver(self):
+    #    pass
+    #
+    # @permission_resolver.setter
+    # @abstractmethod
+    # def role_permission_resolver(self, permissionresolver):
+    #    pass
+    #
+    # @abstractmethod
+    # def resolve_role_permission(self, role_names):
+    #    pass

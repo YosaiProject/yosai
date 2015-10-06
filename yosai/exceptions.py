@@ -240,23 +240,23 @@ class EventBusSubscriptionException(EventBusException):
 # ---------------------------------------------------------------------------
 
 
-class AccountCacheHandlerException(YosaiException):
+class CredentialsCacheHandlerException(YosaiException):
     pass
 
 
-class RealmMisconfiguredException(AccountCacheHandlerException):
+class RealmMisconfiguredException(CredentialsCacheHandlerException):
     pass
 
 
-class GetCachedAccountException(AccountCacheHandlerException):
+class GetCachedCredentialsException(CredentialsCacheHandlerException):
     pass
 
 
-class CacheAccountException(AccountCacheHandlerException):
+class CacheCredentialsException(CredentialsCacheHandlerException):
     pass
 
 
-class ClearCacheAccountException(AccountCacheHandlerException):
+class ClearCacheCredentialsException(CredentialsCacheHandlerException):
     pass
 
 # ---------------------------------------------------------------------------

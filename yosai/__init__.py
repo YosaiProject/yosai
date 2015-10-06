@@ -29,7 +29,7 @@ __status__ = "Development"
 from .exceptions import (
     AbstractMethodException,
     AccountException,
-    AccountCacheHandlerException,
+    CredentialsCacheHandlerException,
     AccountStoreRealmAuthenticationException,
     AuthenticationConfigException,
     AuthenticationSettingsContextException,
@@ -37,9 +37,9 @@ from .exceptions import (
     AuthenticationStrategyMissingRealmException,
     AuthorizationException,
     CacheException,
-    CacheAccountException,
+    CacheCredentialsException,
     CacheKeyRemovalException,
-    ClearCacheAccountException,
+    ClearCacheCredentialsException,
     ConcurrentAccessException,
     CredentialsException,
     CryptContextException,
@@ -55,7 +55,7 @@ from .exceptions import (
     ExpiredSessionException,
     FileNotFoundException,
     GenericException,
-    GetCachedAccountException,
+    GetCachedCredentialsException,
     HostUnauthorizedException,
     IdentifiersNotSetException,
     IllegalArgumentException,
@@ -183,13 +183,13 @@ from yosai.authc.credential import (
 
 from yosai.realm.realm import (
     AccountStoreRealm,
-    DefaultAccountCacheHandler,
+    DefaultCredentialsCacheHandler,
 )
 
 
 from yosai.authz.authz import (
     AllPermission,
-    DomainPermission,
+    DefaultPermission,
     ModularRealmAuthorizer,
     SimpleAuthorizationInfo,
     SimpleRole,

@@ -136,12 +136,12 @@ class MockToken(authc_abcs.AuthenticationToken):
         pass
 
 
-class MockAccountCacheHandler(realm_abcs.AccountCacheHandler):
+class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler):
 
     def __init__(self, account):
         self.account = account
 
-    def get_cached_account(self, account):
+    def get_cached_credentials(self, account):
         return self.account  # always returns the initialized account
 
 
@@ -218,7 +218,7 @@ class MockAccountStore(account_abcs.AccountStore):
     def __init__(self, account=MockAccount(account_id='MAS123')):
         self.account = account
 
-    def get_account(self, authc_token):
+    def get_account(self, request): 
         return self.account  # always returns the initialized account
 
 

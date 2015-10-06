@@ -1,7 +1,7 @@
 import pytest
 
 from yosai import (
-    DefaultAccountCacheHandler,
+    DefaultCredentialsCacheHandler,
 )
 
 from ..doubles import (
@@ -10,43 +10,43 @@ from ..doubles import (
 )
 
 from .doubles import (
-    MockAccountCacheHandler,
-    MockAccountCacheResolver,
-    MockAccountCacheKeyResolver,
+    MockCredentialsCacheHandler,
+    MockCredentialsCacheResolver,
+    MockCredentialsCacheKeyResolver,
 )
 
 @pytest.fixture(scope='function')
-def mock_account_cache_resolver():
-    return MockAccountCacheResolver()
+def mock_credentials_cache_resolver():
+    return MockCredentialsCacheResolver()
 
 @pytest.fixture(scope='function')
-def patched_mock_account_cache_resolver(full_mock_account, mock_cache):
-    return MockAccountCacheResolver(mock_cache)
+def patched_mock_credentials_cache_resolver(full_mock_account, mock_cache):
+    return MockCredentialsCacheResolver(mock_cache)
 
 @pytest.fixture(scope='function')
-def patched_mock_account_cache_key_resolver():
-    return MockAccountCacheKeyResolver('user123')
+def patched_mock_credentials_cache_key_resolver():
+    return MockCredentialsCacheKeyResolver('user123')
 
 @pytest.fixture(scope='function')
-def mock_account_cache_key_resolver():
-    return MockAccountCacheKeyResolver()
+def mock_credentials_cache_key_resolver():
+    return MockCredentialsCacheKeyResolver()
 
 @pytest.fixture(scope='function')
-def patched_default_account_cache_handler(
-        mock_account_cache_resolver, mock_account_cache_key_resolver):
-    return DefaultAccountCacheHandler(mock_account_cache_resolver,
-                                      mock_account_cache_key_resolver)
+def patched_default_credentials_cache_handler(
+        mock_credentials_cache_resolver, mock_credentials_cache_key_resolver):
+    return DefaultCredentialsCacheHandler(mock_credentials_cache_resolver,
+                                          mock_credentials_cache_key_resolver)
 
 @pytest.fixture(scope='function')
-def mock_account_cache_handler():
-    return MockAccountCacheHandler(MockAccount(account_id='MACH13579'))
+def mock_credentials_cache_handler():
+    return MockCredentialsCacheHandler(MockAccount(account_id='MACH13579'))
 
 
 @pytest.fixture(scope='function')
 def patched_accountstore_realm(
         default_accountstorerealm, monkeypatch, default_password_matcher, 
-        mock_account_cache_handler, mock_account_store):
+        mock_credentials_cache_handler, mock_account_store):
     dasr = default_accountstorerealm
-    dasr.account_cache_handler = mock_account_cache_handler
+    dasr.credentials_cache_handler = mock_credentials_cache_handler
     dasr.account_store = mock_account_store
     return default_accountstorerealm   
