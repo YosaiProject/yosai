@@ -87,22 +87,69 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
     def authorization_cache_handler(self, authorizationcachehandler):
         self._authorization_cache_handler = authorizationcachehandler
 
+    @property
+    def permission_resolver(self):
+        try:
+            return self._permission_resolver
+        except AttributeError:
+            self._permission_resolver = None
+            return self._permission_resolver
+
+    @permission_resolver.setter
+    def permission_resolver(self, permissionresolver):
+        self._permission_resolver = permissionresolver
+
+    def do_clear_cache(self, identifiers):
+        msg = "Clearing cache for: " + str(identifiers)
+        print(msg)
+        # log info here
+
+        self.clear_cached_credentials(identifiers)
+        self.clear_cached_authorization_info(identifiers)
+
+    def clear_cached_credentials(self, identifiers):
+        """
+        When cached credentials are no longer needed, they can be manually
+        cleared with this method.  However, account credentials should be
+        cached with a short expiration time (TTL), making the manual clearing
+        of cached credentials an alternative use case.
+        """
+        pass
+
+    def clear_cached_authorization_info(self, identifiers):
+        """
+        This process prevents stale authorization data from being used.
+        If any authorization data for an account is changed at runtime, such as
+        adding or removing roles and/or permissions, the subclass implementation
+        of AccountStoreRealm should clear the cached AuthorizationInfo for that
+        account through this method. This ensures that the next call to
+        get_authorization_info(PrincipalCollection) will acquire the account's
+        fresh authorization data, which is cached for efficient re-use.
+        """
+        pass
+
+    # --------------------------------------------------------------------------
+    # Authentication
+    # --------------------------------------------------------------------------
+
     # removed the basic accessor/mutator methods (not pythonic)
     def supports(self, authc_token):
         # override the following return to False if you do not wish to support
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
-    def authenticate_account(self, authc_token):
-        """ The default authentication caching policy is to cache an account
-            queried from an account store, for a specific user, so to
-            facilitate any subsequent authentication attempts for that userid.
-            Naturally, in order to cache one must have a CacheHandler.
+    def get_credentials(self, authc_token):
+        """ The default authentication caching policy is to cache an account's
+            credentials that are queried from an account store, for a specific
+            user, so to facilitate any subsequent authentication attempts for
+            that user. Naturally, in order to cache one must have a CacheHandler.
             If a user were to fail to authenticate, perhaps due to an
             incorrectly entered password, during the the next authentication
             attempt (of that user id) the cached account will be readily
             available from cache and used to match credentials, boosting
             performance.
+
+        :returns: an Account object
         """
         account = None
         cch = self.credentials_cache_handler
@@ -142,6 +189,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             print(msg3)
             return None
 
+    def authenticate_account(self, authc_token):
+        account = self.get_credentials(authc_token)
         self.assert_credentials_match(authc_token, account)
 
         return account
@@ -155,8 +204,45 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             # log here
             raise IncorrectCredentialsException(msg)
 
-    def do_clear_cache(self, identifiers):
+    # --------------------------------------------------------------------------
+    # Authorization
+    # --------------------------------------------------------------------------
+
+    def get_authorization_info(self, identifiers):
+        """
+        The default caching policy is to cache an account's authorization info,
+        obtained from an account store, for a specific user, so to facilitate
+        any subsequent authorization checks for that user. Naturally, in order
+        to cache one must have a CacheHandler.
+
+        :returns: an AuthorizationInfo object
+        """
         pass
+
+    def get_permissions(self, account):
+        pass
+
+    def resolve_permissions(self, string_perms):
+        pass
+
+    def is_permitted(self, identifiers, permission_s):
+        pass
+
+    def is_permitted_all(self, identifiers, permission_s):
+        pass
+
+    def check_permission(self, identifiers, permission_s):
+        pass
+
+    def has_role(self, identifiers, roleid_s):
+        pass
+
+    def has_all_roles(self, identifiers, roleid_s):
+        pass
+
+    def check_role(self, identifiers, roleid_s):
+        pass
+
 
 # omitted AbstractCacheHandler implementation / references
 

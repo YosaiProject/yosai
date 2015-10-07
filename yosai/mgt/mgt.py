@@ -471,7 +471,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         """
         if realm_s:
             self.apply_event_bus(realm_s)
-            self.apply_cache_manager(realm_s)
+            self.apply_cache_manager(realm_s)  # TBD:  must update to use cache handlers!
 
             authc = self.authenticator
             if (isinstance(authc, DefaultAuthenticator)):
