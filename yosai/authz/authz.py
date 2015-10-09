@@ -153,6 +153,9 @@ class WildcardPermission(serialize_abcs.Serializable):
                                      self.parts['action'],
                                      self.parts['target']))
 
+    def __hash__(self):
+        return hash(frozenset(self.parts.items())
+
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
             return self.parts == other.parts
@@ -348,7 +351,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def __init__(self, realms=None):
         self._realms = tuple()
         self._permission_resolver = None
-        self._role_permission_resolver = None
+
+        # by default, yosai does not support role -> permission resolution
 
     @property
     def realms(self):
@@ -400,30 +404,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                     realm.permission_resolver = resolver
             self._realms = realms
 
-    @property
-    def role_permission_resolver(self):
-        return self._role_permission_resolver
-
-    @role_permission_resolver.setter
-    def role_permission_resolver(self, resolver):
-        self._role_permission_resolver = resolver
-        self.apply_role_permission_resolver_to_realms()
-
-    def apply_role_permission_resolver_to_realms(self):
-        """
-        This method is called after setting a role_permission_resolver
-        attribute in this ModularRealmAuthorizer.  It is also called after
-        setting the self.realms attribute, giving the newly available realms
-        the role_permission_resolver already in use by self.
-        """
-        role_perm_resolver = self.role_permission_resolver
-        realms = copy.copy(self._realms)
-        if (role_perm_resolver and realms):
-            for realm in realms:
-                if isinstance(realm, authz_abcs.RolePermissionResolverAware):
-                    realm.role_permission_resolver = role_perm_resolver
-            self._realms = realms
-
     def assert_realms_configured(self):
         if (not self.realms):
             msg = ("Configuration error:  No realms have been configured! "
@@ -434,36 +414,20 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise IllegalStateException(msg)
 
     # Yosai refactors isPermitted and hasRole extensively, making use of
-    # generators so as to optimize processing and improve readability
+    # generators and sub-generators so as to optimize processing w/ each realm
+    # and improve code readability
 
     # new to Yosai:
-    def _has_role(self, identifiers, roleid):
+    def _has_role(self, identifiers, roleid_s):
         for realm in self.authorizing_realms:
-            result = realm.has_role(identifiers, roleid)
-            if result is not None:
-                return result
-        return None
+            # the realm's has_role returns a generator
+            yield from realm.has_role(identifiers, roleid_s)
 
     # new to Yosai:
-    def _role_collection(self, identifiers, roleids):
-        if isinstance(roleids, collections.Iterable):
-            for roleid in roleids:
-                yield (roleid, self._has_role(identifiers, roleid))
-        else:
-            yield (roleids, self._has_role(identifiers, roleids))
-
-    # new to Yosai:
-    def _is_permitted(self, identifiers, permission):
+    def _is_permitted(self, identifiers, permission_s):
         for realm in self.authorizing_realms:
-            result = realm.is_permitted(identifiers, permission)
-            if result is not None:   # faster than checking if bool
-                return result
-        return None
-
-    # new to Yosai:
-    def _permit_collection(self, identifiers, permissions):
-        for permission in permissions:
-            yield (permission, self._is_permitted(identifiers, permission))
+            # the realm's is_permitted returns a generator
+            yield from realm.is_permitted(identifiers, permission_s)
 
     def is_permitted(self, identifiers, permission_s):
         """
@@ -485,11 +449,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         self.assert_realms_configured()
 
-        if isinstance(permission_s, collections.Iterable):
-            return [(permission, permit) for (permission, permit) in
-                    self._permit_collection(identifiers, permission_s)]
+        results = collections.defaultdict(bool)  # defaults to False
 
-        return [permission_s, self._is_permitted(identifiers, permission_s)]
+        for permit in self._is_permitted(identifiers, permission_s):
+            # permit expected format is: (Permission, Boolean)
+            # As long as one realm returns True for a Permission, that Permission
+            # is granted.  Given that (True or False == True), assign accordingly:
+            results[permit[0]] = results[permit[0]] or permit[1]
+
+        return [(perm, permitted) for perm, permitted in results.items()]
 
     def is_permitted_all(self, identifiers, permission_s):
         """
@@ -500,16 +468,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self.assert_realms_configured()
 
-        if isinstance(permission_s, collections.Iterable):
-            # using a generator in order to fail immediately
-            for (permission, permitted) in self._permit_collection(
-                    identifiers, permission_s):
-                if not permitted:
-                    return False
-            return True
-
-        # else:
-        return self._is_permitted(identifiers, permission_s)  # 1 Bool
+        for (perm, permitted) in self.is_permitted(identifiers, permission_s):
+            if not permitted:
+                return False
+        return True
 
     # yosai consolidates check_permission functionality to one method:
     def check_permission(self, identifiers, permission_s):
@@ -540,19 +502,24 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param identifiers: a collection of identifiers
         :type identifiers: Set
 
-        :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: List of String(s)
 
-        :returns: a tuple containing the roleid and a boolean indicating
-                  whether the role is assigned (this is different than Shiro)
+        :returns: a List of tuple(s), containing the roleid and a Boolean
+                  indicating whether role membership is assigned
         """
         self.assert_realms_configured()
 
-        if isinstance(roleid_s, collections.Iterable):
-            return [(roleid, hasrole) for (roleid, hasrole) in
-                    self._role_collection(identifiers, roleid_s)]
+        results = collections.defaultdict(bool)  # defaults to False
 
-        return [(roleid_s, self._has_role(identifiers, roleid_s))]
+        for checkrole in self._has_role(identifiers, roleid_s):
+            # checkrole expected format is: (roleid, Boolean)
+            # As long as one realm returns True for a roleid, a subject is
+            # considered a member of that Role.
+            # Given that (True or False == True), assign accordingly:
+            results[checkrole[0]] = results[checkrole[0]] or checkrole[1]
+
+        return [(roleid, hasrole) for roleid, hasrole in results.items()]
 
     def has_all_roles(self, identifiers, roleid_s):
         """
@@ -566,8 +533,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self.assert_realms_configured()
 
-        for (roleid, hasrole) in \
-                self._role_collection(identifiers, roleid_s):
+        for (roleid, hasrole) in self.has_role(identifiers, roleid_s):
             if not hasrole:
                 return False
         return True

@@ -135,7 +135,7 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
     def supports(self, authc_token):
         pass
 
-    # new to yosai, considered a counterpart of get_authorization_info    
+    # new to yosai, considered a counterpart of get_authorization_info
     @abstractmethod
     def get_credentials(self, authc_token):
         pass
@@ -177,7 +177,7 @@ class AuthorizingRealm(Realm):
         pass
 
     @abstractmethod
-    def get_permissions(self, account):
+    def get_permissions(self, authz_info): 
         pass
 
     @abstractmethod

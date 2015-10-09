@@ -114,7 +114,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
         cached with a short expiration time (TTL), making the manual clearing
         of cached credentials an alternative use case.
         """
-        pass
+        cch.clear_cache(identifiers)
 
     def clear_cached_authorization_info(self, identifiers):
         """
@@ -126,7 +126,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        pass
+        ach.clear_cache(identifiers)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -187,7 +187,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             msg3 = ("No account found for submitted AuthenticationToken "
                     "[{0}].  Returning None.".format(authc_token))
             print(msg3)
-            return None
+
+        return account
 
     def authenticate_account(self, authc_token):
         account = self.get_credentials(authc_token)
@@ -217,15 +218,100 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
 
         :returns: an AuthorizationInfo object
         """
-        pass
+        authz_info = None
 
-    def get_permissions(self, account):
-        pass
+        msg = ("Retrieving AuthorizationInfo for identifiers [{0}]".
+               format(identifiers))
+        # log trace here
+        print(msg)
+
+        ach = self.authorization_cache_handler
+
+        if (ach):
+            msg = "Attempting to retrieve the AuthorizationInfo from cache."
+            # log trace here
+            print(msg)
+
+            # new to yosai:
+            authz_info = ach.get_cached_authorization_info(identifiers)
+
+            # TBD -- log only if logging level is TRACE:
+            if (authz_info is None):
+                msg = ("No AuthorizationInfo found in cache for identifiers ["
+                       + identifiers + "]")
+                # log trace here
+                print(msg)
+            else:
+                msg = ("AuthorizationInfo found in cache for identifiers ["
+                       + identifiers + "]")
+                # log trace here
+                print(msg)
+
+        if (authz_info is None):
+            # new to yosai:
+            account = self.account_store.get_authz_info(identifiers)
+            authz_info = account.authorization_info
+
+            # If the info is not None and cache exists, then cache the
+            # authorization info:
+            if (authz_info is not None and ach):
+
+                msg = ("Caching authorization info for identifiers: [" +
+                       identifiers + "].")
+                # log trace here
+                print(msg)
+
+                ach.cache_authorization_info(identifiers, account)
+
+        return account.authorization_info
+
+    def get_permissions(self, authz_info):
+        """
+        :returns: frozenset
+        """
+
+        permissions = set()
+
+        try:
+            permissions.update(authz_info.object_permissions)
+
+            perms = self.resolve_permissions(authz_info.string_permissions)
+            permissions.update(perms)
+
+            # yosai omits resolution of roles to permissions
+
+        except TypeError:  # raised because no authz_info passed, so no permissions
+            pass
+
+        return frozenset(permissions)
 
     def resolve_permissions(self, string_perms):
-        pass
+        """
+        :param string_perms: a List of string-formatted permissions
+
+        :returns: a set of permissions else returns an empty set
+        """
+        resolver = self.permission_resolver
+        try:
+            perms = {resolver.resolve_permission(perm) for perm in string_perms}
+            return perms
+        except (AttributeError, TypeError):
+            msg = "Could not resolve permissions from [{0}]".format(string_perms)
+            # log a warning
+            print(msg)
+
+            return set()
+
+    # yosai omits resolve_role_permissions
 
     def is_permitted(self, identifiers, permission_s):
+        """
+        :param permission_s: a collection of one or more permissions, represented
+                             as string-based permissions or Permission objects
+        :type permission_s: list
+        """
+
+    def _is_permitted(self, permission_s, authz_info):
         pass
 
     def is_permitted_all(self, identifiers, permission_s):

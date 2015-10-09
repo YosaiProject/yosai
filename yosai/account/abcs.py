@@ -112,6 +112,16 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
         """
         pass
 
+    @property
+    @abstractmethod
+    def authorization_info(self):
+        """
+        New to Yosai.  The authorization_info attribute is a collection of all
+        authorization information -- permissions and roles.
+        """
+        pass
+
+
 
 class AccountStore(metaclass=ABCMeta):
 
@@ -125,5 +135,14 @@ class AccountStore(metaclass=ABCMeta):
         :param request:  the request object defining the criteria by which
                          to query the account store
         :type request:  AuthenticationToken or Account
+        """
+        pass
+
+    @abstractmethod
+    def get_authz_info(self, identifiers):
+        """
+        creates an Account that includes only the authorization information
+        (and not credentials)
+        :returns: Account
         """
         pass
