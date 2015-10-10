@@ -190,6 +190,10 @@ class AuthorizationException(YosaiException):
     pass
 
 
+class PermissionIndexingException(AuthorizationException):
+    pass
+
+
 class UnauthenticatedException(AuthorizationException):  # DG:  s/b Authen..
     pass
 

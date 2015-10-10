@@ -20,6 +20,7 @@ under the License.
 from abc import ABCMeta, abstractmethod
 
 
+# differs from shiro in that it does not support string-based permissions:
 class AuthorizationInfo(metaclass=ABCMeta):
 
     @property
@@ -32,43 +33,11 @@ class AuthorizationInfo(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def get_string_permissions(self):  # doesn't seem pythonic, does it?
+    def permissions(self):
         """
-        Returns all string-based permissions assigned to the corresponding
-        Subject.  The permissions here plus those returned from
-        get_object_permissions() represent the total set of permissions
-        assigned.  The aggregate set is used to perform a permission
-        authorization check.
-
-        This method is a convenience mechanism that allows Realms to represent
-        permissions as Strings, if specified.  When performing a security
-        check, a Realm MAY first converts these strings to Permission objects
-        through a PermissionResolver and then uses the resulting Permission
-        objects to verify permissions.  Converting to Permission objects first
-        is not a requirement, of course, because Realm can check security in
-        whatever manner deemed necessary.  Nonetheless, the process of first
-        converting to Permission objects is one that most Shiro Realms
-        execute for string-based permission checks -- it gets run one way or
-        the other.
-
-        :returns: all string-based permissions assigned to the corresponding
-                  Subject
+        Returns all permissions assigned to the corresponding
+        Subject.
         """
-        pass
-
-    @property
-    @abstractmethod
-    def get_object_permissions(self):
-        """
-        Returns all Permissions assigned to the corresponding Subject.  The
-        permissions returned from this method plus any
-        returned from get_string_permissions()
-        represent the total set of permissions.  The aggregate set is used to
-        perform a permission authorization check.
-
-        :returns: all Permission objects assigned to the corresponding Subject
-        """
-        pass
 
 
 class Authorizer(metaclass=ABCMeta):

@@ -59,6 +59,8 @@ class PermissionResolver(metaclass=ABCMeta):
     pass
 
 
+# yosai does not support role->permission resolution, but the interface is
+# provided for guidance:
 class RolePermissionResolver(metaclass=ABCMeta):
 
     @abstractmethod
@@ -177,7 +179,7 @@ class AuthorizingRealm(Realm):
         pass
 
     @abstractmethod
-    def get_permissions(self, authz_info): 
+    def get_permissions(self, authz_info):
         pass
 
     @abstractmethod
@@ -189,23 +191,7 @@ class AuthorizingRealm(Realm):
         pass
 
     @abstractmethod
-    def is_permitted_all(self, identifiers, permission_s):
-        pass
-
-    @abstractmethod
-    def check_permission(self, identifiers, permission_s):
-        pass
-
-    @abstractmethod
     def has_role(self, identifiers, roleid_s):
-        pass
-
-    @abstractmethod
-    def has_all_roles(self, identifiers, roleid_s):
-        pass
-
-    @abstractmethod
-    def check_role(self, identifiers, roleid_s):
         pass
 
     # By default, Yosai does not support resolution of Role to Permission:

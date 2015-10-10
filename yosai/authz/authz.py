@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 import ipdb
+import itertools
 
 from yosai import (
     AuthorizationException,
@@ -24,6 +25,7 @@ from yosai import (
     IllegalArgumentException,
     IllegalStateException,
     LogManager,
+    PermissionIndexingException,
     UnauthenticatedException,
     UnauthorizedException,
     authz_abcs,
@@ -328,7 +330,7 @@ class DefaultPermission(WildcardPermission):
                                        action=action_string,
                                        target=target_string)
 
-        super().set_parts(wildcard_string=permission)
+        super().setparts(wildcard_string=permission)
 
     # removed getDomain
 
@@ -560,52 +562,69 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise UnauthorizedException(msg)
 
 
-class SimpleAuthorizationInfo:
+# new to yosai, deprecates shiro's SimpleAuthorizationInfo
+class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
     """
-    Simple implementation of the authz_abcs.AuthorizationInfo interface that stores
-    roles and permissions as internal attributes.
+    This is an implementation of the authz_abcs.AuthorizationInfo interface that
+    stores roles and permissions as internal attributes, indexing permissions
+    to facilitate is_permitted requests.
     """
+    def __init__(self, roles=set(), perms=set()):
+        """
+        :type roles: set of Role objects
+        :type perms: set of DefaultPermission objects
+        """
+        self._roles = roles
+        self._permissions = defaultdict(set)
+        self.index_permissions(perms)
 
-    def __init__(self, roles=set()):
+    @property
+    def roles(self):
+        return self._roles
+
+    @roles.setter
+    def roles(self, roles):
         """
-        :type roles: Set
+        :type roles: a set of Role objects
         """
-        self.roles = roles
-        self.string_permissions = set()
-        self.object_permissions = set()
+        self._roles = roles
+
+    @property
+    def permissions(self):
+        return set(itertools.chain.from_iterable(self._permissions()))
+
+    @permissions.setter
+    def permissions(self, perms):
+        """
+        :type perms: a set of DefaultPermission objects
+        """
+        self._permissions.clear()
+        self.index_permission(perms)
 
     # yosai combines add_role with add_roles
     def add_role(self, role_s):
         """
         :type role_s: set
         """
-        if (self.roles is None):
-            self.roles = set()
-
-        for item in role_s:
-            self.roles.add(item)  # adds in order received
+        self.roles.update(role_s)
 
     # yosai combines add_string_permission with add_string_permissions
-    def add_string_permission(self, permission_s):
+    def add_permission(self, permission_s):
         """
-        :type permission_s: set of string-based permissions
+        :type permission_s: set of DefaultPermission objects
         """
-        if (self.string_permissions is None):
-            self.string_permissions = set()
+        self.index_permission(permission_s)
 
-        for item in permission_s:
-            self.string_permissions.add(item)  # adds in order received
-
-    # yosai combines add_object_permission with add_object_permissions
-    def add_object_permission(self, permission_s):
+    def index_permission(self, permission_s):
         """
-        :type permission_s: set of Permission objects
-        """
-        if (self.object_permissions is None):
-            self.object_permissions = set()
+        Indexes permissions because indexes can be quickly queried to facilitate
+        is_permitted requests.  Indexing is by a Permission's domain attribute.
 
-        for item in permission_s:
-            self.object_permissions.add(item)  # adds in order received
+        :raises PermissionIndexingException: when the permission_index fails to
+                                             index every permission provided
+        """
+        for permission in permission_s:
+            self.permissions[permission.domain].add(permission)
 
 
 class SimpleRole:

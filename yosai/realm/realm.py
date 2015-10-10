@@ -320,11 +320,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             required_perms = permission_s
 
         authz_info = self.get_authorization_info(identifiers)
-        assigned_perms = self.get_permissions(authz_info)
+        related_permissions = self.get_permissions(authz_info)
 
         for permission in required_perms:
-            # for bla bla bla
-            yield (permission, assigned_perms)
+            for perm in related_permission:
+                yield (permission, assigned_perms)
 
     def has_role(self, identifiers, roleid_s):
         pass
