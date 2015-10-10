@@ -308,25 +308,25 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
         """
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
-        :type permission_s: list
+                             and NEVER comingled
+        :type permission_s: list of either String(s) or Permission(s)
         """
+        # the type of the first element in permission_s implies the rest
+        if isinstance(permission_s[0], str):
+            resolver = self.permission_resolver
+            required_perms = [resolver.resolve_permission(perm) for
+                              perm in permission_s]
+        else:
+            required_perms = permission_s
 
-    def _is_permitted(self, permission_s, authz_info):
-        pass
+        authz_info = self.get_authorization_info(identifiers)
+        assigned_perms = self.get_permissions(authz_info)
 
-    def is_permitted_all(self, identifiers, permission_s):
-        pass
-
-    def check_permission(self, identifiers, permission_s):
-        pass
+        for permission in required_perms:
+            # for bla bla bla
+            yield (permission, assigned_perms)
 
     def has_role(self, identifiers, roleid_s):
-        pass
-
-    def has_all_roles(self, identifiers, roleid_s):
-        pass
-
-    def check_role(self, identifiers, roleid_s):
         pass
 
 

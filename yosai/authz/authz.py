@@ -60,7 +60,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
 
         self.case_sensitive = case_sensitive
-        self.parts = {}
+        self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
         if wildcard_string:
             self.set_parts(wildcard_string, case_sensitive)
 
@@ -91,8 +91,8 @@ class WildcardPermission(serialize_abcs.Serializable):
         for index, part in enumerate(parts):
             if not any(x != self.SUBPART_DIVIDER_TOKEN for x in part):
                 msg = ("Wildcard string cannot contain parts consisting JUST "
-                       "of sub-part dividers. Make sure permission strings "
-                       "are properly formatted.")
+                       "of sub-part dividers or nothing at all. Ensure that "
+                       "permission strings are properly formatted.")
                 print(msg)
                 raise IllegalArgumentException(msg)
 
@@ -149,12 +149,12 @@ class WildcardPermission(serialize_abcs.Serializable):
         return True
 
     def __repr__(self):
-        return ("{0}:{1}:{2}".format(self.parts['domain'],
-                                     self.parts['action'],
-                                     self.parts['target']))
+        return ("{0}:{1}:{2}".format(self.parts.get('domain'),
+                                     self.parts.get('action'),
+                                     self.parts.get('target')))
 
     def __hash__(self):
-        return hash(frozenset(self.parts.items())
+        return hash(frozenset(self.parts.items()))
 
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
@@ -223,7 +223,7 @@ class DefaultPermission(WildcardPermission):
     string to separate table columns (e.g. 'domain', 'action' and 'target'
     columns) and is subsequently used in querying strategies.
     """
-    def __init__(self, domain, action=None, target=None):
+    def __init__(self, domain=None, action=None, target=None):
         """
         :type domain: str
         :type action: str or set of strings
@@ -231,13 +231,11 @@ class DefaultPermission(WildcardPermission):
 
         After initializing, the state of a DomainPermission object includes:
             self.results = a list populated by WildcardPermission.set_results
-            self._domain = a Str
+            self._domain = a Str, or None
             self._action = a set, or None
             self._target = a set, or None
         """
         super().__init__()
-        if domain is None:
-            raise IllegalArgumentException('Domain cannot be None')
         self.set_parts(domain=domain, action=action, target=target)
         self._domain = self.parts.get('domain')
         self._action = self.parts.get('action')
@@ -329,8 +327,7 @@ class DefaultPermission(WildcardPermission):
     # removed getDomain
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
-                             authz_abcs.PermissionResolverAware,
-                             authz_abcs.RolePermissionResolverAware):
+                             authz_abcs.PermissionResolverAware):
 
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults
