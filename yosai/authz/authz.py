@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import ipdb
 
 from yosai import (
     AuthorizationException,
@@ -62,9 +63,9 @@ class WildcardPermission(serialize_abcs.Serializable):
         self.case_sensitive = case_sensitive
         self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
         if wildcard_string:
-            self.set_parts(wildcard_string, case_sensitive)
+            self.setparts(wildcard_string, case_sensitive)
 
-    def set_parts(self, wildcard_string,
+    def setparts(self, wildcard_string,
                   case_sensitive=DEFAULT_CASE_SENSITIVE):
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
@@ -223,11 +224,13 @@ class DefaultPermission(WildcardPermission):
     string to separate table columns (e.g. 'domain', 'action' and 'target'
     columns) and is subsequently used in querying strategies.
     """
-    def __init__(self, domain=None, action=None, target=None):
+    def __init__(self, domain=None, action=None, target=None,
+                 wildcard_string=None):
         """
         :type domain: str
         :type action: str or set of strings
         :type target: str or set of strings
+        :type wildcard_permission: str
 
         After initializing, the state of a DomainPermission object includes:
             self.results = a list populated by WildcardPermission.set_results
@@ -235,8 +238,11 @@ class DefaultPermission(WildcardPermission):
             self._action = a set, or None
             self._target = a set, or None
         """
-        super().__init__()
-        self.set_parts(domain=domain, action=action, target=target)
+        if wildcard_string is not None:
+            super().__init__(wildcard_string=wildcard_string)
+        else:
+            super().__init__()
+            self.set_parts(domain=domain, action=action, target=target)
         self._domain = self.parts.get('domain')
         self._action = self.parts.get('action')
         self._target = self.parts.get('target')
