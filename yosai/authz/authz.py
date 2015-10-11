@@ -110,6 +110,9 @@ class WildcardPermission(serialize_abcs.Serializable):
             for sp in subparts:
                 self.parts[myindex].add(sp)
 
+        # final step is to make it immutable:
+        self.parts.update((k, frozenset(v)) for k, v in self.parts.items())
+
     def implies(self, permission):
         """
         :type permission:  Permission object
@@ -316,8 +319,14 @@ class DefaultPermission(WildcardPermission):
         """
 
         # default values
+        domain_string = domain
         action_string = action
         target_string = target
+
+        if isinstance(domain, set):
+            domain_string = self.SUBPART_DIVIDER_TOKEN.\
+                join([token for token in domain])
+
         if isinstance(action, set):
             action_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in action])
@@ -326,7 +335,7 @@ class DefaultPermission(WildcardPermission):
             target_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in target])
 
-        permission = self.encode_parts(domain=domain,
+        permission = self.encode_parts(domain=domain_string,
                                        action=action_string,
                                        target=target_string)
 
@@ -569,14 +578,14 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
     stores roles and permissions as internal attributes, indexing permissions
     to facilitate is_permitted requests.
     """
-    def __init__(self, roles=set(), perms=set()):
+    def __init__(self, roles=set(), permissions=set()):
         """
         :type roles: set of Role objects
         :type perms: set of DefaultPermission objects
         """
         self._roles = roles
-        self._permissions = defaultdict(set)
-        self.index_permissions(perms)
+        self._permissions = collections.defaultdict(set)
+        self.index_permission(permissions)
 
     @property
     def roles(self):
@@ -591,7 +600,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
 
     @property
     def permissions(self):
-        return set(itertools.chain.from_iterable(self._permissions()))
+        return set(itertools.chain.from_iterable(self._permissions.values()))
 
     @permissions.setter
     def permissions(self, perms):
@@ -618,14 +627,37 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
     def index_permission(self, permission_s):
         """
         Indexes permissions because indexes can be quickly queried to facilitate
-        is_permitted requests.  Indexing is by a Permission's domain attribute.
+        is_permitted requests.  
+        
+        Indexing is by a Permission's domain attribute.  One limitation of this 
+        design is that it requires that Permissions be modeled by domain, one 
+        domain per Permission.  This is a generally acceptable limitation.
+
+        """
+        for permission in permission_s:
+            domain = next(iter(permission.domain))  # should only be ONE domain
+            self._permissions[domain].add(permission)
+
+        self.assert_permissions_indexed(permission_s)
+
+    def get_domain(self, domain):
+        return self._permissions.get(domain)
+
+    def assert_permissions_indexed(self, permission_s):
+        """
+        Ensures that all permission_s passed were indexed.
 
         :raises PermissionIndexingException: when the permission_index fails to
                                              index every permission provided
         """
-        for permission in permission_s:
-            self.permissions[permission.domain].add(permission)
+        if not (permission_s <= self.permissions):
+            perms = ','.join(str(perm) for perm in permission_s) 
+            msg = "Failed to Index Permissions: " + perms 
+            raise PermissionIndexingException(msg)
 
+    def __repr__(self):
+        perms = ','.join(str(perm) for perm in self.permissions)
+        return "IndexedAuthorizationInfo({0})".format(perms)
 
 class SimpleRole:
 

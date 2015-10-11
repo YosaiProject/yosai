@@ -265,8 +265,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
 
         return account.authorization_info
 
-    def get_permissions(self, authz_info):
+    # new to yosai:
+    def get_related_permissions(self, authz_info, permission):
         """
+        Queries an indexed collection of permissions in authz_info for
+        related permissions (those that potentially imply privilege).
+
         :returns: frozenset
         """
 
@@ -320,7 +324,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             required_perms = permission_s
 
         authz_info = self.get_authorization_info(identifiers)
-        related_permissions = self.get_permissions(authz_info)
+        related_permissions = self.get_related_permissions(authz_info)
 
         for permission in required_perms:
             for perm in related_permission:
