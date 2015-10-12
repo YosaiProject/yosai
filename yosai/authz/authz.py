@@ -690,74 +690,93 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
     def __repr__(self):
         perms = ','.join(str(perm) for perm in self.permissions)
-        return "IndexedAuthorizationInfo({0})".format(perms)
+        return ("IndexedAuthorizationInfo(permissions={0}, roles={1})".
+                format(perms, self.roles))
 
     @classmethod
     def serialization_schema(cls):
 
         class SerializationSchema(Schema):
-            # role_schema = SimpleRole.serialization_schema()
-            # _roles = fields.Nested(role_schema, many=True)
+            _roles = fields.Nested(SimpleRole.serialization_schema(), many=True)
             _permissions = CollectionDict(fields.Nested(
                 DefaultPermission.serialization_schema()))
+
+            # sets can't be serialized so convert to list
+            # @post_dump
+            # def convert_roles(self, data):
+            #     data['_roles'] = list(data['_roles'])
 
             @post_load
             def make_authz_info(self, data):
                 mycls = IndexedAuthorizationInfo
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
+                instance._roles = set(instance._roles)
                 return instance
 
         return SerializationSchema
 
 
-class SimpleRole:
+class SimpleRole(serialize_abcs.Serializable):
 
     def __init__(self, name=None, permissions=set()):
         self.name = name
-        self.permissions = permissions
 
-    def add(self, permission):
-        """
-        :type permission: a Permission object
-        """
-        permissions = self.permissions
-        if (permissions is None):
-            self.permissions = set()
-        self.permissions.add(permission)
+        # note:  yosai doesn't support role->permission resolution by default
+        #        and so permissions and the permission methods won't be used
+        # self.permissions = permissions
 
-    def add_all(self, permissions):
-        """
-        :type permissions: an set of Permission objects
-        """
-        if (self.permissions is None):
-            self.permissions = set()
+    # def add(self, permission):
+    #    """
+    #    :type permission: a Permission object
+    #    """
+    #    permissions = self.permissions
+    #    if (permissions is None):
+    #        self.permissions = set()
+    #    self.permissions.add(permission)
 
-        for item in permissions:
-            self.permissions.add(item)  # adds in order received
+    # def add_all(self, permissions):
+    #    """
+    #    :type permissions: an set of Permission objects
+    #    """
+    #    if (self.permissions is None):
+    #        self.permissions = set()
 
-    def is_permitted(self, permission):
-        """
-        :type permission: Permission object
-        """
-        if (self.permissions):
-            for perm in self.permissions:
-                if (perm.implies(permission)):
-                    return True
-        return False
+    #   for item in permissions:
+    #        self.permissions.add(item)  # adds in order received
 
-    def hash_code(self):
-        # TBD:  not sure about this..
-        if self.name:
-            return id(self.name)
-        return 0
+    # def is_permitted(self, permission):
+    #    """
+    #    :type permission: Permission object
+    #    """
+    #    if (self.permissions):
+    #        for perm in self.permissions:
+    #            if (perm.implies(permission)):
+    #                return True
+    #    return False
+
+    def __hash__(self):
+        return hash(self.name)
 
     def __eq__(self, other):
-
         if (isinstance(other, SimpleRole)):
             return self.name == other.name
-
         return False
 
     def __repr__(self):
-        return self.name
+        return "SimpleRole(name={0})".format(self.name)
+
+    @classmethod
+    def serialization_schema(cls):
+
+        class SerializationSchema(Schema):
+            name = fields.Str()
+
+            @post_load
+            def make_authz_info(self, data):
+                mycls = SimpleRole
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+                return instance
+
+        return SerializationSchema

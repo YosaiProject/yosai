@@ -29,7 +29,7 @@ import rapidjson
 import pkg_resources
 import copy
 from marshmallow import fields, missing
-
+import pprint
 
 class SerializationManager:
     """
@@ -102,7 +102,6 @@ class SerializationManager:
                 # assume that its a list of Serializables
                 newlist = []
                 for element in unpacked:
-                    print(element)
                     cls = getattr(yosai, element['serialized_cls'])
                     newlist.append(cls.deserialize(element))
                 return newlist
