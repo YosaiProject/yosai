@@ -28,6 +28,7 @@ import datetime
 import rapidjson
 import pkg_resources
 import copy
+from marshmallow import fields, missing
 
 
 class SerializationManager:
@@ -131,3 +132,38 @@ class MSGPackSerializer(serialize_abcs.Serializer):
     @classmethod
     def deserialize(self, message):
         return msgpack.unpackb(message, encoding='utf-8')
+
+
+class CollectionDict(fields.Dict):
+
+    def __init__(self, child, *args, **kwargs):
+        self.child = child
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def accessor(key, obj, default=missing):
+        """Custom accessor that only handles list and tuples.
+        """
+        try:
+            return obj[key]
+        except IndexError:
+            return default
+
+    def _serialize(self, value, attr, obj):
+        ret = super()._serialize(value, attr, obj)
+        for key, collection in ret.items():
+            lvalue = list(collection)
+            ret[key] = [
+                self.child.serialize(i, lvalue, accessor=self.accessor)
+                for i in range(len(lvalue))
+            ]
+        return ret
+
+    def _deserialize(self, value, attr, data):
+        ret = super()._deserialize(value, attr, data)
+        for key, collection in value.items():
+            ret[key] = set([
+                self.child.deserialize(each, i, collection)
+                for i, each in enumerate(collection)
+            ])
+        return ret

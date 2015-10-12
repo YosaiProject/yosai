@@ -21,6 +21,7 @@ import itertools
 
 from yosai import (
     AuthorizationException,
+    CollectionDict,
     HostUnauthorizedException,
     IllegalArgumentException,
     IllegalStateException,
@@ -168,9 +169,6 @@ class WildcardPermission(serialize_abcs.Serializable):
 
         return False
 
-    def hash_code(self):
-        return id(self.parts)
-
     @classmethod
     def serialization_schema(cls):
         class WildcardPartsSchema(Schema):
@@ -190,7 +188,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                 # have to convert to set from post_load due to the
                 # WildcardPartsSchema
                 for key, val in instance.parts.items():
-                    instance.parts[key] = set(val)
+                    instance.parts[key] = frozenset(val)
                 return instance
 
             # prior to serializing, convert a dict of sets to a dict of lists
@@ -342,6 +340,40 @@ class DefaultPermission(WildcardPermission):
         super().setparts(wildcard_string=permission)
 
     # removed getDomain
+
+    @classmethod
+    def serialization_schema(cls):
+        class PermissionPartsSchema(Schema):
+                domain = fields.List(fields.Str)
+                action = fields.List(fields.Str)
+                target = fields.List(fields.Str)
+
+        class SerializationSchema(Schema):
+            parts = fields.Nested(PermissionPartsSchema)
+
+            @post_load
+            def make_default_permission(self, data):
+                mycls = DefaultPermission
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+
+                # have to convert to set from post_load due to the
+                # WildcardPartsSchema
+                for key, val in instance.parts.items():
+                    instance.parts[key] = frozenset(val)
+                return instance
+
+            # prior to serializing, convert a dict of sets to a dict of lists
+            # because sets cannot be serialized
+            @post_dump
+            def convert_sets(self, data):
+                for attribute, value in data['parts'].items():
+                    data['parts'][attribute] = list(value)
+                return data
+
+        return SerializationSchema
+
+
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
                              authz_abcs.PermissionResolverAware):
@@ -572,7 +604,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
 
 # new to yosai, deprecates shiro's SimpleAuthorizationInfo
-class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
+class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
+                               serialize_abcs.Serializable):
     """
     This is an implementation of the authz_abcs.AuthorizationInfo interface that
     stores roles and permissions as internal attributes, indexing permissions
@@ -615,7 +648,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
         """
         :type role_s: set
         """
-        self.roles.update(role_s)
+        self._roles.update(role_s)
 
     # yosai combines add_string_permission with add_string_permissions
     def add_permission(self, permission_s):
@@ -627,10 +660,10 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
     def index_permission(self, permission_s):
         """
         Indexes permissions because indexes can be quickly queried to facilitate
-        is_permitted requests.  
-        
-        Indexing is by a Permission's domain attribute.  One limitation of this 
-        design is that it requires that Permissions be modeled by domain, one 
+        is_permitted requests.
+
+        Indexing is by a Permission's domain attribute.  One limitation of this
+        design is that it requires that Permissions be modeled by domain, one
         domain per Permission.  This is a generally acceptable limitation.
 
         """
@@ -651,13 +684,31 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo):
                                              index every permission provided
         """
         if not (permission_s <= self.permissions):
-            perms = ','.join(str(perm) for perm in permission_s) 
-            msg = "Failed to Index Permissions: " + perms 
+            perms = ','.join(str(perm) for perm in permission_s)
+            msg = "Failed to Index All Permissions: " + perms
             raise PermissionIndexingException(msg)
 
     def __repr__(self):
         perms = ','.join(str(perm) for perm in self.permissions)
         return "IndexedAuthorizationInfo({0})".format(perms)
+
+    @classmethod
+    def serialization_schema(cls):
+
+        class SerializationSchema(Schema):
+            # role_schema = SimpleRole.serialization_schema()
+            # _roles = fields.Nested(role_schema, many=True)
+            _permissions = CollectionDict(fields.Nested(
+                WildcardPermission.serialization_schema()()))
+
+            @post_load
+            def make_authz_info(self, data):
+                mycls = IndexedAuthorizationInfo
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+
+        return SerializationSchema
+
 
 class SimpleRole:
 

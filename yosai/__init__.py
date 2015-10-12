@@ -139,6 +139,7 @@ from yosai.utils.utils import (
 )
 
 from yosai.serialize.serialize import (
+    CollectionDict,
     JSONSerializer,
     MSGPackSerializer,
     SerializationManager,
