@@ -673,7 +673,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
         self.assert_permissions_indexed(permission_s)
 
-    def get_domain(self, domain):
+    def get_permission(self, domain):
         return self._permissions.get(domain)
 
     def assert_permissions_indexed(self, permission_s):
@@ -699,13 +699,14 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
             # role_schema = SimpleRole.serialization_schema()
             # _roles = fields.Nested(role_schema, many=True)
             _permissions = CollectionDict(fields.Nested(
-                WildcardPermission.serialization_schema()()))
+                DefaultPermission.serialization_schema()))
 
             @post_load
             def make_authz_info(self, data):
                 mycls = IndexedAuthorizationInfo
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
+                return instance
 
         return SerializationSchema
 
