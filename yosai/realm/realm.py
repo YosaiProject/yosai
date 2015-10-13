@@ -345,8 +345,34 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             yield (reqstd_perm, is_permitted)
 
     def has_role(self, identifiers, roleid_s):
-        pass
+        """
+        Confirms whether a subject is a member of one or more roles.
 
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
+
+        :returns: Boolean
+        """
+        authz_info = self.get_authorization_info(identifiers)
+        authzinfo_roleids = authz_info.roleids
+        for roleid in roleid_s:
+            hasrole = (roleid <= authzinfo_roleids)
+            yield (roleid, hasrole)
+
+    def has_all_roles(self, identifiers, roleid_s):
+        """
+        Confirms whether a subject is a member of all roles.
+
+        has_all_roles is a bit more opaque a solution than has_role, but fast
+        because it uses a set operation
+
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
+
+        :returns: Boolean
+        """
+        authz_info = self.get_authorization_info(identifiers)
+        return roleid_s <= authz_info.roleids
 
 # omitted AbstractCacheHandler implementation / references
 

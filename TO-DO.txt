@@ -90,3 +90,7 @@ add excessive-login-attempts logic:
 ---------------------------------------------------------------------
 
 confirm correct porting of List<...> collections
+
+
+Unit Testing Reminders
+- roleid_s are Sets and no longer Lists -- update existing unit tests accordingly

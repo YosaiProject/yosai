@@ -504,13 +504,13 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         results = collections.defaultdict(bool)  # defaults to False
 
-        for permit in self._is_permitted(identifiers, permission_s):
+        for permission, is_permitted in self._is_permitted(identifiers, permission_s):
             # permit expected format is: (Permission, Boolean)
             # As long as one realm returns True for a Permission, that Permission
             # is granted.  Given that (True or False == True), assign accordingly:
-            results[permit[0]] = results[permit[0]] or permit[1]
+            results[permission] = results[permission] or is_permitted
 
-        return [(perm, permitted) for perm, permitted in results.items()]
+        return list(results.items())
 
     def is_permitted_all(self, identifiers, permission_s):
         """
@@ -556,23 +556,22 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers: Set
 
         :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: List of String(s)
+        :type roleid_s: Set of String(s)
 
-        :returns: a List of tuple(s), containing the roleid and a Boolean
-                  indicating whether role membership is assigned
+        :returns: a Boolean
         """
         self.assert_realms_configured()
 
         results = collections.defaultdict(bool)  # defaults to False
 
-        for checkrole in self._has_role(identifiers, roleid_s):
+        for roleid, has_role in self._has_role(identifiers, roleid_s):
             # checkrole expected format is: (roleid, Boolean)
             # As long as one realm returns True for a roleid, a subject is
             # considered a member of that Role.
             # Given that (True or False == True), assign accordingly:
-            results[checkrole[0]] = results[checkrole[0]] or checkrole[1]
+            results[roleid] = results[roleid] or has_role
 
-        return [(roleid, hasrole) for roleid, hasrole in results.items()]
+        return list(results.items())
 
     def has_all_roles(self, identifiers, roleid_s):
         """
@@ -580,16 +579,18 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings
+        :type roleid_s:  a String or Set of Strings
 
         :returns: a Boolean
         """
         self.assert_realms_configured()
 
-        for (roleid, hasrole) in self.has_role(identifiers, roleid_s):
-            if not hasrole:
-                return False
-        return True
+        for realm in self.authorizing_realms:
+            # the realm's has_role returns a generator
+            if realm.has_all_roles(identifiers, roleid_s):
+                return True
+
+        return False 
 
     def check_role(self, identifiers, roleid_s):
         """
@@ -597,7 +598,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers: Set
 
         :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or List of Strings
+        :type roleid_s:  a String or Set of Strings
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
@@ -637,6 +638,10 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
         :type roles: a set of Role objects
         """
         self._roles = roles
+
+    @property
+    def roleids(self):
+        return {role.identifier for role in self.roles}
 
     @property
     def permissions(self):
@@ -729,9 +734,9 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
 class SimpleRole(serialize_abcs.Serializable):
 
-    def __init__(self, name=None, permissions=set()):
-        self.name = name
+    def __init__(self, role_identifier=None, permissions=set()):
 
+        self.identifier = role_identifier
         # note:  yosai doesn't support role->permission resolution by default
         #        and so permissions and the permission methods won't be used
         # self.permissions = permissions
@@ -766,21 +771,21 @@ class SimpleRole(serialize_abcs.Serializable):
     #    return False
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.identifier)
 
     def __eq__(self, other):
         if (isinstance(other, SimpleRole)):
-            return self.name == other.name
+            return self.identifier == other.identifier
         return False
 
     def __repr__(self):
-        return "SimpleRole(name={0})".format(self.name)
+        return "SimpleRole(identifier={0})".format(self.identifier)
 
     @classmethod
     def serialization_schema(cls):
 
         class SerializationSchema(Schema):
-            name = fields.Str()
+            identifier = fields.Str()
 
             @post_load
             def make_authz_info(self, data):
