@@ -30,7 +30,7 @@ from yosai import (
     UsernamePasswordToken,
     realm_abcs,
 )
-
+import itertools
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
     """
@@ -194,6 +194,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
         account = self.get_credentials(authc_token)
         self.assert_credentials_match(authc_token, account)
 
+        # new to yosai:  at this point, authentication is confirmed, so clear
+        #                the cache of credentials
+        self.clear_cached_credentials(authc_token.identifier)
         return account
 
     def assert_credentials_match(self, authc_token, account):
@@ -250,44 +253,47 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
         if (authz_info is None):
             # new to yosai:
             account = self.account_store.get_authz_info(identifiers)
-            authz_info = account.authorization_info
+
+            authz_info = IndexedAuthorizationInfo(roles=account.roles,
+                                                  permissions=account.permissions)
 
             # If the info is not None and cache exists, then cache the
-            # authorization info:
-            if (authz_info is not None and ach):
+            # authorization info
+            if (authz_info and ach):
 
                 msg = ("Caching authorization info for identifiers: [" +
                        identifiers + "].")
                 # log trace here
                 print(msg)
 
-                ach.cache_authorization_info(identifiers, account)
+                ach.cache_authorization_info(identifiers, authz_info)
 
-        return account.authorization_info
+        return authz_info
 
     # new to yosai:
-    def get_related_permissions(self, authz_info, permission):
+    def get_authzd_permissions(self, authz_info, permission):
         """
+        :param permission: a Permission that has already been resolved (if needed)
+        :type permission: a Permission object
+
         Queries an indexed collection of permissions in authz_info for
-        related permissions (those that potentially imply privilege).
+        related permissions (those that potentially imply privilege).  Those
+        that are related include:
+            1) permissions with a wildcard domain
+            2) permissions of the same domain as the requested permission
 
         :returns: frozenset
         """
 
-        permissions = set()
-
         try:
-            permissions.update(authz_info.object_permissions)
-
-            perms = self.resolve_permissions(authz_info.string_permissions)
-            permissions.update(perms)
-
+            wildcard_perms = authz_info.get_permission('*')
+            domain_perms = authz_info.get_permission(permission.domain)
             # yosai omits resolution of roles to permissions
 
         except TypeError:  # raised because no authz_info passed, so no permissions
             pass
 
-        return frozenset(permissions)
+        return frozenset(itertools.chain(wildcard_perms, domain_perms))
 
     def resolve_permissions(self, string_perms):
         """
@@ -315,20 +321,23 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
                              and NEVER comingled
         :type permission_s: list of either String(s) or Permission(s)
         """
-        # the type of the first element in permission_s implies the rest
+        # the type of the first element in permission_s implies the type of the
+        # rest of the elements -- no commingling!
         if isinstance(permission_s[0], str):
-            resolver = self.permission_resolver
-            required_perms = [resolver.resolve_permission(perm) for
-                              perm in permission_s]
+            requested_perms = self.resolve_permissions(permission_s)
         else:
-            required_perms = permission_s
+            requested_perms = permission_s
 
         authz_info = self.get_authorization_info(identifiers)
-        related_permissions = self.get_related_permissions(authz_info)
 
-        for permission in required_perms:
-            for perm in related_permission:
-                yield (permission, assigned_perms)
+        for reqstd_perm in requested_perms:
+            is_permitted = False
+            authorized_perms = self.get_authzd_permissions(authz_info, permission)
+            for authz_perm in authorized_perms:
+                if authz_perm.implies(reqstd_perm):
+                    is_permitted = True
+                    break
+            yield (reqstd_perm, is_permitted)
 
     def has_role(self, identifiers, roleid_s):
         pass

@@ -33,7 +33,6 @@ due to their discretionary nature and that their implementation is subject
 to change among the datastores used.  Requiring Concrete Implementations:
    - Account
    - AccountStore
-   - AuthorizingAccountStoreRealm
    - AccountCacheResolver
    - AccountCacheKeyResolver
    - CacheManager
@@ -89,7 +88,5 @@ add excessive-login-attempts logic:
     exception.
 
 ---------------------------------------------------------------------
-
-unit test JSON serialization
 
 confirm correct porting of List<...> collections

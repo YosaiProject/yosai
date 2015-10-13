@@ -688,6 +688,9 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
             msg = "Failed to Index All Permissions: " + perms
             raise PermissionIndexingException(msg)
 
+    def __len__(self):
+        return len(self.permissions) + len(self.roles)
+
     def __repr__(self):
         perms = ','.join(str(perm) for perm in self.permissions)
         return ("IndexedAuthorizationInfo(permissions={0}, roles={1})".
