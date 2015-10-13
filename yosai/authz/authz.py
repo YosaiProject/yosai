@@ -209,6 +209,13 @@ class WildcardPermissionResolver:
     def resolve_permission(self, permission_string):
         return WildcardPermission(permission_string)
 
+# new to yosai:
+class DefaultPermissionResolver:
+
+    @classmethod
+    def resolve_permission(self, permission_string):
+        return DefaultPermission(permission_string)
+
 
 class DefaultPermission(WildcardPermission):
     """
@@ -674,7 +681,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
         self.assert_permissions_indexed(permission_s)
 
     def get_permission(self, domain):
-        return self._permissions.get(domain)
+        return self._permissions.get(domain, set())
 
     def assert_permissions_indexed(self, permission_s):
         """

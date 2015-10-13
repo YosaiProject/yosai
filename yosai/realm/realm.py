@@ -287,7 +287,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
 
         try:
             wildcard_perms = authz_info.get_permission('*')
-            domain_perms = authz_info.get_permission(permission.domain)
+
+            requested_domain = next(iter(permission.domain))
+            domain_perms = authz_info.get_permission(requested_domain)
             # yosai omits resolution of roles to permissions
 
         except TypeError:  # raised because no authz_info passed, so no permissions
@@ -306,7 +308,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
             perms = {resolver.resolve_permission(perm) for perm in string_perms}
             return perms
         except (AttributeError, TypeError):
-            msg = "Could not resolve permissions from [{0}]".format(string_perms)
+            msg = "Could not resolve permissions for {0}".format(string_perms)
+            if not self.permission_resolver:
+                msg += " .  Permission Resolver is not set."
+
             # log a warning
             print(msg)
 
@@ -332,7 +337,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
 
         for reqstd_perm in requested_perms:
             is_permitted = False
-            authorized_perms = self.get_authzd_permissions(authz_info, permission)
+            authorized_perms = self.get_authzd_permissions(authz_info, reqstd_perm)
             for authz_perm in authorized_perms:
                 if authz_perm.implies(reqstd_perm):
                     is_permitted = True

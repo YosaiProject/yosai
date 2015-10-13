@@ -192,6 +192,7 @@ from yosai.realm.realm import (
 from yosai.authz.authz import (
     AllPermission,
     DefaultPermission,
+    DefaultPermissionResolver,
     ModularRealmAuthorizer,
     IndexedAuthorizationInfo,
     SimpleRole,
