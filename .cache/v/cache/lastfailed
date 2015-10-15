@@ -1,16 +1,3 @@
 {
-  "test/isolated_tests/authz/test_authz.py::test_mra_check_role_collection_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_has_all_roles_collection_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_has_all_roles_single_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_has_role_single_role_returns_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_is_permitted_all_collection_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_is_permitted_all_single_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_is_permitted_single_permission_returns_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_private_has_role_true": true,
-  "test/isolated_tests/authz/test_authz.py::test_mra_private_role_collection_yields": true,
-  "test/isolated_tests/context/test_context.py::test_mapcontext_attributes": true,
-  "test/isolated_tests/serialize/test_serialize.py::test_mps_serialize": true,
-  "test/isolated_tests/serialize/test_serialize.py::test_sm_deserialize": true,
-  "test/isolated_tests/session/test_session.py::test_dsc_basic_test": true,
-  "test/isolated_tests/session/test_session_manager.py::test_ansm_get_attribute": true
+  "yosai/logging/test_logging.py": true
 }

@@ -388,11 +388,16 @@ def test_mra_has_all_roles(
     monkeypatch.setattr(mra.realms[1], 'has_all_roles', lambda x, y: param1)
     monkeypatch.setattr(mra.realms[2], 'has_all_roles', lambda x, y: param2)
 
-    result = mra.has_all_roles('arbitrary_identifiers', {'roleid1', 'roleid2'})
-    assert result == expected
+    with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
+        arc.return_value = None
+        result = mra.has_all_roles('arbitrary_identifiers', {'roleid1', 'roleid2'})
+
+        arc.assert_called_once_with()
+        assert result == expected
 
 
-def test_mra_check_role_collection_false(modular_realm_authorizer_fff):
+def test_mra_check_role_collection_raises(
+        modular_realm_authorizer_patched, monkeypatch):
     """
     unit tested:  check_role
 
@@ -400,11 +405,17 @@ def test_mra_check_role_collection_false(modular_realm_authorizer_fff):
     check_role raises an exception if any permission isn't entitled,
     and nothing returned if success
     """
-    mra = modular_realm_authorizer_fff
-    with pytest.raises(UnauthorizedException):
-        mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'])
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, 'has_all_roles', lambda x,y: None)
+    with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
+        arc.return_value = None
+        with pytest.raises(UnauthorizedException):
+            mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'])
 
-def test_mra_check_role_collection_true(modular_realm_authorizer_ftf):
+            arc.assert_called_once_with()
+
+def test_mra_check_role_collection_true(
+        modular_realm_authorizer_patched, monkeypatch):
     """
     unit tested:  check_role
 
@@ -412,15 +423,19 @@ def test_mra_check_role_collection_true(modular_realm_authorizer_ftf):
     check_role raises an exception if any permission isn't entitled,
     and nothing returned if success
     """
-    mra = modular_realm_authorizer_ftf
-    result = mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'])
-    assert result is None
 
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, 'has_all_roles', lambda x,y: {'role1'})
+    with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
+        arc.return_value = None
+
+        mra.check_role('identifiers', 'roleid_s')
+        arc.assert_called_once_with()
 
 # -----------------------------------------------------------------------------
 # IndexedAuthorizationInfo Tests
 # -----------------------------------------------------------------------------
-def test_sa_add_role_no_init_roles(indexed_authz_info):
+def test_iai_add_role_no_init_roles(indexed_authz_info):
     """
     unit tested:  add_role
 
@@ -432,7 +447,7 @@ def test_sa_add_role_no_init_roles(indexed_authz_info):
     saz.add_role({'role1'})
     assert set(['role1']) <= saz.roles
 
-def test_sa_add_roles_with_init_roles(indexed_authz_info, monkeypatch):
+def test_iai_add_roles_with_init_roles(indexed_authz_info, monkeypatch):
     """
     unit tested:  add_role
 
@@ -445,7 +460,7 @@ def test_sa_add_roles_with_init_roles(indexed_authz_info, monkeypatch):
     saz.add_role({'role2'})
     assert set(['role1', 'role2']) <= saz.roles
 
-def test_sa_add_string_permission_no_init_string_permission(indexed_authz_info):
+def test_iai_add_string_permission_no_init_string_permission(indexed_authz_info):
     """
     unit tested:  add_string_permission
 
@@ -455,7 +470,7 @@ def test_sa_add_string_permission_no_init_string_permission(indexed_authz_info):
     saz.add_string_permission({'permission1'})
     assert set(['permission1']) <= saz.string_permissions
 
-def test_sa_add_string_permissions_with_init_string_permission(
+def test_iai_add_string_permissions_with_init_string_permission(
         indexed_authz_info, monkeypatch):
     """
     unit tested:  add_string_permission
@@ -467,7 +482,7 @@ def test_sa_add_string_permissions_with_init_string_permission(
     saz.add_string_permission({'permission2'})
     assert set(['permission1', 'permission2']) <= saz.string_permissions
 
-def test_sa_add_object_permission_no_init_object_permission(indexed_authz_info):
+def test_iai_add_object_permission_no_init_object_permission(indexed_authz_info):
     """
     unit tested:  add_object_permission
 
@@ -477,7 +492,7 @@ def test_sa_add_object_permission_no_init_object_permission(indexed_authz_info):
     saz.add_object_permission({'permission1'})
     assert set(['permission1']) <= saz.object_permissions
 
-def test_sa_add_object_permissions_with_init_object_permission(
+def test_iai_add_object_permissions_with_init_object_permission(
         indexed_authz_info, monkeypatch):
     """
     unit tested:  add_object_permission
