@@ -179,10 +179,6 @@ class AuthorizingRealm(Realm):
         pass
 
     @abstractmethod
-    def get_permissions(self, authz_info):
-        pass
-
-    @abstractmethod
     def resolve_permissions(self, string_perms):
         pass
 

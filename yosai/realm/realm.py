@@ -28,11 +28,14 @@ from yosai import (
     PasswordMatcher,
     RealmMisconfiguredException,
     UsernamePasswordToken,
+    authz_abcs,
     realm_abcs,
 )
 import itertools
 
-class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
+class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
+                        realm_abcs.AuthorizingRealm,
+                        authz_abcs.PermissionResolverAware):
     """
     A Realm interprets information from a datastore.
 
@@ -325,6 +328,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
                              as string-based permissions or Permission objects
                              and NEVER comingled
         :type permission_s: list of either String(s) or Permission(s)
+        :yields: (Permission, Boolean)
         """
         # the type of the first element in permission_s implies the type of the
         # rest of the elements -- no commingling!
@@ -356,7 +360,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm):
         authz_info = self.get_authorization_info(identifiers)
         authzinfo_roleids = authz_info.roleids
         for roleid in roleid_s:
-            hasrole = (roleid <= authzinfo_roleids)
+            hasrole = ({roleid} <= authzinfo_roleids)
             yield (roleid, hasrole)
 
     def has_all_roles(self, identifiers, roleid_s):

@@ -1,11 +1,1 @@
-{
-  "test_authz.py::test_mra_check_permission_collection_succeeds": true,
-  "test_authz.py::test_mra_check_role_collection_true": true,
-  "test_authz.py::test_mra_has_all_roles_collection_true": true,
-  "test_authz.py::test_mra_has_all_roles_single_true": true,
-  "test_authz.py::test_mra_is_permitted_all_single_true": true,
-  "test_authz.py::test_mra_private_has_role_true": true,
-  "test_authz.py::test_mra_private_is_permitted_true": true,
-  "test_authz.py::test_mra_private_role_collection_yields": true,
-  "test_authz_permission.py::test_set_parts_creates_parts[actions1-targets1-action1,action2-target1,target2]": true
-}
+{}

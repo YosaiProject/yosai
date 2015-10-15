@@ -157,6 +157,10 @@ class MockAccount(account_abcs.Account):
         return self._account_id
 
     @property
+    def authorization_info(self):
+        return "authz_info"
+
+    @property
     def credentials(self):
         return self._credentials
 

@@ -1,50 +1,55 @@
 from yosai import (
     authz_abcs,
+    realm_abcs,
 )
 
-class MockAuthzAccountStoreRealm(authz_abcs.Authorizer,
-                                 authz_abcs.PermissionResolverAware,
-                                 authz_abcs.RolePermissionResolverAware):
+
+class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
+                                 authz_abcs.PermissionResolverAware):
 
     def __init__(self):
-        self.id = id(self)  # required for uniqueness among set members
         self._permission_resolver = None
 
-    def check_permission(self, identifiers, permission_s):
-        pass
-    
-    def check_role(self, identifiers, role_s):
-        return False 
-
     def has_role(self, identifiers, roleid_s):
-        return False 
+        return None
 
     def has_all_roles(self, identifiers, roleid_s):
-        return False 
+        return None
 
     def is_permitted(self, identifiers, permission_s):
-        return False 
+        return None
 
     def is_permitted_all(self, identifiers, permission_s):
-        return False 
+        return None
 
     @property
     def permission_resolver(self):
-        return self._permission_resolver 
+        return self._permission_resolver
 
     @permission_resolver.setter
     def permission_resolver(self, permission_resolver):
         self._permission_resolver = permission_resolver 
-    
+
     @property
-    def role_permission_resolver(self):
-        return self._role_permission_resolver 
+    def authorization_cache_handler(self):
+        pass
 
-    @permission_resolver.setter
-    def role_permission_resolver(self, permission_resolver):
-        self._role_permission_resolver = permission_resolver 
+    def do_clear_cache(self, identifiers):
+        pass
 
+    def get_authorization_info(self, identifiers):
+        pass
+ 
+    def resolve_permissions(self, string_perms):
+        pass
 
+    def __hash__(self):
+        return hash(id(self))
+
+    def __eq__(self, other):
+        return self is other
+
+    
 class MockPermission(authz_abcs.Permission):
    
     # using init to define whether implies is always True or False

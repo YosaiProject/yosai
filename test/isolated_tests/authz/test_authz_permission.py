@@ -3,7 +3,7 @@ from unittest import mock
 from collections import OrderedDict
 
 from yosai import (
-    DomainPermission,
+    DefaultPermission,
     IllegalArgumentException,
     IllegalStateException,
     ModularRealmAuthorizer,
@@ -301,12 +301,12 @@ def test_wcpr_returns_wcp():
 
 
 # -----------------------------------------------------------------------------
-# DomainPermission Tests
+# DefaultPermission Tests
 # -----------------------------------------------------------------------------
 
 def test_dp_no_domain_arg_raises():
     with pytest.raises(IllegalArgumentException):
-        DomainPermission(None, actions='actions', targets='targets')
+        DefaultPermission(None, actions='actions', targets='targets')
 
 @pytest.mark.parametrize(
     "actions,targets,actionset,targetset",
@@ -320,9 +320,9 @@ def test_dp_normal_init(actions, targets, actionset, targetset):
     unit tested:  __init__ 
 
     test case:
-    confirm that the DomainPermission initializes as expected 
+    confirm that the DefaultPermission initializes as expected 
     """
-    ddp = DomainPermission(actions=actions, targets=targets)
+    ddp = DefaultPermission(actions=actions, targets=targets)
     assert (ddp.actions == actionset and ddp.targets == targetset)
 
 def test_dp_domain_setter_sets_parts(default_domain_permission):
@@ -333,7 +333,7 @@ def test_dp_domain_setter_sets_parts(default_domain_permission):
 
     """
     ddp = default_domain_permission
-    with mock.patch.object(DomainPermission, 'set_parts') as sp:
+    with mock.patch.object(DefaultPermission, 'set_parts') as sp:
         sp.return_value = None
         dumbpermission = type('DumbPermission', (WildcardPermission,), {})
         ddp.domain = dumbpermission() 
@@ -396,7 +396,7 @@ def test_set_parts_creates_parts(
         actions_string, targets_string):
 
     ddp = default_domain_permission
-    with mock.patch.object(DomainPermission, 'encode_parts') as ep:
+    with mock.patch.object(DefaultPermission, 'encode_parts') as ep:
         ep.return_value = None
         with mock.patch.object(WildcardPermission, 'set_parts') as wc_sp:
             wc_sp.return_value = None

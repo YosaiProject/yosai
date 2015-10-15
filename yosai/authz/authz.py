@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import ipdb
 import itertools
 
 from yosai import (
@@ -30,6 +29,7 @@ from yosai import (
     UnauthenticatedException,
     UnauthorizedException,
     authz_abcs,
+    realm_abcs,
     serialize_abcs,
 )
 
@@ -418,7 +418,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self._realms = realms
         self.apply_permission_resolver_to_realms()
-        self.apply_role_permission_resolver_to_realms()
 
     @property
     def authorizing_realms(self):
@@ -426,7 +425,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         new to Yosai: a generator expression filters out non-authz realms
         """
         return (realm for realm in self._realms
-                if isinstance(realm, authz_abcs.Authorizer))
+                if isinstance(realm, realm_abcs.AuthorizingRealm))
 
     @property
     def permission_resolver(self):
@@ -472,6 +471,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
     # new to Yosai:
     def _has_role(self, identifiers, roleid_s):
+        """
+        :type roleid_s: Set of String(s)
+        """
         for realm in self.authorizing_realms:
             # the realm's has_role returns a generator
             yield from realm.has_role(identifiers, roleid_s)
@@ -496,7 +498,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: a List of tuple(s), containing the Permission and a Boolean
+        :returns: a frozenset of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted
         """
 
@@ -510,7 +512,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # is granted.  Given that (True or False == True), assign accordingly:
             results[permission] = results[permission] or is_permitted
 
-        return list(results.items())
+        return frozenset(results.items())
 
     def is_permitted_all(self, identifiers, permission_s):
         """
@@ -521,7 +523,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self.assert_realms_configured()
 
-        for (perm, permitted) in self.is_permitted(identifiers, permission_s):
+        for perm, permitted in self.is_permitted(identifiers, permission_s):
+            print('perm: ', perm, ' , permitted:', permitted)
             if not permitted:
                 return False
         return True
@@ -558,7 +561,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
 
-        :returns: a Boolean
+        :returns: a frozenset of tuple(s), containing the Role and a Boolean
+                  indicating whether the user is a member of the Role
         """
         self.assert_realms_configured()
 
@@ -571,15 +575,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # Given that (True or False == True), assign accordingly:
             results[roleid] = results[roleid] or has_role
 
-        return list(results.items())
+        return frozenset(results.items())
 
     def has_all_roles(self, identifiers, roleid_s):
         """
         :param identifiers: a collection of identifiers
         :type identifiers: Set
 
-        :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or Set of Strings
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
 
         :returns: a Boolean
         """
@@ -590,7 +594,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             if realm.has_all_roles(identifiers, roleid_s):
                 return True
 
-        return False 
+        return False
 
     def check_role(self, identifiers, roleid_s):
         """
