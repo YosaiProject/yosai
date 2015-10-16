@@ -1,9 +1,12 @@
 import pytest
+import collections
 from unittest import mock
 
 from yosai import (
+    DefaultPermission,
     IllegalArgumentException,
     IllegalStateException,
+    IndexedAuthorizationInfo,
     ModularRealmAuthorizer,
     SimpleRole,
     UnauthorizedException,
@@ -435,75 +438,146 @@ def test_mra_check_role_collection_true(
 # -----------------------------------------------------------------------------
 # IndexedAuthorizationInfo Tests
 # -----------------------------------------------------------------------------
-def test_iai_add_role_no_init_roles(indexed_authz_info):
+
+def test_iai_roleids_isset(indexed_authz_info, monkeypatch):
+    """
+    unit tested:  roleids.getter
+
+    test case:
+    roleids is a property that returns a set of the role identifiers from each
+    role in roles
+    """
+    info = indexed_authz_info
+    results = info.roleids
+    assert results == {'role1', 'role2', 'role3'}
+
+
+def test_iai_permissions_isset(
+        indexed_authz_info, monkeypatch, permission_collection):
+    """
+    unit tested:  permissions (property)
+
+    test case:
+    permissions returns a complete set of every indexed Permission
+    """
+    info = indexed_authz_info
+    assert info.permissions == permission_collection
+
+
+def test_iai_permissions_setter(indexed_authz_info):
+    """
+    unit tested:  permissions.setter
+
+    test case:
+    clears the existing permissions index and then indexes the new set of perms
+    """
+    info = indexed_authz_info
+    with mock.patch.object(IndexedAuthorizationInfo, 'index_permission') as ip:
+        ip.return_value = None
+
+        testperm = DefaultPermission('domain1:action1')
+        info.permissions = {testperm}
+        ip.assert_called_once_with({testperm})
+
+        # _permissions will be empty since index_permission was mocked
+        assert not info._permissions
+
+
+def test_iai_add_role(indexed_authz_info):
     """
     unit tested:  add_role
 
     test case:
-    adding a role when no prior roles have been defined results in the
-    creation of a new set and an update to the set with the role(s)
+    updates the set, roles, with the new role(s)
     """
-    saz = indexed_authz_info
-    saz.add_role({'role1'})
-    assert set(['role1']) <= saz.roles
+    info = indexed_authz_info
+    roles = {SimpleRole(role_identifier='roleA'),
+             SimpleRole(role_identifier='roleB')}
+    info.add_role(roles)
+    assert roles <= info.roles
 
-def test_iai_add_roles_with_init_roles(indexed_authz_info, monkeypatch):
+def test_iai_add_permission(indexed_authz_info, test_permission_collection):
     """
-    unit tested:  add_role
-
-    test case:
-    adding roles when prior roles exists results in the
-    update to the set of roles with the new role(s)
-    """
-    saz = indexed_authz_info
-    monkeypatch.setattr(saz, 'roles', {'role1'})
-    saz.add_role({'role2'})
-    assert set(['role1', 'role2']) <= saz.roles
-
-def test_iai_add_string_permission_no_init_string_permission(indexed_authz_info):
-    """
-    unit tested:  add_string_permission
+    unit tested:  add_permission
 
     test case:
+    adds new permission(s) to the index
     """
-    saz = indexed_authz_info
-    saz.add_string_permission({'permission1'})
-    assert set(['permission1']) <= saz.string_permissions
+    info = indexed_authz_info
+    tpc = test_permission_collection
 
-def test_iai_add_string_permissions_with_init_string_permission(
-        indexed_authz_info, monkeypatch):
-    """
-    unit tested:  add_string_permission
+    with mock.patch.object(IndexedAuthorizationInfo, 'index_permission') as ip:
+        ip.return_value = None
 
-    test case:
-    """
-    saz = indexed_authz_info
-    monkeypatch.setattr(saz, 'string_permissions', {'permission1'})
-    saz.add_string_permission({'permission2'})
-    assert set(['permission1', 'permission2']) <= saz.string_permissions
+        info.add_permission(tpc)
 
-def test_iai_add_object_permission_no_init_object_permission(indexed_authz_info):
+        ip.assert_called_once_with(tpc)
+
+
+def test_iai_index_permission(indexed_authz_info, test_permission_collection):
     """
-    unit tested:  add_object_permission
+    unit tested:  index_permission
 
     test case:
+    permissions are indexed by domain and then the indexing is validated
     """
-    saz = indexed_authz_info
-    saz.add_object_permission({'permission1'})
-    assert set(['permission1']) <= saz.object_permissions
+    info = indexed_authz_info
+    tpc = test_permission_collection
 
-def test_iai_add_object_permissions_with_init_object_permission(
-        indexed_authz_info, monkeypatch):
+    with mock.patch.object(IndexedAuthorizationInfo,
+                           'assert_permissions_indexed') as api:
+        api.return_value = None
+
+        info.index_permission(permission_s=tpc)
+
+        api.assert_called_once_with(tpc)
+
+        for permission in tpc:
+            domain = next(iter(permission.domain))
+            assert {permission} <= info._permissions[domain]
+
+@pytest.mark.parametrize('domain, expected',
+                         [('domain1', {DefaultPermission('domain1:action1')}),
+                          ('domainQ', set())])
+def test_iai_get_permission(indexed_authz_info, domain, expected):
     """
-    unit tested:  add_object_permission
+    unit tested:  get_permission
 
     test case:
-    """
-    saz = indexed_authz_info
-    monkeypatch.setattr(saz, 'object_permissions', {'permission1'})
-    saz.add_object_permission({'permission2'})
-    assert set(['permission1', 'permission2']) <= saz.object_permissions
+    returns the permissions for a specified domain or an empty set if there arent
+    any
 
+                           {DefaultPermission('domain4:action1,action2'),
+                            DefaultPermission('domain4:action3:target1')}),
+    """
+    info = indexed_authz_info
+
+    result = info.get_permission(domain)
+    a = next(iter(result))
+    b = next(iter(expected))
+    print('\n---- a is: ', a)
+    print('---- b is: ', b)
+    assert a == b
+
+#def test_iai_assert_permissions_indexed_raises
+    """
+    unit tested: assert_permissions_indexed_raises
+
+    test case:
+    when permissions expected to be indexed aren't, an exception is raised
+    """
+
+    # info = indexed_authz_info
+
+#def test_iai_length
+    """
+    unit tested:  __len__
+
+    test case:
+    an IndexedAuthorizationInfo object's length is measured by its number of
+    roles and permissions collected, and therefore an empty one is such that
+    it has no roles nor permissions assigned
+    """
 
 # -----------------------------------------------------------------------------
 # SimpleRole Tests

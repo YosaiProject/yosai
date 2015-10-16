@@ -1,1 +1,3 @@
-{}
+{
+  "test_authz.py::test_iai_get_permission[domain1-expected0]": true
+}

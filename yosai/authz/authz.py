@@ -524,7 +524,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         self.assert_realms_configured()
 
         for perm, permitted in self.is_permitted(identifiers, permission_s):
-            print('perm: ', perm, ' , permitted:', permitted)
             if not permitted:
                 return False
         return True
@@ -645,7 +644,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
     @property
     def roleids(self):
-        return {role.identifier for role in self.roles}
+        return {role.identifier for role in self._roles}
 
     @property
     def permissions(self):

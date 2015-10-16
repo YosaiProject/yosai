@@ -29,6 +29,26 @@ def serializable_classes():
 
 
 @pytest.fixture(scope='function')
+def serialized_indexed_authorization_info():
+    pass
+
+
+@pytest.fixture(scope='function')
+def serialized_role():
+    pass
+
+
+@pytest.fixture(scope='function')
+def serialized_wildcard_permission():
+    pass
+
+
+@pytest.fixture(scope='function')
+def serialized_default_permission():
+    pass
+
+
+@pytest.fixture(scope='function')
 def serialized_simple_session():
     return {'serialized_cls': 'SimpleSession',
             'serialized_dist_version': '0.1.0',
