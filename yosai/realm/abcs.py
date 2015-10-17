@@ -166,20 +166,26 @@ class AuthorizingRealm(Realm):
 
     @property
     @abstractmethod
-    def permission_resolver(self):
+    def permission_verifier(self):
         pass
 
-    @permission_resolver.setter
+    @permission_verifier.setter
     @abstractmethod
-    def permission_resolver(self, permissionresolver):
+    def permission_verifier(self, verifier):
+        pass
+
+    @property
+    @abstractmethod
+    def role_verifier(self):
+        pass
+
+    @role_verifier.setter
+    @abstractmethod
+    def role_verifier(self, verifier):
         pass
 
     @abstractmethod
     def get_authorization_info(self, identifiers):
-        pass
-
-    @abstractmethod
-    def resolve_permissions(self, string_perms):
         pass
 
     @abstractmethod

@@ -263,7 +263,7 @@ class DefaultPermission(WildcardPermission):
         self.set_parts(domain=domain,
                        action=getattr(self, '_action'),
                        target=getattr(self, '_target'))
-        self._domain = self.parts.get('domain') 
+        self._domain = self.parts.get('domain')
 
     @property
     def action(self):
@@ -795,3 +795,116 @@ class SimpleRole(serialize_abcs.Serializable):
                 return instance
 
         return SerializationSchema
+
+
+class IndexedPermissionVerifier(authz_abcs.PermissionVerifier
+                                authz_abcs.PermissionResolverAware,
+                                authz_abcs.PermissionResolver):
+
+    def __init__(self):
+        self.permission_resolver = None  # is set after init
+
+    def resolve_permissions(self, permission_s):
+        """
+        :param string_perms: a List of string-formatted permissions
+
+        :returns: a set of permissions else returns an empty set
+        """
+
+        # the type of the first element in permission_s implies the type of the
+        # rest of the elements -- no commingling!
+        if isinstance(permission_s[0], str):
+            resolver = self.permission_resolver
+            try:
+                perms = {resolver.resolve_permission(perm) for perm in permission_s}
+                return perms
+            except (AttributeError, TypeError):
+                msg = "Could not resolve permissions for {0}".format(permission_s)
+                if not self.permission_resolver:
+                    msg += " .  Permission Resolver is not set."
+
+                # log a warning
+                print(msg)
+
+                return set()
+        else:
+            return permission_s
+
+    def get_authzd_permissions(self, authz_info, permission):
+        """
+        :type authz_info:  AuthorizationInfo
+
+        :param permission: a Permission that has already been resolved (if needed)
+        :type permission: a Permission object
+
+        Queries an indexed collection of permissions in authz_info for
+        related permissions (those that potentially imply privilege).  Those
+        that are related include:
+            1) permissions with a wildcard domain
+            2) permissions of the same domain as the requested permission
+
+        :returns: frozenset
+        """
+
+        try:
+            wildcard_perms = authz_info.get_permission('*')
+
+            requested_domain = next(iter(permission.domain))
+            domain_perms = authz_info.get_permission(requested_domain)
+            # yosai omits resolution of roles to permissions
+
+        except TypeError:  # raised because no authz_info passed, so no permissions
+            pass
+
+        return frozenset(itertools.chain(wildcard_perms, domain_perms))
+
+    def is_permitted(self, authz_info, permission_s):
+        """
+        :param permission_s: a collection of one or more Permission objects
+        :type permission_s: set
+
+        :yields: (Permission, Boolean)
+        """
+
+        requested_perms = self.resolve_permissions(permission_s)
+
+        for reqstd_perm in requested_perms:
+            is_permitted = False
+            authorized_perms = self.get_authzd_permissions(authz_info,
+                                                           reqstd_perm)
+            for authz_perm in authorized_perms:
+                if authz_perm.implies(reqstd_perm):
+                    is_permitted = True
+                    break
+            yield (reqstd_perm, is_permitted)
+
+
+class SimpleRoleVerifier(authz_abcs.RoleVerifier):
+
+    def has_role(self, authz_info, roleid_s):
+        """
+        Confirms whether a subject is a member of one or more roles.
+
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
+
+        :yields: tuple(roleid, Boolean)
+        """
+        authzinfo_roleids = authz_info.roleids
+        for roleid in roleid_s:
+            hasrole = ({roleid} <= authzinfo_roleids)
+            yield (roleid, hasrole)
+
+    def has_all_roles(self, authz_info, roleid_s):
+        """
+        Confirms whether a subject is a member of all roles.
+
+        has_all_roles is a bit more opaque a solution than has_role, yet is fast
+        because it uses a set operation
+
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
+
+        :returns: Boolean
+        """
+        return roleid_s <= authz_info.roleids

@@ -57,6 +57,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._account_store = None  # DG:  TBD
         self._credentials_cache_handler = None  # DG:  TBD
         self._authorization_cache_handler = None  # DG:  TBD
+        self._permission_verifier = IndexedPermissionVerifier()
+        self._role_verifier = SimpleRoleVerifier()
 
     @property
     def account_store(self):
@@ -93,14 +95,31 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     @property
     def permission_resolver(self):
         try:
-            return self._permission_resolver
+            return self.permission_verifier.permission_resolver
         except AttributeError:
-            self._permission_resolver = None
-            return self._permission_resolver
+            self.permission_verifier.permission_resolver = None
+            return self.permission_verifier.permission_resolver
 
     @permission_resolver.setter
     def permission_resolver(self, permissionresolver):
-        self._permission_resolver = permissionresolver
+        # passes through realm and onto the verifier that actually uses it
+        self.permission_verifier.permission_resolver = permissionresolver
+
+    @property
+    def permission_verifier(self):
+        return self._permission_verifier
+
+    @permission_verifier.setter
+    def permission_verifier(self, verifier):
+        self._permission_verifier = verifier
+
+    @property
+    def role_verifier(self):
+        return self._role_verifier
+
+    @role_verifier.setter
+    def role_verifier(self, verifier):
+        self._role_verifier = verifier
 
     def do_clear_cache(self, identifiers):
         msg = "Clearing cache for: " + str(identifiers)
@@ -274,80 +293,18 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         return authz_info
 
-    # new to yosai:
-    def get_authzd_permissions(self, authz_info, permission):
-        """
-        :param permission: a Permission that has already been resolved (if needed)
-        :type permission: a Permission object
-
-        Queries an indexed collection of permissions in authz_info for
-        related permissions (those that potentially imply privilege).  Those
-        that are related include:
-            1) permissions with a wildcard domain
-            2) permissions of the same domain as the requested permission
-
-        :returns: frozenset
-        """
-
-        try:
-            wildcard_perms = authz_info.get_permission('*')
-
-            requested_domain = next(iter(permission.domain))
-            domain_perms = authz_info.get_permission(requested_domain)
-            # yosai omits resolution of roles to permissions
-
-        except TypeError:  # raised because no authz_info passed, so no permissions
-            pass
-
-        return frozenset(itertools.chain(wildcard_perms, domain_perms))
-
-    def resolve_permissions(self, string_perms):
-        """
-        :param string_perms: a List of string-formatted permissions
-
-        :returns: a set of permissions else returns an empty set
-        """
-        resolver = self.permission_resolver
-        try:
-            perms = {resolver.resolve_permission(perm) for perm in string_perms}
-            return perms
-        except (AttributeError, TypeError):
-            msg = "Could not resolve permissions for {0}".format(string_perms)
-            if not self.permission_resolver:
-                msg += " .  Permission Resolver is not set."
-
-            # log a warning
-            print(msg)
-
-            return set()
-
-    # yosai omits resolve_role_permissions
-
     def is_permitted(self, identifiers, permission_s):
         """
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
                              and NEVER comingled
         :type permission_s: list of either String(s) or Permission(s)
-        :yields: (Permission, Boolean)
+        :yields: tuple(Permission, Boolean)
         """
-        # the type of the first element in permission_s implies the type of the
-        # rest of the elements -- no commingling!
-        if isinstance(permission_s[0], str):
-            requested_perms = self.resolve_permissions(permission_s)
-        else:
-            requested_perms = permission_s
 
         authz_info = self.get_authorization_info(identifiers)
-
-        for reqstd_perm in requested_perms:
-            is_permitted = False
-            authorized_perms = self.get_authzd_permissions(authz_info, reqstd_perm)
-            for authz_perm in authorized_perms:
-                if authz_perm.implies(reqstd_perm):
-                    is_permitted = True
-                    break
-            yield (reqstd_perm, is_permitted)
+        yield from self.permission_verifier.is_permitted(authz_info,
+                                                         permission_s)
 
     def has_role(self, identifiers, roleid_s):
         """
@@ -356,13 +313,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
 
-        :returns: Boolean
+        :yields: tuple(roleid, Boolean)
         """
         authz_info = self.get_authorization_info(identifiers)
-        authzinfo_roleids = authz_info.roleids
-        for roleid in roleid_s:
-            hasrole = ({roleid} <= authzinfo_roleids)
-            yield (roleid, hasrole)
+        yield from self.role_verifier.has_role(authz_info, roleid_s)
 
     def has_all_roles(self, identifiers, roleid_s):
         """
@@ -377,7 +331,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :returns: Boolean
         """
         authz_info = self.get_authorization_info(identifiers)
-        return roleid_s <= authz_info.roleids
+        return self.role_verifier.has_all_roles(authz_info, roleid_s)
 
 # omitted AbstractCacheHandler implementation / references
 

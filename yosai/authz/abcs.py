@@ -245,3 +245,59 @@ class RolePermissionResolverAware(metaclass=ABCMeta):
     @abstractmethod
     def role_permission_resolver(self, role_permission_resolver):
         pass
+
+
+class PermissionVerifier(metaclass=ABCMeta):
+
+    @abstractmethod
+    def get_authzd_permissions(self, authz_info, permission):
+        """
+        :param permission: a Permission that has already been resolved (if needed)
+        :type permission: a Permission object
+
+        Queries a collection of permissions in authz_info for
+        related permissions (those that potentially imply privilege).
+
+        :returns: frozenset
+        """
+        pass
+
+    @abstractmethod
+    def is_permitted(self, identifiers, permission_s):
+        """
+        :param permission_s: a collection of one or more Permission objects
+        :type permission_s: set
+
+        :yields: (Permission, Boolean)
+        """
+        pass
+
+
+class RoleVerifier(metaclass=ABCMeta):
+
+    @abstractmethod
+    def has_role(self, authz_info, roleid_s):
+        """
+        Confirms whether a subject is a member of one or more roles.
+
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
+
+        :yields: tuple(roleid, Boolean)
+        """
+        pass
+
+    @abstractmethod
+    def has_all_roles(self, authz_info, roleid_s):
+        """
+        Confirms whether a subject is a member of all roles.
+
+        has_all_roles is a bit more opaque a solution than has_role, but fast
+        because it uses a set operation
+
+        :param roleid_s: a collection of 1..N Role identifiers
+        :type roleid_s: Set of String(s)
+
+        :returns: Boolean
+        """
+        pass
