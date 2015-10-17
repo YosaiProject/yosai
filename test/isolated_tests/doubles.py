@@ -225,6 +225,8 @@ class MockAccountStore(account_abcs.AccountStore):
     def get_account(self, request): 
         return self.account  # always returns the initialized account
 
+    def get_authz_info(self, identifiers):
+        pass
 
 class MockPubSub:
 

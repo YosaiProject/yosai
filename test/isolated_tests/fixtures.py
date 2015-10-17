@@ -5,6 +5,7 @@ from yosai import (
     AccountStoreRealm,
     DefaultAuthenticator,
     DefaultEventBus,
+    DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
     PasswordMatcher,
     UsernamePasswordToken,

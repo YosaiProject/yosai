@@ -21,7 +21,9 @@ class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler, object):
 
     def clear_cached_credentials(self, account_id):
         pass
-    
+
+    def clear_cache(self, identifers):
+        pass
 
 class MockCredentialsCacheResolver(realm_abcs.CacheResolver, object):
 

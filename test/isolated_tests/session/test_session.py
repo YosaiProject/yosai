@@ -12,6 +12,7 @@ from ..doubles import (
 )
 
 from yosai import (
+    DefaultSessionContext,
     DefaultSessionSettings,
     DefaultSessionStorageEvaluator,
     DefaultSessionKey,

@@ -34,11 +34,7 @@ def modular_realm_authorizer_patched(monkeypatch, authz_realms_collection):
 
 @pytest.fixture(scope='function')
 def populated_simple_role():
-    name = 'SimpleRole123'
-    permissions = OrderedSet([MockPermission(False),
-                              MockPermission(False),
-                              MockPermission(True)])
-    return SimpleRole(name=name, permissions=permissions)
+    return SimpleRole(role_identifier='role1')
 
 @pytest.fixture(scope='function')
 def default_wildcard_permission():

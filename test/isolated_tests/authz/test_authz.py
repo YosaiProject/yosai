@@ -8,6 +8,7 @@ from yosai import (
     IllegalStateException,
     IndexedAuthorizationInfo,
     ModularRealmAuthorizer,
+    PermissionIndexingException,
     SimpleRole,
     UnauthorizedException,
     WildcardPermission,
@@ -536,6 +537,7 @@ def test_iai_index_permission(indexed_authz_info, test_permission_collection):
             domain = next(iter(permission.domain))
             assert {permission} <= info._permissions[domain]
 
+
 @pytest.mark.parametrize('domain, expected',
                          [('domain1', {DefaultPermission('domain1:action1')}),
                           ('domainQ', set())])
@@ -553,23 +555,21 @@ def test_iai_get_permission(indexed_authz_info, domain, expected):
     info = indexed_authz_info
 
     result = info.get_permission(domain)
-    a = next(iter(result))
-    b = next(iter(expected))
-    print('\n---- a is: ', a)
-    print('---- b is: ', b)
-    assert a == b
+    assert result == expected
 
-#def test_iai_assert_permissions_indexed_raises
+def test_iai_assert_permissions_indexed_raises(
+        indexed_authz_info, test_permission_collection):
     """
     unit tested: assert_permissions_indexed_raises
 
     test case:
     when permissions expected to be indexed aren't, an exception is raised
     """
+    info = indexed_authz_info
+    with pytest.raises(PermissionIndexingException):
+        info.assert_permissions_indexed(test_permission_collection)
 
-    # info = indexed_authz_info
-
-#def test_iai_length
+def test_iai_length(indexed_authz_info, permission_collection, role_collection):
     """
     unit tested:  __len__
 
@@ -578,128 +578,23 @@ def test_iai_get_permission(indexed_authz_info, domain, expected):
     roles and permissions collected, and therefore an empty one is such that
     it has no roles nor permissions assigned
     """
+    info = indexed_authz_info
+    assert len(info) == len(permission_collection) + len(role_collection)
+    info._permissions.clear()
+    assert len(info) == len(role_collection)
+    info._roles = set()
+    assert len(info) == 0
 
 # -----------------------------------------------------------------------------
 # SimpleRole Tests
 # -----------------------------------------------------------------------------
-def test_simple_role_add_with_existing_permissions(populated_simple_role):
-    """
-    unit tested:  add
-
-    test case:
-    adding to an existing permissions attribute
-    """
-    psr = populated_simple_role
-    psr.add('permissionZ')
-    assert 'permissionZ' in psr.permissions
-
-def test_simple_role_add_without_existing_permissions(
-        populated_simple_role, monkeypatch):
-    """
-    unit tested:  add
-
-    test case:
-    creates a new permissions attribute, adds to it
-    """
-    psr = populated_simple_role
-    monkeypatch.setattr(psr, 'permissions', None)
-    psr.add('permissionX')
-    assert 'permissionX' in psr.permissions
-
-def test_simple_role_add_all_with_existing_permissions(populated_simple_role):
-    """
-    unit tested:  add_all
-
-    test case:
-    adding to an existing permissions attribute
-    """
-    psr = populated_simple_role
-    test_set = set(['permission4', 'permission5', 'permission6'])
-    psr.add_all(test_set)
-    assert all(x in psr.permissions for x in test_set)
-
-def test_simple_role_add_all_without_existing_permissions(
-        populated_simple_role, monkeypatch):
-    """
-    unit tested:  add_all
-
-    test case:
-    creates a new permissions attribute, adds to it
-    """
-    psr = populated_simple_role
-    monkeypatch.setattr(psr, 'permissions', None)
-    test_set = set(['permission4', 'permission5', 'permission6'])
-    psr.add_all(test_set)
-    assert all(x in psr.permissions for x in test_set)
-
-def test_simple_role_is_permitted_with_existing_permissions(
-        populated_simple_role):
-    """
-    unit tested:  is_permitted
-
-    test case:
-    a Permission that implies another returns True
-
-    there is one permission in the sample set that always returns True
-    """
-    psr = populated_simple_role
-    new_permission = MockPermission(True)
-    assert psr.is_permitted(new_permission)
-
-def test_simple_role_is_NOT_permitted_with_existing_permissions(
-        populated_simple_role, monkeypatch):
-    """
-    unit tested:  is_permitted
-
-    test case:
-    when no permissions assigned to the role imply the permission of interest
-    """
-    psr = populated_simple_role
-    existing_permissions = set([MockPermission(False),
-                                       MockPermission(False)])
-    monkeypatch.setattr(psr, 'permissions', existing_permissions)
-    new_permission = MockPermission(True)
-    assert psr.is_permitted(new_permission) is False
-
-def test_simple_role_is_permitted_without_existing_permissions(
-        populated_simple_role, monkeypatch):
-    """
-    unit tested:  is_permitted
-
-    test case:
-    when no permissions reside in the role, returns False
-    """
-    psr = populated_simple_role
-    monkeypatch.setattr(psr, 'permissions', None)
-    new_permission = MockPermission(True)
-    assert psr.is_permitted(new_permission) is False
-
-def test_simple_role_hash_code_with_name(populated_simple_role):
-    psr = populated_simple_role
-    assert id(psr.name) == psr.hash_code()
-
-def test_simple_role_hash_code_without_name(
-        populated_simple_role, monkeypatch):
-    psr = populated_simple_role
-    monkeypatch.setattr(psr, 'name', None)
-    assert psr.hash_code() == 0
 
 def test_simple_role_equals_other(populated_simple_role):
     psr = populated_simple_role
-    name = 'SimpleRole123'
-    permissions = set([MockPermission(False),
-                              MockPermission(False),
-                              MockPermission(True)])
-    testrole = SimpleRole(name=name, permissions=permissions)
-
+    testrole = SimpleRole(role_identifier='role1')
     assert psr == testrole
 
 def test_simple_role_not_equals_other(populated_simple_role):
     psr = populated_simple_role
-    name = 'SimpleRole1234567'
-    permissions = set([MockPermission(False),
-                              MockPermission(False),
-                              MockPermission(True)])
-    testrole = SimpleRole(name=name, permissions=permissions)
-
+    testrole = SimpleRole(role_identifier='role2')
     assert psr != testrole

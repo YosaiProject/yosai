@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -31,7 +31,7 @@ class DefaultCompositeAccountId(authc_abcs.CompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..
 
     def __init__(self):
-        self.realm_accountids = defaultdict(set) 
+        self.realm_accountids = defaultdict(set)
 
     def get_realm_account_id(self, realm_name=None):
         return self.realm_accountids.get(realm_name, None)  # won't create new
@@ -42,28 +42,28 @@ class DefaultCompositeAccountId(authc_abcs.CompositeAccountId):
     def __eq__(self, other):
         if (other is self):
             return True
-        
+
         if isinstance(other, DefaultCompositeAccountId):
             return self.realm_accountids == other.realm_accountids
 
-        return False 
-    
+        return False
+
     def __repr__(self):
-        return ', '.join(["{0}: {1}".format(realm, acctids) for realm, acctids 
+        return ', '.join(["{0}: {1}".format(realm, acctids) for realm, acctids
                          in self.realm_accountids.items()])
 
 
 class DefaultCompositeAccount(authc_abcs.CompositeAccount):
 
     def __init__(self, overwrite=True):
-        self._account_id = DefaultCompositeAccountId()  # DG renamed 
+        self._account_id = DefaultCompositeAccountId()  # DG renamed
         self._credentials = None
-        self._merged_attrs = {}  # maybe change to OrderedDict() 
+        self._merged_attrs = {}  # maybe change to OrderedDict()
         self.overwrite = overwrite
         self._realm_attrs = defaultdict(dict)
 
-    @property 
-    def account_id(self):  # DG:  not happy about naming it id 
+    @property
+    def account_id(self):  # DG:  not happy about naming it id
         return self._account_id
 
     # renamed from "attributes" to identifiers
@@ -71,11 +71,15 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
     def identifiers(self):
         return self._merged_attrs
 
-    @property 
+    @property
     def credentials(self):
-        # not needed: all accounts added to a composite have already been 
+        # not needed: all accounts added to a composite have already been
         # authenticated -- included just to satisfy interface requirements
-        return self._credentials 
+        return self._credentials
+
+    @property
+    def authorization_info(self):
+        return self._authorization_info
 
     @property
     def realm_names(self):
@@ -86,7 +90,7 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
 
         realm_attributes = getattr(account, 'identifiers', None)
         if (realm_attributes is None):
-            realm_attributes = {} 
+            realm_attributes = {}
 
         try:
             self._realm_attrs[realm_name].update(realm_attributes)
@@ -101,7 +105,7 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
             else:  # write only if attribute doesn't exist yet
                 if (attribute_key not in self._merged_attrs):
                     self._merged_attrs[attribute_key] = attribute_value
-                
+
     def get_realm_attributes(self, realm_name):
         return self._realm_attrs.get(realm_name, dict())  # DG: no frozen dict
 

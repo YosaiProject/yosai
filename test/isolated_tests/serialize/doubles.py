@@ -1,7 +1,7 @@
 from yosai import (
     serialize_abcs,
 )
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load
 
 
 class MockSerializable(serialize_abcs.Serializable):
@@ -19,7 +19,8 @@ class MockSerializable(serialize_abcs.Serializable):
             myname = fields.Str()
             myage = fields.Integer()
 
-            def make_object(self, data):
+            @post_load
+            def make_mock(self, data):
                 cls = MockSerializable 
                 instance = cls.__new__(cls)
                 instance.__dict__.update(data)

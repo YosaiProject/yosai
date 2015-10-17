@@ -68,11 +68,12 @@ class SerializationManager:
             serialization_attrs = {'serialized_dist_version': dist_version,
                                    'serialized_record_dt': now}
             newdict.update(serialization_attrs)
+            newdict.update(obj.serialize())
+            newdict['serialized_cls'] = obj.__class__.__name__
+            newobj = newdict
+
+        except AttributeError:
             try:
-                newdict.update(obj.serialize())
-                newdict['serialized_cls'] = obj.__class__.__name__
-                newobj = newdict
-            except AttributeError:
                 # assume that its an iterable of Serializables
                 newobj = []
                 for element in obj:
@@ -81,12 +82,12 @@ class SerializationManager:
                     mydict.update(element.serialize())
                     newobj.append(mydict)
 
-            # at this point, newobj is either a list of dicts or a dict
-            return self.serializer.serialize(newobj)
+                # at this point, newobj is either a list of dicts or a dict
+                return self.serializer.serialize(newobj)
 
-        except AttributeError:
-            msg = 'Only serialize Serializable objects or list of Serializables'
-            raise SerializationException(msg)
+            except AttributeError:
+                msg = 'Only serialize Serializable objects or list of Serializables'
+                raise SerializationException(msg)
 
     def deserialize(self, message):
         # NOTE:  unpacked is expected to be a dict or list of dicts

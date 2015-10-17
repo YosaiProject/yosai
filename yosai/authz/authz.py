@@ -39,9 +39,6 @@ from marshmallow import Schema, fields, post_load, post_dump, pre_load
 
 class AllPermission:
 
-    def __init__(self):
-        pass
-
     def implies(self, permission):
         return True
 
@@ -234,8 +231,8 @@ class DefaultPermission(WildcardPermission):
     string to separate table columns (e.g. 'domain', 'action' and 'target'
     columns) and is subsequently used in querying strategies.
     """
-    def __init__(self, domain=None, action=None, target=None,
-                 wildcard_string=None):
+    def __init__(self, wildcard_string=None,
+                 domain=None, action=None, target=None):
         """
         :type domain: str
         :type action: str or set of strings
@@ -263,10 +260,10 @@ class DefaultPermission(WildcardPermission):
 
     @domain.setter
     def domain(self, domain):
-        self._domain = domain
-        self.set_parts(domain=self._domain,
-                       action=getattr(self, '_action', None),
-                       target=getattr(self, '_target', None))
+        self.set_parts(domain=domain,
+                       action=getattr(self, '_action'),
+                       target=getattr(self, '_target'))
+        self._domain = self.parts.get('domain') 
 
     @property
     def action(self):
@@ -274,10 +271,10 @@ class DefaultPermission(WildcardPermission):
 
     @action.setter
     def action(self, action):
-        self.set_parts(domain=self._domain,
+        self.set_parts(domain=getattr(self, '_domain'),
                        action=action,
-                       target=getattr(self, '_target', None))
-        self._action = self.parts.get('action', None)
+                       target=getattr(self, '_target'))
+        self._action = self.parts.get('action')
 
     @property
     def target(self):
@@ -285,10 +282,10 @@ class DefaultPermission(WildcardPermission):
 
     @target.setter
     def target(self, target):
-        self.set_parts(domain=self._domain,
-                       action=getattr(self, '_action', None),
+        self.set_parts(domain=getattr(self, '_domain'),
+                       action=getattr(self, '_action'),
                        target=target)
-        self._target = self.parts.get('target', None)
+        self._target = self.parts.get('target')
 
     def encode_parts(self, domain, action, target):
         """
@@ -328,15 +325,15 @@ class DefaultPermission(WildcardPermission):
         action_string = action
         target_string = target
 
-        if isinstance(domain, set):
+        if (isinstance(domain, set) or isinstance(domain, frozenset)):
             domain_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in domain])
 
-        if isinstance(action, set):
+        if (isinstance(action, set) or isinstance(action, frozenset)):
             action_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in action])
 
-        if isinstance(target, set):
+        if (isinstance(target, set) or isinstance(target, frozenset)):
             target_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in target])
 
@@ -737,7 +734,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
 class SimpleRole(serialize_abcs.Serializable):
 
-    def __init__(self, role_identifier=None, permissions=set()):
+    def __init__(self, role_identifier):
 
         self.identifier = role_identifier
         # note:  yosai doesn't support role->permission resolution by default

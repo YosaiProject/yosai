@@ -391,7 +391,7 @@ def test_ansm_get_attribute(patched_abstract_native_session_manager):
     """
     ansm = patched_abstract_native_session_manager
     result = ansm.get_attribute('sessionkey123', 'attr2')
-    assert result == 'attrX'
+    assert result == 2 
 
 def test_ansm_set_attribute(patched_abstract_native_session_manager):
     """

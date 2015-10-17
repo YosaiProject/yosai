@@ -37,12 +37,12 @@ class MapContext(serialize_abcs.Serializable):
     # entrySet:
     @property
     def attributes(self):
-        return self.context.items()
+        return list(self.context.items())
 
     # keySet:
     @property
     def attribute_keys(self):
-        return self.context.keys()
+        return list(self.context.keys())
 
     @property
     def is_empty(self):

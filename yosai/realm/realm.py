@@ -117,7 +117,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         cached with a short expiration time (TTL), making the manual clearing
         of cached credentials an alternative use case.
         """
-        cch.clear_cache(identifiers)
+
+        self.credentials_cache_handler.clear_cache(identifiers)
 
     def clear_cached_authorization_info(self, identifiers):
         """
@@ -129,7 +130,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        ach.clear_cache(identifiers)
+        self.authorization_cache_handler.clear_cache(identifiers)
 
     # --------------------------------------------------------------------------
     # Authentication
