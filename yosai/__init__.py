@@ -182,22 +182,22 @@ from yosai.authc.credential import (
     AllowAllCredentialsMatcher,
 )
 
-
-from yosai.realm.realm import (
-    AccountStoreRealm,
-    DefaultCredentialsCacheHandler,
-)
-
-
 from yosai.authz.authz import (
     AllPermission,
     DefaultPermission,
     DefaultPermissionResolver,
     ModularRealmAuthorizer,
     IndexedAuthorizationInfo,
+    IndexedPermissionVerifier,
     SimpleRole,
+    SimpleRoleVerifier,
     WildcardPermission,
     WildcardPermissionResolver,
+)
+
+from yosai.realm.realm import (
+    AccountStoreRealm,
+    DefaultCredentialsCacheHandler,
 )
 
 from yosai.cache.cache import (

@@ -31,6 +31,14 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
         self._permission_resolver = permission_resolver 
 
     @property
+    def permission_verifier(self):
+        pass
+        
+    @property
+    def role_verifier(self):
+        pass
+
+    @property
     def authorization_cache_handler(self):
         pass
 

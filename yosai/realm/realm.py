@@ -24,9 +24,11 @@ from yosai import (
     GetCachedCredentialsException,
     IllegalArgumentException,
     IncorrectCredentialsException,
+    IndexedPermissionVerifier,
     LogManager,
     PasswordMatcher,
     RealmMisconfiguredException,
+    SimpleRoleVerifier,
     UsernamePasswordToken,
     authz_abcs,
     realm_abcs,
@@ -161,6 +163,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
+    # new to yosai (refactor):
     def get_credentials(self, authc_token):
         """ The default authentication caching policy is to cache an account's
             credentials that are queried from an account store, for a specific
@@ -213,12 +216,14 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         return account
 
+    # yosai refactors:
     def authenticate_account(self, authc_token):
+
         account = self.get_credentials(authc_token)
         self.assert_credentials_match(authc_token, account)
 
-        # new to yosai:  at this point, authentication is confirmed, so clear
-        #                the cache of credentials
+        # at this point, authentication is confirmed, so clear
+        # the cache of credentials (however, they should have a short ttl anyway)
         self.clear_cached_credentials(authc_token.identifier)
         return account
 
