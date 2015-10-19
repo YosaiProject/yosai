@@ -13,7 +13,7 @@ from .fixtures import (
     default_hash_service,
     default_password_service,
     default_realm_accountids,
-    default_simple_credentials_matcher,
+    default_simple_credentials_verifier,
     fail_authc_attempt,
     fail_multi_authc_attempt,
     first_accountstorerealm_succeeds,

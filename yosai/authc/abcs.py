@@ -164,7 +164,7 @@ class CompositeAccount(account_abcs.Account):
         pass
 
 
-class CredentialsMatcher(metaclass=ABCMeta):
+class CredentialsVerifier(metaclass=ABCMeta):
 
     @abstractmethod
     def credentials_match(authc_token, account):

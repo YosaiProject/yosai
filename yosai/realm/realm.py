@@ -26,7 +26,7 @@ from yosai import (
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
     LogManager,
-    PasswordMatcher,
+    PasswordVerifier,
     RealmMisconfiguredException,
     SimpleRoleVerifier,
     UsernamePasswordToken,
@@ -54,11 +54,14 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         #  DG:  this needs to be updated so that positional arguments
         #       are used to construct the object rather than mutator methods
 
-        self._credentials_matcher = PasswordMatcher()  # 80/20 rule: passwords
         self.name = 'AccountStoreRealm' + str(id(self))  # DG:  replace later..
         self._account_store = None  # DG:  TBD
         self._credentials_cache_handler = None  # DG:  TBD
         self._authorization_cache_handler = None  # DG:  TBD
+
+        #yosai renamed credentials_matcher:
+        self._credentials_verifier = PasswordVerifier()  # 80/20 rule: passwords
+
         self._permission_verifier = IndexedPermissionVerifier()
         self._role_verifier = SimpleRoleVerifier()
 
@@ -71,12 +74,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._account_store = accountstore
 
     @property
-    def credentials_matcher(self):
-        return self._credentials_matcher
+    def credentials_verifier(self):
+        return self._credentials_verifier
 
-    @credentials_matcher.setter
-    def credentials_matcher(self, credentialsmatcher):
-        self._credentials_matcher = credentialsmatcher
+    @credentials_verifier.setter
+    def credentials_verifier(self, credentialsmatcher):
+        self._credentials_verifier = credentialsmatcher
 
     @property
     def credentials_cache_handler(self):
@@ -228,7 +231,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return account
 
     def assert_credentials_match(self, authc_token, account):
-        cm = self.credentials_matcher
+        cm = self.credentials_verifier
         if (not cm.credentials_match(authc_token, account)):
             # not successful - raise an exception as signal:
             msg = ("Submitted credentials for token [" + str(authc_token) +

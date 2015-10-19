@@ -20,14 +20,14 @@ under the License.
 from yosai import (
     IllegalStateException,
     MissingCredentialsException,
-    PasswordMatcherInvalidAccountException,
-    PasswordMatcherInvalidTokenException,
+    PasswordVerifierInvalidAccountException,
+    PasswordVerifierInvalidTokenException,
     authc_abcs,
     DefaultPasswordService,
 )
 
 
-class PasswordMatcher(authc_abcs.CredentialsMatcher):
+class PasswordVerifier(authc_abcs.CredentialsVerifier):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""
 
     def __init__(self):
@@ -53,16 +53,16 @@ class PasswordMatcher(authc_abcs.CredentialsMatcher):
         try:
             return authc_token.credentials
         except AttributeError:
-            raise PasswordMatcherInvalidTokenException
+            raise PasswordVerifierInvalidTokenException
 
     def get_stored_password(self, account): 
         try:
             return account.credentials
         except AttributeError:
-            raise PasswordMatcherInvalidAccountException
+            raise PasswordVerifierInvalidAccountException
 
 
-class SimpleCredentialsMatcher(authc_abcs.CredentialsMatcher):
+class SimpleCredentialsVerifier(authc_abcs.CredentialsVerifier):
 
     def __init__(self):
         pass
@@ -103,7 +103,7 @@ class SimpleCredentialsMatcher(authc_abcs.CredentialsMatcher):
         return token_credentials == account_credentials
         
 
-class AllowAllCredentialsMatcher(authc_abcs.CredentialsMatcher):
+class AllowAllCredentialsVerifier(authc_abcs.CredentialsVerifier):
 
     def credentials_match(self, authc_token, account):
         return True

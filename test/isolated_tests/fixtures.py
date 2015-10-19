@@ -7,7 +7,7 @@ from yosai import (
     DefaultEventBus,
     DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
-    PasswordMatcher,
+    PasswordVerifier,
     UsernamePasswordToken,
 )
 
@@ -76,7 +76,7 @@ def mock_token():
 
 @pytest.fixture(scope='function')
 def default_password_matcher():
-    return PasswordMatcher()
+    return PasswordVerifier()
 
 @pytest.fixture(scope='function')
 def mock_pubsub():

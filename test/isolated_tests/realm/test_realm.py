@@ -6,7 +6,7 @@ from yosai import (
     ClearCacheCredentialsException,
     GetCachedCredentialsException,
     IncorrectCredentialsException,
-    PasswordMatcher,
+    PasswordVerifier,
     RealmMisconfiguredException,
 )
 from ..doubles import (
@@ -197,7 +197,7 @@ def test_asr_acm_succeeds(username_password_token, patched_accountstore_realm,
     token = username_password_token
     pasr = patched_accountstore_realm
 
-    with mock.patch.object(PasswordMatcher, 'credentials_match') as pm_cm:
+    with mock.patch.object(PasswordVerifier, 'credentials_match') as pm_cm:
         pm_cm.return_value = True
         result = pasr.assert_credentials_match(token, full_mock_account)
         pm_cm.assert_called_once_with(token, full_mock_account)
@@ -215,10 +215,16 @@ def test_asr_acm_raises(username_password_token, patched_accountstore_realm,
     pasr = patched_accountstore_realm
 
     with pytest.raises(IncorrectCredentialsException):
-        with mock.patch.object(PasswordMatcher, 'credentials_match') as pm_cm:
+        with mock.patch.object(PasswordVerifier, 'credentials_match') as pm_cm:
             pm_cm.return_value = False
             pasr.assert_credentials_match(token, full_mock_account)
 
+
+# def test_asr_get_authorization_info_w_ach_w_cached
+# def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_w_stored
+# def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_wo_stored
+# def test_asr_get_authorization_info_wo_ach_wo_stored
+# def test_asr_get_authorization_info_wo_ach_w_stored
 
 # -----------------------------------------------------------------------------
 # DefaultCredentialsCacheHandler Tests

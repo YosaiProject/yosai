@@ -115,12 +115,12 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
 
     @property
     @abstractmethod
-    def credentials_matcher(self):
+    def credentials_verifier(self):
         pass
 
-    @credentials_matcher.setter
+    @credentials_verifier.setter
     @abstractmethod
-    def credentials_matcher(self, credentialsmatcher):
+    def credentials_verifier(self, credentialsmatcher):
         pass
 
     @property

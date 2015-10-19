@@ -158,11 +158,11 @@ class PasswordMatchException(AuthenticationException):
     pass
 
 
-class PasswordMatcherInvalidTokenException(AuthenticationException):
+class PasswordVerifierInvalidTokenException(AuthenticationException):
     pass
 
 
-class PasswordMatcherInvalidAccountException(AuthenticationException):
+class PasswordVerifierInvalidAccountException(AuthenticationException):
     pass
 
 

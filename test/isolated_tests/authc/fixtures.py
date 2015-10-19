@@ -18,8 +18,8 @@ from yosai import (
     DefaultCompositeAccount,
     DefaultHashService,
     DefaultPasswordService,
-    PasswordMatcher,
-    SimpleCredentialsMatcher,
+    PasswordVerifier,
+    SimpleCredentialsVerifier,
     UsernamePasswordToken,
 )
 
@@ -188,5 +188,5 @@ def default_realm_accountids():
     return {'realm1': 12345, 'realm2': 67890}
 
 @pytest.fixture(scope='function')
-def default_simple_credentials_matcher():
-    return SimpleCredentialsMatcher()
+def default_simple_credentials_verifier():
+    return SimpleCredentialsVerifier()

@@ -76,8 +76,8 @@ from .exceptions import (
     MissingPrivateSaltException,
     MultiRealmAuthenticationException,
     PasswordMatchException,
-    PasswordMatcherInvalidTokenException,
-    PasswordMatcherInvalidAccountException,
+    PasswordVerifierInvalidTokenException,
+    PasswordVerifierInvalidAccountException,
     PepperPasswordException,
     PermissionIndexingException,
     RealmAttributesException,
@@ -177,9 +177,9 @@ from yosai.authc.authc import (
 )
 
 from yosai.authc.credential import (
-    PasswordMatcher,
-    SimpleCredentialsMatcher,
-    AllowAllCredentialsMatcher,
+    PasswordVerifier,
+    SimpleCredentialsVerifier,
+    AllowAllCredentialsVerifier,
 )
 
 from yosai.authz.authz import (

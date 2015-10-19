@@ -3,15 +3,15 @@ import pytest
 from yosai import (
     IllegalStateException,
     MissingCredentialsException,
-    PasswordMatcherInvalidAccountException,
-    PasswordMatcherInvalidTokenException,
-    AllowAllCredentialsMatcher,
-    PasswordMatcher,
-    SimpleCredentialsMatcher,
+    PasswordVerifierInvalidAccountException,
+    PasswordVerifierInvalidTokenException,
+    AllowAllCredentialsVerifier,
+    PasswordVerifier,
+    SimpleCredentialsVerifier,
 )
 
 # -----------------------------------------------------------------------------
-# PasswordMatcher Tests
+# PasswordVerifier Tests
 # -----------------------------------------------------------------------------
 # no need to unit-test credentials_match since its tests are implicit
 def test_dpm_ensure_password_service_succeeds(default_password_matcher):
@@ -33,7 +33,7 @@ def test_dpm_get_submitted_password_fails(
     dpm = default_password_matcher
     token = username_password_token
     monkeypatch.delattr(token, '_credentials')
-    with pytest.raises(PasswordMatcherInvalidTokenException):
+    with pytest.raises(PasswordVerifierInvalidTokenException):
         dpm.get_submitted_password(username_password_token)
 
 def test_dpm_get_stored_password_succeeds(
@@ -45,40 +45,40 @@ def test_dpm_get_stored_password_fails(
         default_password_matcher, full_mock_account, monkeypatch):
     dpm = default_password_matcher
     monkeypatch.delattr(full_mock_account, '_credentials')
-    with pytest.raises(PasswordMatcherInvalidAccountException):
+    with pytest.raises(PasswordVerifierInvalidAccountException):
         dpm.get_stored_password(full_mock_account)
 
 # -----------------------------------------------------------------------------
-# SimpleCredentialsMatcher Tests
+# SimpleCredentialsVerifier Tests
 # -----------------------------------------------------------------------------
 
 def test_scm_get_credentials_succeeds(
-        default_simple_credentials_matcher, full_mock_account):
+        default_simple_credentials_verifier, full_mock_account):
     """ verify normal behavior """ 
-    dscm = default_simple_credentials_matcher 
+    dscm = default_simple_credentials_verifier 
     fma = full_mock_account
     assert dscm.get_credentials(fma) == fma.credentials
 
 def test_scm_get_credentials_fails(
-        default_simple_credentials_matcher, full_mock_account, monkeypatch):
+        default_simple_credentials_verifier, full_mock_account, monkeypatch):
     """ a credential source without credentials raises an exception """
-    dscm = default_simple_credentials_matcher 
+    dscm = default_simple_credentials_verifier 
     fma = full_mock_account
     monkeypatch.delattr(fma, '_credentials')
     with pytest.raises(MissingCredentialsException):
         dscm.get_credentials(fma)
         
-def test_scm_equals_using_two_strings(default_simple_credentials_matcher):
+def test_scm_equals_using_two_strings(default_simple_credentials_verifier):
     """ strings are converted to bytearrays and then compared for equality """
-    dscm = default_simple_credentials_matcher 
+    dscm = default_simple_credentials_verifier 
     a = 'grapesofwrath'
     b = 'eastofeden'
     c = 'ofmiceandmen'
     d = 'ofmiceandmen'
     assert (dscm.equals(a, b) is False and dscm.equals(c, d) is True)
 
-def test_scm_equals_two_bytearrays(default_simple_credentials_matcher):
-    dscm = default_simple_credentials_matcher 
+def test_scm_equals_two_bytearrays(default_simple_credentials_verifier):
+    dscm = default_simple_credentials_verifier 
     a = bytearray('grapesofwrath', 'utf-8') 
     b = bytearray('eastofeden', 'utf-8')
     c = bytearray('ofmiceandmen', 'utf-8')
@@ -86,8 +86,8 @@ def test_scm_equals_two_bytearrays(default_simple_credentials_matcher):
     assert (dscm.equals(a, b) is False and dscm.equals(c, d) is True)
 
 def test_scm_equals_using_onestring_onebytearray(
-        default_simple_credentials_matcher):
-    dscm = default_simple_credentials_matcher 
+        default_simple_credentials_verifier):
+    dscm = default_simple_credentials_verifier 
     a = 'grapesofwrath'
     b = bytearray('eastofeden', 'utf-8')
     c = 'ofmiceandmen'
@@ -95,8 +95,8 @@ def test_scm_equals_using_onestring_onebytearray(
     assert (dscm.equals(a, b) is False and dscm.equals(c, d) is True)
 
 def test_scm_equals_using_onebytearray_onestring(
-        default_simple_credentials_matcher):
-    dscm = default_simple_credentials_matcher 
+        default_simple_credentials_verifier):
+    dscm = default_simple_credentials_verifier 
     a = bytearray('grapesofwrath', 'utf-8') 
     b = 'eastofeden'
     c = bytearray('ofmiceandmen', 'utf-8')
@@ -104,9 +104,9 @@ def test_scm_equals_using_onebytearray_onestring(
     assert (dscm.equals(a, b) is False and dscm.equals(c, d) is True)
 
 def test_scm_credentials_match_succeeds(
-    default_simple_credentials_matcher, username_password_token, 
+    default_simple_credentials_verifier, username_password_token, 
         full_mock_account, monkeypatch):
-    dscm = default_simple_credentials_matcher 
+    dscm = default_simple_credentials_verifier 
     upt = username_password_token
     fma = full_mock_account
     monkeypatch.setattr(upt, '_credentials', 'ofmiceandmen')
@@ -114,9 +114,9 @@ def test_scm_credentials_match_succeeds(
     assert dscm.credentials_match(upt, fma)
 
 def test_scm_credentials_match_fails(
-    default_simple_credentials_matcher, username_password_token, 
+    default_simple_credentials_verifier, username_password_token, 
         full_mock_account, monkeypatch):
-    dscm = default_simple_credentials_matcher 
+    dscm = default_simple_credentials_verifier 
     upt = username_password_token
     fma = full_mock_account
     monkeypatch.delattr(upt, '_credentials')
