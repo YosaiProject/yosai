@@ -33,7 +33,6 @@ from yosai import (
     authz_abcs,
     realm_abcs,
 )
-import itertools
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,

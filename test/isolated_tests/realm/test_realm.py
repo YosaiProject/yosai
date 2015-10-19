@@ -225,6 +225,9 @@ def test_asr_acm_raises(username_password_token, patched_accountstore_realm,
 # def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_wo_stored
 # def test_asr_get_authorization_info_wo_ach_wo_stored
 # def test_asr_get_authorization_info_wo_ach_w_stored
+# def test_asr_is_permitted_yields
+# def test_asr_has_role_yields
+# def test_asr_has_all_roles_returns
 
 # -----------------------------------------------------------------------------
 # DefaultCredentialsCacheHandler Tests
