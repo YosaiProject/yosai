@@ -7,7 +7,9 @@ from yosai import (
     ModularRealmAuthorizer,
     OrderedSet,
     IndexedAuthorizationInfo,
+    IndexedPermissionVerifier,
     SimpleRole,
+    SimpleRoleVerifier,
     WildcardPermission,
 )
 
@@ -56,3 +58,13 @@ def test_permission_collection():
 def indexed_authz_info(permission_collection, role_collection):
     return IndexedAuthorizationInfo(roles=role_collection,
                                     permissions=permission_collection)
+
+
+@pytest.fixture(scope='function')
+def indexed_permission_verifier():
+    return IndexedPermissionVerifier()
+
+
+@pytest.fixture(scope='function')
+def simple_role_verifier():
+    return SimpleRoleVerifier()

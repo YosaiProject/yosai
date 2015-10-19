@@ -4,9 +4,11 @@ from unittest import mock
 
 from yosai import (
     DefaultPermission,
+    DefaultPermissionResolver,
     IllegalArgumentException,
     IllegalStateException,
     IndexedAuthorizationInfo,
+    IndexedPermissionVerifier,
     ModularRealmAuthorizer,
     PermissionIndexingException,
     SimpleRole,
@@ -598,3 +600,127 @@ def test_simple_role_not_equals_other(populated_simple_role):
     psr = populated_simple_role
     testrole = SimpleRole(role_identifier='role2')
     assert psr != testrole
+
+
+# -----------------------------------------------------------------------------
+# IndexedPermissionVerifier Tests
+# -----------------------------------------------------------------------------
+
+def test_ipv_resolve_permission_strings(
+        indexed_permission_verifier, monkeypatch):
+    """
+    unit tested:  resolve permission
+
+    test case:
+    - a list of string-formatted permissions is passed in as an argument
+    - strings are converted to permission objects
+    - a set of permission objects is returned
+    """
+    ipv = indexed_permission_verifier
+    ipv.permission_resolver = DefaultPermissionResolver()
+
+    permstring1 = 'domain1:action1'
+    permstring2 = 'domain2:action1,action2'
+    permstring3 = 'domain3:*:*'
+    result = ipv.resolve_permission([permstring1, permstring2, permstring3])
+    assert result == {DefaultPermission(wildcard_string=permstring1),
+                      DefaultPermission(wildcard_string=permstring2),
+                      DefaultPermission(wildcard_string=permstring3)}
+
+def test_ipv_resolve_permission_strings_raises_wo_resolver(
+        indexed_permission_verifier, monkeypatch, capsys):
+    """
+    unit tested:  resolve permission
+
+    test case:
+    when the resolver isn't set, a warning is logged and empty set returned
+    """
+    ipv = indexed_permission_verifier
+
+    result = ipv.resolve_permission(['domain1:action1'])
+    out, err = capsys.readouterr()
+    assert 'Permission Resolver is not set' in out and result == set()
+
+def test_ipv_resolve_permission_permissionobjects(
+        indexed_permission_verifier, monkeypatch):
+    """
+    unit tested:  resolve permission
+
+    test case:
+    when a collection of permission objects is passed as an argument, they
+    are returned immediately
+    """
+    ipv = indexed_permission_verifier
+    ipv.permission_resolver = DefaultPermissionResolver()
+
+    permstring1 = 'domain1:action1'
+    permstring2 = 'domain2:action1,action2'
+    permstring3 = 'domain3:*:*'
+    perms = [DefaultPermission(wildcard_string=permstring1),
+             DefaultPermission(wildcard_string=permstring2),
+             DefaultPermission(wildcard_string=permstring3)]
+
+    result = ipv.resolve_permission(perms)
+    assert result == perms
+
+def test_ipv_get_authzd_permissions(
+        indexed_permission_verifier, monkeypatch, indexed_authz_info):
+    """
+    unit tested:  get_authzd_permissions
+
+    test case:
+    returns the permissions from the authzinfo that are relevant to the
+    permission argument
+    """
+    ipv = indexed_permission_verifier
+    perm = DefaultPermission('domain4:action4')
+
+    domainperms = frozenset([DefaultPermission(domain={'domain4'},
+                                               action={'action1', 'action2'}),
+                             DefaultPermission(domain={'domain4'},
+                                               action={'action3'},
+                                               target={'target1'})])
+
+    monkeypatch.setattr(indexed_authz_info, 'get_permission',
+                        lambda x: domainperms)
+
+    result = ipv.get_authzd_permissions(indexed_authz_info, perm)
+
+    assert domainperms == result
+
+
+def test_ipv_is_permitted(
+        indexed_permission_verifier, monkeypatch, indexed_authz_info):
+    """
+    unit tested:  get_authzd_permissions
+
+    test case:
+    - gets authorized permissions based on the requested permission
+    - for each permission requested, confirm whether the related authorized
+      permissions implies permission
+    - yield the results as a tuple
+    """
+    ipv = indexed_permission_verifier
+
+    dp1 = DefaultPermission('domain6:action1')
+    monkeypatch.setattr(dp1, 'implies', lambda x: False)
+    dp2 = DefaultPermission('domain7:action1')
+    monkeypatch.setattr(dp2, 'implies', lambda x: True)
+    authz_perms = frozenset([dp1, dp2])
+    monkeypatch.setattr(ipv, 'get_authzd_permissions', lambda x,y: authz_perms)
+
+    perm1 = DefaultPermission('domain1:action1')
+    perm2 = DefaultPermission('domain2:action1')
+
+    with mock.patch.object(IndexedPermissionVerifier,
+                           'resolve_permission') as ipv_rp:
+        ipv_rp.return_value = [perm1, perm2]
+
+        result = list(ipv.is_permitted('authz_info', [perm1, perm2]))
+
+        ipv_rp.assert_called_once_with([perm1, perm2])
+        assert result == [(perm1, True), (perm2, True)]
+
+# -----------------------------------------------------------------------------
+# SimpleRoleVerifier Tests
+# -----------------------------------------------------------------------------

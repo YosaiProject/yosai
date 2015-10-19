@@ -477,6 +477,11 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
     # new to Yosai:
     def _is_permitted(self, identifiers, permission_s):
+        """
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
+        """
+
         for realm in self.authorizing_realms:
             # the realm's is_permitted returns a generator
             yield from realm.is_permitted(identifiers, permission_s)
@@ -628,14 +633,15 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
 
     def resolve_permission(self, permission_s):
         """
-        :param string_perms: a List of string-formatted permissions
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
 
-        :returns: a set of permissions else returns an empty set
+        :returns: a set of Permission object(s) else returns an empty set
         """
 
         # the type of the first element in permission_s implies the type of the
         # rest of the elements -- no commingling!
-        if isinstance(permission_s[0], str):
+        if isinstance(next(iter(permission_s)), str):
             resolver = self.permission_resolver
             try:
                 perms = {resolver.resolve_permission(perm) for perm in permission_s}
@@ -654,7 +660,7 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
 
     def get_authzd_permissions(self, authz_info, permission):
         """
-        :type authz_info:  AuthorizationInfo
+        :type authz_info:  IndexedAuthorizationInfo
 
         :param permission: a Permission that has already been resolved (if needed)
         :type permission: a Permission object
@@ -668,22 +674,17 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
         :returns: frozenset
         """
 
-        try:
-            wildcard_perms = authz_info.get_permission('*')
+        wildcard_perms = authz_info.get_permission('*')
 
-            requested_domain = next(iter(permission.domain))
-            domain_perms = authz_info.get_permission(requested_domain)
-            # yosai omits resolution of roles to permissions
-
-        except TypeError:  # raised because no authz_info passed, so no permissions
-            pass
+        requested_domain = next(iter(permission.domain))
+        domain_perms = authz_info.get_permission(requested_domain)
 
         return frozenset(itertools.chain(wildcard_perms, domain_perms))
 
     def is_permitted(self, authz_info, permission_s):
         """
-        :param permission_s: a collection of one or more Permission objects
-        :type permission_s: set
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
 
         :yields: (Permission, Boolean)
         """
