@@ -45,26 +45,11 @@ def default_permission():
     return DefaultPermission()
 
 @pytest.fixture(scope='function')
-def permission_collection():
-    return {DefaultPermission(domain={'domain1'}, action={'action1'}),
-            DefaultPermission(domain={'domain2'}, action={'action1', 'action2'}),
-            DefaultPermission(domain={'domain3'}, action={'action1', 'action2', 'action3'}, target={'target1'}),
-            DefaultPermission(domain={'domain4'}, action={'action1', 'action2'}),
-            DefaultPermission(domain={'domain4'}, action={'action3'}, target={'target1'}),
-            DefaultPermission(wildcard_string='*:action5')}
-
-@pytest.fixture(scope='function')
 def test_permission_collection():
     perms = {DefaultPermission('domain_a:action_a'),
              DefaultPermission('domain_b:action_b'),
              DefaultPermission('domain_c:action_c')}
     return perms
-
-@pytest.fixture(scope='function')
-def role_collection():
-    return {SimpleRole(role_identifier='role1'),
-            SimpleRole(role_identifier='role2'),
-            SimpleRole(role_identifier='role3')}
 
 
 @pytest.fixture(scope='function')

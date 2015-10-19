@@ -24,8 +24,23 @@ from yosai import (
     authc_abcs,
 )
 
-# yosai renamed AccountCache to CredentialsCache (shiro diff)
 
+class AuthorizationCacheHandler(metaclass=ABCMeta):
+
+    @abstractmethod
+    def get_cached_authz_info(self, identifiers):
+        pass
+
+    @abstractmethod
+    def cache_authz_info(self, identifers, authz_info):
+        pass
+
+    @abstractmethod
+    def clear_cached_authz_info(self, identifiers):
+        pass
+
+
+# yosai renamed AccountCache to CredentialsCache (shiro diff):
 class CredentialsCacheHandler(metaclass=ABCMeta):
 
     @abstractmethod
@@ -72,17 +87,6 @@ class RoleResolver(metaclass=ABCMeta):
 
     @abstractmethod
     def get_role_names(self, account):
-        pass
-
-
-class AuthorizationCacheHandler(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cached_authorization_info(self, account_id):
-        pass
-
-    @abstractmethod
-    def cache_authorization_info(self, account_id, authz_info):
         pass
 
 

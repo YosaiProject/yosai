@@ -8,6 +8,19 @@ from ..doubles import (
     MockCache,
 )
 
+
+class MockAuthorizationCacheHandler(realm_abcs.AuthorizationCacheHandler, object):
+
+    def get_cached_authz_info(self, identifiers):
+        pass 
+
+    def cache_authz_info(self, identifiers, authz_info): 
+        pass
+
+    def clear_cached_authz_info(self, identifers):
+        pass
+
+
 class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler, object):
 
     def __init__(self, account):
@@ -22,8 +35,6 @@ class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler, object):
     def clear_cached_credentials(self, account_id):
         pass
 
-    def clear_cache(self, identifers):
-        pass
 
 class MockCredentialsCacheResolver(realm_abcs.CacheResolver, object):
 

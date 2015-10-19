@@ -10,6 +10,7 @@ from ..doubles import (
 )
 
 from .doubles import (
+    MockAuthorizationCacheHandler,
     MockCredentialsCacheHandler,
     MockCredentialsCacheResolver,
     MockCredentialsCacheKeyResolver,
@@ -36,6 +37,10 @@ def patched_default_credentials_cache_handler(
         mock_credentials_cache_resolver, mock_credentials_cache_key_resolver):
     return DefaultCredentialsCacheHandler(mock_credentials_cache_resolver,
                                           mock_credentials_cache_key_resolver)
+
+@pytest.fixture(scope='function')
+def mock_authz_cache_handler():
+    return MockAuthorizationCacheHandler()
 
 @pytest.fixture(scope='function')
 def mock_credentials_cache_handler():

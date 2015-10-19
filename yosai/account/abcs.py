@@ -29,7 +29,6 @@ class AccountId(metaclass=ABCMeta):
         pass
 
 class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
-
     """
     An Account is a unique identity within an AccountStore  that has a set of
     attributes.  An account may represent a human being, but this is not
@@ -112,15 +111,16 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
         """
         pass
 
+    # new to yosai-- the addition of authorization information:
     @property
     @abstractmethod
-    def authorization_info(self):
-        """
-        New to Yosai.  The authorization_info attribute is a collection of all
-        authorization information -- permissions and roles.
-        """
+    def permissions(self):
         pass
 
+    @property
+    @abstractmethod
+    def roles(self):
+        pass
 
 
 class AccountStore(metaclass=ABCMeta):

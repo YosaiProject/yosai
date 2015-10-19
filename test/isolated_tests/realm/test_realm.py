@@ -5,6 +5,7 @@ from yosai import (
     CacheCredentialsException,
     ClearCacheCredentialsException,
     GetCachedCredentialsException,
+    IndexedAuthorizationInfo,
     IncorrectCredentialsException,
     PasswordVerifier,
     RealmMisconfiguredException,
@@ -58,7 +59,7 @@ def test_asr_clear_cached_credentials(patched_accountstore_realm, monkeypatch):
     cch = mock.MagicMock() # credentials_cache_handler
     monkeypatch.setattr(asr, 'credentials_cache_handler', cch)
     asr.clear_cached_credentials('identifiers')
-    assert cch.method_calls[0] == mock.call.clear_cache('identifiers')
+    assert cch.method_calls[0] == mock.call.clear_cached_credentials('identifiers')
 
 def test_asr_clear_cached_authorization_info(
         patched_accountstore_realm, monkeypatch):
@@ -72,7 +73,7 @@ def test_asr_clear_cached_authorization_info(
     ach = mock.MagicMock() # credentials_cache_handler
     monkeypatch.setattr(asr, 'authorization_cache_handler', ach)
     asr.clear_cached_authorization_info('identifiers')
-    assert ach.method_calls[0] == mock.call.clear_cache('identifiers')
+    assert ach.method_calls[0] == mock.call.clear_cached_authz_info('identifiers')
 
 
 def test_asr_supports(patched_accountstore_realm,
@@ -220,14 +221,191 @@ def test_asr_acm_raises(username_password_token, patched_accountstore_realm,
             pasr.assert_credentials_match(token, full_mock_account)
 
 
-# def test_asr_get_authorization_info_w_ach_w_cached
-# def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_w_stored
-# def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_wo_stored
-# def test_asr_get_authorization_info_wo_ach_wo_stored
-# def test_asr_get_authorization_info_wo_ach_w_stored
-# def test_asr_is_permitted_yields
-# def test_asr_has_role_yields
-# def test_asr_has_all_roles_returns
+def test_asr_get_authorization_info_w_ach_w_cached(
+        patched_accountstore_realm, mock_authz_cache_handler, monkeypatch,
+        capsys):
+    """
+    unit tested:  get_authorization_info
+
+    test case:
+    - an authorization cache handler (ACH) is set
+    - the ACH returns a cached version of the authz_info
+    - the authz_info is returned
+    """
+    pasr = patched_accountstore_realm
+    ach = mock_authz_cache_handler
+
+    monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: 'authz_info')
+    monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
+
+    result = pasr.get_authorization_info('identifiers')
+    out, err = capsys.readouterr()
+
+    assert (result == 'authz_info' and
+            "AuthorizationInfo found in cache" in out)
+
+def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_w_stored(
+        patched_accountstore_realm, mock_authz_cache_handler, monkeypatch,
+        capsys, mock_account_store, full_mock_account):
+    """
+    unit tested:  get_authorization_info
+
+    test case:
+    - an authorization cache handler (ACH) is set
+    - the ACH fails to return a cached version of the authz_info
+    - the authz_info is instead obtained from the account_store
+    - the authz_info is returned
+    """
+    pasr = patched_accountstore_realm
+    ach = mock_authz_cache_handler
+    mas = mock_account_store
+    fma = full_mock_account
+
+    monkeypatch.setattr(mas, 'get_authz_info', lambda x: fma)
+    monkeypatch.setattr(pasr, 'account_store', mas)
+
+    monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: None)
+    monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
+
+    result = pasr.get_authorization_info('identifiers')
+
+    out, err = capsys.readouterr()
+    assert (result == IndexedAuthorizationInfo(roles=fma.roles,
+                                               permissions=fma.permissions) and
+            "AuthorizationInfo NOT found in cache" in out)
+
+
+def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_wo_stored(
+        patched_accountstore_realm, mock_authz_cache_handler, monkeypatch,
+        capsys, mock_account_store):
+    """
+    unit tested:  get_authorization_info
+
+    test case:
+    - an authorization cache handler (ACH) is set
+    - the ACH fails to return a cached version of the authz_info
+    - the authz_info is NOT obtained from the account_store
+    - None is returned
+    """
+    pasr = patched_accountstore_realm
+    ach = mock_authz_cache_handler
+    mas = mock_account_store
+
+    monkeypatch.setattr(mas, 'get_authz_info', lambda x: None)
+    monkeypatch.setattr(pasr, 'account_store', mas)
+
+    monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: None)
+    monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
+
+    result = pasr.get_authorization_info('identifiers')
+
+    out, err = capsys.readouterr()
+    assert (result is None and
+            "AuthorizationInfo NOT found in cache" in out and
+            "Could not obtain Account authorization info from store" in out)
+
+
+def test_asr_get_authorization_info_wo_ach_wo_stored(
+        patched_accountstore_realm, monkeypatch, capsys, mock_account_store):
+    """
+    unit tested:  get_authorization_info
+
+    test case:
+    - no ACH is configured
+    - no results obtained from accountstore
+    """
+
+    pasr = patched_accountstore_realm
+    mas = mock_account_store
+
+    monkeypatch.setattr(mas, 'get_authz_info', lambda x: None)
+    monkeypatch.setattr(pasr, 'account_store', mas)
+
+    result = pasr.get_authorization_info('identifiers')
+
+    out, err = capsys.readouterr()
+    assert (result is None and
+            "AuthorizationInfo NOT found in cache" not in out and
+            "Could not obtain Account authorization info from store" in out)
+
+
+def test_asr_get_authorization_info_wo_ach_w_stored(
+        patched_accountstore_realm, monkeypatch,
+        capsys, mock_account_store, full_mock_account):
+    """
+    unit tested:  get_authorization_info
+
+    test case:
+    - an authorization cache handler (ACH) is NOT set
+    - the authz_info is instead obtained from the account_store
+    - the authz_info is returned
+    """
+    pasr = patched_accountstore_realm
+    mas = mock_account_store
+    fma = full_mock_account
+
+    monkeypatch.setattr(mas, 'get_authz_info', lambda x: fma)
+    monkeypatch.setattr(pasr, 'account_store', mas)
+
+    result = pasr.get_authorization_info('identifiers')
+
+    out, err = capsys.readouterr()
+    assert (result == IndexedAuthorizationInfo(roles=fma.roles,
+                                               permissions=fma.permissions) and
+            "AuthorizationInfo NOT found in cache" not in out)
+
+def test_asr_is_permitted_yields(patched_accountstore_realm, monkeypatch):
+    """
+    unit tested:  is_permitted
+
+    test case:
+    - gets authorization info
+    - yields from the permission_verifier, one permission at a time
+    """
+    pasr = patched_accountstore_realm
+
+    def mock_yielder(authz_info, input):
+        yield ('permission', False)
+
+    monkeypatch.setattr(pasr.permission_verifier, 'is_permitted', mock_yielder)
+
+    results = list(pasr.is_permitted('identifiers', {'domain:action'}))
+    assert results == [('permission', False)]
+
+
+def test_asr_has_role_yields(patched_accountstore_realm, monkeypatch):
+    """
+    unit tested:  has_role
+
+    test case:
+    - gets authorization info
+    - yields from the role_verifier, one role at a time
+    """
+    pasr = patched_accountstore_realm
+
+    def mock_yielder(authz_info, input):
+        yield ('role', False)
+
+    monkeypatch.setattr(pasr.role_verifier, 'has_role', mock_yielder)
+
+    results = list(pasr.has_role('identifiers', {'roleid1'}))
+    assert results == [('role', False)]
+
+
+def test_asr_has_all_roles_returns(patched_accountstore_realm, monkeypatch):
+    """
+    unit tested:  has_all_roles
+
+    test case:
+    - gets authorization info
+    - returns a Boolean from the role_verifier
+    """
+    pasr = patched_accountstore_realm
+
+    monkeypatch.setattr(pasr.role_verifier, 'has_all_roles', lambda x, y: True)
+
+    result = pasr.has_all_roles('identifiers', {'roleid1', 'roleid2'})
+    assert result is True
 
 # -----------------------------------------------------------------------------
 # DefaultCredentialsCacheHandler Tests

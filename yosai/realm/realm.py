@@ -23,6 +23,7 @@ from yosai import (
     ClearCacheCredentialsException,
     GetCachedCredentialsException,
     IllegalArgumentException,
+    IndexedAuthorizationInfo,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
     LogManager,
@@ -141,7 +142,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         of cached credentials an alternative use case.
         """
 
-        self.credentials_cache_handler.clear_cache(identifiers)
+        self.credentials_cache_handler.clear_cached_credentials(identifiers)
 
     def clear_cached_authorization_info(self, identifiers):
         """
@@ -153,7 +154,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        self.authorization_cache_handler.clear_cache(identifiers)
+        self.authorization_cache_handler.clear_cached_authz_info(identifiers)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -266,11 +267,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             print(msg)
 
             # new to yosai:
-            authz_info = ach.get_cached_authorization_info(identifiers)
+            authz_info = ach.get_cached_authz_info(identifiers)
 
             # TBD -- log only if logging level is TRACE:
             if (authz_info is None):
-                msg = ("No AuthorizationInfo found in cache for identifiers ["
+                msg = ("AuthorizationInfo NOT found in cache for identifiers ["
                        + identifiers + "]")
                 # log trace here
                 print(msg)
@@ -284,8 +285,14 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # new to yosai:
             account = self.account_store.get_authz_info(identifiers)
 
-            authz_info = IndexedAuthorizationInfo(roles=account.roles,
-                                                  permissions=account.permissions)
+            try:
+                authz_info = IndexedAuthorizationInfo(roles=account.roles,
+                                                      permissions=account.permissions)
+            except AttributeError:
+                msg = "Could not obtain Account authorization info from store."
+                print(msg)
+                # log warning
+                authz_info = None
 
             # If the info is not None and cache exists, then cache the
             # authorization info
@@ -296,7 +303,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 # log trace here
                 print(msg)
 
-                ach.cache_authorization_info(identifiers, authz_info)
+                ach.cache_authz_info(identifiers, authz_info)
 
         return authz_info
 

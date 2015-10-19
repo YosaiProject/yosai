@@ -16,6 +16,8 @@ from .fixtures import (
     mock_subject_context,
     mock_token,
     patched_event_bus,
+    permission_collection,
     return_true,
+    role_collection,
     username_password_token,
 )

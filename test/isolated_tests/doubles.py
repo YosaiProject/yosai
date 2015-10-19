@@ -147,18 +147,25 @@ class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler):
 
 class MockAccount(account_abcs.Account):
 
-    def __init__(self, account_id, credentials={}, identifiers={}):
+    def __init__(self, account_id, credentials={}, identifiers={}, 
+                 roles=set(), permissions=set()):
         self._account_id = account_id
         self._credentials = credentials
         self._identifiers = identifiers
+        self._roles = roles
+        self._permissions = permissions
 
     @property
     def account_id(self):
         return self._account_id
 
     @property
-    def authorization_info(self):
-        return "authz_info"
+    def roles(self): 
+        return self._roles 
+
+    @property
+    def permissions(self):
+        return self._permissions 
 
     @property
     def credentials(self):

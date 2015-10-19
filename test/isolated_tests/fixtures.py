@@ -5,9 +5,11 @@ from yosai import (
     AccountStoreRealm,
     DefaultAuthenticator,
     DefaultEventBus,
+    DefaultPermission,
     DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
     PasswordVerifier,
+    SimpleRole,
     UsernamePasswordToken,
 )
 
@@ -29,6 +31,22 @@ from .session.doubles import (
 
 
 @pytest.fixture(scope='function')
+def permission_collection():
+    return {DefaultPermission(domain={'domain1'}, action={'action1'}),
+            DefaultPermission(domain={'domain2'}, action={'action1', 'action2'}),
+            DefaultPermission(domain={'domain3'}, action={'action1', 'action2', 'action3'}, target={'target1'}),
+            DefaultPermission(domain={'domain4'}, action={'action1', 'action2'}),
+            DefaultPermission(domain={'domain4'}, action={'action3'}, target={'target1'}),
+            DefaultPermission(wildcard_string='*:action5')}
+
+
+@pytest.fixture(scope='function')
+def role_collection():
+    return {SimpleRole(role_identifier='role1'),
+            SimpleRole(role_identifier='role2'),
+            SimpleRole(role_identifier='role3')}
+
+@pytest.fixture(scope='function')
 def mock_account_state():
     return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO',
                       'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
@@ -40,11 +58,14 @@ def mock_account_state():
 
 
 @pytest.fixture(scope='function')
-def full_mock_account(mock_account_state):
+def full_mock_account(mock_account_state, role_collection,
+                      permission_collection):
     mas = mock_account_state
     return MockAccount(account_id=8675309,
                        credentials=mas['creds'],
-                       identifiers=mas['identifiers'])
+                       identifiers=mas['identifiers'],
+                       roles=role_collection,
+                       permissions=permission_collection)
 
 
 @pytest.fixture(scope='function')
@@ -136,4 +157,3 @@ def default_session_context():
     return DefaultSessionContext(context_map={'attr1': 'attributeOne',
                                               'attr2': 'attributeTwo',
                                               'attr3': 'attributeThree'})
-
