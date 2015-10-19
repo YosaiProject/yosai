@@ -116,7 +116,7 @@ class MockAbstractSessionStore(AbstractSessionStore):
         super().__init__()
 
     def do_create(self, session):
-            pass
+        pass
 
     def do_read_session(self, session_id):
         pass

@@ -78,8 +78,12 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
         return self._credentials
 
     @property
-    def authorization_info(self):
-        return self._authorization_info
+    def permissions(self):
+        return self._permissions
+
+    @property
+    def roles(self):
+        return self._roles
 
     @property
     def realm_names(self):
@@ -118,4 +122,4 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
             def make_dc_accountid(self):
                 pass  # TBD
 
-        return SrializationSchema
+        return SerializationSchema

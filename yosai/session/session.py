@@ -727,19 +727,19 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
     @classmethod
     def serialization_schema(cls):
         class SerializationSchema(Schema):
-            _session_id = fields.Str()
-            _start_timestamp = fields.DateTime()  # iso is default
-            _stop_timestamp = fields.DateTime()  # iso is default
-            _last_access_time = fields.DateTime()  # iso is default
-            _idle_timeout = fields.TimeDelta()
-            _absolute_timeout = fields.TimeDelta()
-            _is_expired = fields.Boolean()
-            _host = fields.Str()
+            _session_id = fields.Str(allow_none=True)
+            _start_timestamp = fields.DateTime(allow_none=True)  # iso is default
+            _stop_timestamp = fields.DateTime(allow_none=True)  # iso is default
+            _last_access_time = fields.DateTime(allow_none=True)  # iso is default
+            _idle_timeout = fields.TimeDelta(allow_none=True)
+            _absolute_timeout = fields.TimeDelta(allow_none=True)
+            _is_expired = fields.Boolean(allow_none=True)
+            _host = fields.Str(allow_none=True)
 
             # NOTE:  After you've defined your SimpleSessionAttributesSchema,
             #        the Raw() fields assignment below should be replaced by
             #        the Schema line that follows it
-            attributes = fields.Raw()
+            attributes = fields.Dict(allow_none=True)
             # attributes = fields.Nested(cls.SimpleSessionAttributesSchema)
 
             @post_load
@@ -1449,16 +1449,16 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
         self.delete_invalid_sessions = True
         self.session_factory = SimpleSessionFactory()
         self._cache_manager = None
-        self._session_Store = MemorySessionStore()  # advised change to CachingSessionStore
+        self._session_store = MemorySessionStore()  # advised change to CachingSessionStore
 
     @property
-    def session_Store(self):
-        return self._session_Store
+    def session_store(self):
+        return self._session_store
 
-    @session_Store.setter
-    def session_Store(self, sessionstore):
-        self._session_Store = sessionstore
-        self.apply_cache_manager_to_session_Store()
+    @session_store.setter
+    def session_store(self, sessionstore):
+        self._session_store = sessionstore
+        self.apply_cache_manager_to_session_store()
 
     @property
     def cache_manager(self):
@@ -1467,12 +1467,12 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
     @cache_manager.setter
     def cache_manager(self, cachemanager):
         self._cache_manager = cachemanager
-        self.apply_cache_manager_to_session_Store()
+        self.apply_cache_manager_to_session_store()
 
-    def apply_cache_manager_to_session_Store(self):
+    def apply_cache_manager_to_session_store(self):
         try:
-            if isinstance(self.session_Store, cache_abcs.CacheManagerAware):
-                self.session_Store.cache_manager = self._cache_manager
+            if isinstance(self.session_store, cache_abcs.CacheManagerAware):
+                self.session_store.cache_manager = self._cache_manager
         except AttributeError:
             msg = ("tried to set a cache manager in a SessionStore that isn\'t"
                    "defined or configured in the DefaultSessionManager")
@@ -1498,7 +1498,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
                format(session))
         print(msg)
         # log debug here
-        self.session_Store.create(session)
+        self.session_store.create(session)
 
     def on_stop(self, session):
         try:
@@ -1530,7 +1530,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
             self.delete(session)
 
     def on_change(self, session):
-        self.session_Store.update(session)
+        self.session_store.update(session)
 
     def retrieve_session(self, session_key):
         session_id = self.get_session_id(session_key)
@@ -1555,13 +1555,13 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
         return session_key.session_id
 
     def retrieve_session_from_data_source(self, session_id):
-        return self.session_Store.read_session(session_id)
+        return self.session_store.read_session(session_id)
 
     def delete(self, session):
-        self.session_Store.delete(session)
+        self.session_store.delete(session)
 
     def get_active_sessions(self):
-        active_sessions = self.session_Store.get_active_sessions()
+        active_sessions = self.session_store.get_active_sessions()
         if (active_sessions is not None):
             return active_sessions
         else:

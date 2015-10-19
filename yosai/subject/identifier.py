@@ -125,7 +125,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
     def serialization_schema(cls):
         class SerializationSchema(Schema):
 
-            realm_identifiers = fields.Dict()
+            realm_identifiers = fields.Dict(allow_none=True)
 
             @post_load
             def make_simple_identifier_collection(self, data):

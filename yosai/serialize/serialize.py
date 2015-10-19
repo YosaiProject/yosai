@@ -83,11 +83,12 @@ class SerializationManager:
                     newobj.append(mydict)
 
                 # at this point, newobj is either a list of dicts or a dict
-                return self.serializer.serialize(newobj)
 
             except AttributeError:
                 msg = 'Only serialize Serializable objects or list of Serializables'
                 raise SerializationException(msg)
+
+        return self.serializer.serialize(newobj)
 
     def deserialize(self, message):
         # NOTE:  unpacked is expected to be a dict or list of dicts

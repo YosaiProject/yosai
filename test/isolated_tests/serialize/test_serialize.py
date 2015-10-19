@@ -129,7 +129,6 @@ def test_serialization_schemas(serializable_classes, serialized):
       and confirms that the expected serialized attributes are accounted for
     """
     sc = serializable_classes
-
     alleged_class = serialized['serialized_cls']
     klass = sc.get(alleged_class)
     deserialized = klass.deserialize(serialized)

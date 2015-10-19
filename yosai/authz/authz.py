@@ -169,9 +169,9 @@ class WildcardPermission(serialize_abcs.Serializable):
     @classmethod
     def serialization_schema(cls):
         class WildcardPartsSchema(Schema):
-                domain = fields.List(fields.Str)
-                action = fields.List(fields.Str)
-                target = fields.List(fields.Str)
+                domain = fields.List(fields.Str, allow_none=True)
+                action = fields.List(fields.Str, allow_none=True)
+                target = fields.List(fields.Str, allow_none=True)
 
         class SerializationSchema(Schema):
             parts = fields.Nested(WildcardPartsSchema)
@@ -348,9 +348,9 @@ class DefaultPermission(WildcardPermission):
     @classmethod
     def serialization_schema(cls):
         class PermissionPartsSchema(Schema):
-                domain = fields.List(fields.Str)
-                action = fields.List(fields.Str)
-                target = fields.List(fields.Str)
+                domain = fields.List(fields.Str, allow_none=True)
+                action = fields.List(fields.Str, allow_none=True)
+                target = fields.List(fields.Str, allow_none=True)
 
         class SerializationSchema(Schema):
             parts = fields.Nested(PermissionPartsSchema)
@@ -833,9 +833,10 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
     def serialization_schema(cls):
 
         class SerializationSchema(Schema):
-            _roles = fields.Nested(SimpleRole.serialization_schema(), many=True)
+            _roles = fields.Nested(SimpleRole.serialization_schema(), many=True,
+                                   allow_none=True)
             _permissions = CollectionDict(fields.Nested(
-                DefaultPermission.serialization_schema()))
+                DefaultPermission.serialization_schema()), allow_none=True)
 
             # sets can't be serialized so convert to list
             # @post_dump
@@ -906,7 +907,7 @@ class SimpleRole(serialize_abcs.Serializable):
     def serialization_schema(cls):
 
         class SerializationSchema(Schema):
-            identifier = fields.Str()
+            identifier = fields.Str(allow_none=True)
 
             @post_load
             def make_authz_info(self, data):
