@@ -724,3 +724,32 @@ def test_ipv_is_permitted(
 # -----------------------------------------------------------------------------
 # SimpleRoleVerifier Tests
 # -----------------------------------------------------------------------------
+
+def test_srv_has_role(simple_role_verifier, indexed_authz_info):
+    """
+    unit tested:  has_role
+
+    test case:
+    for each role requested, yield whether has role
+    """
+    srv = simple_role_verifier
+    test_roleids = {'role1', 'role10'}
+
+    result = list(srv.has_role(indexed_authz_info, test_roleids))
+    assert set(result) == set([('role1', True), ('role10', False)])
+
+
+@pytest.mark.parametrize('testroles, expected',
+                         [({'role1', 'role2'}, True),
+                          ({'role1', 'role20'}, False)])
+def test_srv_has_all_roles(
+        simple_role_verifier, indexed_authz_info, testroles, expected):
+    """
+    unit tested:  has_all_roles
+
+    test case:
+    when all roles are held, returns True else False
+    """
+    srv = simple_role_verifier
+    result = srv.has_all_roles(indexed_authz_info, testroles)
+    assert result == expected
