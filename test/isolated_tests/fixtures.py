@@ -11,6 +11,7 @@ from yosai import (
     PasswordVerifier,
     SimpleRole,
     UsernamePasswordToken,
+    security_utils,
 )
 
 from .doubles import (
@@ -21,7 +22,9 @@ from .doubles import (
     MockSecurityManager,
     MockSession,
     MockSubject,
+    MockSubjectBuilder,
     MockSubjectContext,
+    MockThreadContext,
     MockToken,
 )
 
@@ -157,3 +160,15 @@ def default_session_context():
     return DefaultSessionContext(context_map={'attr1': 'attributeOne',
                                               'attr2': 'attributeTwo',
                                               'attr3': 'attributeThree'})
+
+
+@pytest.fixture(scope='function')
+def mock_thread_context():
+    return MockThreadContext()
+
+
+@pytest.fixture(scope='function')
+def mock_subject_builder(mock_security_manager):
+    return MockSubjectBuilder(security_utils=security_utils,
+                              security_manager=mock_security_manager)
+

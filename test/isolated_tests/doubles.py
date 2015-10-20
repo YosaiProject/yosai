@@ -378,3 +378,23 @@ class MockSecurityManager(mgt_abcs.SecurityManager):
 
     def __repr__(self):
         return "MockSecurityManager()"
+
+
+class MockThreadContext:
+
+    def __init__(self):
+        self.subject = 'threadcontextsubject'
+        self.security_manager = 'security_manager'
+
+    def bind(self, subject):
+        pass
+
+
+class MockSubjectBuilder:
+
+    def __init__(self, security_utils, security_manager):
+        pass
+
+    def build_subject(self):
+        return 'subjectbuildersubject'
+

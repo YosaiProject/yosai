@@ -41,3 +41,5 @@ class StoppableScheduledExecutor(threading.Thread):
 # TBD:
 class ThreadContext:
     pass
+
+thread_context = ThreadContext()

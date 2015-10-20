@@ -39,14 +39,6 @@ PROJECT STATUS
 
 10/20/2015 Status
 -----------------
-Finished Unit Testing:
-    - conf
-    - authc
-    - authz
-    - event
-    - realm
-    - serialize
-    - session
 
 Pytest unit testing coverage stats are as follows:
 
