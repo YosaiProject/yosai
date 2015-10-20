@@ -151,7 +151,7 @@ class CollectionDict(fields.Dict):
             return default
 
     def _serialize(self, value, attr, obj):
-        ret = super()._serialize(value, attr, obj)
+        ret = super()._serialize(copy.copy(value), attr, obj)
         for key, collection in ret.items():
             lvalue = list(collection)
             ret[key] = [

@@ -98,13 +98,11 @@ class MapContext(serialize_abcs.Serializable):
             return False
 
     def __repr__(self):
-        attributes = ", ".join(str(key) + ': ' + str(value)
-                               for key, value in self.context.items())
-        return "<" + self.__class__.__name__ + "(" + attributes + ")>"
+        return "<" + self.__class__.__name__ + "(" + str(self.context) + ")>"
 
     class ContextSchema(Schema):
-        # Define key/value here for the dictionary
-        pass
+        # The ContextSchema is user defined -- no defaults are provided
+        # Define key fields here for the context dictionary
 
         @post_load
         def make_context(self, data):

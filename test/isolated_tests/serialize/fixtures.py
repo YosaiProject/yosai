@@ -10,6 +10,8 @@ import pytest
 import inspect
 import sys
 import yosai  # to get serializable classes
+from collections import defaultdict
+
 
 @pytest.fixture(scope='function')
 def mock_serializable():
@@ -30,22 +32,41 @@ def serializable_classes():
 
 @pytest.fixture(scope='function')
 def serialized_indexed_authorization_info():
-    pass
+    return {'serialized_cls': 'IndexedAuthorizationInfo',
+            'serialized_dist_version': '0.1.0',
+            'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+            '_permissions':
+            defaultdict(set, {'domain1':
+                        [{'parts': {'action': ['action1', 'action2', 'action3'],
+                                    'domain': ['domain1'],
+                                    'target': ['target1', 'target2']}}]}),
+            '_roles': [{'identifier': 'role123'}]}
 
 
 @pytest.fixture(scope='function')
-def serialized_role():
-    pass
+def serialized_simple_role():
+    return {'serialized_cls': 'SimpleRole',
+            'serialized_dist_version': '0.1.0',
+            'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+            'identifier': 'role123'}
 
 
 @pytest.fixture(scope='function')
 def serialized_wildcard_permission():
-    pass
+    return {'serialized_cls': 'WildcardPermission',
+            'serialized_dist_version': '0.1.0',
+            'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+            'parts': {'action': ['action1', 'action2', 'action3'],
+            'domain': ['domain1'], 'target': ['target1', 'target2']}}
 
 
 @pytest.fixture(scope='function')
 def serialized_default_permission():
-    pass
+    return {'serialized_cls': 'DefaultPermission',
+            'serialized_dist_version': '0.1.0',
+            'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
+            'parts': {'action': ['action1', 'action2', 'action3'],
+            'domain': ['domain1'], 'target': ['target1', 'target2']}}
 
 
 @pytest.fixture(scope='function')
@@ -93,10 +114,18 @@ def serialized(request):
 
 
 @pytest.fixture(scope='function')
-def serializeds(serialized_simple_session,
-                serialized_simple_identifier_collection):
-    return [serialized_simple_session,
-            serialized_simple_identifier_collection]
+def serializeds(serialized_indexed_authorization_info,
+                serialized_simple_session,
+                serialized_simple_identifier_collection,
+                serialized_wildcard_permission,
+                serialized_default_permission,
+                serialized_simple_role):
+    return [serialized_indexed_authorization_info,
+            serialized_simple_role,
+            serialized_simple_session,
+            serialized_simple_identifier_collection,
+            serialized_wildcard_permission,
+            serialized_default_permission]
 
 
 # DelegatingSession
