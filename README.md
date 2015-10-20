@@ -37,7 +37,7 @@ In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortre
 PROJECT STATUS
 ==============
 
-08/01/2015 Status
+10/20/2015 Status
 -----------------
 Finished Unit Testing:
     - conf
