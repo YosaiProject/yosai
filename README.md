@@ -50,62 +50,66 @@ Finished Unit Testing:
 
 Pytest unit testing coverage stats are as follows:
 
-|Name                               |Stmts|Miss | Cover|
-|-----------------------------------|-----|-----|------|
-| yosai/__init__                    | 21  | 0   | 100% |
-| yosai/account/__init__            | 0   | 0   | 100% |
-| yosai/account/abcs                | 19  | 5   | 74%  |
-| yosai/authc/__init__              | 5   | 0   | 100% |
-| yosai/authc/abcs                  | 64  | 21  | 67%  |
-| yosai/authc/authc                 | 153 | 11  | 93%  |
-| yosai/authc/authc_account         | 55  | 7   | 87%  |
-| yosai/authc/context               | 38  | 2   | 95%  |
-| yosai/authc/credential            | 50  | 5   | 90%  |
-| yosai/authc/strategy              | 100 | 6   | 94%  |
-| yosai/authz/__init__              | 1   | 0   | 100% |
-| yosai/authz/abcs                  | 47  | 16  | 66%  |
-| yosai/authz/authz                 | 262 | 16  | 94%  |
-| yosai/cache/__init__              | 0   | 0   | 100% |
-| yosai/cache/abcs                  | 48  | 27  | 44%  |
-| yosai/cache/cache                 | 37  | 37  | 0%   |
-| yosai/concurrency/__init__        | 1   | 0   | 100% |
-| yosai/concurrency/concurrency     | 16  | 4   | 75%  |
-| yosai/concurrency/tbd_concurrency | 10  | 10  | 0%   |
-| yosai/conf/__init__               | 1   | 0   | 100% |
-| yosai/conf/yosaisettings          | 51  | 1   | 98%  |
-| yosai/context/__init__            | 1   | 0   | 100% |
-| yosai/context/context             | 40  | 10  | 75%  |
-| yosai/event/__init__              | 1   | 0   | 100% |
-| yosai/event/abcs                  | 15  | 5   | 67%  |
-| yosai/event/event                 | 79  | 4   | 95%  |
-| yosai/exceptions                  | 147 | 1   | 99%  |
-| yosai/init_yosai                  | 5   | 5   | 0%   |
-| yosai/logging/__init__            | 1   | 0   | 100% |
-| yosai/logging/s_logging           | 77  | 56  | 27%  |
-| yosai/logging/test_logging        | 15  | 15  | 0%   |
-| yosai/realm/__init__              | 1   | 0   | 100% |
-| yosai/realm/abcs                  | 42  | 12  | 71%  |
-| yosai/realm/realm                 | 88  | 3   | 97%  |
-| yosai/security/__init__           | 0   | 0   | 100% |
-| yosai/security/abcs               | 22  | 22  | 0%   |
-| yosai/security/security           | 463 | 463 | 0%   |
-| yosai/serialize/__init__          | 1   | 0   | 100% |
-| yosai/serialize/abcs              | 18  | 3   | 83%  |
-| yosai/serialize/serialize         | 34  | 2   | 94%  |
-| yosai/session/__init__            | 3   | 0   | 100% |
-| yosai/session/abcs                | 142 | 54  | 62%  |
-| yosai/session/session             | 782 | 78  | 90%  |
-| yosai/session/session_gen         | 10  | 0   | 100% |
-| yosai/session/session_settings    | 18  | 1   | 94%  |
-| yosai/session/session_untested    | 1   | 1   | 0%   |
-| yosai/subject/__init__            | 0   | 0   | 100% |
-| yosai/subject/abcs                | 208 | 208 | 0%   |
-| yosai/subject/principal           | 85  | 85  | 0%   |
-| yosai/subject/subject             | 456 | 456 | 0%   |
-| yosai/utils/__init__              | 1   | 0   | 100% |
-| yosai/utils/utils                 | 53  | 19  | 64%  |
-|-----------------------------------|-----|-----|------|
-|TOTAL                              |3605 | 934 | 74%  |
+|Name                                  | Stmts |Miss  | Cover |
+|:--------------------------------------|:-------:|:------:|:-------:|
+| yosai/__init__.py                    | 43    | 0    | 100%  |
+| yosai/account/__init__.py            | 0     | 0    | 100%  |
+| yosai/account/abcs.py                | 26    | 8    | 69%   |
+| yosai/authc/__init__.py              | 0     | 0    | 100%  |
+| yosai/authc/abcs.py                  | 64    | 21   | 67%   |
+| yosai/authc/authc.py                 | 151   | 10   | 93%   |
+| yosai/authc/authc_account.py         | 59    | 10   | 83%   |
+| yosai/authc/context.py               | 39    | 2    | 95%   |
+| yosai/authc/credential.py            | 48    | 5    | 90%   |
+| yosai/authc/strategy.py              | 98    | 6    | 94%   |
+| yosai/authz/__init__.py              | 0     | 0    | 100%  |
+| yosai/authz/abcs.py                  | 53    | 18   | 66%   |
+| yosai/authz/authz.py                 | 335   | 65   | 81%   |
+| yosai/cache/__init__.py              | 0     | 0    | 100%  |
+| yosai/cache/abcs.py                  | 48    | 27   | 44%   |
+| yosai/cache/cache.py                 | 40    | 21   | 48%   |
+| yosai/concurrency/__init__.py        | 0     | 0    | 100%  |
+| yosai/concurrency/abcs.py            | 0     | 0    | 100%  |
+| yosai/concurrency/concurrency.py     | 18    | 4    | 78%   |
+| yosai/concurrency/tbd_concurrency.py | 10    | 10   | 0%    |
+| yosai/conf/__init__.py               | 0     | 0    | 100%  |
+| yosai/conf/yosaisettings.py          | 51    | 1    | 98%   |
+| yosai/context/__init__.py            | 0     | 0    | 100%  |
+| yosai/context/context.py             | 54    | 12   | 78%   |
+| yosai/event/__init__.py              | 0     | 0    | 100%  |
+| yosai/event/abcs.py                  | 15    | 5    | 67%   |
+| yosai/event/event.py                 | 78    | 4    | 95%   |
+| yosai/exceptions.py                  | 157   | 1    | 99%   |
+| yosai/init_yosai.py                  | 5     | 5    | 0%    |
+| yosai/logging/__init__.py            | 0     | 0    | 100%  |
+| yosai/logging/s_logging.py           | 77    | 56   | 27%   |
+| yosai/logging/test_logging.py        | 15    | 15   | 0%    |
+| yosai/mgt/__init__.py                | 0     | 0    | 100%  |
+| yosai/mgt/abcs.py                    | 20    | 8    | 60%   |
+| yosai/mgt/mgt.py                     | 351   | 8    | 98%   |
+| yosai/mgt/mgt_settings.py            | 8     | 1    | 88%   |
+| yosai/realm/__init__.py              | 0     | 0    | 100%  |
+| yosai/realm/abcs.py                  | 91    | 31   | 66%   |
+| yosai/realm/realm.py                 | 153   | 9    | 94%   |
+| yosai/security_utils.py              | 20    | 5    | 75%   |
+| yosai/serialize/__init__.py          | 0     | 0    | 100%  |
+| yosai/serialize/abcs.py              | 23    | 4    | 83%   |
+| yosai/serialize/serialize.py         | 89    | 56   | 37%   |
+| yosai/session/__init__.py            | 0     | 0    | 100%  |
+| yosai/session/abcs.py                | 146   | 54   | 63%   |
+| yosai/session/session.py             | 792   | 67   | 92%   |
+| yosai/session/session_gen.py         | 10    | 0    | 100%  |
+| yosai/session/session_settings.py    | 18    | 1    | 94%   |
+| yosai/session/session_untested.py    | 1     | 1    | 0%    |
+| yosai/subject/__init__.py            | 0     | 0    | 100%  |
+| yosai/subject/abcs.py                | 163   | 63   | 61%   |
+| yosai/subject/identifier.py          | 67    | 2    | 97%   |
+| yosai/subject/subject.py             | 423   | 29   | 93%   |
+| yosai/utils/__init__.py              | 0     | 0    | 100%  |
+| yosai/utils/utils.py                 | 53    | 37   | 30%   |
+|--------------------------------------|-------|------|-------|
+| TOTAL                                | 3912  | 682  | 83%   |
+
 
 
 GROUP COMMUNICATION
