@@ -16,10 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-accountstorerealm:
-    - added get_credentials method so must migrate authenticate_account unit tests over
-    - write unit tests for get_credentials
-
 
 update DefaultSecurityManager set_realms and apply_cache_manager methods to 
 use cache handlers rather than realms
@@ -88,9 +84,3 @@ add excessive-login-attempts logic:
     exception.
 
 ---------------------------------------------------------------------
-
-confirm correct porting of List<...> collections
-
-
-Unit Testing Reminders
-- roleid_s are Sets and no longer Lists -- update existing unit tests accordingly

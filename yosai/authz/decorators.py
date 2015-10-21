@@ -13,7 +13,7 @@ def requires_authentication():
     return wrapped
 
 
-def requires_permissions(permission_s, logical_operator=all):
+def requires_permission(permission_s, logical_operator=all):
     """
     :param permission_s:   the permission(s) required
     :type permission_s:  a Str or List of Strings
@@ -49,8 +49,27 @@ def requires_permissions(permission_s, logical_operator=all):
         return inner_wrap
     return outer_wrap
 
-#def requires_user
-
-#def requires_guest
 
 #def requires_roles
+
+def requires_user(fn):
+    """
+    Requires that the calling Subject is *either* authenticated *or* remembered
+    via RememberMe services before allowing access.
+
+    This method essentially ensures that subject.identifiers is not None
+    """
+
+    @functools.wraps(fn)
+    def wrap(*args, **kwargs):
+        if subject.identifiers is None:
+            msg = ("Attempting to perform a user-only operation.  The "
+                   "current Subject is NOT a user (they haven't been "
+                   "authenticated or remembered from a previous login). "
+                   "ACCESS DENIED.")
+            raise UnauthenticatedException(msg)
+
+        return fn(*args, **kwargs)
+    return wrap
+
+#def requires_guest
