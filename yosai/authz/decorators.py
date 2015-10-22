@@ -6,7 +6,8 @@ def requires_authentication(fn):
     Requires that the calling Subject be authenticated before allowing access.
 
     :raises UnauthenticatedException: indicating that the decorated method is
-                                      not allowed to be executed
+                                      not allowed to be executed because the
+                                      Subject failed to authenticate
     """
 
     @functools.wraps(fn)
@@ -36,12 +37,12 @@ def requires_permission(permission_s, logical_operator=all):
     :type: and OR all (from python standard library)
 
     Elaborate Example:
-        requires_permissions(
+        requires_permission(
             permission_s=['domain1:action1,action2', 'domain2:action1'],
             logical_operator=any)
 
     Basic Example:
-        requires_permissions('domain1:action1,action2')
+        requires_permission('domain1:action1,action2')
     """
     def outer_wrap(fn):
         @functools.wraps(fn)
@@ -58,7 +59,40 @@ def requires_permission(permission_s, logical_operator=all):
     return outer_wrap
 
 
-#def requires_roles
+def requires_role(roleid_s, logical_operator=all):
+    """
+    Requires that the calling Subject be authorized to the extent that is
+    required to satisfy the roleid_s specified and the logical operation
+    upon them.
+
+    :param roleid_s:   a collection of the role(s) required, specified by
+                       identifier (such as a role name)
+    :type roleid_s:  a Str or List of Strings
+
+    :param logical_operator:  indicates whether all or at least one permission
+                              is true (and, any)
+    :type: and OR all (from python standard library)
+
+    Elaborate Example:
+        requires_role(roleid_s=['sysadmin', 'developer'], logical_operator=any)
+
+    Basic Example:
+        requires_role('physician')
+    """
+    def outer_wrap(fn):
+        @functools.wraps(fn)
+        def inner_wrap(*args, **kwargs):
+
+            roleid_s = list(roleid_s)  # in case it's a single string
+
+            subject = security_utils.get_subject()
+
+            subject.check_role(roleid_s, logical_operator)
+
+            return fn(*args, **kwargs)
+        return inner_wrap
+    return outer_wra
+
 
 def requires_user(fn):
     """
@@ -66,6 +100,11 @@ def requires_user(fn):
     via RememberMe services before allowing access.
 
     This method essentially ensures that subject.identifiers IS NOT None
+
+    :raises UnauthenticatedException: indicating that the decorated method is
+                                      not allowed to be executed because the
+                                      Subject attempted to perform a user-only
+                                      operation
     """
 
     @functools.wraps(fn)
@@ -91,6 +130,11 @@ def requires_guest():
     RememberMe services.
 
     This method essentially ensures that subject.identifiers IS None
+
+    :raises UnauthenticatedException: indicating that the decorated method is
+                                      not allowed to be executed because the
+                                      Subject attempted to perform a guest-only
+                                      operation
     """
     @functools.wraps(fn)
     def wrap(*args, **kwargs):

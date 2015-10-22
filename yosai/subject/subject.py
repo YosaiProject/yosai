@@ -446,17 +446,22 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = 'Cannot check permission when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
-    def has_role(self, roleid_s):
+    def has_role(self, roleid_s, logical_operator):
         """
         :param roleid_s: 1..N role identifiers (string)
         :type roleid_s:  a String or List of Strings
+
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
 
         :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
         """
 
         if self.has_identifiers:
-            return (self.security_manager.has_role(self.identifiers, roleid_s))
+            return self.security_manager.has_role(self.identifiers,
+                                                  roleid_s, logical_operator)
         msg = 'Cannot check roles when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
@@ -474,15 +479,21 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = 'Cannot check roles when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
-    def check_role(self, role_ids):
+    def check_role(self, role_ids, logical_operator):
         """
         :param role_ids:  1 or more RoleIds
         :type role_ids: an individual or List of Strings
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         if self.has_identifiers:
-            self.security_manager.check_role(self.identifiers, role_ids)
+            self.security_manager.check_role(self.identifiers,
+                                             role_ids,
+                                             logical_operator)
         else:
             msg = 'Cannot check roles when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
