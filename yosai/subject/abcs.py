@@ -241,11 +241,11 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted_all(self, permissions):
+    def is_permitted_collective(self, permissions, logical_operator):
         pass
 
     @abstractmethod
-    def check_permission(self, permissions):
+    def check_permission(self, permissions, logical_operator):
         pass
 
     @abstractmethod

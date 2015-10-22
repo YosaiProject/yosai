@@ -565,16 +565,25 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         """
         return self.authorizer.is_permitted(identifiers, permission_s)
 
-    def is_permitted_all(self, identifiers, permission_s):
+    def is_permitted_collective(self, identifiers, permission_s, logical_operator):
         """
-        :param identifiers: a Set of Identifier objects
-        :param permission_s:  a List of Permission objects
+        :param identifiers: a collection of identifiers
+        :type identifiers: Set
+
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
+
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
 
         :returns: a Boolean
         """
-        return self.authorizer.is_permitted_all(identifiers, permission_s)
+        return self.authorizer.is_permitted_collective(identifiers,
+                                                       permission_s,
+                                                       logical_operator)
 
-    def check_permission(self, identifiers, permission_s):
+    def check_permission(self, identifiers, permission_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers: Set
@@ -582,9 +591,15 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :returns: a List of Booleans corresponding to the permission elements
         """
-        return self.authorizer.check_permission(identifiers, permission_s)
+        return self.authorizer.check_permission(identifiers,
+                                                permission_s,
+                                                logical_operator)
 
     def has_role(self, identifiers, roleid_s):
         """

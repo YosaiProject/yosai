@@ -1,22 +1,36 @@
 import functools
 
-def requires_authentication():
 
-    def wrapped(fn):
-        @functools.wraps(fn)
-        def wrapped_f(*args, **kwargs):
-            return fn(*args, **kwargs)
+def requires_authentication(fn):
+    """
+    Requires that the calling Subject be authenticated before allowing access.
 
-        # add the yosai pre-authentication code block here
+    :raises UnauthenticatedException: indicating that the decorated method is
+                                      not allowed to be executed
+    """
 
-        return wrapped_f
-    return wrapped
+    @functools.wraps(fn)
+    def wrap(*args, **kwargs):
+
+        subject = security_utils.get_subject()
+
+        if not subject.authenticated():
+            msg = "The current Subject is not authenticated.  ACCESS DENIED."
+            raise UnauthenticatedException(msg)
+
+        return fn(*args, **kwargs)
+    return wrap
 
 
 def requires_permission(permission_s, logical_operator=all):
     """
+    Requires that the calling Subject be authorized to the extent that is
+    required to satisfy the permission_s specified and the logical operation
+    upon them.
+
     :param permission_s:   the permission(s) required
     :type permission_s:  a Str or List of Strings
+
     :param logical_operator:  indicates whether all or at least one permission
                               is true (and, any)
     :type: and OR all (from python standard library)
@@ -32,20 +46,14 @@ def requires_permission(permission_s, logical_operator=all):
     def outer_wrap(fn):
         @functools.wraps(fn)
         def inner_wrap(*args, **kwargs):
+
             permission_s = list(permission_s)  # in case it's a single string
 
-            # get the current executing subject
-            # invoke is_permission(identifiers, permission_s),
-            # use the logical_operator
+            subject = security_utils.get_subject()
 
-            # results is a frozenset of tuples:
-            results = subject.is_permitted(identifers, permission_s)
-            permits = [is_permitted for perm, is_permitted in results]
-            is_permitted = logical_operator(permits)
-            if is_permitted:
-                return fn(*args, **kwargs)
-            else:
-                raise ?????????????
+            subject.check_permission(permission_s, logical_operator)
+
+            return fn(*args, **kwargs)
         return inner_wrap
     return outer_wrap
 
@@ -54,14 +62,17 @@ def requires_permission(permission_s, logical_operator=all):
 
 def requires_user(fn):
     """
-    Requires that the calling Subject is *either* authenticated *or* remembered
+    Requires that the calling Subject be *either* authenticated *or* remembered
     via RememberMe services before allowing access.
 
-    This method essentially ensures that subject.identifiers is not None
+    This method essentially ensures that subject.identifiers IS NOT None
     """
 
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
+
+        subject = security_utils.get_subject()
+
         if subject.identifiers is None:
             msg = ("Attempting to perform a user-only operation.  The "
                    "current Subject is NOT a user (they haven't been "
@@ -72,4 +83,26 @@ def requires_user(fn):
         return fn(*args, **kwargs)
     return wrap
 
-#def requires_guest
+
+def requires_guest():
+    """
+    Requires that the calling Subject be NOT (yet) recognized in the system as
+    a user -- the Subject is not yet authenticated nor remembered through
+    RememberMe services.
+
+    This method essentially ensures that subject.identifiers IS None
+    """
+    @functools.wraps(fn)
+    def wrap(*args, **kwargs):
+
+        subject = security_utils.get_subject()
+
+        if subject.identifiers is not None:
+            msg = ("Attempting to perform a guest-only operation.  The "
+                   "current Subject is NOT a guest (they have either been "
+                   "authenticated or remembered from a previous login). "
+                   "ACCESS DENIED.")
+            raise UnauthenticatedException(msg)
+
+        return fn(*args, **kwargs)
+    return wrap

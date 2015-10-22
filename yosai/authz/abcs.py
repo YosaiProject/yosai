@@ -86,11 +86,11 @@ class Authorizer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted_all(self, identifiers, permission_s):
+    def is_permitted_collective(self, identifiers, permission_s, logical_operator):
         pass
 
     @abstractmethod
-    def check_permission(self, identifiers, permission_s):
+    def check_permission(self, identifiers, permission_s, logical_operator):
         pass
 
     @abstractmethod

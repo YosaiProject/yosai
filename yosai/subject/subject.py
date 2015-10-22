@@ -389,15 +389,21 @@ class DelegatingSubject(subject_abcs.Subject):
         msg = 'Cannot check permission when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
-    def is_permitted_all(self, permission_s):
+    def is_permitted_collective(self, permission_s, logical_operator):
         """
         :param permission_s:  a List of Permission objects
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :returns: a Boolean
         """
+        sm = self.security_manager
         if self.has_identifiers:
-            return self.security_manager.is_permitted_all(self.identifiers,
-                                                          permission_s)
+            return sm.is_permitted_collective(self.identifiers,
+                                              permission_s,
+                                              logical_operator)
 
         msg = 'Cannot check permission when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
@@ -420,16 +426,22 @@ class DelegatingSubject(subject_abcs.Subject):
                 "denied.")
             raise UnauthenticatedException(msg)
 
-    def check_permission(self, permission_s):
+    def check_permission(self, permission_s, logical_operator):
         """
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
+
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
 
         :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_authz_check_possible()
         if self.has_identifiers:
-            self.security_manager.check_permission(self.identifiers, permission_s)
+            self.security_manager.check_permission(self.identifiers,
+                                                   permission_s,
+                                                   logical_operator)
         else:
             msg = 'Cannot check permission when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)

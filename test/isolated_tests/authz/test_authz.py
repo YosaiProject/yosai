@@ -256,14 +256,18 @@ def test_mra_is_permitted_fails(modular_realm_authorizer_patched, monkeypatch):
         assert results == frozenset([('permission1', False), ('permission2', False)])
 
 
-@pytest.mark.parametrize('mock_results, expected',
-                         [({('permission1', True), ('permission2', True)}, True),
-                          ({('permission1', True), ('permission2', False)}, False),
-                          ({('permission1', False), ('permission2', False)}, False)])
-def test_mra_is_permitted_all(
-        modular_realm_authorizer_patched, monkeypatch, mock_results, expected):
+@pytest.mark.parametrize('mock_results, logical_operator, expected',
+                         [({('permission1', True), ('permission2', True)}, all, True),
+                          ({('permission1', True), ('permission2', False)}, all, False),
+                          ({('permission1', False), ('permission2', False)}, all, False),
+                          ({('permission1', True), ('permission2', True)}, any, True),
+                          ({('permission1', True), ('permission2', False)}, any, True),
+                          ({('permission1', False), ('permission2', False)}, any, False)])
+def test_mra_is_permitted_collective(
+        modular_realm_authorizer_patched, monkeypatch, mock_results,
+        logical_operator, expected):
     """
-    unit tested:  is_permitted_all
+    unit tested:  is_permitted_collective
 
     test case:
     a collection of permissions receives a single Boolean
@@ -272,7 +276,9 @@ def test_mra_is_permitted_all(
     monkeypatch.setattr(mra, 'is_permitted', lambda x,y: mock_results)
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
-        results = mra.is_permitted_all({'identifiers'}, ['perm1', 'perm2'])
+        results = mra.is_permitted_collective({'identifiers'},
+                                              ['perm1', 'perm2'],
+                                              logical_operator)
         mra_arc.assert_called_once_with()
         assert results == expected
 
@@ -285,12 +291,12 @@ def test_mra_check_permission_collection_raises(
     check_permission raises an exception if any permission isn't entitled
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, 'is_permitted_all', lambda x,y: False)
+    monkeypatch.setattr(mra, 'is_permitted_collective', lambda x,y,z: False)
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
 
         with pytest.raises(UnauthorizedException):
-            mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'])
+            mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'], all)
             mra_arc.assert_called_once_with()
 
 def test_mra_check_permission_collection_succeeds(
@@ -303,12 +309,12 @@ def test_mra_check_permission_collection_succeeds(
     and nothing returned if success
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, 'is_permitted_all', lambda x,y: True)
+    monkeypatch.setattr(mra, 'is_permitted_collective', lambda x,y,z: True)
 
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
 
-        mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'])
+        mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'], all)
         mra_arc.assert_called_once_with()
 
 

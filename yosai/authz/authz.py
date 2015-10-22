@@ -516,22 +516,31 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         return frozenset(results.items())
 
-    def is_permitted_all(self, identifiers, permission_s):
+    # yosai refactored is_permitted_all to support ANY or ALL operations
+    def is_permitted_collective(self, identifiers,
+                                permission_s, logical_operator):
         """
-        :param identifiers: a Set of Identifier objects
-        :param permission_s:  a List of Permission objects
+        :param identifiers: a collection of Identifier objects
+        :type identifiers: set
+
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of Permission object(s) or String(s)
+
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
 
         :returns: a Boolean
         """
         self.assert_realms_configured()
 
-        for perm, permitted in self.is_permitted(identifiers, permission_s):
-            if not permitted:
-                return False
-        return True
+        # results is a frozenset of tuples:
+        results = self.is_permitted(identifiers, permission_s)
+
+        return logical_operator(is_permitted for perm, is_permitted in results)
 
     # yosai consolidates check_permission functionality to one method:
-    def check_permission(self, identifiers, permission_s):
+    def check_permission(self, identifiers, permission_s, logical_operator):
         """
         like Yosai's authentication process, the authorization process will
         raise an Exception to halt further authz checking once Yosai determines
@@ -543,12 +552,18 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_realms_configured()
-        permitted = self.is_permitted_all(identifiers, permission_s)
+        permitted = self.is_permitted_collective(identifiers,
+                                                 permission_s,
+                                                 logical_operator)
         if not permitted:
-            msg = "Subject does not have permission(s)"
+            msg = "Subject lacks permission(s) to satisfy logical operation"
             print(msg)
             # log here
             raise UnauthorizedException(msg)
