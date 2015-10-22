@@ -392,21 +392,6 @@ def test_asr_has_role_yields(patched_accountstore_realm, monkeypatch):
     assert results == [('role', False)]
 
 
-def test_asr_has_all_roles_returns(patched_accountstore_realm, monkeypatch):
-    """
-    unit tested:  has_all_roles
-
-    test case:
-    - gets authorization info
-    - returns a Boolean from the role_verifier
-    """
-    pasr = patched_accountstore_realm
-
-    monkeypatch.setattr(pasr.role_verifier, 'has_all_roles', lambda x, y: True)
-
-    result = pasr.has_all_roles('identifiers', {'roleid1', 'roleid2'})
-    assert result is True
-
 # -----------------------------------------------------------------------------
 # DefaultCredentialsCacheHandler Tests
 # -----------------------------------------------------------------------------

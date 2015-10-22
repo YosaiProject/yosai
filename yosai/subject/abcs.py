@@ -253,11 +253,11 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def has_all_roles(self, role_identifiers):
+    def has_role_collective(self, role_identifiers, logical_operator):
         pass
 
     @abstractmethod
-    def check_role(self, role_identifiers):
+    def check_role(self, role_identifiers, logical_operator):
         pass
 
     @abstractmethod

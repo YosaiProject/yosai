@@ -337,17 +337,17 @@ def test_dsm_is_permitted(default_security_manager):
         mra_ip.assert_called_once_with('identifiers', 'permission_s')
 
 
-def test_dsm_is_permitted_all(default_security_manager):
+def test_dsm_is_permitted_collective(default_security_manager):
     """
-    unit tested: is_permitted_all
+    unit tested: is_permitted_collective
 
     test case:
     passes request on to authorizer
     """
     dsm = default_security_manager
-    with mock.patch.object(ModularRealmAuthorizer, 'is_permitted_all') as mra_ipa:
-        dsm.is_permitted_all('identifiers', 'permission_s')
-        mra_ipa.assert_called_once_with('identifiers', 'permission_s')
+    with mock.patch.object(ModularRealmAuthorizer, 'is_permitted_collective') as mra_ipa:
+        dsm.is_permitted_collective('identifiers', 'permission_s', all)
+        mra_ipa.assert_called_once_with('identifiers', 'permission_s', all)
 
 
 def test_dsm_check_permission(default_security_manager):
@@ -359,8 +359,8 @@ def test_dsm_check_permission(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_permission') as mra_cp:
-        dsm.check_permission('identifiers', 'permission_s')
-        mra_cp.assert_called_once_with('identifiers', 'permission_s')
+        dsm.check_permission('identifiers', 'permission_s', all)
+        mra_cp.assert_called_once_with('identifiers', 'permission_s', all)
 
 
 def test_dsm_has_role(default_security_manager):
@@ -376,17 +376,17 @@ def test_dsm_has_role(default_security_manager):
         mra_hr.assert_called_once_with('identifiers', 'permission_s')
 
 
-def test_dsm_has_all_roles(default_security_manager):
+def test_dsm_has_role_collective(default_security_manager):
     """
-    unit tested:  has_all_roles
+    unit tested:  has_role_collective
 
     test case:
     passes request on to authorizer
     """
     dsm = default_security_manager
-    with mock.patch.object(ModularRealmAuthorizer, 'has_all_roles') as mra_har:
-        dsm.has_all_roles('identifiers', 'permission_s')
-        mra_har.assert_called_once_with('identifiers', 'permission_s')
+    with mock.patch.object(ModularRealmAuthorizer, 'has_role_collective') as mra_har:
+        dsm.has_role_collective('identifiers', 'permission_s', all)
+        mra_har.assert_called_once_with('identifiers', 'permission_s', all)
 
 
 def test_dsm_check_role(default_security_manager):
@@ -398,8 +398,8 @@ def test_dsm_check_role(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_role') as mra_cr:
-        dsm.check_role('identifiers', 'permission_s')
-        mra_cr.assert_called_once_with('identifiers', 'permission_s')
+        dsm.check_role('identifiers', 'permission_s', all)
+        mra_cr.assert_called_once_with('identifiers', 'permission_s', all)
 
 def test_dsm_start(
         default_security_manager, mock_default_session_manager, monkeypatch):

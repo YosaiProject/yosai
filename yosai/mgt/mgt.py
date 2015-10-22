@@ -614,19 +614,24 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         """
         return self.authorizer.has_role(identifiers, roleid_s)
 
-    def has_all_roles(self, identifiers, roleid_s):
+    def has_role_collective(self, identifiers, roleid_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers: Set
+
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings
 
         :returns: a Boolean
         """
-        return self.authorizer.has_all_roles(identifiers, roleid_s)
+        return self.authorizer.has_role_collective(identifiers,
+                                                   roleid_s, logical_operator)
 
-    def check_role(self, identifiers, roleid_s):
+    def check_role(self, identifiers, roleid_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers: Set
@@ -634,9 +639,14 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
-        return self.authorizer.check_role(identifiers, roleid_s)
+        return self.authorizer.check_role(identifiers,
+                                          roleid_s, logical_operator)
 
     """
     * ===================================================================== *

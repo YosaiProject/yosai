@@ -389,6 +389,7 @@ class DelegatingSubject(subject_abcs.Subject):
         msg = 'Cannot check permission when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
+    # refactored is_permitted_all:
     def is_permitted_collective(self, permission_s, logical_operator):
         """
         :param permission_s:  a List of Permission objects
@@ -446,14 +447,10 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = 'Cannot check permission when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
-    def has_role(self, roleid_s, logical_operator):
+    def has_role(self, roleid_s):
         """
         :param roleid_s: 1..N role identifiers (string)
         :type roleid_s:  a String or List of Strings
-
-        :param logical_operator:  indicates whether all or at least one
-                                  permission check is true (any)
-        :type: and OR all (from python standard library)
 
         :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
@@ -461,20 +458,27 @@ class DelegatingSubject(subject_abcs.Subject):
 
         if self.has_identifiers:
             return self.security_manager.has_role(self.identifiers,
-                                                  roleid_s, logical_operator)
+                                                  roleid_s)
         msg = 'Cannot check roles when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
-    def has_all_roles(self, roleid_s):
+    # refactored has_all_roles:
+    def has_role_collective(self, roleid_s, logical_operator):
         """
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or List of Strings
+
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
 
         :returns: a Boolean
         """
         if self.has_identifiers:
             return (self.has_identifiers and
-                    self.security_manager.has_all_roles(self.identifiers, roleid_s))
+                    self.security_manager.has_role_collective(self.identifiers,
+                                                              roleid_s,
+                                                              logical_operator))
         else:
             msg = 'Cannot check roles when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)

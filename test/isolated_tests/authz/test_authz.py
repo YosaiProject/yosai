@@ -382,33 +382,38 @@ def test_mra_has_role_fails(modular_realm_authorizer_patched, monkeypatch):
         assert results == frozenset([('roleid1', False), ('roleid2', False)])
 
 
-@pytest.mark.parametrize('param1, param2, expected',
-                         [(False, True, True),
-                          (True, True, True),
-                          (True, False, True)])
-def test_mra_has_all_roles(
-        modular_realm_authorizer_patched, monkeypatch, param1, param2, expected):
+@pytest.mark.parametrize('param1, param2, logical_operator, expected',
+                         [(False, True, all, False),
+                          (True, True, all, True),
+                          (True, False, all, True)
+                          (False, True, any, True),
+                          (True, True, any, True),
+                          (True, False, any, True)])
+def test_mra_has_role_collective(
+        modular_realm_authorizer_patched, monkeypatch, param1, param2,
+        logical_operator, expected):
     """
-    unit tested:  has_all_roles
+    unit tested:  has_role_collective
 
     test case:
     a collection of roleids receives a single Boolean
     """
     mra = modular_realm_authorizer_patched
 
-    monkeypatch.setattr(mra.realms[0], 'has_all_roles', lambda x, y: param1)
-    monkeypatch.setattr(mra.realms[1], 'has_all_roles', lambda x, y: param1)
-    monkeypatch.setattr(mra.realms[2], 'has_all_roles', lambda x, y: param2)
+    monkeypatch.setattr(mra.realms[0], 'has_role', lambda x, y: param1)
+    monkeypatch.setattr(mra.realms[1], 'has_role', lambda x, y: param1)
+    monkeypatch.setattr(mra.realms[2], 'has_role', lambda x, y: param2)
 
     with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
         arc.return_value = None
-        result = mra.has_all_roles('arbitrary_identifiers', {'roleid1', 'roleid2'})
+        result = mra.has_role_collective('arbitrary_identifiers',
+                                         {'roleid1', 'roleid2'}, logical_operator)
 
         arc.assert_called_once_with()
         assert result == expected
 
 
-def test_mra_check_role_collection_raises(
+def test_mra_check_role_raises(
         modular_realm_authorizer_patched, monkeypatch):
     """
     unit tested:  check_role
@@ -418,15 +423,15 @@ def test_mra_check_role_collection_raises(
     and nothing returned if success
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, 'has_all_roles', lambda x,y: None)
+    monkeypatch.setattr(mra, 'has_role_collective', lambda x,y,z: False)
     with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
         arc.return_value = None
         with pytest.raises(UnauthorizedException):
-            mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'])
+            mra.check_role('arbitrary_identifiers', ['roleid1', 'roleid2'], all)
 
             arc.assert_called_once_with()
 
-def test_mra_check_role_collection_true(
+def test_mra_check_role_true(
         modular_realm_authorizer_patched, monkeypatch):
     """
     unit tested:  check_role
@@ -437,11 +442,11 @@ def test_mra_check_role_collection_true(
     """
 
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, 'has_all_roles', lambda x,y: {'role1'})
+    monkeypatch.setattr(mra, 'has_role_collective', lambda x,y,z: True)
     with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
         arc.return_value = None
 
-        mra.check_role('identifiers', 'roleid_s')
+        mra.check_role('identifiers', 'roleid_s', all)
         arc.assert_called_once_with()
 
 # -----------------------------------------------------------------------------
@@ -743,19 +748,3 @@ def test_srv_has_role(simple_role_verifier, indexed_authz_info):
 
     result = list(srv.has_role(indexed_authz_info, test_roleids))
     assert set(result) == set([('role1', True), ('role10', False)])
-
-
-@pytest.mark.parametrize('testroles, expected',
-                         [({'role1', 'role2'}, True),
-                          ({'role1', 'role20'}, False)])
-def test_srv_has_all_roles(
-        simple_role_verifier, indexed_authz_info, testroles, expected):
-    """
-    unit tested:  has_all_roles
-
-    test case:
-    when all roles are held, returns True else False
-    """
-    srv = simple_role_verifier
-    result = srv.has_all_roles(indexed_authz_info, testroles)
-    assert result == expected

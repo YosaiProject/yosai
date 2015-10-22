@@ -1,1 +1,3 @@
-{}
+{
+  "test_subject.py::test_dsc_resolve_security_manager_none_raises": true
+}

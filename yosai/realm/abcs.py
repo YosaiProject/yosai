@@ -200,10 +200,6 @@ class AuthorizingRealm(Realm):
     def has_role(self, identifiers, roleid_s):
         pass
 
-    @abstractmethod
-    def has_all_roles(self, identifiers, roleid_s):
-        pass
-
     # By default, Yosai does not support resolution of Role to Permission:
     # @property
     # @abstractmethod

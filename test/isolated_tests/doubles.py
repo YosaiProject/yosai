@@ -295,10 +295,10 @@ class MockSubject(DelegatingSubject):
     def has_role(self, role_identifiers):
         pass
 
-    def has_all_roles(self, role_identifiers):
+    def has_role_collective(self, roleid_s, logical_operator):
         pass
 
-    def check_role(self, role_identifiers):
+    def check_role(self, roleid_s, logical_operator):
         pass
 
     def login(self, auth_token):
@@ -346,7 +346,7 @@ class MockSecurityManager(mgt_abcs.SecurityManager):
     def is_permitted(self, identifiers, permission_s):
         pass
 
-    def is_permitted_all(self, identifiers, permission_s):
+    def is_permitted_collective(self, identifiers, permission_s, logical_operator):
         return True
 
     def check_permission(self, identifiers, permission_s):
@@ -355,10 +355,10 @@ class MockSecurityManager(mgt_abcs.SecurityManager):
     def has_role(self, identifiers, roleid_s):
         pass
 
-    def has_all_roles(self, identifiers, roleid_s):
+    def has_role_collective(self, identifiers, roleid_s, logical_operator):
         pass
 
-    def check_role(self, identifiers, role_s):
+    def check_role(self, identifiers, roleid_s, logical_operator):
         pass
 
     def login(self, subject, authc_token):

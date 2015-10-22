@@ -593,7 +593,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         return frozenset(results.items())
 
-    def has_all_roles(self, identifiers, roleid_s):
+    def has_role_collective(self, identifiers, roleid_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers: Set
@@ -601,18 +601,22 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :returns: a Boolean
         """
         self.assert_realms_configured()
 
-        for realm in self.authorizing_realms:
-            # the realm's has_role returns a generator
-            if realm.has_all_roles(identifiers, roleid_s):
-                return True
+        # results is a frozenset of tuples:
+        results = self.has_role(identifiers, roleid_s)
+
+        return logical_operator(has_role for roleid, has_role in results)
 
         return False
 
-    def check_role(self, identifiers, roleid_s):
+    def check_role(self, identifiers, roleid_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers: Set
@@ -620,12 +624,17 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or Set of Strings
 
+        :param logical_operator:  indicates whether all or at least one
+                                  permission check is true (any)
+        :type: and OR all (from python standard library)
+
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         self.assert_realms_configured()
-        has_role_s = self.has_all_roles(identifiers, roleid_s)
+        has_role_s = self.has_role_collective(identifiers,
+                                              roleid_s, logical_operator)
         if not has_role_s:
-            msg = "Subject does not have role(s)"
+            msg = "Subject does not have role(s) assigned."
             print(msg)
             # log here
             raise UnauthorizedException(msg)
@@ -732,20 +741,6 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
         for roleid in roleid_s:
             hasrole = ({roleid} <= authzinfo_roleids)
             yield (roleid, hasrole)
-
-    def has_all_roles(self, authz_info, roleid_s):
-        """
-        Confirms whether a subject is a member of all roles.
-
-        has_all_roles is a bit more opaque a solution than has_role, yet is fast
-        because it uses a set operation
-
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
-
-        :returns: Boolean
-        """
-        return roleid_s <= authz_info.roleids
 
 
 # new to yosai, deprecates shiro's SimpleAuthorizationInfo

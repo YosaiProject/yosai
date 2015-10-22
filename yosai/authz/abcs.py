@@ -98,11 +98,11 @@ class Authorizer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def has_all_roles(self, identifiers, roleid_s):
+    def has_role_collective(self, identifiers, roleid_s, logical_operator):
         pass
 
     @abstractmethod
-    def check_role(self, identifiers, role_s):
+    def check_role(self, identifiers, role_s, logical_operator):
         pass
 
 
@@ -284,20 +284,5 @@ class RoleVerifier(metaclass=ABCMeta):
         :type roleid_s: Set of String(s)
 
         :yields: tuple(roleid, Boolean)
-        """
-        pass
-
-    @abstractmethod
-    def has_all_roles(self, authz_info, roleid_s):
-        """
-        Confirms whether a subject is a member of all roles.
-
-        has_all_roles is a bit more opaque a solution than has_role, but fast
-        because it uses a set operation
-
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
-
-        :returns: Boolean
         """
         pass

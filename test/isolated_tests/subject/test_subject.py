@@ -115,8 +115,7 @@ def test_dsc_resolve_security_manager_none_raises(
     unit tested:  resolve_security_manager
 
     test case:
-    no security manager attribute exists, SecurityUtils raises an exception
-    because it doesn't have a security manager either
+    no security manager attribute exists, DSC raises an exception
     """
 
     dsc = default_subject_context
@@ -124,7 +123,7 @@ def test_dsc_resolve_security_manager_none_raises(
     monkeypatch.setattr(ThreadContext, 'security_manager', None, raising=False)
     result = dsc.resolve_security_manager()
     out, err = capsys.readouterr()
-    assert ("No SecurityManager available via SecurityUtils" in out and
+    assert ("No SecurityManager available in subject context" in out and
             result is None)
 
 def test_dsc_resolve_identifiers_exists(default_subject_context):
@@ -405,9 +404,9 @@ def test_ds_is_permitted_withoutidentifiers(delegating_subject, monkeypatch):
     monkeypatch.setattr(ds, '_identifiers', None)
     pytest.raises(IdentifiersNotSetException, "ds.is_permitted('anything')")
 
-def test_ds_is_permitted_all(delegating_subject):
+def test_ds_is_permitted_collective(delegating_subject):
     """
-    unit tested:  is_permitted_all
+    unit tested:  is_permitted_collective
 
     test case:
         given a DS with identifiers attribute:
@@ -417,13 +416,13 @@ def test_ds_is_permitted_all(delegating_subject):
         otherwise, raises
     """
     ds = delegating_subject
-    result = ds.is_permitted_all('permission_s')
+    result = ds.is_permitted_collective('permission_s', all)
     assert result is True
 
 
-def test_ds_is_permitted_all_raises(delegating_subject, monkeypatch):
+def test_ds_is_permitted_collective_raises(delegating_subject, monkeypatch):
     """
-    unit tested:  is_permitted_all
+    unit tested:  is_permitted_collective
 
     test case:
         given a DS with identifiers attribute:
@@ -435,7 +434,8 @@ def test_ds_is_permitted_all_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.is_permitted_all('permission_s')")
+    pytest.raises(IdentifiersNotSetException,
+                  "ds.is_permitted_collective('permission_s', all)")
 
 
 def test_ds_assert_authz_check_possible(delegating_subject, monkeypatch):
@@ -462,7 +462,7 @@ def test_ds_check_permission(delegating_subject, monkeypatch):
     monkeypatch.setattr(ds,'assert_authz_check_possible', lambda: None)
     with mock.patch.object(MockSecurityManager, 'check_permission') as mock_cp:
         mock_cp.return_value = None
-        ds.check_permission('arbitrary')
+        ds.check_permission('arbitrary', all)
         assert mock_cp.called
 
 
@@ -477,7 +477,7 @@ def test_ds_check_permission_raises(delegating_subject, monkeypatch):
     monkeypatch.setattr(ds, 'assert_authz_check_possible', lambda: None)
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.check_permission('anything')")
+    pytest.raises(IdentifiersNotSetException, "ds.check_permission('anything', all)")
 
 
 def test_ds_has_role(delegating_subject, monkeypatch):
@@ -506,23 +506,23 @@ def test_ds_has_role_raises(delegating_subject, monkeypatch):
     pytest.raises(IdentifiersNotSetException, "ds.has_role('role123')")
 
 
-def test_has_all_roles(delegating_subject, monkeypatch):
+def test_has_role_collective(delegating_subject, monkeypatch):
     """
-    unit tested:  has_all_roles
+    unit tested:  has_role_collective
 
     test case:
     has identifiers and so delegates to security_master
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds.security_manager, 'has_all_roles', lambda x,y: 'yup')
-    result = ds.has_all_roles('roleid123')
+    monkeypatch.setattr(ds.security_manager, 'has_role_collective', lambda x,y,z: 'yup')
+    result = ds.has_role_collective('roleid123', any)
     assert result == 'yup'
 
 
 
-def test_ds_has_all_roles_raises(delegating_subject, monkeypatch):
+def test_ds_has_role_collective_raises(delegating_subject, monkeypatch):
     """
-    unit tested:  has_all_roles
+    unit tested:  has_role_collective
 
     test case:
     when the identifiers attribute isn't set, an exception is raised
@@ -530,7 +530,7 @@ def test_ds_has_all_roles_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.has_all_roles('role123')")
+    pytest.raises(IdentifiersNotSetException, "ds.has_role_collective('role123', any)")
 
 
 def test_check_role(delegating_subject):
@@ -543,7 +543,7 @@ def test_check_role(delegating_subject):
     """
     ds = delegating_subject
     with mock.patch.object(MockSecurityManager, 'check_role') as mock_cr:
-        ds.check_role('roleid123')
+        ds.check_role('roleid123', any)
         assert mock_cr.called
 
 
@@ -558,7 +558,7 @@ def test_check_role_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.check_role('role123')")
+    pytest.raises(IdentifiersNotSetException, "ds.check_role('role123', any)")
 
 
 def test_ds_login_succeeds(

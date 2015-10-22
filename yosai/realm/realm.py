@@ -332,21 +332,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         authz_info = self.get_authorization_info(identifiers)
         yield from self.role_verifier.has_role(authz_info, roleid_s)
 
-    def has_all_roles(self, identifiers, roleid_s):
-        """
-        Confirms whether a subject is a member of all roles.
-
-        has_all_roles is a bit more opaque a solution than has_role, but fast
-        because it uses a set operation
-
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
-
-        :returns: Boolean
-        """
-        authz_info = self.get_authorization_info(identifiers)
-        return self.role_verifier.has_all_roles(authz_info, roleid_s)
-
 # omitted AbstractCacheHandler implementation / references
 
 class DefaultCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler):
