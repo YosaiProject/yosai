@@ -15,12 +15,18 @@ from yosai import (
     UnauthorizedException,
     WildcardPermission,
     WildcardPermissionResolver,
+    requires_permission,
+    requires_role,
+    security_utils,
 )
 
 from .doubles import (
     MockPermission,
 )
 
+from ..doubles import (
+    MockSubject,
+)
 # -----------------------------------------------------------------------------
 # ModularRealmAuthorizer Tests
 # -----------------------------------------------------------------------------
@@ -383,12 +389,12 @@ def test_mra_has_role_fails(modular_realm_authorizer_patched, monkeypatch):
 
 
 @pytest.mark.parametrize('param1, param2, logical_operator, expected',
-                         [(False, True, all, False),
-                          (True, True, all, True),
-                          (True, False, all, True)
-                          (False, True, any, True),
-                          (True, True, any, True),
-                          (True, False, any, True)])
+                         [({('roleid1', False)}, {('roleid2', True)}, all, False),
+                          ({('roleid1', True)}, {('roleid2', True)}, all, True),
+                          ({('roleid1', True)}, {('roleid2', False)}, all, False),
+                          ({('roleid1', False)}, {('roleid2', True)}, any, True),
+                          ({('roleid1', True)}, {('roleid2', True)}, any, True),
+                          ({('roleid1', True)}, {('roleid2', False)}, any, True)])
 def test_mra_has_role_collective(
         modular_realm_authorizer_patched, monkeypatch, param1, param2,
         logical_operator, expected):
@@ -409,8 +415,7 @@ def test_mra_has_role_collective(
         result = mra.has_role_collective('arbitrary_identifiers',
                                          {'roleid1', 'roleid2'}, logical_operator)
 
-        arc.assert_called_once_with()
-        assert result == expected
+        assert result == expected and arc.called
 
 
 def test_mra_check_role_raises(
@@ -748,3 +753,91 @@ def test_srv_has_role(simple_role_verifier, indexed_authz_info):
 
     result = list(srv.has_role(indexed_authz_info, test_roleids))
     assert set(result) == set([('role1', True), ('role10', False)])
+
+
+# -----------------------------------------------------------------------------
+# Decorator Tests
+# -----------------------------------------------------------------------------
+
+def test_requires_permission_succeeds(monkeypatch, mock_subject):
+    """
+    unit tested:  requires_permission
+
+    test case:
+    - obtains current executing subject
+    - calls subject.check_permission, which does not raise any exception
+    - failing to raise any exception, the decorated method is finally called
+    """
+    monkeypatch.setattr(mock_subject, 'check_permission', lambda x, y: None)
+    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+
+    @requires_permission('domain1:action1')
+    def do_something():
+        return "something was done"
+
+    result = do_something()
+
+    assert result == "something was done"
+
+
+def test_requires_permission_raises(monkeypatch, mock_subject):
+    """
+    unit tested:  requires_permission
+
+    test case:
+    - obtains current executing subject
+    - calls subject.check_permission, which raises an exception
+    """
+    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+
+    @requires_permission('domain1:action1')
+    def do_something():
+        return "something was done"
+
+    with mock.patch.object(MockSubject, 'check_permission') as cp:
+        cp.side_effect = UnauthorizedException
+
+        with pytest.raises(UnauthorizedException):
+            result = do_something()
+
+
+def test_requires_role_succeeds(monkeypatch, mock_subject):
+    """
+    unit tested:  requires_role
+
+    test case:
+    - obtains current executing subject
+    - calls subject.check_role, which does not raise any exception
+    - failing to raise any exception, the decorated method is finally called
+    """
+    monkeypatch.setattr(mock_subject, 'check_role', lambda x, y: None)
+    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+
+    @requires_role('role1')
+    def do_something():
+        return "something was done"
+
+    result = do_something()
+
+    assert result == "something was done"
+
+
+def test_requires_role_raises(monkeypatch, mock_subject):
+    """
+    unit tested:  requires_role
+
+    test case:
+    - obtains current executing subject
+    - calls subject.check_role, which raises an exception
+    """
+    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+
+    @requires_role('role1')
+    def do_something():
+        return "something was done"
+
+    with mock.patch.object(MockSubject, 'check_role') as cp:
+        cp.side_effect = UnauthorizedException
+
+        with pytest.raises(UnauthorizedException):
+            result = do_something()

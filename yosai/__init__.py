@@ -196,10 +196,12 @@ from yosai.authz.authz import (
     WildcardPermissionResolver,
 )
 
+
 from yosai.realm.realm import (
     AccountStoreRealm,
     DefaultCredentialsCacheHandler,
 )
+
 
 from yosai.cache.cache import (
     DisabledCache,
@@ -275,4 +277,17 @@ from yosai.mgt.mgt import (
 from yosai.security_utils import (
     SecurityUtils,
     security_utils
+)
+
+
+from yosai.authc.decorators import (
+    requires_authentication,
+    requires_guest,
+    requires_user,
+)
+
+
+from yosai.authz.decorators import (
+    requires_permission,
+    requires_role,
 )
