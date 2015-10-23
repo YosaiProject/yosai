@@ -4,6 +4,7 @@ from yosai import (
     UnauthenticatedException,
 )
 
+
 def requires_authentication(fn):
     """
     Requires that the calling Subject be authenticated before allowing access.
@@ -18,7 +19,7 @@ def requires_authentication(fn):
 
         subject = security_utils.get_subject()
 
-        if not subject.authenticated():
+        if not subject.authenticated:
             msg = "The current Subject is not authenticated.  ACCESS DENIED."
             raise UnauthenticatedException(msg)
 

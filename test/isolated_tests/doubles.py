@@ -274,6 +274,7 @@ class MockSubject(DelegatingSubject):
         self._identifiers = type('DumbCollection', (object,), {})()
         self._identifiers.primary_identifier = 'attribute1'
         self.host = 'host'
+        self._authenticated = None
 
     @property
     def identifier(self):
@@ -306,7 +307,7 @@ class MockSubject(DelegatingSubject):
 
     @property
     def authenticated(self):
-        pass
+        return self._authenticated 
 
     @property
     def is_remembered(self):
