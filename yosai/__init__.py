@@ -26,6 +26,10 @@ __maintainer__ = "Darin Gordon"
 __email__ = "dkcdkg@gmail.com"
 __status__ = "Development"
 
+import threading
+thread_local = threading.local()  # use only one global instance
+
+
 from .exceptions import (
     AbstractMethodException,
     AccountException,
@@ -123,15 +127,17 @@ from yosai.conf.yosaisettings import (
     Settings,
 )
 
-from yosai.concurrency.concurrency import (
-    StoppableScheduledExecutor,
-    ThreadContext,
-    thread_context,
-)
-
-
 from yosai.logging.s_logging import (
     LogManager,
+)
+
+# log_path = settings.LOGGING_CONFIG_PATH
+# print(log_path)
+# logger = LogManager().get_logger()
+
+
+from yosai.concurrency.concurrency import (
+    StoppableScheduledExecutor,
 )
 
 from yosai.utils.utils import (
@@ -276,7 +282,6 @@ from yosai.mgt.mgt import (
 
 from yosai.security_utils import (
     SecurityUtils,
-    security_utils
 )
 
 
@@ -291,3 +296,9 @@ from yosai.authz.decorators import (
     requires_permission,
     requires_role,
 )
+
+
+# sm_config = mgt_settings.security_manager_config
+# sm_factory = SecurityManagerFactory(sm_config)
+# security_utils.security_manager = sm_factory.create_instance()
+# logger.info('Yosai Initialized')

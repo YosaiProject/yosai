@@ -1,21 +1,19 @@
 from yosai import (
-    thread_context,
+    thread_local,
     UnavailableSecurityManagerException,
-    DefaultSecurityManager,
     SubjectBuilder,
+    thread_local,
 )
 
 
 class SecurityUtils:
-    def __init__(self):
 
-        # This private security manager is a "backup" for obtaining a subject.
-        # thread_context is the primary source for Subject instances.
-        self._security_manager = DefaultSecurityManager(self)
+    # This private security manager is a "backup" for obtaining a subject.
+    # thread_local is the primary source for Subject instances
+    security_manager = None
 
-        self.subject_builder = SubjectBuilder(self, self._security_manager)
-
-    def get_subject(self):
+    @classmethod
+    def get_subject(cls):
         """
         Returns the currently accessible Subject available to the calling code
         depending on runtime environment
@@ -33,37 +31,30 @@ class SecurityUtils:
                                         should *always* be available to the caller)
         """
         try:
-            subject = thread_context.subject
+            subject = thread_local.subject
         except AttributeError:
-            subject = self.subject_builder.build_subject()
-            thread_context.bind(subject)
+            subject_builder = SubjectBuilder(cls, cls.security_manager)
+            subject = subject_builder.build_subject()
+            thread_local.subject = subject
         return subject
 
-    @property
-    def security_manager(self):
+    @classmethod
+    def get_security_manager(cls):
 
-        # yosai refactored to make more pythonic, requires that security_manager
-        # not set to None in thread_context but to raise an AttributeError
         try:
-            security_manager = thread_context.security_manager
+            # thread_local.security_manager is set by the SubjectThreadState:
+            security_manager = thread_local.security_manager
         except AttributeError:
-            try:
-                security_manager = self._security_manager
-            except AttributeError:
+            security_manager = cls.security_manager
+            if security_manager is None:
                 msg = "No SecurityManager accessible to the calling code."
                 raise UnavailableSecurityManagerException(msg)
         return security_manager
 
-    @security_manager.setter
-    def security_manager(self, security_manager):
+    @classmethod
+    def set_security_manager(cls, security_manager):
         """
         Sets a singleton SecurityManager, specifically for transparent use in the
         get_subject() implementation
-
-        This method call exists mainly for framework development support.  Application
-        developers should rarely, if ever, need to call this method.
         """
-        self._security_manager = security_manager
-
-
-security_utils = SecurityUtils()
+        cls.security_manager = security_manager

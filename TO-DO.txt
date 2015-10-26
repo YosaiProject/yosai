@@ -84,3 +84,6 @@ add excessive-login-attempts logic:
     exception.
 
 ---------------------------------------------------------------------
+
+create a ContextFactory to replace the piecemeal xxxSettings classes that 
+interface with yosai settings

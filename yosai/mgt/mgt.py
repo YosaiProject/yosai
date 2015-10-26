@@ -675,7 +675,6 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                        subject_context=None):
 
         if not subject_context:
-            print('subject_context is NONE')
             context = self.create_subject_context()
             context.authenticated = True
             context.authentication_token = authc_token

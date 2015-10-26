@@ -1005,7 +1005,7 @@ class SubjectBuilder:
         """
 
         if security_manager is None:
-            self.security_manager = security_utils.security_manager
+            self.security_manager = security_utils.get_security_manager()
         else:
             self.security_manager = security_manager
 

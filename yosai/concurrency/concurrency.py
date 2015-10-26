@@ -38,8 +38,5 @@ class StoppableScheduledExecutor(threading.Thread):
             if self.event.wait(self.interval):
                 return
 
-# TBD:
-class ThreadContext:
-    pass
-
-thread_context = ThreadContext()
+# yosai omits ThreadContext because it is replaced by the standard library
+# threading.local() object
