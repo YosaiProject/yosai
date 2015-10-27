@@ -16,7 +16,6 @@ from yosai import (
     UsernamePasswordToken,
     cache_abcs,
     authc_abcs,
-    security_utils,
     mgt_settings,
 )
 
@@ -457,7 +456,7 @@ def test_dsm_create_subject_wo_context(default_security_manager):
     """
     dsm = default_security_manager
 
-    testcontext = DefaultSubjectContext(security_utils)
+    testcontext = DefaultSubjectContext()
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account = 'dumb_account'
@@ -493,7 +492,7 @@ def test_dsm_create_subject_w_context(default_security_manager):
     """
     dsm = default_security_manager
 
-    testcontext = DefaultSubjectContext(security_utils)
+    testcontext = DefaultSubjectContext()
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account = 'dumb_account'
@@ -786,9 +785,8 @@ def test_dsm_copy(default_security_manager):
     """
     dsm = default_security_manager
 
-    result = dsm.copy(security_utils, {'subject_context': 'subject_context'})
-    assert result == DefaultSubjectContext(security_utils,
-                                           {'subject_context': 'subject_context'})
+    result = dsm.copy({'subject_context': 'subject_context'})
+    assert result == DefaultSubjectContext({'subject_context': 'subject_context'})
 
 def test_dsm_do_create_subject(default_security_manager, monkeypatch):
     """

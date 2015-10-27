@@ -393,7 +393,7 @@ class MockThreadContext:
 
 class MockSubjectBuilder:
 
-    def __init__(self, security_utils, security_manager):
+    def __init__(self, security_manager):
         pass
 
     def build_subject(self):

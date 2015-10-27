@@ -2,7 +2,6 @@ from yosai import (
     thread_local,
     UnavailableSecurityManagerException,
     SubjectBuilder,
-    thread_local,
 )
 
 
@@ -33,7 +32,7 @@ class SecurityUtils:
         try:
             subject = thread_local.subject
         except AttributeError:
-            subject_builder = SubjectBuilder(cls, cls.security_manager)
+            subject_builder = SubjectBuilder(security_manager=cls.security_manager)
             subject = subject_builder.build_subject()
             thread_local.subject = subject
         return subject

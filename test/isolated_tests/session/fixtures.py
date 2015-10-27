@@ -47,15 +47,14 @@ def immutable_proxied_session():
     return ImmutableProxiedSession(MockSession())
 
 
-# uses patched_event_bus from upper branch
 @pytest.fixture(scope='function')
-def abstract_native_session_manager(patched_event_bus):
-    return MockAbstractNativeSessionManager(event_bus=patched_event_bus)
+def abstract_native_session_manager():
+    return MockAbstractNativeSessionManager()
 
 
 @pytest.fixture(scope='function')
-def patched_abstract_native_session_manager(patched_event_bus, monkeypatch, mock_session):
-    ansm = MockAbstractNativeSessionManager(event_bus=patched_event_bus)
+def patched_abstract_native_session_manager(monkeypatch, mock_session):
+    ansm = MockAbstractNativeSessionManager()
     monkeypatch.setattr(ansm, 'lookup_required_session', lambda x: mock_session) 
     return ansm
 
@@ -68,8 +67,8 @@ def executor_session_validation_scheduler(patched_abstract_native_session_manage
                                                      interval=interval) 
 
 @pytest.fixture(scope='function')
-def abstract_validating_session_manager(patched_event_bus):
-    return MockAbstractValidatingSessionManager(patched_event_bus)
+def abstract_validating_session_manager():
+    return MockAbstractValidatingSessionManager()
 
 
 @pytest.fixture(scope='function')

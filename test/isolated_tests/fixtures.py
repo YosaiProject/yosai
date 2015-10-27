@@ -11,7 +11,7 @@ from yosai import (
     PasswordVerifier,
     SimpleRole,
     UsernamePasswordToken,
-    security_utils,
+    SecurityUtils 
 )
 
 from .doubles import (
@@ -168,6 +168,5 @@ def mock_thread_context():
 
 @pytest.fixture(scope='function')
 def mock_subject_builder(mock_security_manager):
-    return MockSubjectBuilder(security_utils=security_utils,
-                              security_manager=mock_security_manager)
+    return MockSubjectBuilder(security_manager=mock_security_manager)
 

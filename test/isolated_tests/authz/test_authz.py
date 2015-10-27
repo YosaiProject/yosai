@@ -17,7 +17,7 @@ from yosai import (
     WildcardPermissionResolver,
     requires_permission,
     requires_role,
-    security_utils,
+    SecurityUtils,
 )
 
 from .doubles import (
@@ -769,7 +769,7 @@ def test_requires_permission_succeeds(monkeypatch, mock_subject):
     - failing to raise any exception, the decorated method is finally called
     """
     monkeypatch.setattr(mock_subject, 'check_permission', lambda x, y: None)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_permission('domain1:action1')
     def do_something():
@@ -788,7 +788,7 @@ def test_requires_permission_raises(monkeypatch, mock_subject):
     - obtains current executing subject
     - calls subject.check_permission, which raises an exception
     """
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_permission('domain1:action1')
     def do_something():
@@ -811,7 +811,7 @@ def test_requires_role_succeeds(monkeypatch, mock_subject):
     - failing to raise any exception, the decorated method is finally called
     """
     monkeypatch.setattr(mock_subject, 'check_role', lambda x, y: None)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_role('role1')
     def do_something():
@@ -830,7 +830,7 @@ def test_requires_role_raises(monkeypatch, mock_subject):
     - obtains current executing subject
     - calls subject.check_role, which raises an exception
     """
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_role('role1')
     def do_something():
@@ -840,4 +840,4 @@ def test_requires_role_raises(monkeypatch, mock_subject):
         cp.side_effect = UnauthorizedException
 
         with pytest.raises(UnauthorizedException):
-            result = do_something()
+            do_something()

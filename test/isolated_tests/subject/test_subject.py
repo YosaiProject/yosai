@@ -13,11 +13,10 @@ from yosai import (
     IdentifiersNotSetException,
     IllegalArgumentException,
     IllegalStateException,
-    SecurityUtils,
     SessionException,
     SubjectBuilder,
-    security_utils,
-    ThreadContext,
+    SecurityUtils,
+    thread_local,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
 )
@@ -25,6 +24,7 @@ from yosai import (
 from ..doubles import (
     MockSecurityManager,
     MockSession,
+    MockSubjectBuilder,
 )
 
 # ------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ def test_dsc_init(subject_context, default_subject_context):
     Verify that the two subject contexts used for testing are initialized as
     expected
     """
-    dsc = DefaultSubjectContext(security_utils)
+    dsc = DefaultSubjectContext()
     assert (not dsc.attributes and
             'DefaultSubjectContext.AUTHENTICATION_TOKEN' in
             default_subject_context.attribute_keys)
@@ -103,7 +103,7 @@ def test_dsc_resolve_security_manager_none(
     """
     dsc = default_subject_context
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
-    monkeypatch.setattr(ThreadContext, 'security_manager', 'mysecuritymanager', raising=False)
+    monkeypatch.setattr(thread_local, 'security_manager', 'mysecuritymanager', raising=False)
     result = dsc.resolve_security_manager()
     out, err = capsys.readouterr()
     assert ("No SecurityManager available" in out and
@@ -120,7 +120,7 @@ def test_dsc_resolve_security_manager_none_raises(
 
     dsc = default_subject_context
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
-    monkeypatch.setattr(ThreadContext, 'security_manager', None, raising=False)
+    monkeypatch.setattr(thread_local, 'security_manager', None, raising=False)
     result = dsc.resolve_security_manager()
     out, err = capsys.readouterr()
     assert ("No SecurityManager available in subject context" in out and
@@ -1396,8 +1396,8 @@ def test_sb_init_verify_argument_context(subject_builder_context):
     arguments aren't used by init
     """
     sbc = subject_builder_context
-    mycontext = DefaultSubjectContext(security_utils, sbc)
-    sb = SubjectBuilder(security_utils, subject_context=mycontext, **sbc)
+    mycontext = DefaultSubjectContext(sbc)
+    sb = SubjectBuilder(subject_context=mycontext, **sbc)
     assert (sb.subject_context == mycontext)
 
 
@@ -1410,8 +1410,8 @@ def test_sb_init_verify_generated_context(subject_builder_context):
     passed to the builder
     """
     sbc = subject_builder_context
-    sb = SubjectBuilder(security_utils, **sbc)
-    mycontext = DefaultSubjectContext(security_utils, sbc)
+    sb = SubjectBuilder(**sbc)
+    mycontext = DefaultSubjectContext(sbc)
     assert (sb.subject_context == mycontext)
 
 
@@ -1470,3 +1470,70 @@ def test_dsf_create_subject(
     dsf = default_subject_factory
     result = dsf.create_subject(default_subject_context)
     assert isinstance(result, DelegatingSubject)
+
+
+# ------------------------------------------------------------------------------
+# SecurityUtils
+# ------------------------------------------------------------------------------
+
+
+def test_su_get_subject_notinthreadlocal(
+        mock_subject_builder, monkeypatch, mock_security_manager):
+    """
+    unit tested:  get_subject
+
+    test case:
+    - when a subject attribute isn't available from the thread_local,
+      subject_builder creates one
+        - the newly created subject is bound to the thread managed by the
+          thread_local
+    - the subject is returned
+    """
+
+    monkeypatch.setattr(SecurityUtils, 'security_manager',
+                        mock_security_manager)
+
+    monkeypatch.setattr(SubjectBuilder, 'build_subject', lambda x: 'sbs')
+    result = SecurityUtils.get_subject()
+
+    assert (result == 'sbs' and thread_local.subject == result)
+
+
+def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder):
+    """
+    unit tested:  get_subject
+
+    test case:
+    when a subject is bound to a threadlocal, it is returned
+    """
+    monkeypatch.setattr(thread_local, 'subject', 'threadlocalsubject',
+                        raising=False)
+    result = SecurityUtils.get_subject()
+    assert result == 'threadlocalsubject'
+
+
+def test_su_getsecuritymanager_in_threadlocal(monkeypatch):
+    """
+    unit tested:  security_manager.getter
+
+    test case:
+    obtains a security_manager from the thread_local
+    """
+    monkeypatch.setattr(thread_local, 'security_manager',
+                        'threadlocalsecuritymanager', raising=False)
+    result = SecurityUtils.get_security_manager()
+    assert result == 'threadlocalsecuritymanager'
+
+
+def test_su_getsecuritymanager_notin_threadlocal_from_securityutils(
+        monkeypatch):
+    """
+    unit tested:  security_manager.getter
+
+    test case:
+    - security_manager not available from the thread_local
+    - SecurityUtils.security_manager returned
+    """
+    monkeypatch.setattr(SecurityUtils, 'security_manager', 'local_security_manager')
+    result = SecurityUtils.get_security_manager()
+    assert result == SecurityUtils.security_manager

@@ -10,7 +10,7 @@ from yosai import (
     DefaultCompositeAccount,
     UnauthenticatedException,
     UsernamePasswordToken,
-    security_utils,
+    SecurityUtils,
     requires_authentication,
     requires_user,
     requires_guest,
@@ -298,7 +298,7 @@ def test_requires_authentication_succeeds(monkeypatch, mock_subject):
     """
 
     monkeypatch.setattr(mock_subject, '_authenticated', True)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_authentication
     def do_something():
@@ -319,7 +319,7 @@ def test_requires_authentication_raises(monkeypatch, mock_subject):
     """
 
     monkeypatch.setattr(mock_subject, '_authenticated', False)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_authentication
     def do_something():
@@ -338,7 +338,7 @@ def test_requires_user_succeeds(monkeypatch, mock_subject):
     a User status and then is called
     """
     monkeypatch.setattr(mock_subject, '_identifiers', True)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_user
     def do_something():
@@ -357,7 +357,7 @@ def test_requires_user_raises(monkeypatch, mock_subject):
     a User status and raises
     """
     monkeypatch.setattr(mock_subject, '_identifiers', None)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_user
     def do_something():
@@ -377,7 +377,7 @@ def test_requires_guest_succeeds(monkeypatch, mock_subject):
     """
 
     monkeypatch.setattr(mock_subject, '_identifiers', None)
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_guest
     def do_something():
@@ -396,11 +396,11 @@ def test_requires_guest_raises(monkeypatch, mock_subject):
     a decorated method that requires a 'Guest-Subject' status fails to find
     one, raising
     """
-    monkeypatch.setattr(security_utils, 'get_subject', lambda: mock_subject)
+    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_guest
     def do_something():
         return "something was done"
 
     with pytest.raises(UnauthenticatedException):
-        result = do_something()
+        do_something()

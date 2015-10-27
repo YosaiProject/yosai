@@ -69,9 +69,10 @@ class DefaultEventBus(event_abcs.EventBus):
 
     Note:  most of the comments here are pasted from pypubsub's documentation
     """
+    __event_bus = pub  # singleton
 
     def __init__(self):
-        self._event_bus = pub
+        self._event_bus = DefaultEventBus.__event_bus
 
         # The following two settings enforce topic naming convention.
         # If you want to catch topic naming exceptions, Uncomment the settings
@@ -197,3 +198,6 @@ class EventLogger:
 
     def log_event(topicObj=pub.AUTO_TOPIC, **kwargs):
         pass  # define later, using structlog if possible
+
+
+event_bus = DefaultEventBus()

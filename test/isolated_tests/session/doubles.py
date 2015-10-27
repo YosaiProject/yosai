@@ -5,6 +5,7 @@ from yosai import (
     AbstractValidatingSessionManager,
     CachingSessionStore,
     DefaultSessionManager,
+    event_bus,
     session_abcs,
 )
 
@@ -53,8 +54,9 @@ class MockSessionManager:
 
 class MockAbstractNativeSessionManager(AbstractNativeSessionManager):
 
-    def __init__(self, event_bus):
-        super().__init__(event_bus)
+    def __init__(self):
+        super().__init__()
+        self._event_bus = event_bus
         self.listeners = []
 
     def create_session(self, session_context):
@@ -78,8 +80,8 @@ class MockAbstractNativeSessionManager(AbstractNativeSessionManager):
 
 class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
 
-    def __init__(self, event_bus):
-        super().__init__(event_bus)
+    def __init__(self):
+        super().__init__()
         self.listeners = []
 
     def on_start(self, session, session_context):

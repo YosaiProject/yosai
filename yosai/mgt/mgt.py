@@ -377,8 +377,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                              event_abcs.EventBusAware,
                              cache_abcs.CacheManagerAware):
 
-    def __init__(self, securityutils):
-        self.security_utils = securityutils
+    def __init__(self):
         self.realms = None
         self._event_bus = DefaultEventBus()
         self._cache_manager = DisabledCacheManager()  # cannot be set to None
@@ -666,7 +665,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     """
 
     def create_subject_context(self):
-        return DefaultSubjectContext(self.security_utils)
+        return DefaultSubjectContext()
 
     def create_subject(self,
                        authc_token=None,
@@ -784,8 +783,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     def before_logout(self, subject):
         self.remember_me_logout(subject)
 
-    def copy(self, securityutils, subject_context):
-        return DefaultSubjectContext(securityutils, subject_context)
+    def copy(self, subject_context):
+        return DefaultSubjectContext(subject_context)
 
     def do_create_subject(self, subject_context):
         return self.subject_factory.create_subject(subject_context)

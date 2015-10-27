@@ -1,6 +1,6 @@
 import functools
 from yosai import (
-    security_utils,
+    SecurityUtils,
     UnauthenticatedException,
 )
 
@@ -17,7 +17,7 @@ def requires_authentication(fn):
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
 
-        subject = security_utils.get_subject()
+        subject = SecurityUtils.get_subject()
 
         if not subject.authenticated:
             msg = "The current Subject is not authenticated.  ACCESS DENIED."
@@ -43,7 +43,7 @@ def requires_user(fn):
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
 
-        subject = security_utils.get_subject()
+        subject = SecurityUtils.get_subject()
 
         if subject.identifiers is None:
             msg = ("Attempting to perform a user-only operation.  The "
@@ -72,7 +72,7 @@ def requires_guest(fn):
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
 
-        subject = security_utils.get_subject()
+        subject = SecurityUtils.get_subject()
 
         if subject.identifiers is not None:
             msg = ("Attempting to perform a guest-only operation.  The "

@@ -1,6 +1,6 @@
 import functools
 from yosai import (
-    security_utils,
+    SecurityUtils,
 )
 
 
@@ -31,7 +31,7 @@ def requires_permission(_permission_s, logical_operator=all):
 
             permission_s = list(_permission_s)  # in case it's a single
 
-            subject = security_utils.get_subject()
+            subject = SecurityUtils.get_subject()
 
             subject.check_permission(permission_s, logical_operator)
 
@@ -66,7 +66,7 @@ def requires_role(_roleid_s, logical_operator=all):
 
             roleid_s = list(_roleid_s)  # in case it's a single string
 
-            subject = security_utils.get_subject()
+            subject = SecurityUtils.get_subject()
 
             subject.check_role(roleid_s, logical_operator)
 

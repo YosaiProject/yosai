@@ -8,7 +8,6 @@ from yosai import (
     DelegatingSubject,
     SimpleIdentifierCollection,
     SubjectBuilder,
-    security_utils,
 )
 
 
@@ -31,7 +30,7 @@ def subject_context():
 @pytest.fixture(scope='function')
 def default_subject_context(subject_context):
     context = {value: 'value_'+value for key, value in subject_context.items()}
-    return DefaultSubjectContext(security_utils, context)
+    return DefaultSubjectContext(context)
 
 
 @pytest.fixture(scope='function')
@@ -76,8 +75,7 @@ def subject_builder_context(
 
 @pytest.fixture(scope='function')
 def subject_builder(subject_builder_context):
-    return SubjectBuilder(security_utils,
-                          **subject_builder_context)
+    return SubjectBuilder(**subject_builder_context)
 
 @pytest.fixture(scope='function')
 def default_subject_factory():

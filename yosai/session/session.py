@@ -884,12 +884,9 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
     abstract design.
     """
 
-    def __init__(self, event_bus):
-        # new to yosai is the injection of the event_bus, as done with any
-        # other EventBusAware subclasses
-
+    def __init__(self):
         self._listeners = []
-        self._event_bus = event_bus
+        self._event_bus = None  # is assigned by the SecurityManager
 
     @property
     def session_listeners(self):
@@ -1180,9 +1177,8 @@ class ExecutorServiceSessionValidationScheduler(session_abcs.SessionValidationSc
 class AbstractValidatingSessionManager(session_abcs.ValidatingSessionManager,
                                        AbstractNativeSessionManager):
 
-    def __init__(self, event_bus):
-        # event_bus injection is new to Yosai
-        super().__init__(event_bus)
+    def __init__(self):
+        super().__init__()
         self.session_validation_scheduler = None
         self.session_validation_scheduler_enabled =\
             session_settings.validation_scheduler_enable
