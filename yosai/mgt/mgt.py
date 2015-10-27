@@ -384,7 +384,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         self._cache_manager = DisabledCacheManager()  # cannot be set to None
 
         # new to Yosai is the injection of the eventbus:
-        self.authenticator = DefaultAuthenticator(self._event_bus)
+        self.authenticator = DefaultAuthenticator()
 
         # TBD:  add support for eventbus to the authorizer and inject the bus:
         self.authorizer = ModularRealmAuthorizer()

@@ -125,9 +125,8 @@ def first_realm_successful_strategy():
 
 
 @pytest.fixture(scope='function')
-def default_authenticator(first_realm_successful_strategy, patched_event_bus):
-    return DefaultAuthenticator(patched_event_bus,
-                                first_realm_successful_strategy)
+def default_authenticator(first_realm_successful_strategy):
+    return DefaultAuthenticator(first_realm_successful_strategy)
 
 
 @pytest.fixture(scope='function')

@@ -21,6 +21,7 @@ import itertools
 from yosai import (
     AuthorizationException,
     CollectionDict,
+    Event,
     HostUnauthorizedException,
     IllegalArgumentException,
     IllegalStateException,
@@ -29,6 +30,7 @@ from yosai import (
     UnauthenticatedException,
     UnauthorizedException,
     authz_abcs,
+    event_abcs,
     realm_abcs,
     serialize_abcs,
 )
@@ -380,7 +382,8 @@ class DefaultPermission(WildcardPermission):
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
-                             authz_abcs.PermissionResolverAware):
+                             authz_abcs.PermissionResolverAware,
+                             event_abcs.EventBusAware):
 
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults
@@ -401,8 +404,16 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def __init__(self, realms=None):
         self._realms = tuple()
         self._permission_resolver = None
-
+        self._event_bus = None
         # by default, yosai does not support role -> permission resolution
+
+    @property
+    def event_bus(self):
+        return self._event_bus
+
+    @event_bus.setter
+    def event_bus(self, eventbus):
+        self._event_bus = eventbus
 
     @property
     def realms(self):
@@ -514,7 +525,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # is granted.  Given that (True or False == True), assign accordingly:
             results[permission] = results[permission] or is_permitted
 
-        return frozenset(results.items())
+        results = frozenset(results.items())
+        self.notify_results(identifiers, results)  # for audit trail
+        return results
 
     # yosai refactored is_permitted_all to support ANY or ALL operations
     def is_permitted_collective(self, identifiers,
@@ -534,10 +547,18 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self.assert_realms_configured()
 
-        # results is a frozenset of tuples:
-        results = self.is_permitted(identifiers, permission_s)
+        # interim_results is a frozenset of tuples:
+        interim_results = self.is_permitted(identifiers, permission_s)
 
-        return logical_operator(is_permitted for perm, is_permitted in results)
+        results = logical_operator(is_permitted for perm, is_permitted
+                                   in interim_results)
+
+        if results:
+            self.notify_success(identifiers, permission_s)
+        else:
+            self.notify_failure(identifiers, permission_s)
+
+        return results
 
     # yosai consolidates check_permission functionality to one method:
     def check_permission(self, identifiers, permission_s, logical_operator):
@@ -591,7 +612,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # Given that (True or False == True), assign accordingly:
             results[roleid] = results[roleid] or has_role
 
-        return frozenset(results.items())
+        results = frozenset(results.items())
+        self.notify_results(identifiers, results)
+        return results
 
     def has_role_collective(self, identifiers, roleid_s, logical_operator):
         """
@@ -609,12 +632,18 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self.assert_realms_configured()
 
-        # results is a frozenset of tuples:
-        results = self.has_role(identifiers, roleid_s)
+        # interim_results is a frozenset of tuples:
+        interim_results = self.has_role(identifiers, roleid_s)
 
-        return logical_operator(has_role for roleid, has_role in results)
+        results = logical_operator(has_role for roleid, has_role
+                                   in interim_results)
 
-        return False
+        if results:
+            self.notify_success(identifiers, roleid_s)
+        else:
+            self.notify_failure(identifiers, roleid_s)
+
+        return results
 
     def check_role(self, identifiers, roleid_s, logical_operator):
         """
@@ -639,6 +668,44 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # log here
             raise UnauthorizedException(msg)
 
+    # --------------------------------------------------------------------------
+    # Event Communication
+    # --------------------------------------------------------------------------
+
+    # notify_results is intended for audit trail
+    def notify_results(self, identifiers, results):
+        """
+        :param results:  permission or role based results, created by
+                         is_permitted or has_role, respectively
+        """
+        if (self.event_bus):
+            event = Event(source=self.__class__.__name__,
+                          event_topic='AUTHORIZATION.RESULTS',
+                          identifiers=identifiers,
+                          results=results)
+            self.event_bus.publish(event)
+
+    def notify_success(self, identifiers, permission_s):
+        if (self.event_bus):
+            event = Event(source=self.__class__.__name__,
+                          event_topic='AUTHORIZATION.GRANTED',
+                          identifiers=identifiers,
+                          permission_s=permission_s)
+            self.event_bus.publish(event)
+
+    def notify_failure(self, identifiers, permission_s):
+        if (self.event_bus):
+            event = Event(source=self.__class__.__name__,
+                          event_topic='AUTHORIZATION.DENIED',
+                          identifiers=identifiers,
+                          permission_s=permission_s)
+            self.event_bus.publish(event)
+
+    # --------------------------------------------------------------------------
+
+    def __repr__(self):
+        return ("ModularRealmAuthorizer(authorizing_realms={0})".
+                format(self.authorizing_realms))
 
 class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
                                 authz_abcs.PermissionResolverAware,

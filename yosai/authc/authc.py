@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -21,7 +21,6 @@ from yosai import (
     AccountException,
     AuthenticationException,
     Event,
-    DefaultEventBus,
     InvalidTokenPasswordException,
     LogManager,
     MissingPrivateSaltException,
@@ -124,14 +123,14 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self.username = None
         self.host = None
         self.remember_me = False
-        
+
         try:
             if (self._password):
-                for index in range(len(self._password)): 
+                for index in range(len(self._password)):
                     self._password[index] = 0  # DG:  this equals 0x00
         except TypeError:
             msg = 'expected password to be a bytearray'
-            raise InvalidTokenPasswordException(msg) 
+            raise InvalidTokenPasswordException(msg)
 
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(
@@ -147,14 +146,14 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
 class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
-    def __init__(self, event_bus, strategy=FirstRealmSuccessfulStrategy()):
-        """ Default in Shiro 2.0 is 'first successful'. This is the desired 
+    def __init__(self, strategy=FirstRealmSuccessfulStrategy()):
+        """ Default in Shiro 2.0 is 'first successful'. This is the desired
         behavior for most Shiro users (80/20 rule).  Before v2.0, was
         'at least one successful', which was often not desired and caused
         unnecessary I/O.  """
         self.authentication_strategy = strategy
-        self.realms = None  # this gets set by DefaultSecurityManager as a tuple 
-        self._event_bus = event_bus
+        self.realms = None  # this gets set by DefaultSecurityManager as a tuple
+        self._event_bus = None
 
     @property
     def event_bus(self):
@@ -177,8 +176,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
             return realm.authenticate_account(authc_token)
 
     def authenticate_multi_realm_account(self, realms, authc_token):
-        """ 
-        :type realms: Tuple 
+        """
+        :type realms: Tuple
         """
         attempt = DefaultAuthenticationAttempt(authc_token, realms)
         return self.authentication_strategy.execute(attempt)
@@ -204,7 +203,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
                 ae = None
                 if isinstance(ex, AuthenticationException):
                     ae = AuthenticationException()
-                if ae is None: 
+                if ae is None:
                     """
                     Exception thrown was not an expected
                     AuthenticationException.  Therefore it is probably a
@@ -252,10 +251,13 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
 
         return self.authenticate_multi_realm_account(self.realms, authc_token)
 
+    # --------------------------------------------------------------------------
+    # Event Communication
+    # --------------------------------------------------------------------------
+
     def notify_success(self, authc_token, account):
         if (self.event_bus):
-            event = Event(source=self,
-                          event_type='AUTHENTICATION',
+            event = Event(source=self.__class__.__name__,
                           event_topic='AUTHENTICATION.SUCCEEDED',
                           authc_token=authc_token,
                           account=account)
@@ -263,12 +265,13 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
 
     def notify_failure(self, authc_token, throwable):
         if (self.event_bus):
-            event = Event(source=self,
-                          event_type='AUTHENTICATION',
+            event = Event(source=self.__class__.__name__,
                           event_topic='AUTHENTICATION.FAILED',
                           authc_token=authc_token,
                           throwable=throwable)
             self.event_bus.publish(event)
+
+    # --------------------------------------------------------------------------
 
     def __repr__(self):
         return "<DefaultAuthenticator(event_bus={0}, strategy={0})>".\
@@ -288,8 +291,8 @@ class AbstractAuthcService:
             for index in range(len(source)):
                 source[index] = 0  # this becomes 0x00
         except TypeError:
-            msg = 'Expected a bytearray source' 
-            raise InvalidTokenPasswordException(msg) 
+            msg = 'Expected a bytearray source'
+            raise InvalidTokenPasswordException(msg)
 
     def pepper_password(self, source):
         """
@@ -301,16 +304,16 @@ class AbstractAuthcService:
              PASSWORD (rather than a public salt).  The peppered password
              is salted by passlib according to the cryptcontext settings
              else default passlib settings.
-          3) so to minimize copies of the password in memory, 'source' is 
+          3) so to minimize copies of the password in memory, 'source' is
              cleared from memory the moment it is peppered
 
-        :type source: bytearray 
+        :type source: bytearray
         """
-        
+
         if (isinstance(source, bytearray)):
             peppered_pass = bytes(self.private_salt + source)
 
-            # the moment you pepper a password, clear the password because 
+            # the moment you pepper a password, clear the password because
             # it is a lingering copy in memory -- peppered_pass remains
             self.clear_source(source)
 

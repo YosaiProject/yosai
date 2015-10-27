@@ -87,3 +87,11 @@ add excessive-login-attempts logic:
 
 create a ContextFactory to replace the piecemeal xxxSettings classes that 
 interface with yosai settings
+
+porting functionality provided by servlet web-filter facility to pythonic decorators
+to be used by web frameworks
+
+consolidate authz.is_permitted and authz.has_role, using a generic get_results
+method that takes the private method to use (_is_permitted or _has_role) as an argument
+    - replace existing unit tests with new ones
+

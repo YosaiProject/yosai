@@ -178,7 +178,7 @@ def test_dsm_set_eventbus_raises(default_security_manager):
 
 @pytest.mark.parametrize(
     'authenticator, expected_authc_realms, authorizer, expected_authz_realms',
-    [(DefaultAuthenticator(event_bus='eventbus'), 'realms',
+    [(DefaultAuthenticator(), 'realms',
      ModularRealmAuthorizer(), 'realms'),
      (type('DumbAuthenticator', (object,), {'realms': None})(), None,
       type('DumbAuthorizer', (object,), {'realms': None})(), None)])
