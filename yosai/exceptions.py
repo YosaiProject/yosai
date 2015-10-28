@@ -240,6 +240,28 @@ class EventBusSubscriptionException(EventBusException):
 
 
 # ---------------------------------------------------------------------------
+# ----  Event Exceptions
+# ---------------------------------------------------------------------------
+
+
+class EventException(YosaiException):
+    pass
+
+
+class AuthorizationEventException(EventException):
+    pass
+
+
+class AuthenticationEventException(EventException):
+    pass
+
+
+class SessionEventException(EventException):
+    pass
+
+
+
+# ---------------------------------------------------------------------------
 # ---- Realm Exceptions
 # ---------------------------------------------------------------------------
 
@@ -320,10 +342,6 @@ class ExpiredSessionException(StoppedSessionException):
 
 
 class UnknownSessionException(InvalidSessionException):
-    pass
-
-
-class SessionEventException(SessionException):
     pass
 
 

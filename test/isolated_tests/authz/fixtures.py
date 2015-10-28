@@ -11,6 +11,7 @@ from yosai import (
     SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
+    event_bus,
 )
 
 from .doubles import (
@@ -29,9 +30,11 @@ def authz_realms_collection():
             MockAuthzAccountStoreRealm())
 
 @pytest.fixture(scope='function')
-def modular_realm_authorizer_patched(monkeypatch, authz_realms_collection):
+def modular_realm_authorizer_patched(
+        monkeypatch, authz_realms_collection, patched_event_bus):
     a = ModularRealmAuthorizer()
     monkeypatch.setattr(a, '_realms', authz_realms_collection)
+    monkeypatch.setattr(a, '_event_bus', patched_event_bus)
     return a
 
 @pytest.fixture(scope='function')

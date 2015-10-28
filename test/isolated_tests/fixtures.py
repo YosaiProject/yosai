@@ -11,7 +11,7 @@ from yosai import (
     PasswordVerifier,
     SimpleRole,
     UsernamePasswordToken,
-    SecurityUtils 
+    SecurityUtils
 )
 
 from .doubles import (
@@ -125,8 +125,11 @@ def first_realm_successful_strategy():
 
 
 @pytest.fixture(scope='function')
-def default_authenticator(first_realm_successful_strategy):
-    return DefaultAuthenticator(first_realm_successful_strategy)
+def default_authenticator(
+        first_realm_successful_strategy, monkeypatch, patched_event_bus):
+    da = DefaultAuthenticator(first_realm_successful_strategy)
+    monkeypatch.setattr(da, '_event_bus', patched_event_bus)
+    return da
 
 
 @pytest.fixture(scope='function')
@@ -169,4 +172,3 @@ def mock_thread_context():
 @pytest.fixture(scope='function')
 def mock_subject_builder(mock_security_manager):
     return MockSubjectBuilder(security_manager=mock_security_manager)
-

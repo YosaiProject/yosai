@@ -3,8 +3,11 @@ import collections
 from unittest import mock
 
 from yosai import (
+    AuthorizationEventException,
     DefaultPermission,
     DefaultPermissionResolver,
+    Event,
+    DefaultEventBus,
     IllegalArgumentException,
     IllegalStateException,
     IndexedAuthorizationInfo,
@@ -453,6 +456,124 @@ def test_mra_check_role_true(
 
         mra.check_role('identifiers', 'roleid_s', all)
         arc.assert_called_once_with()
+
+
+def test_mra_notify_results(modular_realm_authorizer_patched):
+    """
+    unit tested:  notify_results
+
+    test case:
+    creates an Event and publishes it to the event_bus
+    """
+    mra = modular_realm_authorizer_patched
+    result = frozenset([('permission1', True)])
+
+    myevent = Event(source='ModularRealmAuthorizer',
+                    event_topic='AUTHORIZATION.RESULTS',
+                    identifiers='identifiers',
+                    results=result)
+
+    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
+        eb_pub.return_value = None
+
+        mra.notify_results('identifiers', result)
+
+        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+
+
+def test_mra_notify_results_raises(
+        modular_realm_authorizer_patched, monkeypatch):
+    """
+    unit tested:  notify_results
+
+    test case:
+    creates an Event, tries publishes it to the event_bus,
+    but fails and so raises an exception
+    """
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, '_event_bus', None)
+
+    with pytest.raises(AuthorizationEventException):
+        mra.notify_results('identifiers', 'result')
+
+
+def test_mra_notify_success(modular_realm_authorizer_patched):
+    """
+    unit tested:  notify_success
+
+    test case:
+    creates an Event and publishes it to the event_bus
+    """
+    mra = modular_realm_authorizer_patched
+    permission_s = ['domain1:action1']
+
+    myevent = Event(source='ModularRealmAuthorizer',
+                    event_topic='AUTHORIZATION.GRANTED',
+                    identifiers='identifiers',
+                    permission_s=permission_s)
+
+    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
+        eb_pub.return_value = None
+
+        mra.notify_success('identifiers', permission_s)
+
+        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+
+
+def test_mra_notify_success_raises(
+        modular_realm_authorizer_patched, monkeypatch):
+    """
+    unit tested:  notify_success
+
+    test case:
+    creates an Event, tries publishes it to the event_bus,
+    but fails and so raises an exception
+    """
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, '_event_bus', None)
+
+    with pytest.raises(AuthorizationEventException):
+        mra.notify_success('identifiers', 'result')
+
+
+def test_mra_notify_failure(modular_realm_authorizer_patched):
+    """
+    unit tested:  notify_failure
+
+    test case:
+    creates an Event and publishes it to the event_bus
+    """
+    mra = modular_realm_authorizer_patched
+    permission_s = ['domain1:action1']
+
+    myevent = Event(source='ModularRealmAuthorizer',
+                    event_topic='AUTHORIZATION.DENIED',
+                    identifiers='identifiers',
+                    permission_s=permission_s)
+
+    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
+        eb_pub.return_value = None
+
+        mra.notify_failure('identifiers', permission_s)
+
+        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+
+
+def test_mra_notify_failure_raises(
+        modular_realm_authorizer_patched, monkeypatch):
+    """
+    unit tested:  notify_failure
+
+    test case:
+    creates an Event, tries publishes it to the event_bus,
+    but fails and so raises an exception
+    """
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, '_event_bus', None)
+
+    with pytest.raises(AuthorizationEventException):
+        mra.notify_failure('identifiers', 'result')
+
 
 # -----------------------------------------------------------------------------
 # IndexedAuthorizationInfo Tests

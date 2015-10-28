@@ -3,6 +3,9 @@ from unittest import mock
 
 from yosai import (
     AuthenticationException,
+    AuthenticationEventException,
+    DefaultEventBus,
+    Event,
     InvalidTokenPasswordException,
     MultiRealmAuthenticationException,
     UnsupportedTokenException,
@@ -222,67 +225,81 @@ def test_da_do_authc_acct_without_realm(
     with pytest.raises(AuthenticationException):
         da.do_authenticate_account(token)
 
-def test_da_notify_success_with_eventbus(
-        default_authenticator, username_password_token, full_mock_account,
-        patched_event_bus, monkeypatch):
+
+def test_da_notify_success(default_authenticator):
     """
     unit tested:  notify_success
+
+    test case:
+    creates an Event and publishes it to the event_bus
     """
-
     da = default_authenticator
-    token = username_password_token
-    account = full_mock_account
 
-    monkeypatch.setattr(da, '_event_bus', patched_event_bus)
+    myevent = Event(source='DefaultAuthenticator',
+                    event_topic='AUTHENTICATION.SUCCEEDED',
+                    authc_token='token',
+                    account='account')
 
-    assert da.notify_success(token, account) is None
+    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
+        eb_pub.return_value = None
 
-def test_da_notify_success_without_eventbus(
-        default_authenticator, username_password_token, full_mock_account,
-        monkeypatch):
+        da.notify_success('token', 'account')
+
+        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+
+
+def test_da_notify_success_raises(default_authenticator, monkeypatch):
     """
     unit tested:  notify_success
-    """
 
+    test case:
+    creates an Event, tries publishes it to the event_bus,
+    but fails and so raises an exception
+    """
     da = default_authenticator
-    token = username_password_token
-    account = full_mock_account
 
     monkeypatch.setattr(da, '_event_bus', None)
 
-    assert da.notify_success(token, account) is None
+    with pytest.raises(AuthenticationEventException):
+        da.notify_success('token', 'account')
 
 
-def test_da_notify_failure_with_eventbus(
-        default_authenticator, username_password_token, full_mock_account,
-        patched_event_bus, monkeypatch):
+def test_da_notify_failure(default_authenticator):
     """
     unit tested:  notify_failure
+
+    test case:
+    creates an Event and publishes it to the event_bus
     """
-
     da = default_authenticator
-    token = username_password_token
-    account = full_mock_account
 
-    monkeypatch.setattr(da, '_event_bus', patched_event_bus)
+    myevent = Event(source='DefaultAuthenticator',
+                    event_topic='AUTHENTICATION.FAILED',
+                    authc_token='token',
+                    throwable='throwable')
 
-    assert da.notify_failure(token, account) is None
+    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
+        eb_pub.return_value = None
 
-def test_da_notify_failure_without_eventbus(
-        default_authenticator, username_password_token, full_mock_account,
-        monkeypatch):
+        da.notify_failure('token', 'throwable')
+
+        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+
+
+def test_da_notify_falure_raises(default_authenticator, monkeypatch):
     """
     unit tested:  notify_failure
-    """
 
+    test case:
+    creates an Event, tries publishes it to the event_bus,
+    but fails and so raises an exception
+    """
     da = default_authenticator
-    token = username_password_token
-    account = full_mock_account
 
     monkeypatch.setattr(da, '_event_bus', None)
 
-    assert da.notify_failure(token, account) is None
-
+    with pytest.raises(AuthenticationEventException):
+        da.notify_failure('token', 'throwable')
 
 # -----------------------------------------------------------------------------
 # Decorator Tests

@@ -20,6 +20,7 @@ under the License.
 from yosai import (
     AccountException,
     AuthenticationException,
+    AuthenticationEventException,
     Event,
     InvalidTokenPasswordException,
     LogManager,
@@ -256,20 +257,26 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
     # --------------------------------------------------------------------------
 
     def notify_success(self, authc_token, account):
-        if (self.event_bus):
+        try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHENTICATION.SUCCEEDED',
                           authc_token=authc_token,
                           account=account)
-            self.event_bus.publish(event)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
+            raise AuthenticationEventException(msg)
 
     def notify_failure(self, authc_token, throwable):
-        if (self.event_bus):
+        try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHENTICATION.FAILED',
                           authc_token=authc_token,
                           throwable=throwable)
-            self.event_bus.publish(event)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish AUTHENTICATION.FAILED event"
+            raise AuthenticationEventException(msg)
 
     # --------------------------------------------------------------------------
 

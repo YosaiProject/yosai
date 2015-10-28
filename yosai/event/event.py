@@ -55,12 +55,20 @@ class Event:
     the same characteristics and behavior.
     """
 
-    def __init__(self, event_topic, source, **eventattrs):
-        self.event_topic = event_topic  # ex:  AUTHENTICATION_FAILED
+    def __init__(self, source, event_topic, **eventattrs):
         self.source = source  # the object that emitted the event
+        self.event_topic = event_topic  # ex:  AUTHENTICATION_FAILED
         self.timestamp = datetime.datetime.utcnow()
         self.__dict__.update(**eventattrs)  # DG:  risky?
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        return (isinstance(other, Event) and
+                ({key: val for key, val in self.__dict__.items()
+                 if key != 'timestamp'} ==
+                {key: val for key, val in other.__dict__.items() 
+                 if key != 'timestamp'}))
 
 class DefaultEventBus(event_abcs.EventBus):
     """
@@ -69,10 +77,8 @@ class DefaultEventBus(event_abcs.EventBus):
 
     Note:  most of the comments here are pasted from pypubsub's documentation
     """
-    __event_bus = pub  # singleton
-
     def __init__(self):
-        self._event_bus = DefaultEventBus.__event_bus
+        self._event_bus = pub
 
         # The following two settings enforce topic naming convention.
         # If you want to catch topic naming exceptions, Uncomment the settings
@@ -190,7 +196,7 @@ class EventLogger:
     """ monitors and logs all event traffic over pypubsub """
 
     def __init__(self):
-        self._event_bus = pub
+        self._event_bus = None
         self.subscribe_to_all_topics()
 
     def subscribe_to_all_topics(self):
@@ -200,4 +206,4 @@ class EventLogger:
         pass  # define later, using structlog if possible
 
 
-event_bus = DefaultEventBus()
+event_bus = DefaultEventBus()  # pseudo-singleton

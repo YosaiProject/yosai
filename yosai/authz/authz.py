@@ -20,6 +20,7 @@ import itertools
 
 from yosai import (
     AuthorizationException,
+    AuthorizationEventException,
     CollectionDict,
     Event,
     HostUnauthorizedException,
@@ -678,28 +679,37 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param results:  permission or role based results, created by
                          is_permitted or has_role, respectively
         """
-        if (self.event_bus):
+        try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.RESULTS',
                           identifiers=identifiers,
                           results=results)
-            self.event_bus.publish(event)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish AUTHORIZATION.RESULTS event"
+            raise AuthorizationEventException(msg)
 
     def notify_success(self, identifiers, permission_s):
-        if (self.event_bus):
+        try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.GRANTED',
                           identifiers=identifiers,
                           permission_s=permission_s)
-            self.event_bus.publish(event)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish AUTHORIZATION.GRANTED event"
+            raise AuthorizationEventException(msg)
 
     def notify_failure(self, identifiers, permission_s):
-        if (self.event_bus):
+        try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.DENIED',
                           identifiers=identifiers,
                           permission_s=permission_s)
-            self.event_bus.publish(event)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish AUTHORIZATION.DENIED event"
+            raise AuthorizationEventException(msg)
 
     # --------------------------------------------------------------------------
 
