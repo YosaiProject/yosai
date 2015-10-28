@@ -229,10 +229,19 @@ def test_mra_is_permitted_succeeds(modular_realm_authorizer_patched, monkeypatch
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
 
-        results = mra.is_permitted('identifiers', {'permission1', 'permission2'})
+        with mock.patch.object(mra, 'notify_results') as mra_nr:
+            mra_nr.return_value = None
 
-        mra_arc.assert_called_once_with()
-        assert results == frozenset([('permission1', True), ('permission2', True)])
+            results = mra.is_permitted('identifiers', {'permission1', 'permission2'})
+
+            mra_arc.assert_called_once_with()
+
+            mra_nr.assert_called_once_with(
+                'identifiers',
+                frozenset([('permission1', True), ('permission2', True)]))
+
+            assert results == frozenset([('permission1', True),
+                                         ('permission2', True)])
 
 
 def test_mra_is_permitted_fails(modular_realm_authorizer_patched, monkeypatch):
@@ -285,11 +294,23 @@ def test_mra_is_permitted_collective(
     monkeypatch.setattr(mra, 'is_permitted', lambda x,y: mock_results)
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
-        results = mra.is_permitted_collective({'identifiers'},
-                                              ['perm1', 'perm2'],
-                                              logical_operator)
-        mra_arc.assert_called_once_with()
-        assert results == expected
+        with mock.patch.object(mra, 'notify_success') as mra_ns:
+            mra_ns.return_value = None
+            with mock.patch.object(mra, 'notify_failure') as mra_nf:
+                mra_nf.return_value = None
+
+                results = mra.is_permitted_collective({'identifiers'},
+                                                      ['perm1', 'perm2'],
+                                                      logical_operator)
+                mra_arc.assert_called_once_with()
+                assert results == expected
+                if expected is True:
+                    mra_ns.assert_called_once_with({'identifiers'},
+                                                   ['perm1', 'perm2'])
+                else:
+                    mra_nf.assert_called_once_with({'identifiers'},
+                                                   ['perm1', 'perm2'])
+
 
 def test_mra_check_permission_collection_raises(
         modular_realm_authorizer_patched, monkeypatch):
@@ -355,10 +376,17 @@ def test_mra_has_role_succeeds(modular_realm_authorizer_patched, monkeypatch):
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
 
-        results = mra.has_role('identifiers', {'roleid1', 'roleid2'})
+        with mock.patch.object(mra, 'notify_results') as mra_nr:
+            mra_nr.return_value = None
 
-        mra_arc.assert_called_once_with()
-        assert results == frozenset([('roleid1', True), ('roleid2', True)])
+            results = mra.has_role('identifiers', {'roleid1', 'roleid2'})
+
+            mra_arc.assert_called_once_with()
+            mra_nr.assert_called_once_with(
+                'identifiers',
+                frozenset([('roleid1', True), ('roleid2', True)]))
+
+            assert results == frozenset([('roleid1', True), ('roleid2', True)])
 
 
 def test_mra_has_role_fails(modular_realm_authorizer_patched, monkeypatch):
@@ -415,10 +443,24 @@ def test_mra_has_role_collective(
 
     with mock.patch.object(ModularRealmAuthorizer, 'assert_realms_configured') as arc:
         arc.return_value = None
-        result = mra.has_role_collective('arbitrary_identifiers',
-                                         {'roleid1', 'roleid2'}, logical_operator)
 
-        assert result == expected and arc.called
+        with mock.patch.object(mra, 'notify_success') as mra_ns:
+            mra_ns.return_value = None
+            with mock.patch.object(mra, 'notify_failure') as mra_nf:
+                mra_nf.return_value = None
+
+                result = mra.has_role_collective('arbitrary_identifiers',
+                                                 {'roleid1', 'roleid2'},
+                                                 logical_operator)
+
+                if expected is True:
+                    mra_ns.assert_called_once_with('arbitrary_identifiers',
+                                                   {'roleid1', 'roleid2'})
+                else:
+                    mra_nf.assert_called_once_with('arbitrary_identifiers',
+                                                   {'roleid1', 'roleid2'})
+
+                assert result == expected and arc.called
 
 
 def test_mra_check_role_raises(
