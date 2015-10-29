@@ -27,6 +27,7 @@ configuration are obtained by (global) default settings.
 
 This design is inspired by, or a copy of, source code written for Django.
 """
+from pathlib import Path
 import yaml
 import os
 from yosai import FileNotFoundException, MisconfiguredException
@@ -96,8 +97,12 @@ class Settings:
 
     def get_config(self, filepath):
         if os.path.exists(filepath):
-            with open(filepath) as conf_file:
-                config = yaml.load(open(conf_file))  # rapidjson.loads(conf_file.read())
+
+            with Path(filepath).open() as stream:
+                config = yaml.load(stream)
+
+#            with open(filepath) as conf_file:
+#                config = rapidjson.loads(conf_file.read())
         else:
             raise FileNotFoundException('could not locate: ' + str(filepath)) 
         return config
