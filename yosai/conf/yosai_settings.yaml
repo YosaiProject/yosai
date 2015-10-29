@@ -1,13 +1,16 @@
+---
 AUTHC_CONFIG: 
-        default_algorithm: bcrypt_sha256
-        hash_algorithms: 
-            bcrypt_sha256: 
-            sha256_crypt: 
-                    default_rounds: 110000
-                    max_rounds: 1000000
-                    min_rounds: 1000
-                    salt_size: 16
-        private_salt: M4D31nN3wJ3rs3y
+    default_algorithm: bcrypt_sha256
+    hash_algorithms: 
+        bcrypt_sha256: 
+        sha256_crypt: 
+            default_rounds: 110000
+            max_rounds: 1000000
+            min_rounds: 1000
+            salt_size: 16
+    private_salt: M4D31nN3wJ3rs3y
+
+
 LOGGING_CONFIG: 
     version : 1
     disable_existing_loggers : false
@@ -46,6 +49,8 @@ LOGGING_CONFIG:
     root: 
         level : INFO
         handlers : [console info_file_handler error_file_handler]
+
+
 SESSION_CONFIG: 
     session_timeout: 
         absolute_timeout: 1800
@@ -54,5 +59,7 @@ SESSION_CONFIG:
         scheduler_enabled: true
         time_interval: 3600
     active_sessions_cache_name: yosai_active_session_cache
+
+
 MGT_CONFIG: 
     DEFAULT_CIPHER_KEY: you need to update this using the fernet keygen
