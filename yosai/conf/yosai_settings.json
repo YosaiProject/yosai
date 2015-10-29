@@ -1,4 +1,8 @@
 {
+    "MAIN_CONFIG": {
+        
+    },
+
     "AUTHC_CONFIG": {
             "default_algorithm": "bcrypt_sha256",
             "hash_algorithms": {
@@ -10,7 +14,7 @@
                         "salt_size": 16
                 }
             },
-            "private_salt": "N3wJ3rs3yN3wY0rk"
+            "private_salt": "M4D31nN3wJ3rs3y"
     },
 
     "LOGGING_CONFIG": {

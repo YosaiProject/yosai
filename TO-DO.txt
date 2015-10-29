@@ -95,3 +95,4 @@ consolidate authz.is_permitted and authz.has_role, using a generic get_results
 method that takes the private method to use (_is_permitted or _has_role) as an argument
     - replace existing unit tests with new ones
 
+adopt Pyramid's scaffolding implementation
