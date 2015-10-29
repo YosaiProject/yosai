@@ -13,7 +13,7 @@ LOGGING_CONFIG:
     disable_existing_loggers : false
     formatters: 
             print_format: 
-                format : %(asctime)s\t(levelname)s:%(name)s\t%(message)s
+                format : "%(asctime)s\t(levelname)s:%(name)s\t%(message)s"
             json_format: 
                 () : s_logging.JSONFormatter
     handlers: 
