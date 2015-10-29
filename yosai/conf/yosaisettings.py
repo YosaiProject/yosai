@@ -27,7 +27,7 @@ configuration are obtained by (global) default settings.
 
 This design is inspired by, or a copy of, source code written for Django.
 """
-
+import yaml
 import os
 from yosai import FileNotFoundException, MisconfiguredException
 import rapidjson 
@@ -91,13 +91,13 @@ class LazySettings:
 
 class Settings:
 
-    def __init__(self, settings_filepath='yosai_settings.json'):
+    def __init__(self, settings_filepath='yosai_settings.yaml'):
         self.load_config(settings_filepath)
 
     def get_config(self, filepath):
         if os.path.exists(filepath):
             with open(filepath) as conf_file:
-                config = rapidjson.loads(conf_file.read())
+                config = yaml.load(open(conf_file))  # rapidjson.loads(conf_file.read())
         else:
             raise FileNotFoundException('could not locate: ' + str(filepath)) 
         return config
