@@ -1,73 +1,58 @@
----
-MAIN_CONFIG:
-    AUTHC_CONFIG:
+AUTHC_CONFIG: 
         default_algorithm: bcrypt_sha256
-            hash_algorithms:
-                bcrypt_sha256: {}
-                sha256_crypt: 
+        hash_algorithms: 
+            bcrypt_sha256: 
+            sha256_crypt: 
                     default_rounds: 110000
                     max_rounds: 1000000
                     min_rounds: 1000
                     salt_size: 16
-                
-            private_salt: M4D31nN3wJ3rs3y
-
-    LOGGING_CONFIG:
-        version: 1
-        disable_existing_loggers: false
-
-        formatters: 
-                print_format: 
-                    format : "%(asctime)s\t(levelname)s:%(name)s\t%(message)s"
-                json_format: 
-                    (): s_logging.JSONFormatter
-                
-        handlers:
-                console:
-                    class: logging.StreamHandler
-                    level: DEBUG
-                    stream: ext://sys.stdout
-                    formatter: json_format
-
-                info_file_handler: 
-                    class: logging.handlers.RotatingFileHandler
-                    level: INFO
-                    filename: info.log
-                    formatter: json_format
-                    maxBytes: 10485760
-                    backupCount: 20
-                    encoding: utf8
-
-                error_file_handler: 
-                    class: logging.handlers.RotatingFileHandler
-                    level: ERROR
-                    filename: errors.log
-                    formatter: json_format
-                    maxBytes: 10485760
-                    backupCount: 20
-                    encoding: utf8
-
-        loggers: 
+        private_salt: M4D31nN3wJ3rs3y
+LOGGING_CONFIG: 
+    version : 1
+    disable_existing_loggers : false
+    formatters: 
+            print_format: 
+                format : %(asctime)s\t(levelname)s:%(name)s\t%(message)s
+            json_format: 
+                () : s_logging.JSONFormatter
+    handlers: 
+            console: 
+                class: logging.StreamHandler
+                level : DEBUG
+                stream : ext://sys.stdout
+                formatter: json_format
+            info_file_handler: 
+                class : logging.handlers.RotatingFileHandler
+                level : INFO
+                filename : info.log
+                formatter : json_format
+                maxBytes : 10485760
+                backupCount : 20
+                encoding : utf8
+            error_file_handler: 
+                class : logging.handlers.RotatingFileHandler
+                level : ERROR
+                filename : errors.log
+                formatter : json_format
+                maxBytes : 10485760
+                backupCount : 20
+                encoding : utf8
+    loggers: 
             test_logger_1: 
-                level: INFO
-                handlers: [info_file_handler]
-                propagate: no
-
-        root: 
-            level: INFO
-            handlers: [console, info_file_handler, error_file_handler]
-            
-
-    SESSION_CONFIG: 
-        session_timeout: 
-            absolute_timeout: 1800
-            idle_timeout: 300
-
-        session_validation: 
-            scheduler_enabled: true
-            time_interval: 3600
-
-        active_sessions_cache_name: yosai_active_session_cache
-
-    MGT_CONFIG:
-        DEFAULT_CIPHER_KEY: "you need to update this using the fernet keygen"
+                level : INFO
+                handlers : [info_file_handler]
+                propagate : no
+    root: 
+        level : INFO
+        handlers : [console info_file_handler error_file_handler]
+SESSION_CONFIG: 
+    session_timeout: 
+        absolute_timeout: 1800
+        idle_timeout: 300
+    session_validation: 
+        scheduler_enabled: true
+        time_interval: 3600
+    active_sessions_cache_name: yosai_active_session_cache
+MGT_CONFIG: 
+    DEFAULT_CIPHER_KEY: you need to update this using the fernet keygen
