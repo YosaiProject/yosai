@@ -31,7 +31,6 @@ from pathlib import Path
 import yaml
 import os
 from yosai import FileNotFoundException, MisconfiguredException
-import rapidjson 
 
 ENV_VAR = "YOSAI_SETTINGS_MODULE"
 empty = object()
@@ -101,8 +100,6 @@ class Settings:
             with Path(filepath).open() as stream:
                 config = yaml.load(stream)
 
-#            with open(filepath) as conf_file:
-#                config = rapidjson.loads(conf_file.read())
         else:
             raise FileNotFoundException('could not locate: ' + str(filepath)) 
         return config

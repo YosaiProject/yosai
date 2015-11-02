@@ -41,6 +41,7 @@ from yosai import(
     SerializationManager,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
+    event_bus,
     mgt_settings,
     mgt_abcs,
     authc_abcs,
@@ -377,21 +378,26 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                              event_abcs.EventBusAware,
                              cache_abcs.CacheManagerAware):
 
-    def __init__(self):
-        self.realms = None
-        self._event_bus = DefaultEventBus()
-        self._cache_manager = DisabledCacheManager()  # cannot be set to None
+    def __init__(self,
+                 realms = None,
+                 event_bus = event_bus,
+                 cache_manager = DisabledCacheManager(),
+                 authenticator = DefaultAuthenticator(),
+                 authorizer = ModularRealmAuthorizer(),
+                 session_manager = None,
+                 remember_me_manager = None,
+                 subject_store = None,
+                 subject_factory = None):
 
-        # new to Yosai is the injection of the eventbus:
-        self.authenticator = DefaultAuthenticator()
-
-        # TBD:  add support for eventbus to the authorizer and inject the bus:
-        self.authorizer = ModularRealmAuthorizer()
-
-        self.session_manager = None
-        self.remember_me_manager = None
-        self.subject_store = None
-        self.subject_factory = None
+        self.realms = realms
+        self._event_bus = event_bus
+        self._cache_manager = cache_manager
+        self.authenticator = authenticator
+        self.authorizer = authorizer
+        self.session_manager = session_manager
+        self.remember_me_manager = remember_me_manager
+        self.subject_store = subject_store
+        self.subject_factory = subject_factory
 
     """
     * ===================================================================== *

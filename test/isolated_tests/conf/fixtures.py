@@ -28,7 +28,7 @@ def config():
 @pytest.fixture(scope='function')
 def filepath():
     path = os.path.dirname(sys.modules[LazySettings.__module__].__file__)
-    return path + "/yosai_settings.json"  # within same directory
+    return path + "/yosai_settings.yaml"  # within same directory
 
 @pytest.fixture(scope='function')
 def settings_fixture(filepath):
