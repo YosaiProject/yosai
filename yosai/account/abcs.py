@@ -65,7 +65,7 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
         same account store.  For example, this can be a store-wide unique
         username or email address, database primary key, UUID, GUID, etc.
 
-        After an account is authenticated, Shiro will use this id for all
+        After an account is authenticated, Yosai will use this id for all
         future access to the account: for caching the account (if caching is
         enabled), for future lookups from the account store, and any lookups
         for authorization.
@@ -135,14 +135,43 @@ class AccountStore(metaclass=ABCMeta):
         :param request:  the request object defining the criteria by which
                          to query the account store
         :type request:  AuthenticationToken or Account
+
+        :returns: Account
         """
         pass
+
+
+class CredentialsAccountStore(AccountStore):
+
+    @abstractmethod
+    def get_credentials(self, authc_token):
+        """
+        :returns: Account
+        """
+        pass
+
+
+class AuthorizationAccountStore(AccountStore):
 
     @abstractmethod
     def get_authz_info(self, identifiers):
         """
         creates an Account that includes only the authorization information
         (and not credentials)
+        :returns: Account
+        """
+        pass
+
+    @abstractmethod
+    def get_permissions(self, identifiers):
+        """
+        :returns: Account
+        """
+        pass
+
+    @abstractmethod
+    def get_roles(self, identifiers):
+        """
         :returns: Account
         """
         pass
