@@ -332,8 +332,8 @@ def test_dsm_is_permitted(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'is_permitted') as mra_ip:
-        dsm.is_permitted('identifiers', 'permission_s')
-        mra_ip.assert_called_once_with('identifiers', 'permission_s')
+        dsm.is_permitted('identifier_s', 'permission_s')
+        mra_ip.assert_called_once_with('identifier_s', 'permission_s')
 
 
 def test_dsm_is_permitted_collective(default_security_manager):
@@ -345,8 +345,8 @@ def test_dsm_is_permitted_collective(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'is_permitted_collective') as mra_ipa:
-        dsm.is_permitted_collective('identifiers', 'permission_s', all)
-        mra_ipa.assert_called_once_with('identifiers', 'permission_s', all)
+        dsm.is_permitted_collective('identifier_s', 'permission_s', all)
+        mra_ipa.assert_called_once_with('identifier_s', 'permission_s', all)
 
 
 def test_dsm_check_permission(default_security_manager):
@@ -358,8 +358,8 @@ def test_dsm_check_permission(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_permission') as mra_cp:
-        dsm.check_permission('identifiers', 'permission_s', all)
-        mra_cp.assert_called_once_with('identifiers', 'permission_s', all)
+        dsm.check_permission('identifier_s', 'permission_s', all)
+        mra_cp.assert_called_once_with('identifier_s', 'permission_s', all)
 
 
 def test_dsm_has_role(default_security_manager):
@@ -371,8 +371,8 @@ def test_dsm_has_role(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'has_role') as mra_hr:
-        dsm.has_role('identifiers', 'permission_s')
-        mra_hr.assert_called_once_with('identifiers', 'permission_s')
+        dsm.has_role('identifier_s', 'permission_s')
+        mra_hr.assert_called_once_with('identifier_s', 'permission_s')
 
 
 def test_dsm_has_role_collective(default_security_manager):
@@ -384,8 +384,8 @@ def test_dsm_has_role_collective(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'has_role_collective') as mra_har:
-        dsm.has_role_collective('identifiers', 'permission_s', all)
-        mra_har.assert_called_once_with('identifiers', 'permission_s', all)
+        dsm.has_role_collective('identifier_s', 'permission_s', all)
+        mra_har.assert_called_once_with('identifier_s', 'permission_s', all)
 
 
 def test_dsm_check_role(default_security_manager):
@@ -397,8 +397,8 @@ def test_dsm_check_role(default_security_manager):
     """
     dsm = default_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_role') as mra_cr:
-        dsm.check_role('identifiers', 'permission_s', all)
-        mra_cr.assert_called_once_with('identifiers', 'permission_s', all)
+        dsm.check_role('identifier_s', 'permission_s', all)
+        mra_cr.assert_called_once_with('identifier_s', 'permission_s', all)
 
 def test_dsm_start(
         default_security_manager, mock_default_session_manager, monkeypatch):
@@ -466,7 +466,7 @@ def test_dsm_create_subject_wo_context(default_security_manager):
         dsm_esm.return_value = testcontext
         with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
             dsm_rs.return_value = testcontext
-            with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
+            with mock.patch.object(dsm, 'resolve_identifier_s') as dsm_rp:
                 dsm_rp.return_value = testcontext
                 with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
                     dsm_dcs.return_value = 'subject'
@@ -502,7 +502,7 @@ def test_dsm_create_subject_w_context(default_security_manager):
         dsm_esm.return_value = testcontext
         with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
             dsm_rs.return_value = testcontext
-            with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
+            with mock.patch.object(dsm, 'resolve_identifier_s') as dsm_rp:
                 dsm_rp.return_value = testcontext
                 with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
                     dsm_dcs.return_value = None
@@ -638,7 +638,7 @@ def test_dsm_rememberme_logout_warned(
 
     class MockSubject:
         def __init__(self):
-            self.identifiers = {'username': 'username'}
+            self.identifier_s = {'username': 'username'}
 
     with mock.patch.object(MockRememberMeManager,
                            'on_logout') as mrmm_ol:
@@ -1014,70 +1014,70 @@ def test_dsm_get_session_key_wo_sessionid(
     result = dsm.get_session_key(msc)
     assert result is None
 
-def test_dsm_resolve_identifiers_incontext(
+def test_dsm_resolve_identifier_s_incontext(
         default_security_manager, monkeypatch, mock_subject_context):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    subject_context contains identifiers, so returns it back immediately
+    subject_context contains identifier_s, so returns it back immediately
     """
     dsm = default_security_manager
     msc = mock_subject_context
-    monkeypatch.setattr(msc, 'resolve_identifiers', lambda: 'identifiers')
-    result = dsm.resolve_identifiers(msc)
+    monkeypatch.setattr(msc, 'resolve_identifier_s', lambda: 'identifier_s')
+    result = dsm.resolve_identifier_s(msc)
 
     assert result == msc
 
 
-def test_dsm_resolve_identifiers_notincontext_remembered(
+def test_dsm_resolve_identifier_s_notincontext_remembered(
         default_security_manager, monkeypatch, mock_subject_context):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    - by default, the mock subject context's resolve_identifiers returns None
-    - obtains identifiers from remembered identity
+    - by default, the mock subject context's resolve_identifier_s returns None
+    - obtains identifier_s from remembered identity
     """
 
     dsm = default_security_manager
     msc = mock_subject_context
 
-    dsm.resolve_identifiers(msc)
+    dsm.resolve_identifier_s(msc)
 
 
-def test_dsm_resolve_identifiers_notincontext_notremembered(
+def test_dsm_resolve_identifier_s_notincontext_notremembered(
         default_security_manager, monkeypatch, mock_subject_context):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    - by default, the mock subject context's resolve_identifiers returns None
-    - fails to obtain identifiers from remembered identity
+    - by default, the mock subject context's resolve_identifier_s returns None
+    - fails to obtain identifier_s from remembered identity
     """
 
     dsm = default_security_manager
     msc = mock_subject_context
     monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: None)
-    result = dsm.resolve_identifiers(msc)
-    assert not hasattr(result, 'identifiers')
+    result = dsm.resolve_identifier_s(msc)
+    assert not hasattr(result, 'identifier_s')
 
 
-def test_dsm_resolve_identifiers_notincontext_remembered(
+def test_dsm_resolve_identifier_s_notincontext_remembered(
         default_security_manager, monkeypatch, mock_subject_context):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    - by default, the mock subject context's resolve_identifiers returns None
-    - fails to obtain identifiers from remembered identity
+    - by default, the mock subject context's resolve_identifier_s returns None
+    - fails to obtain identifier_s from remembered identity
     """
 
     dsm = default_security_manager
     msc = mock_subject_context
-    monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: 'identifiers')
-    result = dsm.resolve_identifiers(msc)
-    assert hasattr(result, 'identifiers')
+    monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: 'identifier_s')
+    result = dsm.resolve_identifier_s(msc)
+    assert hasattr(result, 'identifier_s')
 
 
 def test_dsm_create_session_context_empty(
@@ -1141,14 +1141,14 @@ def test_dsm_logout_succeeds(
     unit tested:  logout
 
     test case:
-    calls before_logout, obtains identifiers from subject, calls the
+    calls before_logout, obtains identifier_s from subject, calls the
     authenticator's on_logout method, calls delete, calls stop_session
     """
     dsm = default_security_manager
     ms = mock_subject
 
     class MockAuthenticator(authc_abcs.LogoutAware):
-        def on_logout(self, identifiers):
+        def on_logout(self, identifier_s):
             pass
 
     monkeypatch.setattr(dsm, 'authenticator', MockAuthenticator())
@@ -1163,7 +1163,7 @@ def test_dsm_logout_succeeds(
 
                     dsm.logout(ms)
                     dsm_bl.assert_called_once_with(ms)
-                    ma_ol.assert_called_once_with(ms.identifiers)
+                    ma_ol.assert_called_once_with(ms.identifier_s)
                     dsm_delete.assert_called_once_with(ms)
                     dsm_ss.assert_called_once_with(ms)
 
@@ -1174,18 +1174,18 @@ def test_dsm_logout_succeeds_until_delete_raises(
     unit tested:  logout
 
     test case:
-    calls before_logout, obtains identifiers from subject, calls the
+    calls before_logout, obtains identifier_s from subject, calls the
     authenticator's on_logout method, calls delete and raises
     """
     dsm = default_security_manager
     ms = mock_subject
 
     class MockAuthenticator(authc_abcs.LogoutAware):
-        def on_logout(self, identifiers):
+        def on_logout(self, identifier_s):
             pass
 
     monkeypatch.setattr(dsm, 'authenticator', MockAuthenticator())
-    monkeypatch.setattr(ms, '_identifiers', None)
+    monkeypatch.setattr(ms, '_identifier_s', None)
 
     with mock.patch.object(dsm, 'before_logout') as dsm_bl:
         dsm_bl.return_value = None
@@ -1229,14 +1229,14 @@ def test_dsm_get_remembered_identity(
     unit tested:  get_remembered_identity
 
     test case:
-    returns remembered identifiers from the rmm
+    returns remembered identifier_s from the rmm
     """
     dsm = default_security_manager
     mrmm = mock_remember_me_manager
 
     monkeypatch.setattr(dsm, 'remember_me_manager', mrmm)
     monkeypatch.setattr(mrmm,
-                        'get_remembered_identifiers',
+                        'get_remembered_identifier_s',
                         lambda x: 'remembered_identifier')
     result = dsm.get_remembered_identity('subjectcontext')
     assert result == 'remembered_identifier'
@@ -1261,7 +1261,7 @@ def test_dsm_get_remembered_identity_raises(
     unit tested:  get_remembered_identity
 
     test case:
-    raises an exception while trying to get remembered identifiers from rmm
+    raises an exception while trying to get remembered identifier_s from rmm
     """
 
     dsm = default_security_manager
@@ -1269,7 +1269,7 @@ def test_dsm_get_remembered_identity_raises(
 
     monkeypatch.setattr(dsm, 'remember_me_manager', mrmm)
     with mock.patch.object(MockRememberMeManager,
-                           'get_remembered_identifiers') as mrmm_gri:
+                           'get_remembered_identifier_s') as mrmm_gri:
         mrmm_gri.side_effect = Exception
 
         result = dsm.get_remembered_identity('subjectcontext')
@@ -1376,14 +1376,14 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     unit tested:  remember_identity
 
     test case:
-    if identifiers cannot be obtained as an argument, and when calling
+    if identifier_s cannot be obtained as an argument, and when calling
     get_identity_to_remember an exception is raised, an exception is raised
     """
     mrmm = mock_remember_me_manager
     with mock.patch.object(MockRememberMeManager, 'get_identity_to_remember') as gitr:
         gitr.side_effect = AttributeError
         pytest.raises(IllegalArgumentException,
-                      "mrmm.remember_identity('subject', identifiers=None, account=None)")
+                      "mrmm.remember_identity('subject', identifier_s=None, account=None)")
 
 
 def test_armm_remember_identity_wo_identitiersarg(
@@ -1392,23 +1392,23 @@ def test_armm_remember_identity_wo_identitiersarg(
     unit tested:  remember_identity
 
     test case:
-    - identifiers obtained through get_identity_to_remember
+    - identifier_s obtained through get_identity_to_remember
     - calls remember_serialized_identity using serialized identifier collection
       and subject
     """
     mrmm = mock_remember_me_manager
 
-    monkeypatch.setattr(mrmm, 'get_identity_to_remember', lambda x,y: 'identifiers')
+    monkeypatch.setattr(mrmm, 'get_identity_to_remember', lambda x,y: 'identifier_s')
 
-    with mock.patch.object(MockRememberMeManager, 'convert_identifiers_to_bytes') as citb:
+    with mock.patch.object(MockRememberMeManager, 'convert_identifier_s_to_bytes') as citb:
         citb.return_value = 'serialized'
 
         with mock.patch.object(MockRememberMeManager, 'remember_serialized_identity') as rsi:
             rsi.return_value = None
 
-            mrmm.remember_identity('subject', identifiers=None, account='account')
+            mrmm.remember_identity('subject', identifier_s=None, account='account')
 
-            citb.assert_called_once_with('identifiers')
+            citb.assert_called_once_with('identifier_s')
             rsi.assert_called_once_with('subject', 'serialized')
 
 
@@ -1423,7 +1423,7 @@ def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
     mrmm = mock_remember_me_manager
 
     with mock.patch.object(MockRememberMeManager,
-                           'convert_identifiers_to_bytes') as citb:
+                           'convert_identifier_s_to_bytes') as citb:
         citb.return_value = 'serialized'
 
         with mock.patch.object(MockRememberMeManager,
@@ -1431,10 +1431,10 @@ def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
             rsi.return_value = None
 
             mrmm.remember_identity('subject',
-                                   identifiers='identifiers',
+                                   identifier_s='identifier_s',
                                    account='account')
 
-            citb.assert_called_once_with('identifiers')
+            citb.assert_called_once_with('identifier_s')
             rsi.assert_called_once_with('subject', 'serialized')
 
 def test_armm_get_identity_to_remember(
@@ -1443,53 +1443,53 @@ def test_armm_get_identity_to_remember(
     unit tested:  get_identity_to_remember
 
     test case:
-    returns account.identifiers
+    returns account.identifier_s
     """
     mrmm = mock_remember_me_manager
     result = mrmm.get_identity_to_remember('subject', full_mock_account)
-    assert result == full_mock_account.identifiers
+    assert result == full_mock_account.identifier_s
 
 
-def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager):
+def test_armm_convert_identifier_s_to_bytes(mock_remember_me_manager):
     """
-    unit tested:  convert_identifiers_to_bytes
+    unit tested:  convert_identifier_s_to_bytes
 
     test case:
-    returns a byte string encoded serialized identifiers collection
+    returns a byte string encoded serialized identifier_s collection
     """
     mrmm = mock_remember_me_manager
     with mock.patch.object(SerializationManager, 'serialize') as sm_ser:
         sm_ser.return_value = 'serialized'
-        result = mrmm.convert_identifiers_to_bytes('identifiers')
-        sm_ser.assert_called_once_with('identifiers')
+        result = mrmm.convert_identifier_s_to_bytes('identifier_s')
+        sm_ser.assert_called_once_with('identifier_s')
 
 
-def test_armm_get_remembered_identifiers_raises(
+def test_armm_get_remembered_identifier_s_raises(
         mock_remember_me_manager, monkeypatch):
     """
-    unit tested:  get_remembered_identifiers
+    unit tested:  get_remembered_identifier_s
 
     test case:
     - get_remembered_serialized_identity raises an exception
         - on_remembered_identifier_failure is called as a result
-    - backup identifiers from o.r.i.f are returned
+    - backup identifier_s from o.r.i.f are returned
     """
     mrmm = mock_remember_me_manager
 
     monkeypatch.setattr(mrmm, 'on_remembered_identifier_failure',
-                        lambda x, y: 'identifiers')
+                        lambda x, y: 'identifier_s')
 
     with mock.patch.object(MockRememberMeManager,
                            'get_remembered_serialized_identity') as grsi:
         grsi.side_effect = AttributeError
-        result = mrmm.get_remembered_identifiers('subject_context')
-        assert result == 'identifiers'
+        result = mrmm.get_remembered_identifier_s('subject_context')
+        assert result == 'identifier_s'
 
 
-def test_armm_get_remembered_identifiers_serialized(
+def test_armm_get_remembered_identifier_s_serialized(
         mock_remember_me_manager, monkeypatch):
     """
-    unit tested:  get_remembered_identifiers
+    unit tested:  get_remembered_identifier_s
 
     test case:
     - obtains a remembered serialized identitifiers
@@ -1497,20 +1497,20 @@ def test_armm_get_remembered_identifiers_serialized(
     """
     mrmm = mock_remember_me_manager
 
-    monkeypatch.setattr(mrmm, 'convert_bytes_to_identifiers',
-                        lambda x, y: 'identifiers')
+    monkeypatch.setattr(mrmm, 'convert_bytes_to_identifier_s',
+                        lambda x, y: 'identifier_s')
 
     with mock.patch.object(MockRememberMeManager,
                            'get_remembered_serialized_identity') as grsi:
         grsi.return_value = 'serialized_identity'
-        result = mrmm.get_remembered_identifiers('subject_context')
-        assert result == 'identifiers'
+        result = mrmm.get_remembered_identifier_s('subject_context')
+        assert result == 'identifier_s'
 
 
-def test_armm_convert_bytes_to_identifiers(
+def test_armm_convert_bytes_to_identifier_s(
         mock_remember_me_manager, monkeypatch):
     """
-    unit tested:  convert_bytes_to_identifiers
+    unit tested:  convert_bytes_to_identifier_s
 
     test case:
     first calls decrypt method and then returns deserialized object
@@ -1521,7 +1521,7 @@ def test_armm_convert_bytes_to_identifiers(
 
     with mock.patch.object(SerializationManager, 'deserialize') as sm_deserialize:
         sm_deserialize.return_value = 'deserialized'
-        result = mrmm.convert_bytes_to_identifiers('serialized', 'subject_context')
+        result = mrmm.convert_bytes_to_identifier_s('serialized', 'subject_context')
         sm_deserialize.assert_called_with('decrypted')
         assert result == 'deserialized'
 

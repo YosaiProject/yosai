@@ -21,6 +21,7 @@ from yosai import (
     AccountStoreRealmAuthenticationException,
     CacheCredentialsException,
     ClearCacheCredentialsException,
+    DefaultPermission,
     GetCachedCredentialsException,
     IllegalArgumentException,
     IndexedAuthorizationInfo,
@@ -29,6 +30,7 @@ from yosai import (
     LogManager,
     PasswordVerifier,
     RealmMisconfiguredException,
+    SimpleRole,
     SimpleRoleVerifier,
     UsernamePasswordToken,
     authz_abcs,
@@ -126,15 +128,15 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def role_verifier(self, verifier):
         self._role_verifier = verifier
 
-    def do_clear_cache(self, identifiers):
-        msg = "Clearing cache for: " + str(identifiers)
+    def do_clear_cache(self, identifier_s):
+        msg = "Clearing cache for: " + str(identifier_s)
         print(msg)
         # log info here
 
-        self.clear_cached_credentials(identifiers)
-        self.clear_cached_authorization_info(identifiers)
+        self.clear_cached_credentials(identifier_s)
+        self.clear_cached_authorization_info(identifier_s)
 
-    def clear_cached_credentials(self, identifiers):
+    def clear_cached_credentials(self, identifier_s):
         """
         When cached credentials are no longer needed, they can be manually
         cleared with this method.  However, account credentials should be
@@ -142,9 +144,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         of cached credentials an alternative use case.
         """
 
-        self.credentials_cache_handler.clear_cached_credentials(identifiers)
+        self.credentials_cache_handler.clear_cached_credentials(identifier_s)
 
-    def clear_cached_authorization_info(self, identifiers):
+    def clear_cached_authorization_info(self, identifier_s):
         """
         This process prevents stale authorization data from being used.
         If any authorization data for an account is changed at runtime, such as
@@ -154,7 +156,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        self.authorization_cache_handler.clear_cached_authz_info(identifiers)
+        self.authorization_cache_handler.clear_cached_authz_info(identifier_s)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -243,7 +245,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # Authorization
     # --------------------------------------------------------------------------
 
-    def get_authorization_info(self, identifiers):
+    def get_authorization_info(self, identifier_s):
         """
         The default caching policy is to cache an account's authorization info,
         obtained from an account store, for a specific user, so to facilitate
@@ -254,8 +256,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         authz_info = None
 
-        msg = ("Retrieving AuthorizationInfo for identifiers [{0}]".
-               format(identifiers))
+        msg = ("Retrieving AuthorizationInfo for identifier_s [{0}]".
+               format(identifier_s))
         # log trace here
         print(msg)
 
@@ -267,27 +269,32 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             print(msg)
 
             # new to yosai:
-            authz_info = ach.get_cached_authz_info(identifiers)
+            authz_info = ach.get_cached_authz_info(identifier_s)
 
             # TBD -- log only if logging level is TRACE:
             if (authz_info is None):
-                msg = ("AuthorizationInfo NOT found in cache for identifiers ["
-                       + identifiers + "]")
+                msg = ("AuthorizationInfo NOT found in cache for identifier_s ["
+                       + identifier_s + "]")
                 # log trace here
                 print(msg)
             else:
-                msg = ("AuthorizationInfo found in cache for identifiers ["
-                       + identifiers + "]")
+                msg = ("AuthorizationInfo found in cache for identifier_s ["
+                       + identifier_s + "]")
                 # log trace here
                 print(msg)
 
         if (authz_info is None):
             # new to yosai:
-            account = self.account_store.get_authz_info(identifiers)
+            account = self.account_store.get_authz_info(identifier_s)
 
             try:
-                authz_info = IndexedAuthorizationInfo(roles=account.roles,
-                                                      permissions=account.permissions)
+                roles = {SimpleRole(title=role.title) for role in account.roles}
+
+                permissions = {DefaultPermission(perm) for perm in
+                               account.permissions}
+
+                authz_info = IndexedAuthorizationInfo(roles=roles,
+                                                      permissions=permissions)
             except AttributeError:
                 msg = "Could not obtain Account authorization info from store."
                 print(msg)
@@ -298,16 +305,16 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # authorization info
             if (authz_info and ach):
 
-                msg = ("Caching authorization info for identifiers: [" +
-                       identifiers + "].")
+                msg = ("Caching authorization info for identifier_s: [" +
+                       identifier_s + "].")
                 # log trace here
                 print(msg)
 
-                ach.cache_authz_info(identifiers, authz_info)
+                ach.cache_authz_info(identifier_s, authz_info)
 
         return authz_info
 
-    def is_permitted(self, identifiers, permission_s):
+    def is_permitted(self, identifier_s, permission_s):
         """
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
@@ -316,20 +323,20 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :yields: tuple(Permission, Boolean)
         """
 
-        authz_info = self.get_authorization_info(identifiers)
+        authz_info = self.get_authorization_info(identifier_s)
         yield from self.permission_verifier.is_permitted(authz_info,
                                                          permission_s)
 
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifier_s, roleid_s):
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :param roleid_s: a collection of 1..N Role identifiers
+        :param roleid_s: a collection of 1..N Role identifier_s
         :type roleid_s: Set of String(s)
 
         :yields: tuple(roleid, Boolean)
         """
-        authz_info = self.get_authorization_info(identifiers)
+        authz_info = self.get_authorization_info(identifier_s)
         yield from self.role_verifier.has_role(authz_info, roleid_s)
 
 # omitted AbstractCacheHandler implementation / references

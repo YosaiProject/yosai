@@ -182,10 +182,10 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
             # log debug here
 
     # yosai omits authc_token argument as its for an edge case
-    def remember_identity(self, subject, identifiers=None, account=None):
+    def remember_identity(self, subject, identifier_s=None, account=None):
         """
         Yosai consolidates rememberIdentity, an overloaded method in java,
-        to a method that will use an identifiers-else-account logic.
+        to a method that will use an identifier_s-else-account logic.
 
         Remembers a subject-unique identity for retrieval later.  This
         implementation first resolves the exact identifying attributes to
@@ -194,42 +194,42 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
         :param subject:  the subject for which the identifying attributes are
                          being remembered
-        :param identifiers: the identifying attributes to remember for retrieval
+        :param identifier_s: the identifying attributes to remember for retrieval
                             later on
         :param account: the account containing authentication info resulting
                          from the successful authentication attempt
         """
-        if not identifiers:  # then account must not be None
+        if not identifier_s:  # then account must not be None
             try:
-                identifiers = self.get_identity_to_remember(subject, account)
+                identifier_s = self.get_identity_to_remember(subject, account)
             except AttributeError:
-                msg = "Neither account nor identifiers arguments passed"
+                msg = "Neither account nor identifier_s arguments passed"
                 raise IllegalArgumentException(msg)
 
-        serialized = self.convert_identifiers_to_bytes(identifiers)
+        serialized = self.convert_identifier_s_to_bytes(identifier_s)
         self.remember_serialized_identity(subject, serialized)
 
     def get_identity_to_remember(self, subject, account):
         """
-        Returns the account's identifiers and ignores the subject argument
+        Returns the account's identifier_s and ignores the subject argument
 
-        :param subject: the subject whose identifiers are remembered
+        :param subject: the subject whose identifier_s are remembered
         :param account: the account resulting from the successful authentication attempt
         :returns: the IdentifierCollection to remember
         """
-        return account.identifiers
+        return account.identifier_s
 
-    def convert_identifiers_to_bytes(self, identifiers):
+    def convert_identifier_s_to_bytes(self, identifier_s):
         """
         Encryption requires a binary type as input, so this method converts
-        the identifiers collection object to one.
+        the identifier_s collection object to one.
 
-        :type identifiers: a serializable IdentifierCollection object
+        :type identifier_s: a serializable IdentifierCollection object
         :returns: a bytestring
         """
 
         # serializes to bytes by default:
-        return self.serialization_manager.serialize(identifiers)
+        return self.serialization_manager.serialize(identifier_s)
 
     @abstractmethod
     def remember_serialized_identity(subject, serialized):
@@ -243,18 +243,18 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         pass
 
-    def get_remembered_identifiers(self, subject_context):
-        identifiers = None
+    def get_remembered_identifier_s(self, subject_context):
+        identifier_s = None
         try:
             serialized = self.get_remembered_serialized_identity(subject_context)
             if serialized:
-                identifiers = self.convert_bytes_to_identifiers(identifiers,
+                identifier_s = self.convert_bytes_to_identifier_s(identifier_s,
                                                                 subject_context)
         except Exception as ex:
-            identifiers = \
+            identifier_s = \
                 self.on_remembered_identifier_failure(ex, subject_context)
 
-        return identifiers
+        return identifier_s
 
     @abstractmethod
     def get_remembered_serialized_identity(subject_context):
@@ -274,7 +274,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         pass
 
-    def convert_bytes_to_identifiers(self, serialized, subject_context):
+    def convert_bytes_to_identifier_s(self, serialized, subject_context):
         """
         If a cipher_service is available, it will be used to first decrypt the
         serialized message.  Then, the bytes are deserialized and returned.
@@ -283,7 +283,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :param subject_context: the contextual data, usually provided by a
                                 SubjectBuilder implementation, that is being
                                 used to construct a Subject instance
-        :returns: the de-serialized identifiers
+        :returns: the de-serialized identifier_s
         """
 
         # unlike Shiro, Yosai assumes that the message is encrypted:
@@ -293,7 +293,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
     def on_remembered_identifier_failure(self, exc, subject_context):
         """
-        Called when an exception is thrown while trying to retrieve identifiers.
+        Called when an exception is thrown while trying to retrieve identifier_s.
         The default implementation logs a debug message and forgets ('unremembers')
         the problem identity by calling forget_identity(subject_context) and
         then immediately re-raises the exception to allow the calling
@@ -303,7 +303,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         but can be overridden by subclasses for custom handling behavior.
 
         This most commonly would be called when an encryption key is updated
-        and old identifiers are retrieved that have been encrypted with the
+        and old identifier_s are retrieved that have been encrypted with the
         previous key.
 
         :param exc: the exception that was thrown
@@ -313,8 +313,8 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :raises:  the original Exception passed is propagated in all cases
         """
         msg = ("There was a failure while trying to retrieve remembered "
-               "identifiers.  This could be due to a configuration problem or "
-               "corrupted identifiers.  This could also be due to a recently "
+               "identifier_s.  This could be due to a configuration problem or "
+               "corrupted identifier_s.  This could also be due to a recently "
                "changed encryption key.  The remembered identity will be "
                "forgotten and not used for this request.", exc)
         print(msg)
@@ -343,7 +343,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         decrypts the encrypted message using Fernet
 
         :param encrypted: the encrypted message
-        :returns: the decrypted, serialized identifiers collection
+        :returns: the decrypted, serialized identifier_s collection
         """
         fernet = Fernet(self.decryption_cipher_key)
         return fernet.decrypt(encrypted)
@@ -557,10 +557,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     *       method overloading
     * ===================================================================== *
     """
-    def is_permitted(self, identifiers, permission_s):
+    def is_permitted(self, identifier_s, permission_s):
         """
-        :param identifiers: a collection of identifiers
-        :type identifiers: Set
+        :param identifier_s: a collection of identifier_s
+        :type identifier_s: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -568,12 +568,12 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         :returns: a List of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted
         """
-        return self.authorizer.is_permitted(identifiers, permission_s)
+        return self.authorizer.is_permitted(identifier_s, permission_s)
 
-    def is_permitted_collective(self, identifiers, permission_s, logical_operator):
+    def is_permitted_collective(self, identifier_s, permission_s, logical_operator):
         """
-        :param identifiers: a collection of identifiers
-        :type identifiers: Set
+        :param identifier_s: a collection of identifier_s
+        :type identifier_s: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -584,14 +584,14 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         :returns: a Boolean
         """
-        return self.authorizer.is_permitted_collective(identifiers,
+        return self.authorizer.is_permitted_collective(identifier_s,
                                                        permission_s,
                                                        logical_operator)
 
-    def check_permission(self, identifiers, permission_s, logical_operator):
+    def check_permission(self, identifier_s, permission_s, logical_operator):
         """
-        :param identifiers: a collection of identifiers
-        :type identifiers: Set
+        :param identifier_s: a collection of identifier_s
+        :type identifier_s: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
@@ -602,46 +602,46 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         :returns: a List of Booleans corresponding to the permission elements
         """
-        return self.authorizer.check_permission(identifiers,
+        return self.authorizer.check_permission(identifier_s,
                                                 permission_s,
                                                 logical_operator)
 
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifier_s, roleid_s):
         """
-        :param identifiers: a collection of identifiers
-        :type identifiers: Set
+        :param identifier_s: a collection of identifier_s
+        :type identifier_s: Set
 
-        :param roleid_s: 1..N role identifiers
+        :param roleid_s: 1..N role identifier_s
         :type roleid_s:  a String or List of Strings
 
         :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
         """
-        return self.authorizer.has_role(identifiers, roleid_s)
+        return self.authorizer.has_role(identifier_s, roleid_s)
 
-    def has_role_collective(self, identifiers, roleid_s, logical_operator):
+    def has_role_collective(self, identifier_s, roleid_s, logical_operator):
         """
-        :param identifiers: a collection of identifiers
-        :type identifiers: Set
+        :param identifier_s: a collection of identifier_s
+        :type identifier_s: Set
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
         :type: and OR all (from python standard library)
 
-        :param roleid_s: 1..N role identifiers
+        :param roleid_s: 1..N role identifier_s
         :type roleid_s:  a String or List of Strings
 
         :returns: a Boolean
         """
-        return self.authorizer.has_role_collective(identifiers,
+        return self.authorizer.has_role_collective(identifier_s,
                                                    roleid_s, logical_operator)
 
-    def check_role(self, identifiers, roleid_s, logical_operator):
+    def check_role(self, identifier_s, roleid_s, logical_operator):
         """
-        :param identifiers: a collection of identifiers
-        :type identifiers: Set
+        :param identifier_s: a collection of identifier_s
+        :type identifier_s: Set
 
-        :param roleid_s: 1..N role identifiers
+        :param roleid_s: 1..N role identifier_s
         :type roleid_s:  a String or List of Strings
 
         :param logical_operator:  indicates whether all or at least one
@@ -650,7 +650,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
-        return self.authorizer.check_role(identifiers,
+        return self.authorizer.check_role(identifier_s,
                                           roleid_s, logical_operator)
 
     """
@@ -704,11 +704,11 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         # Similarly, the subject_factory should not require any concept of
         # remember_me -- translate that here first if possible before handing
         # off to the subject_factory:
-        context = self.resolve_identifiers(context)
+        context = self.resolve_identifier_s(context)
         subject = self.do_create_subject(context)
 
         # save this subject for future reference if necessary:
-        # (this is needed here in case remember_me identifiers were resolved
+        # (this is needed here in case remember_me identifier_s were resolved
         # and they need to be stored in the session, so we don't constantly
         # re-hydrate the remember_me identifier_collection on every operation).
         self.save(subject)
@@ -758,8 +758,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" +
                        rmm.__class__.__name__ + "] threw an exception during "
-                       "on_logout for subject with identifiers [{identifiers}]".
-                       format(identifiers=subject.identifiers if subject else None))
+                       "on_logout for subject with identifier_s [{identifier_s}]".
+                       format(identifier_s=subject.identifier_s if subject else None))
                 print(msg)
                 # log warn, including exc_info = ex
 
@@ -875,23 +875,23 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
     # yosai omits is_empty method
 
-    def resolve_identifiers(self, subject_context):
-        identifiers = subject_context.resolve_identifiers()
-        if (not identifiers):
+    def resolve_identifier_s(self, subject_context):
+        identifier_s = subject_context.resolve_identifier_s()
+        if (not identifier_s):
             msg = ("No identity (identifier_collection) found in the "
                    "subject_context.  Looking for a remembered identity.")
             print(msg)
             # log trace here
 
-            identifiers = self.get_remembered_identity(subject_context)
+            identifier_s = self.get_remembered_identity(subject_context)
 
-            if identifiers:
+            if identifier_s:
                 msg = ("Found remembered IdentifierCollection.  Adding to the "
                        "context to be used for subject construction by the "
                        "SubjectFactory.")
                 print(msg)
                 # log debug here
-                subject_context.identifiers = identifiers
+                subject_context.identifier_s = identifier_s
 
             else:
                 msg = ("No remembered identity found.  Returning original "
@@ -928,15 +928,15 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         self.before_logout(subject)
 
-        identifiers = subject.identifiers
-        if (identifiers):
+        identifier_s = subject.identifier_s
+        if (identifier_s):
             msg = ("Logging out subject with primary identifier {0}".format(
-                   identifiers.primary_identifier))
+                   identifier_s.primary_identifier))
             print(msg)
             # log debug here
             authc = self.authenticator
             if (isinstance(authc, authc_abcs.LogoutAware)):
-                authc.on_logout(identifiers)
+                authc.on_logout(identifier_s)
 
         try:
             self.delete(subject)
@@ -962,11 +962,11 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         rmm = self.remember_me_manager
         if rmm is not None:
             try:
-                return rmm.get_remembered_identifiers(subject_context)
+                return rmm.get_remembered_identifier_s(subject_context)
             except Exception as ex:
                 msg = ("Delegate RememberMeManager instance of type [" +
                        rmm.__class__.__name__ + "] raised an exception during "
-                       "get_remembered_identifiers().")
+                       "get_remembered_identifier_s().")
                 print(msg)
                 # log warn here , including exc_info = ex
         return None

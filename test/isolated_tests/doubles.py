@@ -147,11 +147,11 @@ class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler):
 
 class MockAccount(account_abcs.Account):
 
-    def __init__(self, account_id, credentials={}, identifiers={}, 
+    def __init__(self, account_id, credentials={}, identifier_s={}, 
                  roles=set(), permissions=set()):
         self._account_id = account_id
         self._credentials = credentials
-        self._identifiers = identifiers
+        self._identifier_s = identifier_s
         self._roles = roles
         self._permissions = permissions
 
@@ -172,28 +172,28 @@ class MockAccount(account_abcs.Account):
         return self._credentials
 
     @property
-    def identifiers(self):
-        return self._identifiers
+    def identifier_s(self):
+        return self._identifier_s
 
     def __eq__(self, other):
         try:
             result = (self._account_id == other._account_id and
                       self.credentials == other.credentials and
-                      self.identifiers == other.identifiers)
+                      self.identifier_s == other.identifier_s)
         except Exception:
             return False
         return result
 
     def __repr__(self):
-        return "<MockAccount(id={0}, credentials={1}, identifiers={2})>".\
-            format(self.account_id, self.credentials, self.identifiers)
+        return "<MockAccount(id={0}, credentials={1}, identifier_s={2})>".\
+            format(self.account_id, self.credentials, self.identifier_s)
 
     @classmethod
     def serialization_schema(cls):
         class SerializationSchema(Schema):
             account_id = fields.Str()
             credentials = fields.Nested(cls.AccountCredentialsSchema)
-            identifiers = fields.Nested(cls.AccountAttributesSchema)
+            identifier_s = fields.Nested(cls.AccountAttributesSchema)
 
             @post_load
             def make_account(self, data):
@@ -232,7 +232,7 @@ class MockAccountStore(account_abcs.AccountStore):
     def get_account(self, request): 
         return self.account  # always returns the initialized account
 
-    def get_authz_info(self, identifiers):
+    def get_authz_info(self, identifier_s):
         pass
 
 class MockPubSub:
@@ -264,15 +264,15 @@ class MockSubjectContext(MapContext):
     def resolve_session(self):
         return None
 
-    def resolve_identifiers(self):
+    def resolve_identifier_s(self):
         return None
 
 
 class MockSubject(DelegatingSubject):
 
     def __init__(self):
-        self._identifiers = type('DumbCollection', (object,), {})()
-        self._identifiers.primary_identifier = 'attribute1'
+        self._identifier_s = type('DumbCollection', (object,), {})()
+        self._identifier_s.primary_identifier = 'attribute1'
         self.host = 'host'
         self._authenticated = None
 
@@ -281,8 +281,8 @@ class MockSubject(DelegatingSubject):
         return None
 
     @property
-    def identifiers(self):
-        return self._identifiers
+    def identifier_s(self):
+        return self._identifier_s
 
     def is_permitted(self, permissions):
         pass
@@ -293,7 +293,7 @@ class MockSubject(DelegatingSubject):
     def check_permission(self, permissions):
         pass
 
-    def has_role(self, role_identifiers):
+    def has_role(self, role_identifier_s):
         pass
 
     def has_role_collective(self, roleid_s, logical_operator):
@@ -325,13 +325,13 @@ class MockSubject(DelegatingSubject):
     def associate_with(self, x_able):
         pass
 
-    def run_as(self, identifiers):
+    def run_as(self, identifier_s):
         pass
 
     def is_run_as(self):
         pass
 
-    def get_previous_identifiers(self):
+    def get_previous_identifier_s(self):
         pass
 
     def release_run_as(self):
@@ -344,22 +344,22 @@ class MockSecurityManager(mgt_abcs.SecurityManager):
     def authenticate_account(self, authc_token):
         pass
 
-    def is_permitted(self, identifiers, permission_s):
+    def is_permitted(self, identifier_s, permission_s):
         pass
 
-    def is_permitted_collective(self, identifiers, permission_s, logical_operator):
+    def is_permitted_collective(self, identifier_s, permission_s, logical_operator):
         return True
 
-    def check_permission(self, identifiers, permission_s):
+    def check_permission(self, identifier_s, permission_s):
         pass
 
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifier_s, roleid_s):
         pass
 
-    def has_role_collective(self, identifiers, roleid_s, logical_operator):
+    def has_role_collective(self, identifier_s, roleid_s, logical_operator):
         pass
 
-    def check_role(self, identifiers, roleid_s, logical_operator):
+    def check_role(self, identifier_s, roleid_s, logical_operator):
         pass
 
     def login(self, subject, authc_token):

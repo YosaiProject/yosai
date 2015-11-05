@@ -73,11 +73,11 @@ class MutableIdentifierCollection(IdentifierCollection):
 class IdentifierMap(IdentifierCollection):
 
     @abstractmethod
-    def get_realm_identifiers(self, realm_name):
+    def get_realm_identifier_s(self, realm_name):
         pass
 
     @abstractmethod
-    def set_realm_identifiers(self, realm_name, identifiers):
+    def set_realm_identifier_s(self, realm_name, identifier_s):
         pass
 
     @abstractmethod
@@ -131,16 +131,16 @@ class SubjectContext(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifiers(self):
+    def identifier_s(self):
         pass
 
-    @identifiers.setter
+    @identifier_s.setter
     @abstractmethod
-    def identifiers(self, identifiers):
+    def identifier_s(self, identifier_s):
         pass
 
     @abstractmethod
-    def resolve_identifiers(self):
+    def resolve_identifier_s(self):
         pass
 
     @property
@@ -233,7 +233,7 @@ class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifiers(self):
+    def identifier_s(self):
         pass
 
     @abstractmethod
@@ -249,15 +249,15 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def has_role(self, role_identifiers):
+    def has_role(self, role_identifier_s):
         pass
 
     @abstractmethod
-    def has_role_collective(self, role_identifiers, logical_operator):
+    def has_role_collective(self, role_identifier_s, logical_operator):
         pass
 
     @abstractmethod
-    def check_role(self, role_identifiers, logical_operator):
+    def check_role(self, role_identifier_s, logical_operator):
         pass
 
     @abstractmethod
@@ -293,7 +293,7 @@ class Subject(metaclass=ABCMeta):
     #    pass
 
     @abstractmethod
-    def run_as(self, identifiers):
+    def run_as(self, identifier_s):
         pass
 
     @abstractmethod
@@ -301,7 +301,7 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_previous_identifiers(self):
+    def get_previous_identifier_s(self):
         pass
 
     @abstractmethod

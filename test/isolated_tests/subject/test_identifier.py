@@ -38,7 +38,7 @@ def test_sic_primary_identifier_property_raises(
     the primary identifier is initially lazy loaded
     """
     sic = simple_identifier_collection
-    monkeypatch.delattr(sic, 'realm_identifiers')
+    monkeypatch.delattr(sic, 'realm_identifier_s')
     result = sic.primary_identifier
     out, err = capsys.readouterr()
     assert (result is None and
@@ -58,16 +58,16 @@ def test_sic_add(realm_name, identifier_s, collection):
     test case:
     the add method accepts two forms of input:
     1) a realm_name/identifier pair
-        - either a scalar identifier value or collection of identifiers (set)
+        - either a scalar identifier value or collection of identifier_s (set)
     2) an identifier collection object
     """
     sic = SimpleIdentifierCollection(realm_name, identifier_s, collection)
     if collection:
-        assert sic.realm_identifiers == collection.realm_identifiers
+        assert sic.realm_identifier_s == collection.realm_identifier_s
     elif isinstance(identifier_s, set):
-        assert sic.realm_identifiers[realm_name] == identifier_s
+        assert sic.realm_identifier_s[realm_name] == identifier_s
     else:
-        assert sic.realm_identifiers[realm_name] == {identifier_s}
+        assert sic.realm_identifier_s[realm_name] == {identifier_s}
 
 
 def test_sic_by_type():
@@ -75,7 +75,7 @@ def test_sic_by_type():
     unit tested:  by_type
 
     test case:
-    returns all identifiers of a requested type
+    returns all identifier_s of a requested type
     """
     DumbClass = type('DumbClass', (object,), {})
     dc1 = DumbClass()
@@ -92,7 +92,7 @@ def test_sic_from_realm(simple_identifier_collection):
     unit tested:  from_realm
 
     test case:
-    returns identifiers for realm of interest
+    returns identifier_s for realm of interest
     """
     sic = simple_identifier_collection
     result = sic.from_realm('realm1')
@@ -120,7 +120,7 @@ def test_sic_is_empty(simple_identifier_collection):
     """
     sic = simple_identifier_collection
     assert not sic.is_empty
-    sic.realm_identifiers = collections.defaultdict(set)  # clear()
+    sic.realm_identifier_s = collections.defaultdict(set)  # clear()
     assert sic.is_empty
 
 
@@ -175,4 +175,4 @@ def test_sic_deserialize(sic_serialized, simple_identifier_collection):
 
     sic = simple_identifier_collection
     deserialized = SimpleIdentifierCollection.deserialize(sic_serialized)
-    assert deserialized.realm_identifiers == sic.realm_identifiers
+    assert deserialized.realm_identifier_s == sic.realm_identifier_s

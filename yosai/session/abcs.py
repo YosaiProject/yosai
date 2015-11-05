@@ -534,7 +534,7 @@ class SessionContext(metaclass=ABCMeta):
         since knowing the host allows for more flexibility when securing a
         system: by requiring an host, access control policies can also ensure
         access is restricted to specific client *locations* in addition to
-        Subject identifiers, if so desired.
+        Subject identifier_s, if so desired.
 
         Caveat - if clients to your system are on a public network (as would
         be the case for a public web site), odds are high the clients can be

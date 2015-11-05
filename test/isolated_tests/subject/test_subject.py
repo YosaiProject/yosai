@@ -47,7 +47,7 @@ def test_dsc_init(subject_context, default_subject_context):
 
 
 @pytest.mark.parametrize(
-    'attr', ['security_manager', 'session_id', 'subject', 'identifiers',
+    'attr', ['security_manager', 'session_id', 'subject', 'identifier_s',
              'session', 'session_creation_enabled', 'account',
              'authentication_token', 'host'])
 def test_dsc_property_accessors(
@@ -65,7 +65,7 @@ def test_dsc_property_accessors(
 
 
 @pytest.mark.parametrize(
-    'attr', ['security_manager', 'session_id', 'subject', 'identifiers',
+    'attr', ['security_manager', 'session_id', 'subject', 'identifier_s',
              'session', 'session_creation_enabled', 'account',
              'authentication_token', 'host'])
 def test_dsc_property_mutator(attr, default_subject_context):
@@ -126,49 +126,49 @@ def test_dsc_resolve_security_manager_none_raises(
     assert ("No SecurityManager available in subject context" in out and
             result is None)
 
-def test_dsc_resolve_identifiers_exists(default_subject_context):
+def test_dsc_resolve_identifier_s_exists(default_subject_context):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    resolves to the dsc's identifiers attribute when it is set
+    resolves to the dsc's identifier_s attribute when it is set
     """
     dsc = default_subject_context
-    result = dsc.resolve_identifiers()
-    assert result == dsc.identifiers and bool(result)
+    result = dsc.resolve_identifier_s()
+    assert result == dsc.identifier_s and bool(result)
 
-def test_dsc_resolve_identifiers_none_accountreturns(
+def test_dsc_resolve_identifier_s_none_accountreturns(
         default_subject_context, monkeypatch, subject_context):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    when the dsc doesn't have an identifiers attribute set, but the subject attr
-    does, the subject's identifiers is returned
+    when the dsc doesn't have an identifier_s attribute set, but the subject attr
+    does, the subject's identifier_s is returned
     """
     dsc = default_subject_context
 
     class DumbSubject:
         def __init__(self):
-            self.identifiers = 'subjectidentifier'
+            self.identifier_s = 'subjectidentifier'
 
     monkeypatch.setitem(dsc.context, subject_context['IDENTIFIERS'], None)
     monkeypatch.setitem(dsc.context, subject_context['ACCOUNT'], None)
     monkeypatch.setitem(dsc.context, subject_context['SUBJECT'], DumbSubject())
 
-    result = dsc.resolve_identifiers()
+    result = dsc.resolve_identifier_s()
     assert result == 'subjectidentifier'
 
 
-def test_dsc_resolve_identifiers_none_sessionreturns(
+def test_dsc_resolve_identifier_s_none_sessionreturns(
         default_subject_context, monkeypatch):
     """
-    unit tested:  resolve_identifiers
+    unit tested:  resolve_identifier_s
 
     test case:
-    when the dsc doesn't have an identifiers attribute set, and neither account
-    nor subject has identifiers, resolve_session is called to obtain a session,
-    and then the session's identifiers is obtained
+    when the dsc doesn't have an identifier_s attribute set, and neither account
+    nor subject has identifier_s, resolve_session is called to obtain a session,
+    and then the session's identifier_s is obtained
     """
     dsc = default_subject_context
     class DumbSession:
@@ -177,7 +177,7 @@ def test_dsc_resolve_identifiers_none_sessionreturns(
 
     monkeypatch.setattr(dsc, 'get', lambda x: None)
     monkeypatch.setattr(dsc, 'resolve_session', lambda: DumbSession())
-    result = dsc.resolve_identifiers()
+    result = dsc.resolve_identifier_s()
     assert result == 'identifier'
 
 
@@ -348,40 +348,40 @@ def test_ds_decorate_type_check(delegating_subject):
     assert result is None
 
 
-def test_ds_identifiers_fromstack(delegating_subject, monkeypatch):
+def test_ds_identifier_s_fromstack(delegating_subject, monkeypatch):
     """
-    unit tested:  identifiers
+    unit tested:  identifier_s
 
     test case:
-    first tries to obtain identifiers from get_run_as_identifiers_stack
+    first tries to obtain identifier_s from get_run_as_identifier_s_stack
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: ['identifier1'] )
-    result = ds.identifiers
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: ['identifier1'] )
+    result = ds.identifier_s
     assert result == 'identifier1'
 
 
-def test_ds_identifiers_fromidentifiers(
+def test_ds_identifier_s_fromidentifier_s(
         delegating_subject, monkeypatch, simple_identifier_collection):
     """
-    unit tested:  identifiers
+    unit tested:  identifier_s
 
     test case:
-    first tries to obtain identifiers from get_run_as_identifiers_stack, fails,
-    and reverts to _identifiers attribute
+    first tries to obtain identifier_s from get_run_as_identifier_s_stack, fails,
+    and reverts to _identifier_s attribute
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    result = ds.identifiers
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    result = ds.identifier_s
     assert result == simple_identifier_collection
 
 
-def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
+def test_ds_is_permitted_withidentifier_s(delegating_subject, monkeypatch):
     """
     unit test:  is_permitted
 
     test case:
-    the identifiers attribute is set for the fixture and is passed on as an
+    the identifier_s attribute is set for the fixture and is passed on as an
     argument to the security manager
     """
 
@@ -391,17 +391,17 @@ def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
     assert result == 'sm_permitted'
 
 
-def test_ds_is_permitted_withoutidentifiers(delegating_subject, monkeypatch):
+def test_ds_is_permitted_withoutidentifier_s(delegating_subject, monkeypatch):
     """
     unit test:  is_permitted
 
     test case:
-    when no identifiers attribute is set, no permission can be determined and
+    when no identifier_s attribute is set, no permission can be determined and
     so an exception raises
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
     pytest.raises(IdentifiersNotSetException, "ds.is_permitted('anything')")
 
 def test_ds_is_permitted_collective(delegating_subject):
@@ -409,7 +409,7 @@ def test_ds_is_permitted_collective(delegating_subject):
     unit tested:  is_permitted_collective
 
     test case:
-        given a DS with identifiers attribute:
+        given a DS with identifier_s attribute:
             calls security_manager's method, which is a verified double whose
             return value is hard coded True
 
@@ -425,15 +425,15 @@ def test_ds_is_permitted_collective_raises(delegating_subject, monkeypatch):
     unit tested:  is_permitted_collective
 
     test case:
-        given a DS with identifiers attribute:
+        given a DS with identifier_s attribute:
             calls security_manager's method, which is a verified double whose
             return value is hard coded True
 
         otherwise, raises
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
     pytest.raises(IdentifiersNotSetException,
                   "ds.is_permitted_collective('permission_s', all)")
 
@@ -443,11 +443,11 @@ def test_ds_assert_authz_check_possible(delegating_subject, monkeypatch):
     unit tested:  assert_authz_check_possible
 
     test case:
-    raises an exception when identifiers attribute isn't set
+    raises an exception when identifier_s attribute isn't set
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.delattr(ds, '_identifiers')
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.delattr(ds, '_identifier_s')
     pytest.raises(UnauthenticatedException, "ds.assert_authz_check_possible()")
 
 
@@ -471,12 +471,12 @@ def test_ds_check_permission_raises(delegating_subject, monkeypatch):
     unit tested:  check_permission
 
     test case:
-    requires the identifiers attribute, raising if it doesn't exist
+    requires the identifier_s attribute, raising if it doesn't exist
     """
     ds = delegating_subject
     monkeypatch.setattr(ds, 'assert_authz_check_possible', lambda: None)
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
     pytest.raises(IdentifiersNotSetException, "ds.check_permission('anything', all)")
 
 
@@ -498,11 +498,11 @@ def test_ds_has_role_raises(delegating_subject, monkeypatch):
     unit tested:  has_role
 
     test case:
-    when the identifiers attribute isn't set, an exception is raised
+    when the identifier_s attribute isn't set, an exception is raised
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
     pytest.raises(IdentifiersNotSetException, "ds.has_role('role123')")
 
 
@@ -511,7 +511,7 @@ def test_has_role_collective(delegating_subject, monkeypatch):
     unit tested:  has_role_collective
 
     test case:
-    has identifiers and so delegates to security_master
+    has identifier_s and so delegates to security_master
     """
     ds = delegating_subject
     monkeypatch.setattr(ds.security_manager, 'has_role_collective', lambda x,y,z: 'yup')
@@ -525,11 +525,11 @@ def test_ds_has_role_collective_raises(delegating_subject, monkeypatch):
     unit tested:  has_role_collective
 
     test case:
-    when the identifiers attribute isn't set, an exception is raised
+    when the identifier_s attribute isn't set, an exception is raised
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
     pytest.raises(IdentifiersNotSetException, "ds.has_role_collective('role123', any)")
 
 
@@ -538,7 +538,7 @@ def test_check_role(delegating_subject):
     unit tested:  check_role
 
     test case:
-    when identifiers attribute exists, delegates request to
+    when identifier_s attribute exists, delegates request to
     security_manager.check_role
     """
     ds = delegating_subject
@@ -552,12 +552,12 @@ def test_check_role_raises(delegating_subject, monkeypatch):
     unit tested:  check_role
 
     test case:
-    when the identifiers attribute isn't set, an exception is raised
+    when the identifier_s attribute isn't set, an exception is raised
     """
 
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
     pytest.raises(IdentifiersNotSetException, "ds.check_role('role123', any)")
 
 
@@ -572,15 +572,15 @@ def test_ds_login_succeeds(
     - uses a MockSecurityManager, which is patched to return a MockSubject when
       login is called
     - obtains a mocksubject from security_manager.login, which includes
-      identifiers and host attributes (patched in), both of which are assigned
+      identifier_s and host attributes (patched in), both of which are assigned
       to the DS
     - patch the subject's get_session to return a "session", and assigns that
       to the DS's session attributee
     """
     ds = delegating_subject
     sic = simple_identifier_collection
-    monkeypatch.setattr(mock_subject, '_identifiers', sic)
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
+    monkeypatch.setattr(mock_subject, '_identifier_s', sic)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda:  None)
     monkeypatch.setattr(mock_subject, 'get_session', lambda x: mock_session)
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
@@ -599,7 +599,7 @@ def test_ds_login_succeeds(
 
                 assert (ds.session == mock_session and
                         ds.host == mock_subject.host and
-                        ds._identifiers == simple_identifier_collection)
+                        ds._identifier_s == simple_identifier_collection)
 
 def test_ds_login_raises(delegating_subject, monkeypatch):
     """
@@ -619,7 +619,7 @@ def test_ds_login_raises(delegating_subject, monkeypatch):
             pytest.raises(AuthenticationException, "ds.login('dumb_authc_token')")
 
 
-def test_ds_login_noidentifiers_raises(
+def test_ds_login_noidentifier_s_raises(
         delegating_subject, monkeypatch, mock_subject):
     """
     unit tested:  login
@@ -629,11 +629,11 @@ def test_ds_login_noidentifiers_raises(
     - uses a MockSecurityManager, which is patched to return a MockSubject when
       login is called
     - obtains a mocksubject from security_manager.login, which DOES NOT include
-      an identifiers attribute
+      an identifier_s attribute
     - an identitifers attribute is required, so an exception is raised
     """
     ds = delegating_subject
-    monkeypatch.setattr(mock_subject, '_identifiers', None)
+    monkeypatch.setattr(mock_subject, '_identifier_s', None)
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
         mock_crii.return_value = None
@@ -655,7 +655,7 @@ def test_ds_login_nohost(
     - uses a MockSecurityManager, which is patched to return a MockSubject when
       login is called
     - obtains a mocksubject from security_manager.login, which includes
-      identifiers but NO host attribute
+      identifier_s but NO host attribute
     - since no host attribute is available from the subject, login obtains
       a host from the authc_token
     - patch the subject's get_session to return a "session", and assigns that
@@ -663,9 +663,9 @@ def test_ds_login_nohost(
     """
     ds = delegating_subject
     sic = simple_identifier_collection
-    monkeypatch.setattr(mock_subject, '_identifiers', sic)
+    monkeypatch.setattr(mock_subject, '_identifier_s', sic)
     monkeypatch.setattr(mock_subject, 'host', None)
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda:  None)
     monkeypatch.setattr(mock_subject, 'get_session', lambda x: mock_session)
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
@@ -685,7 +685,7 @@ def test_ds_login_nohost(
 
                 assert (ds.session == mock_session and
                         ds.host == username_password_token.host and
-                        ds._identifiers == simple_identifier_collection)
+                        ds._identifier_s == simple_identifier_collection)
 
 
 def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
@@ -700,8 +700,8 @@ def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
 
     ds = delegating_subject
     sic = simple_identifier_collection
-    monkeypatch.setattr(mock_subject, '_identifiers', sic)
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
+    monkeypatch.setattr(mock_subject, '_identifier_s', sic)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda:  None)
     monkeypatch.setattr(mock_subject, 'get_session', lambda x: None)
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
@@ -716,11 +716,11 @@ def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
 
             assert (ds.session is None and
                     ds.host == mock_subject.host and
-                    ds._identifiers == simple_identifier_collection)
+                    ds._identifier_s == simple_identifier_collection)
 
 
 @pytest.mark.parametrize('attr',
-                         ['security_manager', 'identifiers', 'session',
+                         ['security_manager', 'identifier_s', 'session',
                           'authenticated'])
 def test_ds_attribute_type_raises(delegating_subject, attr, monkeypatch):
     """
@@ -862,7 +862,7 @@ def test_logout(delegating_subject):
 
             mock_clear.assert_called_once_with()
             mocksm_logout.assert_called_once_with(ds)
-            assert (ds._session is None and ds._identifiers is None and
+            assert (ds._session is None and ds._identifier_s is None and
                     ds._authenticated == False)
 
 
@@ -871,13 +871,13 @@ def test_ds_run_as(delegating_subject):
     unit tested:  run_as
 
     test case:
-    pushes the current delegating subject's identifiers onto the run_as stack
+    pushes the current delegating subject's identifier_s onto the run_as stack
     """
     ds = delegating_subject
     with mock.patch.object(DelegatingSubject, 'push_identity') as mock_pi:
         mock_pi.return_value = None
-        ds.run_as('myidentifiers')
-        mock_pi.assert_called_once_with('myidentifiers')
+        ds.run_as('myidentifier_s')
+        mock_pi.assert_called_once_with('myidentifier_s')
 
 
 def test_ds_run_as_raises(delegating_subject, monkeypatch):
@@ -885,58 +885,58 @@ def test_ds_run_as_raises(delegating_subject, monkeypatch):
     unit tested:  run_as
 
     test case:
-    without the identifiers attribute, an exception is raised
+    without the identifier_s attribute, an exception is raised
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IllegalStateException, "ds.run_as('dumb_identifiers')")
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    monkeypatch.setattr(ds, '_identifier_s', None)
+    pytest.raises(IllegalStateException, "ds.run_as('dumb_identifier_s')")
 
 
 @pytest.mark.parametrize('stack, expected',
-                         [(collections.deque(['identifiers']), True),
+                         [(collections.deque(['identifier_s']), True),
                           (collections.deque(), False)])
 def test_ds_is_run_as_accessor(delegating_subject, stack, expected, monkeypatch):
     """
     unit tested:  is_run_as property
 
     test case:
-    bools an empty deque or deque with identifiers
+    bools an empty deque or deque with identifier_s
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: stack)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: stack)
     ds.is_run_as == expected
 
-def test_ds_get_previous_identifiers_wo_stack(delegating_subject, monkeypatch):
+def test_ds_get_previous_identifier_s_wo_stack(delegating_subject, monkeypatch):
     """
-    unit tested:  get_previous_identifiers
+    unit tested:  get_previous_identifier_s
 
     test case:
     when no stack exists, None is returned
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    result = ds.get_previous_identifiers()
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
+    result = ds.get_previous_identifier_s()
     assert result is None
 
 
-def test_ds_get_previous_identifiers_w_singlestack(delegating_subject, monkeypatch):
+def test_ds_get_previous_identifier_s_w_singlestack(delegating_subject, monkeypatch):
     """
-    unit tested:  get_previous_identifiers
+    unit tested:  get_previous_identifier_s
 
     test case:
-    when a single-element stack is obtained, previous_identifiers == self.identifiers
+    when a single-element stack is obtained, previous_identifier_s == self.identifier_s
     """
     ds = delegating_subject
     stack = collections.deque(['one'])
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: stack)
-    result = ds.get_previous_identifiers()
-    assert result == ds.identifiers
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: stack)
+    result = ds.get_previous_identifier_s()
+    assert result == ds.identifier_s
 
 
-def test_ds_get_previous_identifiers_w_multistack(delegating_subject, monkeypatch):
+def test_ds_get_previous_identifier_s_w_multistack(delegating_subject, monkeypatch):
     """
-    unit tested:  get_previous_identifiers
+    unit tested:  get_previous_identifier_s
 
     test case:
     when a multi-element stack is obtained, returns the second element from the
@@ -944,8 +944,8 @@ def test_ds_get_previous_identifiers_w_multistack(delegating_subject, monkeypatc
     """
     ds = delegating_subject
     stack = collections.deque(['two', 'one'])
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: stack)
-    result = ds.get_previous_identifiers()
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: stack)
+    result = ds.get_previous_identifier_s()
     assert result == 'one'
 
 
@@ -964,10 +964,10 @@ def test_ds_release_run_as(delegating_subject, monkeypatch):
 @pytest.mark.parametrize('key, expected',
                          [('key', collections.deque(['key'])),
                           (None, collections.deque([]))])
-def test_ds_get_run_as_identifiers_stack(
+def test_ds_get_run_as_identifier_s_stack(
         delegating_subject, key, expected, monkeypatch, mock_session):
     """
-    unit tested:  get_run_as_identifiers_stack
+    unit tested:  get_run_as_identifier_s_stack
 
     test case:
     returns a either a deque containing the key or as empty
@@ -975,7 +975,7 @@ def test_ds_get_run_as_identifiers_stack(
     ds = delegating_subject
     monkeypatch.setattr(mock_session, 'get_attribute', lambda x: key)
     monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
-    result = ds.get_run_as_identifiers_stack()
+    result = ds.get_run_as_identifier_s_stack()
     assert result == expected
 
 
@@ -992,14 +992,14 @@ def test_ds_clear_run_as_identities(
     with mock.patch.object(MockSession, 'remove_attribute') as mock_ra:
         mock_ra.return_value = None
         ds.clear_run_as_identities()
-        mock_ra.assert_called_once_with(ds.run_as_identifiers_session_key)
+        mock_ra.assert_called_once_with(ds.run_as_identifier_s_session_key)
 
 def test_ds_push_identity_raises(delegating_subject, monkeypatch):
     """
     unit tested:  push_identity
 
     test case:
-    when no identifiers argument is passed, an exception is raised
+    when no identifier_s argument is passed, an exception is raised
     """
     ds = delegating_subject
     pytest.raises(IllegalArgumentException,
@@ -1013,15 +1013,15 @@ def test_ds_push_identity_withstack(
     unit tested:  push_identity
 
     test case:
-    adds the identifiers argument to the existing stack
+    adds the identifier_s argument to the existing stack
     """
     ds = delegating_subject
     sic = simple_identifier_collection
     newstack = collections.deque(['collection1'])
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: newstack)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: newstack)
     monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
     ds.push_identity(sic)
-    assert (mock_session.session[ds.run_as_identifiers_session_key] ==
+    assert (mock_session.session[ds.run_as_identifier_s_session_key] ==
         collections.deque([sic, 'collection1']))
 
 
@@ -1032,14 +1032,14 @@ def test_ds_push_identity_withoutstack(
     unit tested:  push_identity
 
     test case:
-    creates a new stack and adds the identifiers argument to it
+    creates a new stack and adds the identifier_s argument to it
     """
     ds = delegating_subject
     sic = simple_identifier_collection
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
     monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
     ds.push_identity(sic)
-    assert (mock_session.session[ds.run_as_identifiers_session_key] ==
+    assert (mock_session.session[ds.run_as_identifier_s_session_key] ==
             collections.deque([sic]))
 
 
@@ -1051,7 +1051,7 @@ def test_ds_pop_identity_withoutstack(delegating_subject, monkeypatch):
     if there is an empty run-as stack, this method returns None
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: None)
     result = ds.pop_identity()
     assert result is None
 
@@ -1065,7 +1065,7 @@ def test_ds_pop_identity_withsinglestack(delegating_subject, monkeypatch):
     """
     ds = delegating_subject
     newstack = collections.deque(['collection1'])
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: newstack)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: newstack)
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities') as mock_crai:
         mock_crai.return_value
 
@@ -1086,11 +1086,11 @@ def test_ds_pop_identity_withmultistack(
     """
     ds = delegating_subject
     newstack = collections.deque(['collection2', 'collection1'])
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: newstack)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: newstack)
     monkeypatch.setattr(ds, 'get_session', lambda: mock_session)
 
     result = ds.pop_identity()
-    session_stack = mock_session.get_attribute(ds.run_as_identifiers_session_key)
+    session_stack = mock_session.get_attribute(ds.run_as_identifier_s_session_key)
     assert (result == 'collection2' and
             session_stack == collections.deque(['collection1']))
 
@@ -1168,10 +1168,10 @@ def test_dss_save_to_session(default_subject_store):
     unit tested:  save_to_session
 
     test case:
-    merges identifiers and authentication state
+    merges identifier_s and authentication state
     """
     dss = default_subject_store
-    with mock.patch.object(DefaultSubjectStore, 'merge_identifiers') as dss_mi:
+    with mock.patch.object(DefaultSubjectStore, 'merge_identifier_s') as dss_mi:
         dss_mi.return_value = None
         with mock.patch.object(DefaultSubjectStore, 'merge_authentication_state') as dss_mas:
             dss_mas.return_value = None
@@ -1180,50 +1180,50 @@ def test_dss_save_to_session(default_subject_store):
             dss_mas.assert_called_once_with('subject')
 
 
-def test_dss_merge_identifiers_runas(
+def test_dss_merge_identifier_s_runas(
         default_subject_store, delegating_subject, monkeypatch):
     """
-    unit tested:  merge_identifiers
+    unit tested:  merge_identifier_s
 
     test case:
-    with run_as set for the DS, current_identifiers is obtained directly from
-    the _identifiers attribute (bypassing the property logic), and then the
-    current_identifiers are saved to the session
+    with run_as set for the DS, current_identifier_s is obtained directly from
+    the _identifier_s attribute (bypassing the property logic), and then the
+    current_identifier_s are saved to the session
     """
     dss = default_subject_store
     ds = delegating_subject
     monkeypatch.setitem(ds.session._delegate.session, dss.dsc_isk, 'old_key')
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: True)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: True)
     with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
         mock_sa.return_value = None
-        dss.merge_identifiers(ds)
-        mock_sa.assert_called_once_with(dss.dsc_isk, ds._identifiers)
+        dss.merge_identifier_s(ds)
+        mock_sa.assert_called_once_with(dss.dsc_isk, ds._identifier_s)
 
 
-def test_dss_merge_identifiers_notrunas_withsession(
+def test_dss_merge_identifier_s_notrunas_withsession(
         default_subject_store, delegating_subject, monkeypatch):
     """
-    unit tested:  merge_identifiers
+    unit tested:  merge_identifier_s
 
     test case:
-    with run_as NOT set for the DS, current_identifiers is obtained from
-    the identifiers property, and then the current_identifiers are saved to the
+    with run_as NOT set for the DS, current_identifier_s is obtained from
+    the identifier_s property, and then the current_identifier_s are saved to the
     session
     """
     dss = default_subject_store
     ds = delegating_subject
     monkeypatch.setitem(ds.session._delegate.session, dss.dsc_isk, 'old_key')
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: False)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: False)
     with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
         mock_sa.return_value = None
-        dss.merge_identifiers(ds)
-        mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifiers)
+        dss.merge_identifier_s(ds)
+        mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifier_s)
 
 
-def test_dss_merge_identifiers_notrunas_withoutsession(
+def test_dss_merge_identifier_s_notrunas_withoutsession(
         default_subject_store, delegating_subject, monkeypatch, mock_session):
     """
-    unit tested:  merge_identifiers
+    unit tested:  merge_identifier_s
 
     test case:
 
@@ -1231,12 +1231,12 @@ def test_dss_merge_identifiers_notrunas_withoutsession(
     dss = default_subject_store
     ds = delegating_subject
     monkeypatch.setattr(ds, 'session', None)
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: False)
+    monkeypatch.setattr(ds, 'get_run_as_identifier_s_stack', lambda: False)
     monkeypatch.setattr(ds, 'decorate', lambda x: mock_session)
     with mock.patch.object(MockSession, 'set_attribute') as mock_sa:
         mock_sa.return_value = None
-        dss.merge_identifiers(ds)
-        mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifiers)
+        dss.merge_identifier_s(ds)
+        mock_sa.assert_called_once_with(dss.dsc_isk, ds.identifier_s)
 
 
 def test_dss_merge_authentication_state_case1(
@@ -1466,7 +1466,7 @@ def test_dsf_create_subject(
     returns a new DelegatingSubject instance based on the subject_context arg
     """
     default_subject_context.security_manager = mock_security_manager
-    default_subject_context.identifiers = simple_identifier_collection
+    default_subject_context.identifier_s = simple_identifier_collection
     dsf = default_subject_factory
     result = dsf.create_subject(default_subject_context)
     assert isinstance(result, DelegatingSubject)

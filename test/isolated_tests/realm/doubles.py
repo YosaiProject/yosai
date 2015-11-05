@@ -11,10 +11,10 @@ from ..doubles import (
 
 class MockAuthorizationCacheHandler(realm_abcs.AuthorizationCacheHandler, object):
 
-    def get_cached_authz_info(self, identifiers):
+    def get_cached_authz_info(self, identifier_s):
         pass 
 
-    def cache_authz_info(self, identifiers, authz_info): 
+    def cache_authz_info(self, identifier_s, authz_info): 
         pass
 
     def clear_cached_authz_info(self, identifers):

@@ -53,7 +53,7 @@ def role_collection():
 def mock_account_state():
     return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO',
                       'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
-            'identifiers': {'givenname': 'Napolean',
+            'identifier_s': {'givenname': 'Napolean',
                             'surname': 'Dynamite',
                             'email': 'napoleandynamite@example.com',
                             'username': 'napodyna',
@@ -66,7 +66,7 @@ def full_mock_account(mock_account_state, role_collection,
     mas = mock_account_state
     return MockAccount(account_id=8675309,
                        credentials=mas['creds'],
-                       identifiers=mas['identifiers'],
+                       identifier_s=mas['identifier_s'],
                        roles=role_collection,
                        permissions=permission_collection)
 

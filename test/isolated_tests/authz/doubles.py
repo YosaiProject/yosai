@@ -10,16 +10,16 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
     def __init__(self):
         self._permission_resolver = None
 
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifier_s, roleid_s):
         return None
 
-    def has_all_roles(self, identifiers, roleid_s):
+    def has_all_roles(self, identifier_s, roleid_s):
         return None
 
-    def is_permitted(self, identifiers, permission_s):
+    def is_permitted(self, identifier_s, permission_s):
         return None
 
-    def is_permitted_all(self, identifiers, permission_s):
+    def is_permitted_all(self, identifier_s, permission_s):
         return None
 
     @property
@@ -42,10 +42,10 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
     def authorization_cache_handler(self):
         pass
 
-    def do_clear_cache(self, identifiers):
+    def do_clear_cache(self, identifier_s):
         pass
 
-    def get_authorization_info(self, identifiers):
+    def get_authorization_info(self, identifier_s):
         pass
  
     def resolve_permissions(self, string_perms):

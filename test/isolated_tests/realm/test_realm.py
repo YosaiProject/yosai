@@ -42,10 +42,10 @@ def test_asr_do_clear_cache(patched_accountstore_realm):
                                'clear_cached_authorization_info') as ccai:
             ccai.return_value = None
 
-            asr.do_clear_cache('identifiers')
+            asr.do_clear_cache('identifier_s')
 
-            ccc.assert_called_once_with('identifiers')
-            ccai.assert_called_once_with('identifiers')
+            ccc.assert_called_once_with('identifier_s')
+            ccai.assert_called_once_with('identifier_s')
 
 
 def test_asr_clear_cached_credentials(patched_accountstore_realm, monkeypatch):
@@ -58,8 +58,8 @@ def test_asr_clear_cached_credentials(patched_accountstore_realm, monkeypatch):
     asr = patched_accountstore_realm
     cch = mock.MagicMock() # credentials_cache_handler
     monkeypatch.setattr(asr, 'credentials_cache_handler', cch)
-    asr.clear_cached_credentials('identifiers')
-    assert cch.method_calls[0] == mock.call.clear_cached_credentials('identifiers')
+    asr.clear_cached_credentials('identifier_s')
+    assert cch.method_calls[0] == mock.call.clear_cached_credentials('identifier_s')
 
 def test_asr_clear_cached_authorization_info(
         patched_accountstore_realm, monkeypatch):
@@ -72,8 +72,8 @@ def test_asr_clear_cached_authorization_info(
     asr = patched_accountstore_realm
     ach = mock.MagicMock() # credentials_cache_handler
     monkeypatch.setattr(asr, 'authorization_cache_handler', ach)
-    asr.clear_cached_authorization_info('identifiers')
-    assert ach.method_calls[0] == mock.call.clear_cached_authz_info('identifiers')
+    asr.clear_cached_authorization_info('identifier_s')
+    assert ach.method_calls[0] == mock.call.clear_cached_authz_info('identifier_s')
 
 
 def test_asr_supports(patched_accountstore_realm,
@@ -238,7 +238,7 @@ def test_asr_get_authorization_info_w_ach_w_cached(
     monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: 'authz_info')
     monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
 
-    result = pasr.get_authorization_info('identifiers')
+    result = pasr.get_authorization_info('identifier_s')
     out, err = capsys.readouterr()
 
     assert (result == 'authz_info' and
@@ -267,7 +267,7 @@ def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_w_stored(
     monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: None)
     monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
 
-    result = pasr.get_authorization_info('identifiers')
+    result = pasr.get_authorization_info('identifier_s')
 
     out, err = capsys.readouterr()
     assert (result == IndexedAuthorizationInfo(roles=fma.roles,
@@ -297,7 +297,7 @@ def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_wo_stored(
     monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: None)
     monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
 
-    result = pasr.get_authorization_info('identifiers')
+    result = pasr.get_authorization_info('identifier_s')
 
     out, err = capsys.readouterr()
     assert (result is None and
@@ -321,7 +321,7 @@ def test_asr_get_authorization_info_wo_ach_wo_stored(
     monkeypatch.setattr(mas, 'get_authz_info', lambda x: None)
     monkeypatch.setattr(pasr, 'account_store', mas)
 
-    result = pasr.get_authorization_info('identifiers')
+    result = pasr.get_authorization_info('identifier_s')
 
     out, err = capsys.readouterr()
     assert (result is None and
@@ -347,7 +347,7 @@ def test_asr_get_authorization_info_wo_ach_w_stored(
     monkeypatch.setattr(mas, 'get_authz_info', lambda x: fma)
     monkeypatch.setattr(pasr, 'account_store', mas)
 
-    result = pasr.get_authorization_info('identifiers')
+    result = pasr.get_authorization_info('identifier_s')
 
     out, err = capsys.readouterr()
     assert (result == IndexedAuthorizationInfo(roles=fma.roles,
@@ -369,7 +369,7 @@ def test_asr_is_permitted_yields(patched_accountstore_realm, monkeypatch):
 
     monkeypatch.setattr(pasr.permission_verifier, 'is_permitted', mock_yielder)
 
-    results = list(pasr.is_permitted('identifiers', {'domain:action'}))
+    results = list(pasr.is_permitted('identifier_s', {'domain:action'}))
     assert results == [('permission', False)]
 
 
@@ -388,7 +388,7 @@ def test_asr_has_role_yields(patched_accountstore_realm, monkeypatch):
 
     monkeypatch.setattr(pasr.role_verifier, 'has_role', mock_yielder)
 
-    results = list(pasr.has_role('identifiers', {'roleid1'}))
+    results = list(pasr.has_role('identifier_s', {'roleid1'}))
     assert results == [('role', False)]
 
 

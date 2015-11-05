@@ -34,10 +34,10 @@ class RememberMeManager(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def get_remembered_identifiers(self, subject_context):
+    def get_remembered_identifier_s(self, subject_context):
         """ 
         Based on the specified subject context map being used to build a
-        Subject instance, returns any previously remembered identifiers for the
+        Subject instance, returns any previously remembered identifier_s for the
         subject for automatic identity association (aka 'Remember Me').
         
         The context map is usually populated by a Subject.Builder
@@ -48,7 +48,7 @@ class RememberMeManager(metaclass=ABCMeta):
                                 Builder implementation, that is being used to 
                                 construct a Subject instance
 
-        :returns: the remembered identifiers or None if none could be acquired
+        :returns: the remembered identifier_s or None if none could be acquired
         """
         pass
 
@@ -74,7 +74,7 @@ class RememberMeManager(metaclass=ABCMeta):
 
         """ 
         Reacts to a successful authentication attempt, typically saving the 
-        identifiers to be retrieved ('remembered') for future system access.
+        identifier_s to be retrieved ('remembered') for future system access.
         
         :param subject: the subject that executed a successful authentication 
                         attempt
@@ -89,7 +89,7 @@ class RememberMeManager(metaclass=ABCMeta):
     def on_failed_login(self, subject, token, auth_exc):
         """ 
         Reacts to a failed authentication attempt, typically by forgetting any
-        previously remembered identifiers for the Subject.
+        previously remembered identifier_s for the Subject.
     
         :param subject: the subject that executed the failed authentication 
                         attempt
@@ -104,7 +104,7 @@ class RememberMeManager(metaclass=ABCMeta):
     def on_logout(self, subject):
         """
         Reacts to a Subject logging out of the application, typically by
-        forgetting any previously remembered identifiers for the Subject.
+        forgetting any previously remembered identifier_s for the Subject.
      
         :param subject: the subject logging out
         """
