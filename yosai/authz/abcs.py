@@ -184,6 +184,20 @@ class Permission(metaclass=ABCMeta):
         pass
 
 
+# new to yosai:
+class RoleResolverAware(metaclass=ABCMeta):
+
+    @property
+    @abstractmethod
+    def role_resolver(self):
+        pass
+
+    @role_resolver.setter
+    @abstractmethod
+    def role_resolver(self, roleresolver):
+        pass
+
+
 class PermissionResolverAware(metaclass=ABCMeta):
 
     @property

@@ -404,6 +404,7 @@ class DefaultPermission(WildcardPermission):
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
                              authz_abcs.PermissionResolverAware,
+                             authz_abcs.RoleResolverAware,
                              event_abcs.EventBusAware):
 
     """
@@ -425,6 +426,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def __init__(self, realms=None):
         self._realms = tuple()
         self._permission_resolver = None
+        self._role_resolver = None  # new to yosai
         self._event_bus = None
         # by default, yosai does not support role -> permission resolution
 
@@ -447,6 +449,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self._realms = realms
         self.apply_permission_resolver_to_realms()
+        self.apply_role_resolver_to_realms()
 
     @property
     def authorizing_realms(self):
@@ -483,6 +486,26 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                 # interface contract validation:
                 if isinstance(realm, authz_abcs.PermissionResolverAware):
                     realm.permission_resolver = resolver
+            self._realms = realms
+
+    # role resolver is new to yosai
+    @property
+    def role_resolver(self):
+        return self._role_resolver
+
+    @role_resolver.setter
+    def role_resolver(self, resolver):
+        self._role_resolver = resolver
+        self.apply_role_resolver_to_realms()
+
+    def apply_role_resolver_to_realms(self):
+        resolver = copy.copy(self._role_resolver)
+        realms = copy.copy(self._realms)
+        if (resolver and realms):
+            for realm in realms:
+                # interface contract validation:
+                if isinstance(realm, authz_abcs.RoleResolverAware):
+                    realm.role_resolver = resolver
             self._realms = realms
 
     def assert_realms_configured(self):

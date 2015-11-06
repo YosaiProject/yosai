@@ -39,7 +39,8 @@ from yosai import (
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
-                        authz_abcs.PermissionResolverAware):
+                        authz_abcs.PermissionResolverAware,
+                        authz_abcs.RoleResolverAware):
     """
     A Realm interprets information from a datastore.
 
@@ -62,7 +63,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._authorization_cache_handler = None  # DG:  TBD
         self._permission_resolver = None  # is setter-injected after init
 
-        #yosai renamed credentials_matcher:
+        # new to yosai:
+        self._role_resolver = None  # is setter-injected after init
+
+        # yosai renamed credentials_matcher:
         self._credentials_verifier = PasswordVerifier()  # 80/20 rule: passwords
 
         self._permission_verifier = IndexedPermissionVerifier()
@@ -110,6 +114,16 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._permission_resolver = permissionresolver
         self.permission_verifier.permission_resolver = self._permission_resolver
         self.account_store.permission_resolver = self._permission_resolver
+
+    @property
+    def role_resolver(self):
+        return self._role_resolver
+
+    @role_resolver.setter
+    def role_resolver(self, roleresolver):
+        # passes through realm and onto the verifier that actually uses it
+        self._role_resolver = roleresolver
+        self.account_store.role_resolver = self._role_resolver
 
     @property
     def permission_verifier(self):

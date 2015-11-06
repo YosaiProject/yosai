@@ -27,24 +27,29 @@ from yosai import(
     DefaultAuthenticator,
     DisabledCacheManager,
     DefaultMGTSettings,
+    DefaultPermission,
     DefaultSessionManager,
     DefaultSessionContext,
     DefaultSessionKey,
     DefaultSubjectContext,
+    DeleteSubjectException,
     DefaultEventBus,
     IllegalArgumentException,
     InvalidSessionException,
     LogManager,
     ModularRealmAuthorizer,
-    DeleteSubjectException,
+    PermissionResolver,
+    RoleResolver,
     SaveSubjectException,
     SerializationManager,
+    SimpleRole,
     UnavailableSecurityManagerException,
     UnrecognizedAttributeException,
     event_bus,
     mgt_settings,
     mgt_abcs,
     authc_abcs,
+    authz_abcs,
     event_abcs,
     cache_abcs,
 )
@@ -249,7 +254,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
             serialized = self.get_remembered_serialized_identity(subject_context)
             if serialized:
                 identifier_s = self.convert_bytes_to_identifier_s(identifier_s,
-                                                                subject_context)
+                                                                  subject_context)
         except Exception as ex:
             identifier_s = \
                 self.on_remembered_identifier_failure(ex, subject_context)
@@ -379,15 +384,17 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                              cache_abcs.CacheManagerAware):
 
     def __init__(self,
-                 realms = None,
-                 event_bus = event_bus,
-                 cache_manager = DisabledCacheManager(),
-                 authenticator = DefaultAuthenticator(),
-                 authorizer = ModularRealmAuthorizer(),
-                 session_manager = None,
-                 remember_me_manager = None,
-                 subject_store = None,
-                 subject_factory = None):
+                 realms=None,
+                 event_bus=event_bus,
+                 cache_manager=DisabledCacheManager(),
+                 authenticator=DefaultAuthenticator(),
+                 authorizer=ModularRealmAuthorizer(),
+                 session_manager=None,
+                 remember_me_manager=None,
+                 subject_store=None,
+                 subject_factory=None,
+                 permission_resolver=PermissionResolver(DefaultPermission),
+                 role_resolver=RoleResolver(SimpleRole)):
 
         self.realms = realms
         self._event_bus = event_bus
@@ -398,6 +405,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         self.remember_me_manager = remember_me_manager
         self.subject_store = subject_store
         self.subject_factory = subject_factory
+        self.permission_resolver = permission_resolver
+        self.role_resolver = role_resolver
 
     """
     * ===================================================================== *
@@ -413,11 +422,11 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         if authenticator:
             self._authenticator = authenticator
 
-            if (isinstance(self.authenticator, DefaultAuthenticator)):
-                self.authenticator.realms = self.realms
+            if (isinstance(self._authenticator, DefaultAuthenticator)):
+                self._authenticator.realms = self.realms
 
-            self.apply_event_bus(self.authenticator)
-            self.apply_cache_manager(self.authenticator)
+            self.apply_event_bus(self._authenticator)
+            self.apply_cache_manager(self._authenticator)
 
         else:
             msg = "authenticator parameter must have a value"
@@ -431,8 +440,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     def authorizer(self, authorizer):
         if authorizer:
             self._authorizer = authorizer
-            self.apply_event_bus(self.authorizer)
-            self.apply_cache_manager(self.authorizer)
+            self.apply_event_bus(self._authorizer)
+            self.apply_cache_manager(self._authorizer)
+            self.apply_permission_resolver(self._authorizer)
+            self.apply_role_resolver(self._authorizer)
         else:
             msg = "authorizer parameter must have a value"
             raise IllegalArgumentException(msg)
@@ -478,6 +489,10 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self.apply_event_bus(realm_s)
             self.apply_cache_manager(realm_s)  # TBD:  must update to use cache handlers!
 
+            # new to yosai (shiro v2 alpha is missing it):
+            self.apply_permission_resolver(realm_s)
+            self.apply_role_resolver(realm_s)
+
             authc = self.authenticator
             if (isinstance(authc, DefaultAuthenticator)):
                 authc.realms = realm_s
@@ -495,7 +510,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         try:
             for target in target_s:
                 validate_apply(target)
-        except TypeError:
+        except TypeError:  # then its presumably not a collection
             validate_apply(target_s)
 
     def apply_cache_manager(self, target_s):
@@ -525,11 +540,28 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         self.apply_target_s(validate_apply, target_s)
 
+    def apply_permission_resolver(self, target_s):
+
+        def validate_apply(target):
+            if isinstance(target, authz_abcs.PermissionResolverAware):
+                target.permission_resolver = self.permission_resolver
+
+        self.apply_target_s(validate_apply, target_s)
+
+    def apply_role_resolver(self, target_s):
+
+        def validate_apply(target):
+            if isinstance(target, authz_abcs.RoleResolverAware):
+                target.role_resolver = self.role_resolver
+
+        self.apply_target_s(validate_apply, target_s)
+
     def get_dependencies_for_injection(self, ignore):
         deps = {self._event_bus, self._cache_manager, self.realms,
                 self.authenticator, self.authorizer,
                 self.session_manager, self.subject_store,
-                self.subject_factory}
+                self.subject_factory, self.permission_resolver,
+                self.role_resolver}
         try:
             deps.remove(ignore)
         except KeyError:
