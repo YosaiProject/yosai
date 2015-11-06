@@ -40,6 +40,10 @@ def configure_security_manager():
        authorizer, session_manager, remember_me_manager,
        subject_store, subject_factory
     """
+    # permission resolver
+    # account store
+    # credentials cache handler
+    # authorization info cache handler
     security_manager = DefaultSecurityManager(event_bus=event_bus)
 
     SecurityUtils.set_security_manager(security_manager)

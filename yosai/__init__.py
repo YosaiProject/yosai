@@ -251,14 +251,13 @@ from yosai.authc.credential import (
 from yosai.authz.authz import (
     AllPermission,
     DefaultPermission,
-    DefaultPermissionResolver,
+    PermissionResolver,
     ModularRealmAuthorizer,
     IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
     SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
-    WildcardPermissionResolver,
 )
 
 

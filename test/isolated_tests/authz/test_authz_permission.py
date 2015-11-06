@@ -10,7 +10,7 @@ from yosai import (
     SimpleRole,
     UnauthorizedException,
     WildcardPermission,
-    WildcardPermissionResolver,
+    PermissionResolver,
 )
 
 from .doubles import (
@@ -287,17 +287,20 @@ def test_wcp_not_equals_bad_type():
 
 
 # -----------------------------------------------------------------------------
-# WildcardPermissionResolver Tests
+# PermissionResolver Tests
 # -----------------------------------------------------------------------------
-def test_wcpr_returns_wcp():
+@pytest.mark.parametrize('resolver_class', 
+                         [WildcardPermission, DefaultPermission])
+def test_pr_returns(resolver_class):
     """
-    unit tested:
+    unit tested: resolve 
 
     test case:
 
     """
-    wcp = WildcardPermissionResolver.resolve_permission('testing123')
-    assert isinstance(wcp, WildcardPermission)
+    resolver = PermissionResolver(resolver_class)
+    wcp = resolver.resolve('domain:action:target')
+    assert isinstance(wcp, resolver_class)
 
 
 # -----------------------------------------------------------------------------

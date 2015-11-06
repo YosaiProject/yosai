@@ -202,19 +202,39 @@ class WildcardPermission(serialize_abcs.Serializable):
         return SerializationSchema
 
 
-class WildcardPermissionResolver:
+class PermissionResolver(authz_abcs.PermissionResolver):
 
-    # new to yosai is the use of classmethod, and no need for instantiation
-    @classmethod
-    def resolve_permission(self, permission_string):
-        return WildcardPermission(permission_string)
+    # using dependency injection to define which Permission class to use
+    def __init__(self, permission_class):
+        """
+        :param permission_class: expecting either a WildcardPermission or
+                                 DefaultPermission class
+        :type permission_class: Permission
+        """
+        self.permission_class = permission_class
 
-# new to yosai:
-class DefaultPermissionResolver:
+    def resolve(self, permission_s):
+        """
+        :param permission_s: a collection of 1..N permissions expressed in
+                             String or Permission form
+        :type permission_s: List
 
-    @classmethod
-    def resolve_permission(self, permission_string):
-        return DefaultPermission(permission_string)
+        :returns: a set of Permission object(s)
+        """
+        # the type of the first element in permission_s implies the type of the
+        # rest of the elements -- no commingling!
+        if isinstance(next(iter(permission_s)), str):
+            perms = {self.permission_class(perm) for perm in permission_s}
+            return perms
+        else:  # assumption is that it's already a collection of Permissions
+            return permission_s
+
+    def __call__(self, permission):
+        """
+        :type permission: String
+        :returns: a Permission object
+        """
+        return self.permission_class(permission)
 
 
 class DefaultPermission(WildcardPermission):
@@ -717,12 +737,12 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         return ("ModularRealmAuthorizer(authorizing_realms={0})".
                 format(self.authorizing_realms))
 
+
 class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
-                                authz_abcs.PermissionResolverAware,
-                                authz_abcs.PermissionResolver):
+                                authz_abcs.PermissionResolverAware):
 
     def __init__(self):
-        self._permission_resolver = None  # is set after init
+        self._permission_resolver = None  # setter-injected after init
 
     @property
     def permission_resolver(self):
@@ -731,33 +751,6 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
     @permission_resolver.setter
     def permission_resolver(self, permissionresolver):
         self._permission_resolver = permissionresolver
-
-    def resolve_permission(self, permission_s):
-        """
-        :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of Permission object(s) or String(s)
-
-        :returns: a set of Permission object(s) else returns an empty set
-        """
-
-        # the type of the first element in permission_s implies the type of the
-        # rest of the elements -- no commingling!
-        if isinstance(next(iter(permission_s)), str):
-            resolver = self.permission_resolver
-            try:
-                perms = {resolver.resolve_permission(perm) for perm in permission_s}
-                return perms
-            except (AttributeError, TypeError):
-                msg = "Could not resolve permissions for {0}".format(permission_s)
-                if not self.permission_resolver:
-                    msg += " .  Permission Resolver is not set."
-
-                # log a warning
-                print(msg)
-
-                return set()
-        else:
-            return permission_s
 
     def get_authzd_permissions(self, authz_info, permission):
         """
@@ -790,7 +783,7 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
         :yields: (Permission, Boolean)
         """
 
-        requested_perms = self.resolve_permission(permission_s)
+        requested_perms = self.permission_resolver.resolve(permission_s)
 
         for reqstd_perm in requested_perms:
             is_permitted = False

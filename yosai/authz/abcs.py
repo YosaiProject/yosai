@@ -200,7 +200,7 @@ class PermissionResolverAware(metaclass=ABCMeta):
 class PermissionResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def resolve_permission(self, permission_string):
+    def resolve(self, permission_s):
         pass
 
 

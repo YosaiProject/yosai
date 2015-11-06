@@ -60,6 +60,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._account_store = None  # DG:  TBD
         self._credentials_cache_handler = None  # DG:  TBD
         self._authorization_cache_handler = None  # DG:  TBD
+        self._permission_resolver = None  # is setter-injected after init
 
         #yosai renamed credentials_matcher:
         self._credentials_verifier = PasswordVerifier()  # 80/20 rule: passwords
@@ -101,16 +102,14 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     @property
     def permission_resolver(self):
-        try:
-            return self.permission_verifier.permission_resolver
-        except AttributeError:
-            self.permission_verifier.permission_resolver = None
-            return self.permission_verifier.permission_resolver
+        return self._permission_resolver
 
     @permission_resolver.setter
     def permission_resolver(self, permissionresolver):
         # passes through realm and onto the verifier that actually uses it
-        self.permission_verifier.permission_resolver = permissionresolver
+        self._permission_resolver = permissionresolver
+        self.permission_verifier.permission_resolver = self._permission_resolver
+        self.account_store.permission_resolver = self._permission_resolver
 
     @property
     def permission_verifier(self):
