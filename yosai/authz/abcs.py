@@ -218,6 +218,13 @@ class PermissionResolver(metaclass=ABCMeta):
         pass
 
 
+class RoleResolver(metaclass=ABCMeta):
+
+    @abstractmethod
+    def resolve(self, role_s):
+        pass
+
+
 class RolePermissionResolver(metaclass=ABCMeta):
     """
     The RolePermissionResolver resolves roles into permissions.

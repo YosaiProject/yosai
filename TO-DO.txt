@@ -96,3 +96,8 @@ method that takes the private method to use (_is_permitted or _has_role) as an a
     - replace existing unit tests with new ones
 
 adopt Pyramid's scaffolding implementation
+
+tighten up who sets the resolver objects and where
+ - there seems to be overlap between ModularRealmAuthorizer and DefaultSecurityManager
+   with respects to injecting into realms
+

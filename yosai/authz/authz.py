@@ -237,6 +237,39 @@ class PermissionResolver(authz_abcs.PermissionResolver):
         return self.permission_class(permission)
 
 
+class RoleResolver(authz_abcs.RoleResolver):
+
+    # using dependency injection to define which Role class to use
+    def __init__(self, role_class):
+        """
+        :param role_class:  a SimpleRole or other Role class 
+        """
+        self.role_class = role_class
+
+    def resolve(self, role_s):
+        """
+        :param permission_s: a collection of 1..N roles expressed in
+                             String or Role form
+        :type permission_s: List
+
+        :returns: a set of Role object(s)
+        """
+        # the type of the first element in roles_s implies the type of the
+        # rest of the elements -- no commingling!
+        if isinstance(next(iter(role_s)), str):
+            roles = {self.role_class(role) for role in role_s}
+            return roles 
+        else:  # assumption is that it's already a collection of Roles 
+            return role_s 
+
+    def __call__(self, role):
+        """
+        :type permission: String
+        :returns: a Role object
+        """
+        return self.role_class(role)
+
+
 class DefaultPermission(WildcardPermission):
     """
     This class is known in Shiro as DomainPermission.  It has been renamed
@@ -399,7 +432,6 @@ class DefaultPermission(WildcardPermission):
                 return data
 
         return SerializationSchema
-
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
