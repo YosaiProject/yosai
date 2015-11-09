@@ -139,13 +139,13 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
         identifier = authc_token.identifier
 
         credential = (self.get_credential_query(session, identifier).
-                      scalar().credential)
+                      scalar())
 
         perms = self.get_permissions_query(session, identifier).all()
         permissions = {self.permission_resolver(permission=p.perm)
                        for p in perms}
 
-        roles = {self.role_resolver(title=r.title)
+        roles = {self.role_resolver(r.title)
                  for r in self.get_roles_query(session, identifier).all()}
 
         account = Account(account_id=identifier,

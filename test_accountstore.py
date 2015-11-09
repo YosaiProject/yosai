@@ -12,7 +12,8 @@ account_store.role_resolver = rr
 authc_token = type('dumb', (object,), {})()
 authc_token.identifier = 'thedude'
 
-account = account_store.get_credentials(authc_token)
+account = account_store.get_account(authc_token)
 
+print('\nAccount is: ', account)
 print('\nCredentials is: ', account.credentials)
 
