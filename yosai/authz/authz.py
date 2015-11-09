@@ -236,6 +236,9 @@ class PermissionResolver(authz_abcs.PermissionResolver):
         """
         return self.permission_class(permission)
 
+    def __repr__(self):
+        return "PermissionResolver({0})".format(self.permission_class)
+
 
 class RoleResolver(authz_abcs.RoleResolver):
 
@@ -268,6 +271,9 @@ class RoleResolver(authz_abcs.RoleResolver):
         :returns: a Role object
         """
         return self.role_class(role)
+
+    def __repr__(self):
+        return "RoleResolver({0})".format(self.role_class)
 
 
 class DefaultPermission(WildcardPermission):

@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
 from ..meta import (
     Session,
 )
@@ -48,11 +47,10 @@ def session_context(fn):
     """
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
-
         session = Session()
-        fn(*args, session=session, **kwargs)
+        result = fn(*args, session=session, **kwargs)
         session.close()
-
+        return result
     return wrap
 
 
@@ -68,7 +66,7 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
     step 3:  return results
     """
 
-    def __init__(self, permission_resolver=None, role_resolver=None):
+    def __init__(self):
         """
         Since KeyedTuple permissions records have to be converted to an object
         that yosai can use, it might as well be actual PermissionModel objects.
@@ -125,7 +123,7 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
                 filter(UserModel.identifier == identifier))
 
     def get_credential_query(self, session, identifier):
-        return (session.query(CredentialModel.password).
+        return (session.query(CredentialModel.credential).
                 join(UserModel, CredentialModel.user_id == UserModel.pk_id).
                 filter(UserModel.identifier == identifier))
 
@@ -176,11 +174,13 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
         """
         :returns: Account
         """
+
         perms = self.get_permissions_query(session, identifier).all()
+
         permissions = {self.permission_resolver(permission=p.perm)
                        for p in perms}
 
-        roles = {self.role_resolver(title=r.title)
+        roles = {self.role_resolver(r.title)
                  for r in self.get_roles_query(session, identifier).all()}
 
         account = Account(account_id=identifier,

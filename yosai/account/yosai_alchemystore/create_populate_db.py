@@ -2,6 +2,7 @@ from yosai_alchemystore import (
     engine,
     Base,
     Session,
+    Credential,
     User,
     Domain,
     Action,
@@ -11,7 +12,7 @@ from yosai_alchemystore import (
     role_membership,
     role_permission,
 )
-
+import datetime
 from sqlalchemy import case, func, distinct
 
 Base.metadata.drop_all(engine)
@@ -56,6 +57,15 @@ domains = dict((domain.name, domain) for domain in session.query(Domain).all())
 actions = dict((action.name, action) for action in session.query(Action).all())
 resources = dict((resource.name, resource) for resource in session.query(Resource).all())
 roles = dict((role.title, role) for role in session.query(Role).all())
+
+thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
+print('thirty from now is:  ', thirty_from_now)
+
+credentials = [Credential(user_id=user.pk_id, 
+                          credential='password',
+                          expiration_dt=thirty_from_now) for user in users.values()]
+session.add_all(credentials)
+
 
 perm1 = Permission(domain=domains['money'],
                    action=actions['write'],
