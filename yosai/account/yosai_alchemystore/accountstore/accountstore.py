@@ -176,8 +176,12 @@ class AlchemyAccountStore(authz_abcs.PermissionResolverAware,
         """
         :returns: Account
         """
-        permissions = self.get_permissions_query(session, identifier).all()
-        roles = self.get_roles_query(session, identifier).all()
+        perms = self.get_permissions_query(session, identifier).all()
+        permissions = {self.permission_resolver(permission=p.perm)
+                       for p in perms}
+
+        roles = {self.role_resolver(title=r.title)
+                 for r in self.get_roles_query(session, identifier).all()}
 
         account = Account(account_id=identifier,
                           permissions=permissions,

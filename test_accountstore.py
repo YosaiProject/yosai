@@ -7,7 +7,7 @@ rr = RoleResolver(SimpleRole)
 
 account_store = AlchemyAccountStore(permission_resolver=pr, role_resolver=rr)
 
-permissions = account_store.get_authz_info(identifier='thedude')
+permissions = account_store.get_authz_info(identifier='walter')
 
 print(permissions)
 

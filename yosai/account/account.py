@@ -74,5 +74,7 @@ class Account(account_abcs.Account):
 
         return SerializationSchema
 
-
+    def __repr__(self):
+        return "Account(account_id={0}, permissions={1}, roles={2})".format(
+            self.account_id, self.permissions, self.roles)
 
