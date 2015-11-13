@@ -51,12 +51,12 @@ basic RBAC data model that uses a flat, non-heirarchical design.
 ###II) Yosai DPCache
 This is an integration of the dogpile.cache project.  Yosai reduces objects
 to their serializable form using Marshmallow, encodes them, and then caches.
-Objects obtained from cache are de-serialized and then re-materialized
-into Yosai objects.  dogpile.cache supports Redis, Memcached, and Riak off
-the shelf, featuring thread-safe asynchronous interaction using a dogpile lock 
-mechanism.  A “dogpile” lock is one that allows a single thread to generate an 
-expensive resource while other threads use the “old” value until the “new” value 
-is ready.
+Objects obtained from cache are de-serialized into reduced form and then 
+re-materialized into Yosai objects.  dogpile.cache supports Redis, Memcached,
+and Riak off the shelf, featuring thread-safe asynchronous interaction using a
+dogpile lock mechanism.  A “dogpile” lock is one that allows a single thread to
+generate an expensive resource while other threads use the “old” value until
+the “new” value is ready.
 
 
 10/20/2015 Status
@@ -151,3 +151,6 @@ applied to Yosai, ensuring that each subpackage reflects the most recent updates
 and standarding the entire project with a common revision.
 
 Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx
+
+
+![alt text](http://imgur.com/Wf9UGVY "Join the Project!")
