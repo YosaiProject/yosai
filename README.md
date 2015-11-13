@@ -153,4 +153,4 @@ and standarding the entire project with a common revision.
 Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx
 
 
-![alt text](http://imgur.com/Wf9UGVY "Join the Project!")
+![alt text](http://i.imgur.com/Wf9UGVY.jpg "Join the Project!")
