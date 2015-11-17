@@ -95,6 +95,10 @@ class SerializationManager:
 
         try:
             unpacked = self.serializer.deserialize(message)
+
+            if not unpacked:
+                return None
+                
             yosai = __import__('yosai')
 
             try:
@@ -109,6 +113,9 @@ class SerializationManager:
                 return newlist
 
         except AttributeError:
+            if message is None:  # a cache returns None when cache entry expires
+                return None
+
             msg = 'Only de-serialize Serializable objects or list of Serializables'
             raise SerializationException(msg)
 
@@ -121,7 +128,10 @@ class JSONSerializer(serialize_abcs.Serializer):
 
     @classmethod
     def deserialize(self, message):
-        return rapidjson.loads(message, encoding='utf-8')
+        try:
+            return rapidjson.loads(message, encoding='utf-8')
+        except:
+            return None
 
 
 class MSGPackSerializer(serialize_abcs.Serializer):
@@ -132,7 +142,10 @@ class MSGPackSerializer(serialize_abcs.Serializer):
 
     @classmethod
     def deserialize(self, message):
-        return msgpack.unpackb(message, encoding='utf-8')
+        try:
+            return msgpack.unpackb(message, encoding='utf-8')
+        except:
+            return None
 
 
 class CollectionDict(fields.Dict):

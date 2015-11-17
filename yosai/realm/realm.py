@@ -202,6 +202,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         if (not account):
             # account not cached, so retrieve it from the account_store
             try:
+                # get both credentials and authz_info:
                 account = self.account_store.get_account(authc_token)
             except AttributeError:
                 msg = ('AccountStoreRealm misconfigured.  At a minimum, '
@@ -301,13 +302,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             account = self.account_store.get_authz_info(identifier_s)
 
             try:
-                roles = {SimpleRole(title=role.title) for role in account.roles}
-
-                permissions = {DefaultPermission(perm) for perm in
-                               account.permissions}
-
-                authz_info = IndexedAuthorizationInfo(roles=roles,
-                                                      permissions=permissions)
+                authz_info =\
+                    IndexedAuthorizationInfo(roles=account.roles,
+                                             permissions=account.permissions)
             except AttributeError:
                 msg = "Could not obtain Account authorization info from store."
                 print(msg)

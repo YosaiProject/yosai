@@ -1,0 +1,23 @@
+realm
+------
+resolver setter injection:
+- setting realm.permission_resolver should in turn set account_store.permission_resolver
+- setting realm.role_resolver should in turn set account_store.role_resolver
+
+the account that is returned by get_authz_info is in the format as expected
+the account that is returned by get_account is in the format as expected
+
+obtains from cache else obtains from account_store:
+    credentials
+    authz_info:  permissions and roles
+
+DI test
+--------
+    set a permission resolver at the top level and confirm that it comes out of
+    the bottom (from accountstore)
+
+    set a role resolver at the top level and confirm that it comes out of
+    the bottom (from accountstore)
+
+    set event_bus at the top and confirm that it is set at subsequent levels
+

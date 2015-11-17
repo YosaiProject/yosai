@@ -101,3 +101,15 @@ tighten up who sets the resolver objects and where
  - there seems to be overlap between ModularRealmAuthorizer and DefaultSecurityManager
    with respects to injecting into realms
 
+refactor method overloading, cleanly separating collection vs scalar arguments
+
+create a SimpleAuthorizer, which maintains only ONE authorizing realm
+
+within the ModularAuthorizer, keep a mapping in memory between identifier and realm
+
+a sessionexecutor raises expired session events, which are received by the 
+Authorizer and then relayed to the realm to clear cache
+
+a refreshed authorization cache is one that replaces an invalidated authorization cache
+and has a TTL that is in synch with the user's session
+
