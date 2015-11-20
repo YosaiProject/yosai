@@ -41,7 +41,7 @@ from .exceptions import (
     AuthorizationEventException,
     CacheException,
     CacheCredentialsException,
-    CacheKeyRemovalException,
+    CacheKeyGenerationException,
     ClearCacheCredentialsException,
     ConcurrentAccessException,
     CredentialsCacheHandlerException,

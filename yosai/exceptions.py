@@ -215,7 +215,7 @@ class CacheException(YosaiException):
     pass
 
 
-class CacheKeyRemovalException(CacheException):
+class CacheKeyGenerationException(CacheException):
     pass
 
 

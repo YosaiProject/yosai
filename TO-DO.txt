@@ -110,6 +110,9 @@ within the ModularAuthorizer, keep a mapping in memory between identifier and re
 a sessionexecutor raises expired session events, which are received by the 
 Authorizer and then relayed to the realm to clear cache
 
+an expired session clears authorization and session cache
+
 a refreshed authorization cache is one that replaces an invalidated authorization cache
 and has a TTL that is in synch with the user's session
+
 

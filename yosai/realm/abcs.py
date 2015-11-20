@@ -25,51 +25,6 @@ from yosai import (
 )
 
 
-class AuthorizationCacheHandler(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cached_authz_info(self, identifier_s):
-        pass
-
-    @abstractmethod
-    def cache_authz_info(self, identifers, authz_info):
-        pass
-
-    @abstractmethod
-    def clear_cached_authz_info(self, identifier_s):
-        pass
-
-
-# yosai renamed AccountCache to CredentialsCache (shiro diff):
-class CredentialsCacheHandler(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cached_credentials(self, authc_token):
-        pass
-
-    @abstractmethod
-    def cache_credentials(self, authc_token, account):
-        pass
-
-    @abstractmethod
-    def clear_cached_credentials(self, account_id):
-        pass
-
-
-class CacheKeyResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cache_key(self, authc_token=None, account=None, account_id=None):
-        pass
-
-
-class CacheResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cache(self, authc_token=None, account=None, account_id=None):
-        pass
-
-
 class PermissionResolver(metaclass=ABCMeta):
     pass
 

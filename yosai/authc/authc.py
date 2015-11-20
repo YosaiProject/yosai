@@ -44,7 +44,7 @@ from yosai import (
 class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
                             authc_abcs.RememberMeAuthenticationToken):
 
-    def __init__(self, username=None, password=None, remember_me=False,
+    def __init__(self, username, password, remember_me=False,
                  host=None):
         """
         :param username: the username submitted for authentication

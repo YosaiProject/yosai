@@ -37,6 +37,7 @@ from yosai import (
     realm_abcs,
 )
 
+
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
                         authz_abcs.PermissionResolverAware,
@@ -348,59 +349,3 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         authz_info = self.get_authorization_info(identifier_s)
         yield from self.role_verifier.has_role(authz_info, roleid_s)
-
-# omitted AbstractCacheHandler implementation / references
-
-class DefaultCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler):
-
-    def __init__(self, cache_resolver, cache_key_resolver):
-        # this init is new to Yosai in that it requires 2 positional arguments
-        self.credentials_cache_key_resolver = cache_key_resolver
-        self.credentials_cache_resolver = cache_resolver
-        self.cache_manager = None  # rather thn AbstractCacheManager dependency
-
-    # omitted accessor / mutator methods for attributes (not pythonic)
-
-    def get_cached_credentials(self, authc_token):
-        try:
-            cache = self.credentials_cache_resolver.\
-                get_cache(authc_token=authc_token)
-            key = self.credentials_cache_key_resolver.\
-                get_cache_key(authc_token=authc_token)
-            # log here
-            return cache.get(key)
-        except AttributeError:
-            raise GetCachedCredentialsException
-
-    def cache_credentials(self, authc_token, account):
-        try:
-            cache = self.credentials_cache_resolver.\
-                get_cache(authc_token=authc_token, account=account)
-            key = self.credentials_cache_key_resolver.\
-                get_cache_key(authc_token=authc_token, account=account)
-            if not key:  # a key is required to cache, so this is an issue
-                raise CacheCredentialsException
-            # log here
-            cache.put(key, account)
-        except AttributeError:
-            raise CacheCredentialsException
-
-    def clear_cached_credentials(self, account_id):
-        try:
-            cache = self.credentials_cache_resolver.\
-                get_cache(account_id=account_id)
-            key = self.credentials_cache_key_resolver.\
-                get_cache_key(account_id=account_id)
-
-            # None implies that either it doesn't exist in cache or there's a
-            # problem in locating it in cache.  The latter is harder to verify
-            # so just log a trail to debug (in case).
-            if (not key):
-                # log here
-                if not cache:
-                    # log here
-                    raise ClearCacheCredentialsException
-                return None
-            return cache.remove(key)
-        except AttributeError:
-            raise ClearCacheCredentialsException

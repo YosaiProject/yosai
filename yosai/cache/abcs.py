@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -19,88 +19,70 @@ under the License.
 
 from abc import ABCMeta, abstractmethod
 
-from yosai import (
-    IllegalArgumentException,
-)
 
-class Cache(metaclass=ABCMeta):
+class CacheHandler(metaclass=ABCMeta):
 
     @abstractmethod
-    def get(self, key):
-        pass
-
-    @abstractmethod
-    def put(self, key, value):
-        pass
-
-    @abstractmethod
-    def remove(self, key):
-        """ 
-        invokes an atomic get-and-delete method in cache, returning what 
-        was gotten (and then deleted)
+    def get(self, key_source):
+        """
+        :param key_source:  a yosai object that contains the key identifer
+        :type key_source:  Account, UsernamePasswordToken
         """
         pass
 
-    @property
     @abstractmethod
-    def values(self):
+    def get_or_create(self, key_source, creator_func):
+        """
+        :param key_source:  a yosai object that contains the key identifer
+        :type key_source:  Account, UsernamePasswordToken
+
+        :param creator_func: the function called to generate a new
+                             Serializable object for cache
+        :type creator_func:  function
+        """
+        pass
+
+    @abstractmethod
+    def cache(self, key_source, value):
+        """
+        Also known as the 'set' command, renamed to avoid collision.  This
+        method is used to cache an object.
+
+        :param key_source:  a yosai object that contains the key identifer
+        :type key_source:  Account, UsernamePasswordToken
+
+        :param value:  the Serializable object to cache
+        """
+        pass
+
+    @abstractmethod
+    def delete(self, key_source):
+        """
+        Removes an object from cache
+
+        :param key_source:  a yosai object that contains the key identifer
+        :type key_source:  Account, UsernamePasswordToken
+        """
+        pass
+
+    # @abstractmethod
+    # def set_ttl(self, key_source, ttl):
+    #    """
+    #    Resets the time to live attribute of a cache entry
+
+    #    :param key_source:  a yosai object that contains the key identifer
+    #    :type key_source:  Account, UsernamePasswordToken
+    #    """
+
+class CacheKeyResolver(metaclass=ABCMeta):
+
+    @abstractmethod
+    def get_cache_key(self, authc_token=None, account=None, account_id=None):
         pass
 
 
-class CacheManagerAware(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def cache_manager(self):
-        pass
-
-    @cache_manager.setter
-    @abstractmethod
-    def cache_manager(self, cachemanger):
-        pass
-
-
-class CacheManager(metaclass=ABCMeta):
+class CacheResolver(metaclass=ABCMeta):
 
     @abstractmethod
-    def get_cache(self, name):
+    def get_cache(self, authc_token=None, account=None, account_id=None):
         pass
-
-
-class AbstractCacheManager(CacheManager, metaclass=ABCMeta):
-
-    def __init__(self):
-        self.caches = {}
-
-    def get_cache(self, name=None):
-        if (not name):
-            msg = "Cache name cannot be null or empty."
-            raise IllegalArgumentException(msg)
-
-        cache = self.caches.get(name, None)  # DG:  not sure whether to copy?
-        if (cache is None):
-            cache = self.create_cache(name)
-            existing = self.caches.put_if_absent(name, cache)
-            if (existing is not None):
-                cache = existing
-
-        # noinspection unchecked
-        return cache
-
-    @abstractmethod
-    def create_cache(self, name):
-        pass
-
-    def destroy(self):
-        while (not self.caches.is_empty()):
-            for cache in self.caches.values():
-                del cache  # DG:  not sure about this..
-            
-            self.caches.clear()
-
-    def __str__(self): 
-        sb = "{0} with {1} cache(s)): [".\
-            format(self.__class__.__name__, " with ", len(self.caches))
-        ", ".join([str(cache) for cache in self.caches.values])
-        sb += "]"
-        return sb
