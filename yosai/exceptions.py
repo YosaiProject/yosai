@@ -166,7 +166,7 @@ class PasswordVerifierInvalidAccountException(AuthenticationException):
     pass
 
 
-class PepperPasswordException(YosaiException):
+class PreparePasswordException(YosaiException):
     pass
 
 

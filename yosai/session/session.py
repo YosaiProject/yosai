@@ -185,7 +185,7 @@ class MemorySessionStore(AbstractSessionStore):
         return tuple(self.sessions.values())
 
 
-class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheManagerAware):
+class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     """
     An CachingSessionStore is a SessionStore that provides a transparent caching
     layer between the components that use it and the underlying EIS
@@ -204,18 +204,18 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheManagerAware):
 
     def __init__(self):
         self.active_sessions_cache_name = settings.active_sessions_cache_name
-        self.cache_manager = None
+        self.cache_handler = None
         self.active_sessions = None
 
-    # cache_manager property is required for CacheManagerAware interface
+    # cache_handler property is required for CacheHandlerAware interface
     @property
-    def cache_manager(self):
-        return self._cache_manager
+    def cache_handler(self):
+        return self._cache_handler
 
-    # cache_manager property is required for CacheManagerAware interface
-    @cache_manager.setter
-    def cache_manager(self, cachemanager):
-        self._cache_manager = cachemanager
+    # cache_handler property is required for CacheHandlerAware interface
+    @cache_handler.setter
+    def cache_handler(self, cachehandler):
+        self._cache_handler = cachehandler
 
     @property
     def active_sessions_cache(self):
@@ -233,7 +233,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheManagerAware):
 
     def create_active_sessions_cache(self):
         try:
-            mgr = self.cache_manager
+            mgr = self.cache_handler
             name = self.active_sessions_cache_name
             return mgr.get_cache(name)
         except:
@@ -1435,7 +1435,7 @@ class DefaultSessionContext(MapContext, session_abcs.SessionContext):
 
 
 class DefaultSessionManager(AbstractValidatingSessionManager,
-                            cache_abcs.CacheManagerAware):
+                            cache_abcs.CacheHandlerAware):
     """
     Default business-tier implementation of a ValidatingSessionManager.
     All session CRUD operations are delegated to an internal SessionStore.
@@ -1444,7 +1444,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
     def __init__(self):
         self.delete_invalid_sessions = True
         self.session_factory = SimpleSessionFactory()
-        self._cache_manager = None
+        self._cache_handler = None
         self._session_store = MemorySessionStore()  # advised change to CachingSessionStore
 
     @property
@@ -1454,21 +1454,21 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
     @session_store.setter
     def session_store(self, sessionstore):
         self._session_store = sessionstore
-        self.apply_cache_manager_to_session_store()
+        self.apply_cache_handler_to_session_store()
 
     @property
-    def cache_manager(self):
-        return self._cache_manager
+    def cache_handler(self):
+        return self._cache_handler
 
-    @cache_manager.setter
-    def cache_manager(self, cachemanager):
-        self._cache_manager = cachemanager
-        self.apply_cache_manager_to_session_store()
+    @cache_handler.setter
+    def cache_handler(self, cachehandler):
+        self._cache_handler = cachehandler
+        self.apply_cache_handler_to_session_store()
 
-    def apply_cache_manager_to_session_store(self):
+    def apply_cache_handler_to_session_store(self):
         try:
-            if isinstance(self.session_store, cache_abcs.CacheManagerAware):
-                self.session_store.cache_manager = self._cache_manager
+            if isinstance(self.session_store, cache_abcs.CacheHandlerAware):
+                self.session_store.cache_handler = self._cache_handler
         except AttributeError:
             msg = ("tried to set a cache manager in a SessionStore that isn\'t"
                    "defined or configured in the DefaultSessionManager")

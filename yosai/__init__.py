@@ -83,7 +83,7 @@ from .exceptions import (
     PasswordMatchException,
     PasswordVerifierInvalidTokenException,
     PasswordVerifierInvalidAccountException,
-    PepperPasswordException,
+    PreparePasswordException,
     PermissionIndexingException,
     RealmAttributesException,
     RealmMisconfiguredException,

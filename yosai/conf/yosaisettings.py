@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -20,7 +20,7 @@ under the License.
 """
 Following are the settings and configuration for Yosai.
 
-Yosai follows a custom-else-default method of obtaining configuration 
+Yosai follows a custom-else-default method of obtaining configuration
 settings: First, it obtains customized, user-specied configuration.  Any
 other required configuration attributes that are unavailable through customized
 configuration are obtained by (global) default settings.
@@ -43,8 +43,9 @@ class LazySettings:
     specified in default settings.
     """
 
-    def __init__(self):
+    def __init__(self, env_var):
         self._wrapped = empty
+        self.env_var = env_var
 
     def __getattr__(self, name):
         if self._wrapped is empty:
@@ -71,18 +72,20 @@ class LazySettings:
     def configured(self):
         return self._wrapped is not empty
 
-    def _setup(self, name=None):
+    def _setup(self, env_var=None, name=None):
         """
-        Load the settings module referenced by ENV_VAR. This environment-
+        Load the settings module referenced by env_var. This environment-
         defined configuration process is called during the settings
         configuration process.
         """
-        settings_file = os.environ.get(ENV_VAR)
+        if env_var is None:
+            env_var = ENV_VAR
+        settings_file = os.environ.get(env_var)
         if not settings_file:
             msg = ("Requested {desc}, but settings are not configured. "
                    "You must define the environment variable {env}. ".
                    format(desc=("setting: " + name) if name else "settings",
-                          env=ENV_VAR))
+                          env=env_var))
 
             raise MisconfiguredException(msg)
 
@@ -101,10 +104,10 @@ class Settings:
                 config = yaml.load(stream)
 
         else:
-            raise FileNotFoundException('could not locate: ' + str(filepath)) 
+            raise FileNotFoundException('could not locate: ' + str(filepath))
         return config
 
-    def load_config(self, filepath): 
+    def load_config(self, filepath):
         try:
             config = self.get_config(filepath)
             tempdict = {}
@@ -115,4 +118,4 @@ class Settings:
             raise MisconfiguredException('Settings failed to load attrs')
 
 
-settings = LazySettings()
+settings = LazySettings(ENV_VAR)

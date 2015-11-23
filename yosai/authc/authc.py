@@ -26,7 +26,7 @@ from yosai import (
     LogManager,
     MissingPrivateSaltException,
     PasswordMatchException,
-    PepperPasswordException,
+    PreparePasswordException,
     RealmAttributesException,  # new in Yosai
     settings,
     UnknownAccountException,
@@ -301,34 +301,31 @@ class AbstractAuthcService:
             msg = 'Expected a bytearray source'
             raise InvalidTokenPasswordException(msg)
 
-    def pepper_password(self, source):
+    def prepare_password(self, source):
         """
           A few differences between Shiro and Yosai regarding salts:
           1) Shiro generates its own public salt whereas Yosai defers salt
              creation to passlib
           2) Shiro concatenates the PUBLIC SALT with its PRIVATE SALT (pepper).
-             Unlike Shiro, Yosai concatenates the PRIVATE SALT with the
-             PASSWORD (rather than a public salt).  The peppered password
-             is salted by passlib according to the cryptcontext settings
-             else default passlib settings.
-          3) so to minimize copies of the password in memory, 'source' is
-             cleared from memory the moment it is peppered
+             Unlike Shiro, Yosai isn't peppering.
+          3) to minimize copies of the password in memory, 'source' is
+             cleared from memory the moment it is prepared
 
         :type source: bytearray
         """
 
         if (isinstance(source, bytearray)):
-            peppered_pass = bytes(self.private_salt + source)
+            credential = bytes(source)
 
-            # the moment you pepper a password, clear the password because
-            # it is a lingering copy in memory -- peppered_pass remains
+            # the moment you no longer need a password, clear it because
+            # it is a lingering copy in memory -- prepared_pass remains
             self.clear_source(source)
 
         else:
-            msg = "could not pepper password -- must use bytearrays"
-            raise PepperPasswordException(msg)
+            msg = "could not prepare password -- must use bytearrays"
+            raise PreparePasswordException(msg)
 
-        return peppered_pass
+        return credential
 
 
 class DefaultHashService(AbstractAuthcService):
@@ -346,9 +343,9 @@ class DefaultHashService(AbstractAuthcService):
         # CryptoContext API.  With that given, rather than return a SimpleHash
         # object from this compute method, Yosai now simply returns a dict
         result = {}
-        peppered_bytes = self.pepper_password(source)
+        prepared_bytes = self.prepare_password(source)
         result['ciphertext'] = bytearray(
-            self.crypt_context.encrypt(peppered_bytes), 'utf-8')
+            self.crypt_context.encrypt(prepared_bytes), 'utf-8')
         result['config'] = self.crypt_context.to_dict()
 
         return result  # DG:  this design is unique to Yosai, not Shiro
@@ -382,8 +379,8 @@ class DefaultPasswordService(AbstractAuthcService):
             - passlib determines the format and compatability
         """
         try:
-            peppered_pass = self.pepper_password(password)  # s/b bytes
-            return self.crypt_context.verify(peppered_pass, saved)
+            prepared_pass = self.prepare_password(password)  # s/b bytes
+            return self.crypt_context.verify(prepared_pass, saved)
 
         except (AttributeError, TypeError):
             raise PasswordMatchException('unrecognized attribute type')

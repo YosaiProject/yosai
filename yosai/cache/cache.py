@@ -39,18 +39,13 @@ class CacheSettings():
 
         self.server_config = self.cache_config.get('SERVER_CONFIG')
 
-        self.ttl_config = self.cache_config.get('TTL_CONFIG')
-        self.absolute_ttl = self.ttl_config.get('ABSOLUTE_TTL')
-        self.credentials_ttl = self.ttl_config.get('CREDENTIALS_TTL')
-        self.authz_info_ttl = self.ttl_config.get('AUTHZ_INFO_TTL')
-        self.session_abs_ttl = self.ttl_config.get('SESSION_ABSOLUTE_TTL')
+        ttl_config = self.cache_config.get('TTL_CONFIG')
+        self.absolute_ttl = ttl_config.get('ABSOLUTE_TTL')
+        self.credentials_ttl = ttl_config.get('CREDENTIALS_TTL')
+        self.authz_info_ttl = ttl_config.get('AUTHZ_INFO_TTL')
+        self.session_abs_ttl = ttl_config.get('SESSION_ABSOLUTE_TTL')
 
-        self.key_config = self.cache_config.get('KEY_CONFIG')
-        self.credentials_key = self.key_config.get('CREDENTIALS_KEY')
-        self.authz_info_key = self.key_config.get('AUTHZ_INFO_KEY')
-        self.session_key = self.key_config.get('SESSION_KEY')
-
-
+# this belongs in yosai_dpcache as it is dogpile.cache specific
 def create_cache_region(cache_settings, make_region):
 
     cache_region = make_region(**cache_settings.region_init_config)
@@ -65,36 +60,34 @@ def create_cache_region(cache_settings, make_region):
 
 class CacheHandler(cache_abcs.CacheHandler):
 
-    def __init__(self, cache_region, ttl, cache_key):
+    def __init__(self, cache_region, cache_settings):
         """
         :type cache_region: a [yosai_dpcache] CacheRegion object
-
-        :param ttl: time to live, expressed in seconds
-        :type ttl: integer
-
-        :param cache_key:  the key formatted for String.Formatter variable
-                     substitution
-            ``example cache_key:
-                "yosai:{0}:{1}:credentials"
-            ``
         """
         self.cache_region = cache_region
-        self.ttl = ttl
-        self.cache_key = cache_key
 
-    def generate_key(self, obj):
-        identifier = obj.identifier  # this is a standard across classes
-        return self.cache_key.format(identifier)
+        # hard coding these for now:
 
-    def get(self, obj):
+        self.credentials_ttl = cache_settings.credentials_ttl
+        self.authz_info_ttl = cache_settings.authz_info_ttl
+        self.session_ttl = cache_settings.session_abs_ttl
+
+    def get_ttl(self, key):
+        return getattr(self, key + '_key', None)
+
+    def generate_key(self, identifier, key):
+        # simple for now yet TBD:
+        return "yosai:{0}:{1}".format(identifier, key)
+
+    def get(self, key, identifier):
         """
         :param obj:  a yosai object that contains an identifer
         :type obj:  Account, UsernamePasswordToken
         """
-        key = self.generate_key(obj)
-        return self.cache_region.get(key)
+        full_key = self.generate_key(identifier, key)
+        return self.cache_region.get(full_key)
 
-    def get_or_create(self, obj, creator_func):
+    def get_or_create(self, key, identifier, creator_func):
         """
         This method will try to obtain an object from cache.  If the object is
         not available from cache, the creator_func function is called to generate
@@ -111,27 +104,29 @@ class CacheHandler(cache_abcs.CacheHandler):
                              Serializable object for cache
         :type creator_func:  function
         """
-        key = self.generate_key(obj)
-        return self.cache_region.get_or_create(key=key,
+        full_key = self.generate_key(identifier, key)
+        ttl = self.get_ttl(key)
+        return self.cache_region.get_or_create(key=full_key,
                                                creator=creator_func,
-                                               expiration=self.ttl)
+                                               expiration=ttl)
 
-    def put(self, obj, value):
+    def set(self, key, identifier, value):
         """
         :param obj:  a yosai object that contains the key identifer
         :type obj:  Account, UsernamePasswordToken
 
         :param value:  the Serializable object to cache
         """
-        key = self.generate_key(obj)
-        self.cache_region.put(key, value, expiration=self.ttl)
+        full_key = self.generate_key(identifier, key)
+        ttl = self.get_ttl(key)
+        self.cache_region.set(full_key, value, expiration=ttl)
 
-    def delete(self, obj):
+    def delete(self, key, identifier):
         """
         Removes an object from cache
 
         :param obj:  a yosai object that contains an identifer
         :type obj:  Account, UsernamePasswordToken
         """
-        key = self.generate_key(obj)
-        self.cache_region.delete(key)
+        full_key = self.generate_key(identifier key)
+        self.cache_region.delete(full_key)
