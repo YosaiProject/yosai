@@ -405,6 +405,7 @@ class Credential(serialize_abcs.Serializable):
                 mycls = Credential 
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
+                return instance
 
         return SerializationSchema
 
