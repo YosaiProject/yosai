@@ -17,6 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 
+from marshmallow import Schema, fields, post_load
+
 from yosai import (
     AccountException,
     AuthenticationException,
@@ -34,6 +36,7 @@ from yosai import (
     YosaiException,
     event_abcs,
     authc_abcs,
+    serialize_abcs,
     AuthenticationSettings,
     CryptContextFactory,
     FirstRealmSuccessfulStrategy,
@@ -384,3 +387,24 @@ class DefaultPasswordService(AbstractAuthcService):
 
         except (AttributeError, TypeError):
             raise PasswordMatchException('unrecognized attribute type')
+
+
+class Credential(serialize_abcs.Serializable):
+
+    def __init__(self, credential):
+        self.credential = credential
+
+    @classmethod
+    def serialization_schema(cls):
+
+        class SerializationSchema(Schema):
+            credential = fields.String()
+
+            @post_load
+            def make_credential(self, data):
+                mycls = Credential 
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+
+        return SerializationSchema
+

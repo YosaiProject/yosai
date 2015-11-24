@@ -16,14 +16,14 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+__version__ = '0.1.0'
+__license__ = 'Apache 2.0'
+__author__ = 'Darin Gordon'
+__credits__ = ['Apache Shiro']
+__maintainer__ = 'Darin Gordon'
+__email__ = 'dkcdkg@gmail.com'
+__status__ = 'Development'
 
-__author__ = "Darin Gordon"
-__credits__ = ["Apache Shiro"]
-__license__ = "Apache 2.0"
-__version__ = "0.1.0"
-__maintainer__ = "Darin Gordon"
-__email__ = "dkcdkg@gmail.com"
-__status__ = "Development"
 
 import threading
 
@@ -235,6 +235,7 @@ from yosai.authc.context import (
 
 from yosai.authc.authc import (
     AbstractAuthcService,
+    Credential,
     DefaultAuthenticator,
     DefaultHashService,
     DefaultPasswordService,

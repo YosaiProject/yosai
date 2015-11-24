@@ -45,7 +45,7 @@ class LazySettings:
 
     def __init__(self, env_var):
         self._wrapped = empty
-        self.env_var = env_var
+        self.__dict__["env_var"] = env_var 
 
     def __getattr__(self, name):
         if self._wrapped is empty:
@@ -72,15 +72,13 @@ class LazySettings:
     def configured(self):
         return self._wrapped is not empty
 
-    def _setup(self, env_var=None, name=None):
+    def _setup(self, name=None):
         """
         Load the settings module referenced by env_var. This environment-
         defined configuration process is called during the settings
         configuration process.
         """
-        if env_var is None:
-            env_var = ENV_VAR
-        settings_file = os.environ.get(env_var)
+        settings_file = os.environ.get(self.__dict__['env_var'])
         if not settings_file:
             msg = ("Requested {desc}, but settings are not configured. "
                    "You must define the environment variable {env}. ".
@@ -94,7 +92,7 @@ class LazySettings:
 
 class Settings:
 
-    def __init__(self, settings_filepath='yosai_settings.yaml'):
+    def __init__(self, settings_filepath):
         self.load_config(settings_filepath)
 
     def get_config(self, filepath):
