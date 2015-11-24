@@ -18,9 +18,8 @@ under the License.
 """
 
 __author__ = "Darin Gordon"
-__copyright__ = "Copyright 2015, The Yosai Project"
-__credits__ = ["Apache Shiro Project Contributors"]
-__license__ = "Apache"
+__credits__ = ["Apache Shiro"]
+__license__ = "Apache 2.0"
 __version__ = "0.1.0"
 __maintainer__ = "Darin Gordon"
 __email__ = "dkcdkg@gmail.com"

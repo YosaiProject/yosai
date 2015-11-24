@@ -32,7 +32,7 @@ import yaml
 import os
 from yosai import FileNotFoundException, MisconfiguredException
 
-ENV_VAR = "YOSAI_SETTINGS_MODULE"
+ENV_VAR = "YOSAI_CORE_SETTINGS"
 empty = object()
 
 
