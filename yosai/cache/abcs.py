@@ -20,69 +20,31 @@ under the License.
 from abc import ABCMeta, abstractmethod
 
 
+class CacheHandlerAware(metaclass=ABCMeta):
+
+    @property
+    def cache_handler(self):
+        pass
+
+    @cache_handler.setter
+    def cache_handler(self, cachehandler):
+        pass
+
+
 class CacheHandler(metaclass=ABCMeta):
 
     @abstractmethod
-    def get(self, key_source):
-        """
-        :param key_source:  a yosai object that contains the key identifer
-        :type key_source:  Account, UsernamePasswordToken
-        """
+    def get(self, key, identifier):
         pass
 
     @abstractmethod
-    def get_or_create(self, key_source, creator_func):
-        """
-        :param key_source:  a yosai object that contains the key identifer
-        :type key_source:  Account, UsernamePasswordToken
-
-        :param creator_func: the function called to generate a new
-                             Serializable object for cache
-        :type creator_func:  function
-        """
+    def get_or_create(self, key, identifier, creator_func):
         pass
 
     @abstractmethod
-    def cache(self, key_source, value):
-        """
-        Also known as the 'set' command, renamed to avoid collision.  This
-        method is used to cache an object.
-
-        :param key_source:  a yosai object that contains the key identifer
-        :type key_source:  Account, UsernamePasswordToken
-
-        :param value:  the Serializable object to cache
-        """
+    def set(self, key, identifier, value):
         pass
 
     @abstractmethod
-    def delete(self, key_source):
-        """
-        Removes an object from cache
-
-        :param key_source:  a yosai object that contains the key identifer
-        :type key_source:  Account, UsernamePasswordToken
-        """
-        pass
-
-    # @abstractmethod
-    # def set_ttl(self, key_source, ttl):
-    #    """
-    #    Resets the time to live attribute of a cache entry
-
-    #    :param key_source:  a yosai object that contains the key identifer
-    #    :type key_source:  Account, UsernamePasswordToken
-    #    """
-
-class CacheKeyResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cache_key(self, authc_token=None, account=None, account_id=None):
-        pass
-
-
-class CacheResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def get_cache(self, authc_token=None, account=None, account_id=None):
+    def delete(self, key, identifier):
         pass

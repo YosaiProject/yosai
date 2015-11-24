@@ -264,7 +264,6 @@ from yosai.authz.authz import (
 
 from yosai.realm.realm import (
     AccountStoreRealm,
-    DefaultCredentialsCacheHandler,
 )
 
 

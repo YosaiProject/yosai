@@ -82,16 +82,6 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
     def credentials_verifier(self, credentialsmatcher):
         pass
 
-    @property
-    @abstractmethod
-    def credentials_cache_handler(self):
-        pass
-
-    @credentials_cache_handler.setter
-    @abstractmethod
-    def credentials_cache_handler(self, credentialscachehandler):
-        pass
-
     @abstractmethod
     def supports(self, authc_token):
         pass
@@ -112,16 +102,6 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
 
 # new to yosai:
 class AuthorizingRealm(Realm):
-
-    @property
-    @abstractmethod
-    def authorization_cache_handler(self):
-        pass
-
-    @authorization_cache_handler.setter
-    @abstractmethod
-    def authorization_cache_handler(self, authzcachehandler):
-        pass
 
     @property
     @abstractmethod

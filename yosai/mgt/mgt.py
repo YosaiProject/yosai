@@ -380,12 +380,12 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 # also known as ApplicationSecurityManager in Shiro 2.0 alpha:
 class DefaultSecurityManager(mgt_abcs.SecurityManager,
                              event_abcs.EventBusAware,
-                             cache_abcs.CacheManagerAware):
+                             cache_abcs.CacheHandlerAware):
 
     def __init__(self,
                  realms=None,
                  event_bus=event_bus,
-                 cache_manager=None,
+                 cache_handler=None,
                  authenticator=DefaultAuthenticator(),
                  authorizer=ModularRealmAuthorizer(),
                  session_manager=None,
@@ -397,7 +397,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         self.realms = realms
         self._event_bus = event_bus
-        self._cache_manager = cache_manager
+        self._cache_handler = cache_handler
         self.authenticator = authenticator
         self.authorizer = authorizer
         self.session_manager = session_manager
@@ -425,7 +425,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                 self._authenticator.realms = self.realms
 
             self.apply_event_bus(self._authenticator)
-            self.apply_cache_manager(self._authenticator)
+            self.apply_cache_handler(self._authenticator)
 
         else:
             msg = "authenticator parameter must have a value"
@@ -440,7 +440,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         if authorizer:
             self._authorizer = authorizer
             self.apply_event_bus(self._authorizer)
-            self.apply_cache_manager(self._authorizer)
+            self.apply_cache_handler(self._authorizer)
             self.apply_permission_resolver(self._authorizer)
             self.apply_role_resolver(self._authorizer)
         else:
@@ -448,15 +448,15 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             raise IllegalArgumentException(msg)
 
     @property
-    def cache_manager(self):
-        return self._cache_manager
+    def cache_handler(self):
+        return self._cache_handler
 
-    @cache_manager.setter
-    def cache_manager(self, cachemanager):
+    @cache_handler.setter
+    def cache_handler(self, cachemanager):
         if (cachemanager):
-            self._cache_manager = cachemanager
-            self.apply_cache_manager(
-                self.get_dependencies_for_injection(self._cache_manager))
+            self._cache_handler = cachemanager
+            self.apply_cache_handler(
+                self.get_dependencies_for_injection(self._cache_handler))
 
         else:
             msg = ('Incorrect parameter.  If you want to disable caching, '
@@ -486,7 +486,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         """
         if realm_s:
             self.apply_event_bus(realm_s)
-            self.apply_cache_manager(realm_s)  # TBD:  must update to use cache handlers!
+            self.apply_cache_handler(realm_s)  # TBD:  must update to use cache handlers!
 
             # new to yosai (shiro v2 alpha is missing it):
             self.apply_permission_resolver(realm_s)
@@ -512,7 +512,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         except TypeError:  # then its presumably not a collection
             validate_apply(target_s)
 
-    def apply_cache_manager(self, target_s):
+    def apply_cache_handler(self, target_s):
         """
         :param target: the object or objects that, if eligible, are to have
                        the cache manager set
@@ -520,8 +520,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         """
         # yosai refactored, deferring iteration to the methods that call it
         def validate_apply(target):
-            if isinstance(target, cache_abcs.CacheManagerAware):
-                target.cache_manager = self.cache_manager
+            if isinstance(target, cache_abcs.CacheHandlerAware):
+                target.cache_handler = self.cache_handler
 
         self.apply_target_s(validate_apply, target_s)
 
@@ -556,7 +556,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         self.apply_target_s(validate_apply, target_s)
 
     def get_dependencies_for_injection(self, ignore):
-        deps = {self._event_bus, self._cache_manager, self.realms,
+        deps = {self._event_bus, self._cache_handler, self.realms,
                 self.authenticator, self.authorizer,
                 self.session_manager, self.subject_store,
                 self.subject_factory, self.permission_resolver,

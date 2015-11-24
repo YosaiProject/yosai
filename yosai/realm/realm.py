@@ -34,12 +34,14 @@ from yosai import (
     SimpleRoleVerifier,
     UsernamePasswordToken,
     authz_abcs,
+    cache_abcs,
     realm_abcs,
 )
 
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
+                        cache_abcs.CacheHandlerAware,
                         authz_abcs.PermissionResolverAware,
                         authz_abcs.RoleResolverAware):
     """
@@ -60,8 +62,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         self.name = 'AccountStoreRealm' + str(id(self))  # DG:  replace later..
         self._account_store = None  # DG:  TBD
-        self._credentials_cache_handler = None  # DG:  TBD
-        self._authorization_cache_handler = None  # DG:  TBD
+        self._cache_handler = None  # DG:  TBD
         self._permission_resolver = None  # is setter-injected after init
 
         # new to yosai:
@@ -90,20 +91,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._credentials_verifier = credentialsmatcher
 
     @property
-    def credentials_cache_handler(self):
-        return self._credentials_cache_handler
+    def cache_handler(self):
+        return self._cache_handler
 
-    @credentials_cache_handler.setter
-    def credentials_cache_handler(self, credentialscachehandler):
-        self._credentials_cache_handler = credentialscachehandler
-
-    @property
-    def authorization_cache_handler(self):
-        return self._authorization_cache_handler
-
-    @authorization_cache_handler.setter
-    def authorization_cache_handler(self, authorizationcachehandler):
-        self._authorization_cache_handler = authorizationcachehandler
+    @cache_handler.setter
+    def cache_handler(self, cachehandler):
+        self._cache_handler = cachehandler
 
     @property
     def permission_resolver(self):
@@ -158,7 +151,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         of cached credentials an alternative use case.
         """
 
-        self.credentials_cache_handler.clear_cached_credentials(identifier_s)
+        self.cache_handler.clear_cached_credentials(identifier_s)
 
     def clear_cached_authorization_info(self, identifier_s):
         """
@@ -170,7 +163,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        self.authorization_cache_handler.clear_cached_authz_info(identifier_s)
+        self.cache_handler.clear_cached_authz_info(identifier_s)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -197,7 +190,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :returns: an Account object
         """
         account = None
-        cch = self.credentials_cache_handler
+        cch = self.cache_handler
         if cch:
             account = cch.get_cached_credentials(authc_token)
         if (not account):
@@ -276,7 +269,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # log trace here
         print(msg)
 
-        ach = self.authorization_cache_handler
+        ach = self.cache_handler
 
         if (ach):
             msg = "Attempting to retrieve the AuthorizationInfo from cache."
