@@ -41,7 +41,9 @@ from yosai import (
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
+                        authz_abcs.AuthzInfoResolverAware,
                         cache_abcs.CacheHandlerAware,
+                        authz_abcs.CredentialResolverAware,
                         authz_abcs.PermissionResolverAware,
                         authz_abcs.RoleResolverAware):
     """
@@ -52,8 +54,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
            and authorization
         2) yosai includes support for authorization within the AccountStoreRealm
             - as of shiro v2 alpha rev1693638, shiro doesn't (yet)
-        3) yosai renamed account_cache objects to credentials_cache objects
-
     """
 
     def __init__(self):
@@ -99,15 +99,33 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._cache_handler = cachehandler
 
     @property
+    def authz_info_resolver(self):
+        return self._authz_info_resolver
+
+    @authz_info_resolver.setter
+    def authz_info_resolver(self, authz_info_resolver):
+        self._authz_info_resolver = authz_info_resolver
+        self.account_store.authz_info_resolver = authz_info_resolver
+
+    @property
+    def credential_resolver(self):
+        return self._credential_resolver
+
+    @credential_resolver.setter
+    def credential_resolver(self, credentialresolver):
+        self._credential_resolver = credentialresolver
+        self.account_store.credential_resolver = credentialresolver
+
+    @property
     def permission_resolver(self):
-        return self._permission_resolver
+         self._permission_resolver
 
     @permission_resolver.setter
     def permission_resolver(self, permissionresolver):
         # passes through realm and onto the verifier that actually uses it
         self._permission_resolver = permissionresolver
-        self.permission_verifier.permission_resolver = self._permission_resolver
-        self.account_store.permission_resolver = self._permission_resolver
+        self.permission_verifier.permission_resolver = permissionresolver
+        self.account_store.permission_resolver = permissionresolver
 
     @property
     def role_resolver(self):
@@ -117,7 +135,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def role_resolver(self, roleresolver):
         # passes through realm and onto the verifier that actually uses it
         self._role_resolver = roleresolver
-        self.account_store.role_resolver = self._role_resolver
+        self.account_store.role_resolver = roleresolver
 
     @property
     def permission_verifier(self):
@@ -150,8 +168,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         cached with a short expiration time (TTL), making the manual clearing
         of cached credentials an alternative use case.
         """
-
-        self.cache_handler.clear_cached_credentials(identifier_s)
+        self.cache_handler.delete('credentials', identifier_s)
 
     def clear_cached_authorization_info(self, identifier_s):
         """
@@ -163,7 +180,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        self.cache_handler.clear_cached_authz_info(identifier_s)
+        self.cache_handler.delete('authz_info', identifier_s)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -175,8 +192,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
-    # new to yosai (refactor):
-    def get_credentials(self, authc_token):
+    def get_account(self, authc_token):
         """ The default authentication caching policy is to cache an account's
             credentials that are queried from an account store, for a specific
             user, so to facilitate any subsequent authentication attempts for
@@ -187,17 +203,25 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             available from cache and used to match credentials, boosting
             performance.
 
+            get_account expects an account object that contains credentials and
+            authz_info, eager loading authorization info into cache
+
+            If the realm only interacted with an authentication account store,
+            get_account would not be used but rather get_credentials because
+            no authz_info is expected.  get_credentials is a method reserved
+            for authentication-only realms.
+
         :returns: an Account object
         """
         account = None
-        cch = self.cache_handler
-        if cch:
-            account = cch.get_cached_credentials(authc_token)
+        ch = self.cache_handler
+        if ch:
+            account = ch.get('credentials', authc_token.identifier)
         if (not account):
             # account not cached, so retrieve it from the account_store
             try:
                 # get both credentials and authz_info:
-                account = self.account_store.get_account(authc_token)
+                account = self.account_store.get_account(authc_token.identifier)
             except AttributeError:
                 msg = ('AccountStoreRealm misconfigured.  At a minimum, '
                        'define an AccountStore. Further, define a'
@@ -211,9 +235,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 print(msg)
 
                 # DG:  caches pre-authenticated values
-                if cch:
+                if ch:
                     # Note:  credentials are set with a short TTL in cache
-                    cch.cache_credentials(authc_token, account)
+                    ch.set('credentials', authc_token.identifier, account.credential)
+                    cauthc_token.identifier, authz_info)
 
         else:
             msg2 = ("Using cached account [{0}] for credentials "
@@ -232,7 +257,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # yosai refactors:
     def authenticate_account(self, authc_token):
 
-        account = self.get_credentials(authc_token)
+        account = self.get_account(authc_token)
         self.assert_credentials_match(authc_token, account)
 
         # at this point, authentication is confirmed, so clear

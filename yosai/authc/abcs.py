@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -25,20 +25,20 @@ from abc import ABCMeta, abstractmethod
 
 
 # replaced AuthenticationEvents with an event schema:  a) type b) topic
-    
+
 class AuthenticationListener(metaclass=ABCMeta):
     """
-     An AuthenticationListener listens for notifications while Subjects 
+     An AuthenticationListener listens for notifications while Subjects
      authenticate with the system.
     """
 
     @abstractmethod
     def on_success(self, authc_token, account):
         """
-        Callback triggered when an authentication attempt for a Subject  
+        Callback triggered when an authentication attempt for a Subject
         succeeds
-         
-        :param authc_token: the authentication token submitted during the 
+
+        :param authc_token: the authentication token submitted during the
                             Subject (user)'s authentication attempt
         :param account:  the authentication-related account data acquired
                          after authentication for the corresponding Subject
@@ -48,11 +48,11 @@ class AuthenticationListener(metaclass=ABCMeta):
     @abstractmethod
     def on_failure(self, authc_token, authc_exception):
         """
-        Callback triggered when an authentication attempt for a Subject fails 
-        
+        Callback triggered when an authentication attempt for a Subject fails
+
         :param authc_token: the authentication token submitted during the
                             Subject (user)'s authentication attempt
-        :param authc_exception: the AuthenticationException that occurred as 
+        :param authc_exception: the AuthenticationException that occurred as
                                 a result of the attempt
         """
         pass
@@ -61,10 +61,10 @@ class AuthenticationListener(metaclass=ABCMeta):
     def on_logout(self, identifier_s):
         """
         Callback triggered when a {@code Subject} logs-out of the system.
-        
+
         This method will only be triggered when a Subject explicitly logs-out
         of the session.  It will not be triggered if their Session times out.
-      
+
         :param identifier_s: the identifying identifier_s of the Subject logging
                            out.
         """
@@ -77,8 +77,8 @@ class AuthenticationToken(metaclass=ABCMeta):
     supporting credentials submitted by a user during an authentication
     attempt.
 
-    The token is submitted to an Authenticator via the 
-    authenticate_account(token) method.  The Authenticator then executes the 
+    The token is submitted to an Authenticator via the
+    authenticate_account(token) method.  The Authenticator then executes the
     authentication/log-in process.
 
     Common implementations of an AuthenticationToken would have
@@ -114,7 +114,7 @@ class AuthenticationToken(metaclass=ABCMeta):
     def identifier(self):
         """
         Returns the account identity submitted during the authentication
-        process.  
+        process.
         """
         pass
 
@@ -132,7 +132,7 @@ class Authenticator(metaclass=ABCMeta):
     """
     Authenticates an account based on the submitted AuthenticationToken.
     """
- 
+
     @abstractmethod
     def authenticate_account(self, authc_token):
         """
@@ -177,7 +177,7 @@ class HostAuthenticationToken(AuthenticationToken):
     @abstractmethod
     def host(self):
         pass
-        
+
 
 class LogoutAware(metaclass=ABCMeta):
 
@@ -233,15 +233,21 @@ class AuthenticationStrategy(metaclass=ABCMeta):
     """
     A AuthenticationStrategy implementation attempts to authenticate an account
     by consulting one or more Realms. This interface enables the
-    <a href="http://en.wikipedia.org/wiki/Strategy_pattern">Strategy Design Pattern</a> 
+    <a href="http://en.wikipedia.org/wiki/Strategy_pattern">Strategy Design Pattern</a>
     for authentication, allowing a Yosai user to customize an Authenticator's
     authentication processing logic.
 
-    Most Yosai users will find one of the existing Strategy implementations 
+    Most Yosai users will find one of the existing Strategy implementations
     suitable for most needs, but if those are not sufficient, custom logic can
-    be performed by implementing this interface.  
+    be performed by implementing this interface.
     """
     @abstractmethod
     def execute(self, attempt):
         pass
 
+
+class CredentialResolver(metaclass=ABCMeta):
+
+    @abstractmethod
+    def resolve(self, credential):
+        pass

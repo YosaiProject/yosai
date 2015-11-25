@@ -202,6 +202,25 @@ class WildcardPermission(serialize_abcs.Serializable):
         return SerializationSchema
 
 
+class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
+
+    def __init__(self, authz_info_class):
+        self.authz_info_class = authz_info_class
+
+    def resolve(self, roles, permissions):
+        pass  # is never called
+
+    def __call__(self, roles, permissions):
+        """
+        :type roles: set of role objects
+        :type perms: set of permission objects
+        """
+        return self.authz_info_class(roles=roles, permissions=permissions)
+
+    def __repr__(self):
+        return "AuthzInfoResolver({0})".format(self.authz_info_class)
+
+
 class PermissionResolver(authz_abcs.PermissionResolver):
 
     # using dependency injection to define which Permission class to use
@@ -245,15 +264,15 @@ class RoleResolver(authz_abcs.RoleResolver):
     # using dependency injection to define which Role class to use
     def __init__(self, role_class):
         """
-        :param role_class:  a SimpleRole or other Role class 
+        :param role_class:  a SimpleRole or other Role class
         """
         self.role_class = role_class
 
     def resolve(self, role_s):
         """
-        :param permission_s: a collection of 1..N roles expressed in
-                             String or Role form
-        :type permission_s: List
+        :param role_s: a collection of 1..N roles expressed in
+                       String or Role form
+        :type role_s: List
 
         :returns: a set of Role object(s)
         """
@@ -261,9 +280,9 @@ class RoleResolver(authz_abcs.RoleResolver):
         # rest of the elements -- no commingling!
         if isinstance(next(iter(role_s)), str):
             roles = {self.role_class(role) for role in role_s}
-            return roles 
-        else:  # assumption is that it's already a collection of Roles 
-            return role_s 
+            return roles
+        else:  # assumption is that it's already a collection of Roles
+            return role_s
 
     def __call__(self, role):
         """
@@ -441,6 +460,8 @@ class DefaultPermission(WildcardPermission):
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
+                             authz_abcs.AuthzInfoResolverAware,
+                             authz_abcs.CredentialResolverAware,
                              authz_abcs.PermissionResolverAware,
                              authz_abcs.RoleResolverAware,
                              event_abcs.EventBusAware):
@@ -463,8 +484,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     """
     def __init__(self, realms=None):
         self._realms = tuple()
+        self._authz_info_resolver = None
         self._permission_resolver = None
         self._role_resolver = None  # new to yosai
+        self._credential_resolver = None
         self._event_bus = None
         # by default, yosai does not support role -> permission resolution
 
@@ -496,6 +519,42 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         return (realm for realm in self._realms
                 if isinstance(realm, realm_abcs.AuthorizingRealm))
+
+    @property
+    def authz_info_resolver(self):
+        return self._authz_info_resolver
+
+    @authz_info_resolver.setter
+    def authz_info_resolver(self, authz_info_resolver):
+        self._authz_info_resolver = authz_info_resolver
+        self.apply_authz_info_resolver_to_realms()
+
+    def apply_authz_info_resolver_to_realms(self):
+        resolver = copy.copy(self._authz_info_resolver)
+        realms = copy.copy(self._realms)
+        if (resolver and realms):
+            for realm in realms:
+                if isinstance(realm, authz_abcs.AuthzInfoResolverAware):
+                    realm.authz_info_resolver = resolver
+            self._realms = realms
+
+    @property
+    def credential_resolver(self):
+        return self._credential_resolver
+
+    @credential_resolver.setter
+    def credential_resolver(self, credentialresolver):
+        self._credential_resolver = credentialresolver
+        self.apply_credential_resolver_to_realms()
+
+    def apply_credential_resolver_to_realms(self):
+        resolver = copy.copy(self._credential_resolver)
+        realms = copy.copy(self._realms)
+        if (resolver and realms):
+            for realm in realms:
+                if isinstance(realm, authz_abcs.CredentialResolverAware):
+                    realm.credential_resolver = resolver
+            self._realms = realms
 
     @property
     def permission_resolver(self):

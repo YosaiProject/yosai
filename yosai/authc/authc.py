@@ -402,10 +402,31 @@ class Credential(serialize_abcs.Serializable):
 
             @post_load
             def make_credential(self, data):
-                mycls = Credential 
+                mycls = Credential
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
                 return instance
 
         return SerializationSchema
 
+
+class CredentialResolver(authc_abcs.CredentialResolver):
+
+    # using dependency injection to define which Role class to use
+    def __init__(self, credential_class):
+        self.credential_class = credential_class
+
+    def resolve(self, credential):
+        """
+        :type credential: String
+        """
+        pass  # never used 
+
+    def __call__(self, credential):
+        """
+        :type credential: String
+        """
+        return self.credential_class(credential)
+
+    def __repr__(self):
+        return "CredentialResolver({0})".format(self.credential_class)

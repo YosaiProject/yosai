@@ -24,6 +24,8 @@ import copy
 
 from yosai import(
     AuthenticationException,
+    Credential,
+    CredentialResolver,
     DefaultAuthenticator,
     DefaultMGTSettings,
     DefaultPermission,
@@ -392,6 +394,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                  remember_me_manager=None,
                  subject_store=None,
                  subject_factory=None,
+                 authz_info_resolver=AuthzInfoResolver(IndexedAuthorizationInfo),
+                 credential_resolver=CredentialResolver(Credential),
                  permission_resolver=PermissionResolver(DefaultPermission),
                  role_resolver=RoleResolver(SimpleRole)):
 
@@ -404,6 +408,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
         self.remember_me_manager = remember_me_manager
         self.subject_store = subject_store
         self.subject_factory = subject_factory
+        self.authz_info_resolver = authz_info_resolver
+        self.credential_resolver = credential_resolver
         self.permission_resolver = permission_resolver
         self.role_resolver = role_resolver
 
@@ -441,8 +447,6 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self._authorizer = authorizer
             self.apply_event_bus(self._authorizer)
             self.apply_cache_handler(self._authorizer)
-            self.apply_permission_resolver(self._authorizer)
-            self.apply_role_resolver(self._authorizer)
         else:
             msg = "authorizer parameter must have a value"
             raise IllegalArgumentException(msg)
@@ -489,6 +493,8 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self.apply_cache_handler(realm_s)  # TBD:  must update to use cache handlers!
 
             # new to yosai (shiro v2 alpha is missing it):
+            self.apply_credential_resolver(realm_s)
+            self.apply_authz_info_resolver(realm_s)
             self.apply_permission_resolver(realm_s)
             self.apply_role_resolver(realm_s)
 
@@ -539,6 +545,22 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
         self.apply_target_s(validate_apply, target_s)
 
+    def apply_authz_info_resolver(self, target_s):
+
+        def validate_apply(target):
+            if isinstance(target, authz_abcs.AuthzInfoResolverAware):
+                target.authz_info_resolver = self.authz_info_resolver
+
+        self.apply_target_s(validate_apply, target_s)
+
+    def apply_credential_resolver(self, target_s):
+
+        def validate_apply(target):
+            if isinstance(target, authz_abcs.CredentialResolverAware):
+                target.credential_resolver = self.credential_resolver
+
+        self.apply_target_s(validate_apply, target_s)
+
     def apply_permission_resolver(self, target_s):
 
         def validate_apply(target):
@@ -560,7 +582,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                 self.authenticator, self.authorizer,
                 self.session_manager, self.subject_store,
                 self.subject_factory, self.permission_resolver,
-                self.role_resolver}
+                self.role_resolver, self.credential_resolver}
         try:
             deps.remove(ignore)
         except KeyError:

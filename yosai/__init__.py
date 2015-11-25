@@ -236,6 +236,7 @@ from yosai.authc.context import (
 from yosai.authc.authc import (
     AbstractAuthcService,
     Credential,
+    CredentialResolver,
     DefaultAuthenticator,
     DefaultHashService,
     DefaultPasswordService,

@@ -185,6 +185,34 @@ class Permission(metaclass=ABCMeta):
 
 
 # new to yosai:
+class AuthzInfoResolverAware(metaclass=ABCMeta):
+
+    @property
+    @abstractmethod
+    def authz_info_resolver(self):
+        pass
+
+    @authz_info_resolver.setter
+    @abstractmethod
+    def authz_info_resolver(self, authz_info_resolver):
+        pass
+
+
+# new to yosai:
+class CredentialResolverAware(metaclass=ABCMeta):
+
+    @property
+    @abstractmethod
+    def credential_resolver(self):
+        pass
+
+    @credential_resolver.setter
+    @abstractmethod
+    def credential_resolver(self, credentialresolver):
+        pass
+
+
+# new to yosai:
 class RoleResolverAware(metaclass=ABCMeta):
 
     @property
@@ -208,6 +236,13 @@ class PermissionResolverAware(metaclass=ABCMeta):
     @permission_resolver.setter
     @abstractmethod
     def permission_resolver(self, permission_resolver):
+        pass
+
+
+class AuthzInfoResolver(metaclass=ABCMeta):
+
+    @abstractmethod
+    def resolve(self, permission_s, role_s):
         pass
 
 
