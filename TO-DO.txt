@@ -118,7 +118,3 @@ and has a TTL that is in synch with the user's session
 add get_or_create_multi support in yosai_dpcache, yosai_alchemystore, and 
 within AccountStoreRealm
 
-the accountstore queries should return an accountid column and that accountid
-should be used for the Account object's accountid rather than the argument
-identifier
-
