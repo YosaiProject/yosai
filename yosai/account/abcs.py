@@ -111,34 +111,29 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
         """
         pass
 
-    # new to yosai-- the addition of authorization information:
     @property
     @abstractmethod
-    def permissions(self):
-        pass
-
-    @property
-    @abstractmethod
-    def roles(self):
+    def authz_info(self):
         pass
 
 
 class AccountStore(metaclass=ABCMeta):
+    pass
 
-    @abstractmethod
-    def get_account(self, request):
-        """
-        Obtains the most complete Account object available from the AccountStore,
-        consisting of both authentication AND authorization related information
-        when they are available.
-
-        :param request:  the request object defining the criteria by which
-                         to query the account store
-        :type request:  AuthenticationToken or Account
-
-        :returns: Account
-        """
-        pass
+#    @abstractmethod
+#    def get_account(self, request):
+#        """
+#        Obtains the most complete Account object available from the AccountStore,
+#        consisting of both authentication AND authorization related information
+#        when they are available.
+#
+#        :param request:  the request object defining the criteria by which
+#                         to query the account store
+#        :type request:  AuthenticationToken or Account
+#
+#        :returns: Account
+#        """
+#        pass
 
 
 class CredentialsAccountStore(AccountStore):
@@ -162,16 +157,16 @@ class AuthorizationAccountStore(AccountStore):
         """
         pass
 
-    @abstractmethod
-    def get_permissions(self, identifiers):
-        """
-        :returns: Account
-        """
-        pass
+    # @abstractmethod
+    # def get_permissions(self, identifiers):
+    #    """
+    #    :returns: Account
+    #    """
+    #    pass
 
-    @abstractmethod
-    def get_roles(self, identifiers):
-        """
-        :returns: Account
-        """
-        pass
+    # @abstractmethod
+    # def get_roles(self, identifiers):
+    #    """
+    #    :returns: Account
+    #    """
+    #    pass

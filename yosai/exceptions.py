@@ -29,6 +29,10 @@ class GenericException(YosaiException):
     pass
 
 
+class IdentifierMismatchException(YosaiException):
+    pass
+
+
 class IllegalArgumentException(YosaiException):
     pass
 
@@ -86,6 +90,10 @@ class AccountException(AuthenticationException):
 
 
 class ConcurrentAccessException(AccountException):
+    pass
+
+
+class CredentialsNotFoundException(AuthenticationException):
     pass
 
 

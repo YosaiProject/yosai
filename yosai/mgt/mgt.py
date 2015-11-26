@@ -24,6 +24,7 @@ import copy
 
 from yosai import(
     AuthenticationException,
+    AuthzInfoResolver,
     Credential,
     CredentialResolver,
     DefaultAuthenticator,
@@ -36,6 +37,7 @@ from yosai import(
     DeleteSubjectException,
     DefaultEventBus,
     IllegalArgumentException,
+    IndexedAuthorizationInfo,
     InvalidSessionException,
     LogManager,
     ModularRealmAuthorizer,

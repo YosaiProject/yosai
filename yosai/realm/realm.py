@@ -21,9 +21,11 @@ from yosai import (
     AccountStoreRealmAuthenticationException,
     CacheCredentialsException,
     ClearCacheCredentialsException,
+    CredentialsNotFoundException,
     DefaultPermission,
     GetCachedCredentialsException,
-    IllegalArgumentException,
+    IdentifierMismatchException,
+    InvalidArgumentException,
     IndexedAuthorizationInfo,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
@@ -192,7 +194,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
-    def get_account(self, authc_token):
+    def get_credentials(self, identifier):
         """
         The default authentication caching policy is to cache an account's
         credentials that are queried from an account store, for a specific
@@ -204,62 +206,65 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         available from cache and used to match credentials, boosting
         performance.
 
-        get_account expects an account object that contains credentials and
-        authz_info, eager loading authorization info into cache
-
-        If the realm only interacted with an authentication account store,
-        get_account would not be used but rather get_credentials because
-        no authz_info is expected.  get_credentials is a method reserved
-        for authentication-only realms.
-
         :returns: an Account object
         """
         account = None
         ch = self.cache_handler
-        if ch:
-            account = ch.get('credentials', authc_token.identifier)
-        if (not account):
-            # account not cached, so retrieve it from the account_store
-            try:
-                # get both credentials and authz_info:
-                account = self.account_store.get_account(authc_token.identifier)
-            except AttributeError:
-                msg = ('AccountStoreRealm misconfigured.  At a minimum, '
-                       'define an AccountStore. Further, define a'
-                       ' CacheHandler to cache an authenticated account')
-                # log here (exception)
-                raise RealmMisconfiguredException(msg)
-            if (authc_token and account):
-                msg = ("Acquired Account [{0}] from account store".format(
-                       account))
+
+        try:
+            def get_stored_credentials(self):
+                msg = ("Could not obtain cached credentials for [{0}].  "
+                       "Will try to acquire credentials from account store."
+                       .format(identifier))
                 # log here (debug)
                 print(msg)
+                account = self.account_store.get_credentials(identifier)
+                if account is None:
+                    msg = "Could not get credentials for {0}".format(identifier)
+                    raise CredentialsNotFoundException(msg)
 
-                # DG:  caches pre-authenticated values
-                if ch:
-                    # Note:  credentials are set with a short TTL in cache
-                    ch.set('credentials', authc_token.identifier, account.credential)
-                    cauthc_token.identifier, authz_info)
+            try:
+                msg2 = ("Attempting to get cached credentials for [{0}]"
+                        .format(identifier))
+                # log here (debug)
+                print(msg2)
+                account = ch.get_or_create('credentials',
+                                           identifier,
+                                           get_stored_credentials)
+            except CredentialsNotFoundException:
+                # log here
+                msg3 = ("No account found for submitted AuthenticationToken "
+                        "[{0}].  Returning None.".format(authc_token))
+                print(msg3)
 
-        else:
-            msg2 = ("Using cached account [{0}] for credentials "
-                    "matching.".format(account))
-            # log here (debug)
-            print(msg2)
-
-        if (not account):
-            # log here
-            msg3 = ("No account found for submitted AuthenticationToken "
-                    "[{0}].  Returning None.".format(authc_token))
-            print(msg3)
+        except AttributeError:
+            msg = ('AccountStoreRealm misconfigured.  At a minimum, '
+                   'define an AccountStore and CacheHandler.')
+            # log here (exception)
+            raise RealmMisconfiguredException(msg)
 
         return account
+
+    def assert_identifiers_match(self, provided_identifier, received_identifier):
+        try:
+            assert provided_dentifier == received_identifier
+        except AssertionError:
+            msg = 'provided identifier doesn\'t match received identifier'
+            raise IdentifierMismatchException(msg)
 
     # yosai refactors:
     def authenticate_account(self, authc_token):
 
-        account = self.get_account(authc_token)
-        assert authc_token.identifier == account.account_id  # just in case
+        try:
+            identifier = authc_token.identifier
+        except AttributeError:
+            msg = 'Failed to obtain authc_token.identifier'
+            raise InvalidArgumentException(msg)
+
+        account = self.get_credentials(identifier)
+
+        self.assert_identifiers_match(identifier, account.account_id)
+
         self.assert_credentials_match(authc_token, account)
 
         # at this point, authentication is confirmed, so clear

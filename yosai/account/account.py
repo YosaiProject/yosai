@@ -7,17 +7,16 @@ from marshmallow import Schema, fields, post_load
 
 class Account(account_abcs.Account):
     """
-    This is a basic collection of the security related attributes associated 
+    This is a basic collection of the security related attributes associated
     with an account
     """
 
     def __init__(self, account_id=None, credentials=None, identifiers=None,
-                 permissions=None, roles=None):
+                 authz_info=None):
         self.account_id = account_id
-        self.credentials = credentials 
+        self.credentials = credentials
         self.identifiers = identifiers
-        self.permissions = permissions
-        self.roles = roles
+        self.authz_info = authz_info
 
     @property
     def account_id(self):
@@ -44,20 +43,12 @@ class Account(account_abcs.Account):
         self._identifiers = identifiers
 
     @property
-    def permissions(self):
-        return self._permissions
+    def authz_info(self):
+        return self._authz_info
 
-    @permissions.setter
-    def permissions(self, permissions):
-        self._permissions = permissions
-
-    @property
-    def roles(self):
-        return self._roles
-
-    @roles.setter
-    def roles(self, roles):
-        self._roles = roles
+    @authz_info.setter
+    def authz_info(self, authz_info):
+        self._authz_info = authz_info
 
     # this is a placeholder for later -- TBD
     @classmethod
@@ -68,7 +59,7 @@ class Account(account_abcs.Account):
 
             @post_load
             def make_account(self, data):
-                mycls = Account 
+                mycls = Account
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
 
@@ -76,6 +67,5 @@ class Account(account_abcs.Account):
 
     # omitting credentials from print output:
     def __repr__(self):
-        return "Account(account_id={0}, permissions={1}, roles={2})".format(
-            self.account_id, self.permissions, self.roles)
-
+        return "Account(account_id={0}, authz_info={1})".format(
+            self.account_id, self.authz_info)
