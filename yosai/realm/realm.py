@@ -193,23 +193,24 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return isinstance(authc_token, UsernamePasswordToken)
 
     def get_account(self, authc_token):
-        """ The default authentication caching policy is to cache an account's
-            credentials that are queried from an account store, for a specific
-            user, so to facilitate any subsequent authentication attempts for
-            that user. Naturally, in order to cache one must have a CacheHandler.
-            If a user were to fail to authenticate, perhaps due to an
-            incorrectly entered password, during the the next authentication
-            attempt (of that user id) the cached account will be readily
-            available from cache and used to match credentials, boosting
-            performance.
+        """
+        The default authentication caching policy is to cache an account's
+        credentials that are queried from an account store, for a specific
+        user, so to facilitate any subsequent authentication attempts for
+        that user. Naturally, in order to cache one must have a CacheHandler.
+        If a user were to fail to authenticate, perhaps due to an
+        incorrectly entered password, during the the next authentication
+        attempt (of that user id) the cached account will be readily
+        available from cache and used to match credentials, boosting
+        performance.
 
-            get_account expects an account object that contains credentials and
-            authz_info, eager loading authorization info into cache
+        get_account expects an account object that contains credentials and
+        authz_info, eager loading authorization info into cache
 
-            If the realm only interacted with an authentication account store,
-            get_account would not be used but rather get_credentials because
-            no authz_info is expected.  get_credentials is a method reserved
-            for authentication-only realms.
+        If the realm only interacted with an authentication account store,
+        get_account would not be used but rather get_credentials because
+        no authz_info is expected.  get_credentials is a method reserved
+        for authentication-only realms.
 
         :returns: an Account object
         """
@@ -258,6 +259,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def authenticate_account(self, authc_token):
 
         account = self.get_account(authc_token)
+        assert authc_token.identifier == account.account_id  # just in case
         self.assert_credentials_match(authc_token, account)
 
         # at this point, authentication is confirmed, so clear
