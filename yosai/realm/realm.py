@@ -194,6 +194,13 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
+    def assert_identifiers_match(self, provided_identifier, received_identifier):
+        try:
+            assert provided_dentifier == received_identifier
+        except AssertionError:
+            msg = 'provided identifier doesn\'t match received identifier'
+            raise IdentifierMismatchException(msg)
+
     def get_credentials(self, identifier):
         """
         The default authentication caching policy is to cache an account's
@@ -233,8 +240,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                                            get_stored_credentials)
             except CredentialsNotFoundException:
                 # log here
-                msg3 = ("No account found for submitted AuthenticationToken "
-                        "[{0}].  Returning None.".format(authc_token))
+                msg3 = ("No account credentials found for identifier [{0}].  "
+                        "Returning None.".format(identifier))
                 print(msg3)
 
         except AttributeError:
@@ -243,18 +250,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # log here (exception)
             raise RealmMisconfiguredException(msg)
 
+        self.assert_identifiers_match(identifier, account.account_id)
+        
         return account
-
-    def assert_identifiers_match(self, provided_identifier, received_identifier):
-        try:
-            assert provided_dentifier == received_identifier
-        except AssertionError:
-            msg = 'provided identifier doesn\'t match received identifier'
-            raise IdentifierMismatchException(msg)
 
     # yosai refactors:
     def authenticate_account(self, authc_token):
-
         try:
             identifier = authc_token.identifier
         except AttributeError:
@@ -263,13 +264,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         account = self.get_credentials(identifier)
 
-        self.assert_identifiers_match(identifier, account.account_id)
-
         self.assert_credentials_match(authc_token, account)
 
         # at this point, authentication is confirmed, so clear
         # the cache of credentials (however, they should have a short ttl anyway)
-        self.clear_cached_credentials(authc_token.identifier)
+        self.clear_cached_credentials(identifier)
         return account
 
     def assert_credentials_match(self, authc_token, account):
