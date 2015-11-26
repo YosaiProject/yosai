@@ -63,12 +63,14 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         #       are used to construct the object rather than mutator methods
 
         self.name = 'AccountStoreRealm' + str(id(self))  # DG:  replace later..
-        self._account_store = None  # DG:  TBD
-        self._cache_handler = None  # DG:  TBD
-        self._permission_resolver = None  # is setter-injected after init
+        self._account_store = None
+        self._cache_handler = None
 
-        # new to yosai:
-        self._role_resolver = None  # is setter-injected after init
+        # resolvers are setter-injected after init
+        self._permission_resolver = None
+        self._role_resolver = None
+        self._credential_resolver = None
+        self._authz_info_resolver = None
 
         # yosai renamed credentials_matcher:
         self._credentials_verifier = PasswordVerifier()  # 80/20 rule: passwords
@@ -194,13 +196,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
-    def assert_identifiers_match(self, provided_identifier, received_identifier):
-        try:
-            assert provided_dentifier == received_identifier
-        except AssertionError:
-            msg = 'provided identifier doesn\'t match received identifier'
-            raise IdentifierMismatchException(msg)
-
     def get_credentials(self, identifier):
         """
         The default authentication caching policy is to cache an account's
@@ -229,6 +224,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 if account is None:
                     msg = "Could not get credentials for {0}".format(identifier)
                     raise CredentialsNotFoundException(msg)
+                return account.credentials
 
             try:
                 msg2 = ("Attempting to get cached credentials for [{0}]"
@@ -237,7 +233,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 print(msg2)
                 account = ch.get_or_create('credentials',
                                            identifier,
-                                           get_stored_credentials)
+                                           get_stored_credentials,
+                                           self)
             except CredentialsNotFoundException:
                 # log here
                 msg3 = ("No account credentials found for identifier [{0}].  "
@@ -250,8 +247,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # log here (exception)
             raise RealmMisconfiguredException(msg)
 
-        self.assert_identifiers_match(identifier, account.account_id)
-        
         return account
 
     # yosai refactors:
