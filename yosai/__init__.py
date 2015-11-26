@@ -38,6 +38,7 @@ from .exceptions import (
     AuthenticationStrategyMissingRealmException,
     AuthorizationException,
     AuthorizationEventException,
+    AuthzInfoNotFoundException,
     CacheException,
     CacheCredentialsException,
     CacheKeyGenerationException,

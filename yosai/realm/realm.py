@@ -19,6 +19,7 @@ under the License.
 
 from yosai import (
     AccountStoreRealmAuthenticationException,
+    AuthzInfoNotFoundException,
     CacheCredentialsException,
     ClearCacheCredentialsException,
     CredentialsNotFoundException,
@@ -279,70 +280,52 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # Authorization
     # --------------------------------------------------------------------------
 
-    def get_authorization_info(self, identifier_s):
+    def get_authorization_info(self, identifier):
         """
         The default caching policy is to cache an account's authorization info,
-        obtained from an account store, for a specific user, so to facilitate
-        any subsequent authorization checks for that user. Naturally, in order
-        to cache one must have a CacheHandler.
+        obtained from an account store so to facilitate subsequent authorization
+        checks. In order to cache, a realm must have a CacheHandler.
 
         :returns: an AuthorizationInfo object
         """
-        authz_info = None
+        account = None
+        ch = self.cache_handler
 
-        msg = ("Retrieving AuthorizationInfo for identifier_s [{0}]".
-               format(identifier_s))
-        # log trace here
-        print(msg)
-
-        ach = self.cache_handler
-
-        if (ach):
-            msg = "Attempting to retrieve the AuthorizationInfo from cache."
-            # log trace here
-            print(msg)
-
-            # new to yosai:
-            authz_info = ach.get_cached_authz_info(identifier_s)
-
-            # TBD -- log only if logging level is TRACE:
-            if (authz_info is None):
-                msg = ("AuthorizationInfo NOT found in cache for identifier_s ["
-                       + identifier_s + "]")
-                # log trace here
+        try:
+            def get_stored_authz_info(self):
+                msg = ("Could not obtain cached authz_info for [{0}].  "
+                       "Will try to acquire authz_info from account store."
+                       .format(identifier))
+                # log here (debug)
                 print(msg)
-            else:
-                msg = ("AuthorizationInfo found in cache for identifier_s ["
-                       + identifier_s + "]")
-                # log trace here
-                print(msg)
-
-        if (authz_info is None):
-            # new to yosai:
-            account = self.account_store.get_authz_info(identifier_s)
+                account = self.account_store.get_authz_info(identifier)
+                if account is None:
+                    msg = "Could not get authz_info for {0}".format(identifier)
+                    raise AuthzInfoNotFoundException(msg)
+                return account.authz_info
 
             try:
-                authz_info =\
-                    IndexedAuthorizationInfo(roles=account.roles,
-                                             permissions=account.permissions)
-            except AttributeError:
-                msg = "Could not obtain Account authorization info from store."
-                print(msg)
-                # log warning
-                authz_info = None
+                msg2 = ("Attempting to get cached authz_info for [{0}]"
+                        .format(identifier))
+                # log here (debug)
+                print(msg2)
+                account = ch.get_or_create('authz_info',
+                                           identifier,
+                                           get_stored_authz_info,
+                                           self)
+            except AuthzInfoNotFoundException:
+                # log here
+                msg3 = ("No account authz_info found for identifier [{0}].  "
+                        "Returning None.".format(identifier))
+                print(msg3)
 
-            # If the info is not None and cache exists, then cache the
-            # authorization info
-            if (authz_info and ach):
+        except AttributeError:
+            msg = ('AccountStoreRealm misconfigured.  At a minimum, '
+                   'define an AccountStore and CacheHandler.')
+            # log here (exception)
+            raise RealmMisconfiguredException(msg)
 
-                msg = ("Caching authorization info for identifier_s: [" +
-                       identifier_s + "].")
-                # log trace here
-                print(msg)
-
-                ach.cache_authz_info(identifier_s, authz_info)
-
-        return authz_info
+        return account
 
     def is_permitted(self, identifier_s, permission_s):
         """
@@ -353,7 +336,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :yields: tuple(Permission, Boolean)
         """
 
-        authz_info = self.get_authorization_info(identifier_s)
+        authz_info = self.get_authorization_info(identifier_s).authz_info
         yield from self.permission_verifier.is_permitted(authz_info,
                                                          permission_s)
 
@@ -366,5 +349,5 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :yields: tuple(roleid, Boolean)
         """
-        authz_info = self.get_authorization_info(identifier_s)
+        authz_info = self.get_authorization_info(identifier_s).authz_info
         yield from self.role_verifier.has_role(authz_info, roleid_s)

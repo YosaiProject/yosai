@@ -198,6 +198,10 @@ class AuthorizationException(YosaiException):
     pass
 
 
+class AuthzInfoNotFoundException(AuthorizationException):
+    pass
+
+    
 class PermissionIndexingException(AuthorizationException):
     pass
 
