@@ -58,7 +58,6 @@ SESSION_CONFIG:
     session_validation:
         scheduler_enabled: true
         time_interval: 3600
-    active_sessions_cache_name: yosai_active_session_cache
 
 
 MGT_CONFIG:

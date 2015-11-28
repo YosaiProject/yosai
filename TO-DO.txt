@@ -118,3 +118,50 @@ and has a TTL that is in synch with the user's session
 add get_or_create_multi support in yosai_dpcache, yosai_alchemystore, and 
 within AccountStoreRealm
 
+make the ModularRealmAuthorizer a session listener, invalidating authz cache
+when a session expires
+    - create a method "invalidate_authz_info_cache"
+        - tell every authorizing realm to delete the authz_info cache entry
+          for the session-expired subject id (less elegant, improve later)
+
+=---------------------------------------------------------------------------=
+= Event Handling To-Do
+=---------------------------------------------------------------------------=
+
+Events requiring responses (ideally done concurrenty):
+- new interfaces are require:
+    1) AuthenticationEventListener
+    2) AuthorizationEventListener
+    3) SessionEventListener
+
+1) authentication:  
+    I) when a user is successfully authenticated, a notify_success 
+       event is emitted by the Authenticator
+    II)  ModularRealmAuthorizer:
+      - implements an AuthenticationEventListener interface
+      - responds to successful authentication by caching the authz_info for
+        the authenticated user (subject identifier must be passed in the event)
+
+2) authorization:  
+    I) every request and its response should be emitted to the eventbus
+
+3) session management:
+    I) the session manager emits session events (notify_expire)
+
+4) event logger
+    -  implements every event listener interface, logs all events
+
+=---------------------------------------------------------------------------=
+
+Cache Invalidator
+-------------------
+EventListener
+        - implements a SessionEventListener interface
+        - invalidates cached authorization_info for expired sessions
+            - remove the clear cache features from accountstorerealm
+
+StaleAuthzInfoListener
+        - invalidates cached authorization_info for stale accounts
+ 
+=---------------------------------------------------------------------------=
+=---------------------------------------------------------------------------=

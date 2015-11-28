@@ -32,8 +32,8 @@ class Session(metaclass=ABCMeta):
 
     A Session is intended to be managed by the business tier and accessible via
     other tiers without being tied to any given client technology.  This is a
-    great benefit to Python systems, since until now the only viable session
-    mechanisms were those highly-coupled and deeply embedded in web application
+    great benefit to Python systems as most viable session mechanisms are
+    those highly-coupled and deeply embedded in web application
     frameworks.
     """
 
@@ -229,10 +229,10 @@ class SessionListener(metaclass=ABCMeta):
 # moved from /mgt:
 class SessionStorageEvaluator(metaclass=ABCMeta):
     """
-    Evaluates whether or not Shiro may use a Subject}'s Session to persist that
+    Evaluates whether Yosai may use a Subject's Session to persist that
     Subject's internal state.
 
-    It is a common Shiro implementation strategy to use a Subject's session to
+    It is a common Yosai implementation strategy to use a Subject's session to
     persist the Subject's identity and authentication state (e.g. after login)
     so that information does not need to be passed around for any further
     requests/invocations.  This effectively allows a session id to be used for
@@ -332,7 +332,7 @@ class SessionManager(metaclass=ABCMeta):
 class NativeSessionManager(SessionManager):
     """
     A Native session manager is one that manages sessions natively - that is,
-    it is directly responsible * for the creation, persistence and removal of
+    it is directly responsible for the creation, persistence and removal of
     Session instances and their lifecycles.
     """
 

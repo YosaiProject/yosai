@@ -18,7 +18,6 @@ under the License.
 """
 
 import datetime
-import threading
 import time
 from abc import ABCMeta, abstractmethod
 from marshmallow import Schema, fields, post_load
@@ -112,14 +111,14 @@ class AbstractSessionStore(session_abcs.SessionStore):
         pass
 
     def read_session(self, session_id):
-        session = self.do_read_session(session_id)
+        session = self.do_read(session_id)
         if session is None:
             msg = "There is no session with id [" + str(session_id) + "]"
             raise UnknownSessionException(msg)
         return session
 
     @abstractmethod
-    def do_read_session(self, session_id):
+    def do_read(self, session_id):
         pass
 
 
@@ -162,7 +161,7 @@ class MemorySessionStore(AbstractSessionStore):
 
         return self.sessions.setdefault(session_id, session)
 
-    def do_read_session(self, sessionid):
+    def do_read(self, sessionid):
         return self.sessions.get(sessionid)
 
     def update(self, session):
@@ -199,13 +198,14 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
     All SessionStore methods are implemented by this class to employ
     caching behavior, delegating the actual EIS operations to respective
-    'do' methods implemented by subclasses (do_create, do_read, etc).
+    'do' CRUD methods implemented by subclasses: do_create, do_read, do_update,
+    and do_delete
     """
 
     def __init__(self):
-        self.active_sessions_cache_name = settings.active_sessions_cache_name
         self.cache_handler = None
         self.active_sessions = None
+        self.cache_name = None
 
     # cache_handler property is required for CacheHandlerAware interface
     @property
@@ -216,28 +216,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     @cache_handler.setter
     def cache_handler(self, cachehandler):
         self._cache_handler = cachehandler
-
-    @property
-    def active_sessions_cache(self):
-        return self.active_sessions
-
-    @active_sessions_cache.setter
-    def active_sessions_cache(self, cache):
-        self.active_sessions = cache
-
-    def get_active_sessions_cache_lazy(self):
-        if (self.active_sessions is None):
-            self.active_sessions = self.create_active_sessions_cache()
-
-        return self.active_sessions
-
-    def create_active_sessions_cache(self):
-        try:
-            mgr = self.cache_handler
-            name = self.active_sessions_cache_name
-            return mgr.get_cache(name)
-        except:
-            return None
+        self.cache_name = self.cache_handler.cache_name
 
     def create(self, session):
         sessionid = super().create(session)
@@ -312,18 +291,28 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
             # log here
             return
 
-    def get_active_sessions(self):
-        try:
-            cache = self.get_active_sessions_cache_lazy()
-            return tuple(cache.values)  # s/b a property attribute
-
-        except AttributeError:
-            return tuple()
+    # active_sessions support is for manual cache invalidation
+    # and so I am commenting anything related to it for now -- TBD (DG):
+    # def get_active_sessions(self):
+    #    try:
+    #        cache = self.get_active_sessions_cache_lazy()
+    #        return tuple(cache.values)  # s/b a property attribute
+    #
+    #    except AttributeError:
+    #        return tuple()
 
 
 # Yosai omits the SessionListenerAdapter class
 
 class ProxiedSession(session_abcs.Session):
+    """
+    Simple Session implementation that immediately delegates all
+    corresponding calls to an underlying proxied session instance.
+
+    This class is mostly useful for framework subclassing to intercept certain
+    Session calls and perform additional logic.
+
+    """
 
     def __init__(self, target_session):
         # the proxied instance:
@@ -391,6 +380,9 @@ class ImmutableProxiedSession(ProxiedSession):
     Session, but does not allow any 'write' operations to the underlying
     session. It allows 'read' operations only.
 
+    Instances of this class are sent to the Eventbus to ensure that event
+    listening recipients will not be able to modify the session's contents.
+
     The Session write operations are defined as follows.  A call to any of
     these methods/setters on this proxy will immediately raise an
     InvalidSessionException:
@@ -429,7 +421,8 @@ class ImmutableProxiedSession(ProxiedSession):
         raise Exception('this exception should never have raised, ALERT!')
 
 
-class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable):
+class SimpleSession(session_abcs.ValidatingSession,
+                    serialize_abcs.Serializable):
 
     # Yosai omits:
     #    - the manually-managed class version control process (too policy-reliant)
@@ -549,7 +542,6 @@ class SimpleSession(session_abcs.ValidatingSession, serialize_abcs.Serializable)
         if not hasattr(self, '_stop_timestamp'):
             self._stop_timestamp = None
         return self._stop_timestamp
-
 
     @stop_timestamp.setter
     def stop_timestamp(self, stop_ts):
@@ -875,8 +867,7 @@ class DefaultSessionKey(session_abcs.SessionKey):
 
 
 class AbstractNativeSessionManager(event_abcs.EventBusAware,
-                                   session_abcs.NativeSessionManager,
-                                   metaclass=ABCMeta):
+                                   session_abcs.NativeSessionManager):
     """
     AbstractNativeSessionManager is an abc , consisting largely of a
     concrete implementation but also the specification of abstract methods
@@ -1434,6 +1425,31 @@ class DefaultSessionContext(MapContext, session_abcs.SessionContext):
         self.none_safe_put('session_id', sessionid)
 
 
+class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
+
+    # Global policy determining whether Subject sessions may be used to persist
+    # Subject state if the Subject's Session does not yet exist.
+
+    def __init__(self):
+        self._session_storage_enabled = True
+
+    @property
+    def session_storage_enabled(self):
+        return self._session_storage_enabled
+
+    @session_storage_enabled.setter
+    def session_storage_enabled(self, sse):
+        self._session_storage_enabled = sse
+
+    def is_session_storage_enabled(self, subject=None):
+        if (not subject):
+            return self._session_storage_enabled
+        else:
+            return ((subject is not None and
+                     subject.get_session(False) is not None) or
+                    bool(self._session_storage_enabled))
+
+
 class DefaultSessionManager(AbstractValidatingSessionManager,
                             cache_abcs.CacheHandlerAware):
     """
@@ -1562,28 +1578,3 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
             return active_sessions
         else:
             return tuple()
-
-
-class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
-
-    # Global policy determining whether Subject sessions may be used to persist
-    # Subject state if the Subject's Session does not yet exist.
-
-    def __init__(self):
-        self._session_storage_enabled = True
-
-    def is_session_storage_enabled(self, subject=None):
-        if (not subject):
-            return self._session_storage_enabled
-        else:
-            return ((subject is not None and
-                     subject.get_session(False) is not None) or
-                    bool(self._session_storage_enabled))
-
-    @property
-    def session_storage_enabled(self):
-        return self._session_storage_enabled
-
-    @session_storage_enabled.setter
-    def session_storage_enabled(self, sse):
-        self._session_storage_enabled = sse

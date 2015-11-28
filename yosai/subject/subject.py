@@ -843,6 +843,9 @@ class DefaultSubjectStore:
     """
 
     def __init__(self):
+
+        # used to determine whether session state may be persisted for this
+        # subject if the session has not yet been persisted
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
 
         self.dsc_isk = 'DefaultSubjectContext.IDENTIFIERS_SESSION_KEY'
