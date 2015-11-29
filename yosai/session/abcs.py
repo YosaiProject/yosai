@@ -666,7 +666,7 @@ class SessionStore(metaclass=ABCMeta):
     access to an EIS (Enterprise Information System).  It provides your four
     typical CRUD methods:
         - create(session)
-        - read_session(session_id)
+        - read(session_id)
         - update(Session)
         - delete(Session)
 
@@ -700,8 +700,9 @@ class SessionStore(metaclass=ABCMeta):
         """
         pass
 
+    # yosai renamed read_session:
     @abstractmethod
-    def read_session(self, session_id):
+    def read(self, session_id):
         """
         Retrieves the session from the EIS uniquely identified by the specified
         session_id

@@ -47,8 +47,6 @@ from yosai import (
     session_abcs,
 )
 
-from abc import abstractmethod
-
 
 class AbstractSessionStore(session_abcs.SessionStore):
     """
@@ -74,8 +72,8 @@ class AbstractSessionStore(session_abcs.SessionStore):
     """
 
     def __init__(self):
-        # shiro defaults to UUID, yosai uses random:
-        self.session_id_generator = RandomSessionIDGenerator
+        # shiro defaults to UUID where as yosai uses well hashed urandom:
+        self.session_id_generator = RandomSessionIDGenerator()
 
     def generate_session_id(self, session):
         """
@@ -106,11 +104,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
             raise IllegalArgumentException(msg)
         session.session_id = session_id
 
-    @abstractmethod
-    def do_create(self, session):
-        pass
-
-    def read_session(self, session_id):
+    def read(self, session_id):
         session = self.do_read(session_id)
         if session is None:
             msg = "There is no session with id [" + str(session_id) + "]"
@@ -118,7 +112,11 @@ class AbstractSessionStore(session_abcs.SessionStore):
         return session
 
     @abstractmethod
-    def do_read(self, session_id):
+    def _do_read(self, session_id):
+        pass
+
+    @abstractmethod
+    def _do_create(self, session):
         pass
 
 
@@ -146,24 +144,6 @@ class MemorySessionStore(AbstractSessionStore):
     def __init__(self):
         self.sessions = {}
 
-    def do_create(self, session):
-        sessionid = self.generate_session_id(session)
-        self.assign_session_id(session, sessionid)
-        self.store_session(sessionid, session)
-        return sessionid
-
-    def store_session(self, session_id, session):
-        # stores only if session doesn't already exist, returning the existing
-        # session (as default) otherwise
-        if session_id is None or session is None:
-            msg = 'MemorySessionStore.store_session invalid param passed'
-            raise IllegalArgumentException(msg)
-
-        return self.sessions.setdefault(session_id, session)
-
-    def do_read(self, sessionid):
-        return self.sessions.get(sessionid)
-
     def update(self, session):
         return self.store_session(session.session_id, session)
 
@@ -180,8 +160,23 @@ class MemorySessionStore(AbstractSessionStore):
             print(msg)
             # log here
 
-    def get_active_sessions(self):
-        return tuple(self.sessions.values())
+    def store_session(self, session_id, session):
+        # stores only if session doesn't already exist, returning the existing
+        # session (as default) otherwise
+        if session_id is None or session is None:
+            msg = 'MemorySessionStore.store_session invalid param passed'
+            raise IllegalArgumentException(msg)
+
+        return self.sessions.setdefault(session_id, session)
+
+    def _do_create(self, session):
+        sessionid = self.generate_session_id(session)
+        self.assign_session_id(session, sessionid)
+        self.store_session(sessionid, session)
+        return sessionid
+
+    def _do_read(self, sessionid):
+        return self.sessions.get(sessionid)
 
 
 class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
@@ -191,20 +186,41 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     (Enterprise Information System) session backing store (e.g.
     Redis, Memcached, filesystem, database, enterprise grid/cloud, etc).
 
-    This implementation caches all active sessions in a configured
-    active_sessions_cache.  This property is None by default. If one is
-    not explicitly set, a cache manager is expected to be configured
-    to acquire the Cache instance used for the active_sessions_cache.
+    Yosai omits 'active sessions' related functionality, which is used in Shiro
+    as a means to bulk-invalidate timed out sessions.  Rather than manually sift
+    through a collection containing every active session just to find
+    timeouts, Yosai lazy-invalidates idle-timeout sessions and relies on
+    automatic expiration of absolute timeout within cache. Absolute timeout is
+    set as the cache entry's expiration time.
 
-    All SessionStore methods are implemented by this class to employ
-    caching behavior, delegating the actual EIS operations to respective
-    'do' CRUD methods implemented by subclasses: do_create, do_read, do_update,
-    and do_delete
+    Unlike Shiro, Yosai implements the CRUD operations within CachingSessionStore
+    rather than defer implementation further to subclasses.
+
+    Write-Through Caching
+    -----------------------
+    Write-through caching is a caching pattern where writes to the cache cause
+    writes to an underlying database (EIS). The cache acts as a facade to the
+    underlying resource.
+
+    All methods within CachingSessionStore are implemented to employ caching
+    behavior while delegating cache write-through related operations
+    to respective 'do' CRUD methods, which are to be implemented by subclasses:
+    do_create, do_read, do_update and do_delete.
+
+    Potential write-through caching strategies:
+    ------------------------------------
+    As of Postgresql 9.5, you can UPSERT session records
+
+    Databases such as Postgresql offer what is known as foreign data wrappers
+    (FDWs) that pipe data from cache to the database.
+
+    Ref: https://en.wikipedia.org/wiki/Cache_%28computing%29#Writing_policies
+
     """
 
     def __init__(self):
+        super().__init__()  # obtains a session id generator
         self.cache_handler = None
-        self.active_sessions = None
         self.cache_name = None
 
     # cache_handler property is required for CacheHandlerAware interface
@@ -220,86 +236,83 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
     def create(self, session):
         sessionid = super().create(session)
-        self.cache(session=session, session_id=sessionid)
+        self._cache(session=session, session_id=sessionid)
         return sessionid
 
+    def read(self, sessionid):
+        session = self._get_cached_session(sessionid)
+
+        # for write-through caching:
+        # if (session is None):
+        #    session = super().read(sessionid)
+
+        return session
+
+    def update(self, session):
+
+        # for write-through caching:
+        # self._do_update(session)
+
+        try:
+            if (session.is_valid):
+                self._cache(session=session, session_id=session.session_id)
+            else:
+                self._uncache(session)
+
+        except AttributeError:
+            self._cache(session=session, session_id=session.session_id)
+
+    def delete(self, session):
+        self._uncache(session)
+        # for write-through caching:
+        # self._do_delete(session)
+
     # java overloaded methods combined:
-    def get_cached_session(self, sessionid, cache=None):
-        if cache is None:
-            cache = self.get_active_sessions_cache_lazy()
+    def _get_cached_session(self, sessionid):
         try:
             # assume that sessionid isn't None
-            return cache.get(sessionid)
+            return self.cache_handler.get(key='session', identifier=sessionid)
         except AttributeError:
             msg = "no cache parameter nor lazy-defined cache"
             print(msg)
             # log here
         return None
 
-    def cache(self, session, sessionid, cache=None):
-
-        if (cache is None):
-            cache = self.get_active_sessions_cache_lazy()
-
+    def _cache(self, session, sessionid, cache=None):
         try:
-            cache.put(sessionid, session)
+            self.cache_handler.set(key='session',
+                                   identifier=sessionid,
+                                   value=session)
         except AttributeError:
             msg = "no cache parameter nor lazy-defined cache"
             print(msg)
         return
 
-    def read_session(self, sessionid):
-        session = self.get_cached_session(sessionid)
-        if (session is None):
-            session = super().read_session(sessionid)
-
-        return session
-
-    def update(self, session):
-        self.do_update(session)
-
-        # if (isinstance(session, session_abcs.ValidatingSession)):
-        try:
-            if (session.is_valid):
-                self.cache(session=session, session_id=session.session_id)
-            else:
-                self.uncache(session)
-
-        except AttributeError:
-            self.cache(session=session, session_id=session.session_id)
-
-    @abstractmethod
-    def do_update(self, session):
-        pass
-
-    def delete(self, session):
-        self.uncache(session)
-        self.do_delete(session)
-
-    @abstractmethod
-    def do_delete(self, session):
-        pass
-
-    def uncache(self, session):
+    def _uncache(self, session):
         try:
             sessionid = session.session_id
-            cache = self.get_active_sessions_cache_lazy()
-            cache.remove(sessionid)
+            self.cache_handler.delete(key='session', identifier=sessionid)
         except AttributeError:
             msg = "Tried to uncache a session with incomplete parameters"
             print(msg)
             # log here
             return
 
-    # active_sessions support is for manual cache invalidation
-    # and so I am commenting anything related to it for now -- TBD (DG):
-    # def get_active_sessions(self):
-    #    try:
-    #        cache = self.get_active_sessions_cache_lazy()
-    #        return tuple(cache.values)  # s/b a property attribute
-    #
-    #    except AttributeError:
-    #        return tuple()
+    # intended for write-through caching:
+    def _do_create(self, session):
+        pass
+
+    # intended for write-through caching:
+    def _do_read(self, session_id):
+        pass
+
+    # intended for write-through caching:
+    def _do_delete(self, session):
+        pass
+
+    # intended for write-through caching:
+    def _do_update(self, session):
+        pass
 
 
 # Yosai omits the SessionListenerAdapter class
@@ -1510,6 +1523,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
                format(session))
         print(msg)
         # log debug here
+
         self.session_store.create(session)
 
     def on_stop(self, session):
@@ -1567,7 +1581,7 @@ class DefaultSessionManager(AbstractValidatingSessionManager,
         return session_key.session_id
 
     def retrieve_session_from_data_source(self, session_id):
-        return self.session_store.read_session(session_id)
+        return self.session_store.read(session_id)
 
     def delete(self, session):
         self.session_store.delete(session)
