@@ -171,3 +171,6 @@ Packaging
 1) move dependencies to setup.py  (ex:  https://github.com/kislyuk/signxml/pull/37)
 2) create a pypi compatible README as it doesnt handle markup
 
+-----------------------------------------------------------------------------
+
+DelegatingSession is Serializable in Shiro-- investigate why

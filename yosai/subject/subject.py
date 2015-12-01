@@ -314,9 +314,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.__class__.__name__ + ".RUN_AS_IDENTIFIERS_SESSION_KEY")
 
     def decorate(self, session):
-        if isinstance(session, session_abcs.Session):
-            return DelegatingSubject.StoppingAwareProxiedSession(session, self)
-        return None
+        return StoppingAwareProxiedSession(session, self)
 
     @property
     def security_manager(self):

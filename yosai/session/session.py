@@ -24,6 +24,7 @@ from marshmallow import Schema, fields, post_load
 
 from yosai import (
     AbstractMethodException,
+    Event,
     MapContext,
     ExpiredSessionException,
     IllegalArgumentException,
@@ -772,14 +773,15 @@ class DelegatingSession(session_abcs.Session):
     method call.
 
     A DelegatingSession will cache data when appropriate to avoid a remote
-    method invocation, only communicating with the server when necessary.
+    method invocation, only communicating with the server when necessary and
+    if write-through session caching is implemented.
 
     Of course, if used in-process with a NativeSessionManager business object,
     as might be the case in a web-based application where the web classes
     and server-side business objects exist in the same namespace, a remote
     method call will not be incurred.
 
-    Note:  Shiro makes DelegatingSession Serializable where as Yosai doesn't
+    Note:  Shiro makes DelegatingSession Serializable where as Yosai doesn't (TBD)
     """
 
     def __init__(self, session_manager, key):
@@ -878,27 +880,11 @@ class DefaultSessionKey(session_abcs.SessionKey):
         except AttributeError:
             return False
 
-
-class AbstractNativeSessionManager(event_abcs.EventBusAware,
-                                   session_abcs.NativeSessionManager):
-    """
-    AbstractNativeSessionManager is an abc , consisting largely of a
-    concrete implementation but also the specification of abstract methods
-    to be implemented by its subclasses.  This is consistent with Shiro's
-    abstract design.
-    """
+# yosai refactor:
+class SessionEventHandler(event_abcs.EventBusAware):
 
     def __init__(self):
-        self._listeners = []
-        self._event_bus = None  # is assigned by the SecurityManager
-
-    @property
-    def session_listeners(self):
-        return self._listeners
-
-    @session_listeners.setter
-    def session_listeners(self, listeners):
-        self._listeners = listeners
+        self._event_bus = None  # setter injected
 
     @property
     def event_bus(self):
@@ -908,98 +894,161 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
     def event_bus(self, event_bus):
         self._event_bus = event_bus
 
-    def publish_event(self, event):
+    def notify_start(self, session):
+        """
+        :param session:  a mutable Session
+        """
         try:
-            self.event_bus.publish(event)
+            event = Event(source=self.__class__.__name__,
+                          event_topic='SESSION.START',
+                          results=session)
+            self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
-            msg = 'Could not publish event to eventbus.'
+            msg = "Could not publish SESSION.START event"
             raise SessionEventException(msg)
 
-    def start(self, session_context):
-        session = self.create_session(session_context)
-        # new approach for yosai is to apply *two* timeouts:
-        self.apply_session_timeouts(session_context)
-        self.on_start(session, session_context)
-        self.notify_start(session)
+    def notify_stop(self, session):
+        """
+        :type session:  ImmutableProxiedSession
+        """
+        try:
+            event = Event(source=self.__class__.__name__,
+                          event_topic='SESSION.STOP',
+                          results=immutable_session)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish SESSION.STOP event"
+            raise SessionEventException(msg)
 
-        # Don't expose the EIS-tier Session object to the client-tier:
+    def notify_expiration(self, session):
+        """
+        :type session:  ImmutableProxiedSession
+        """
+        try:
+            event = Event(source=self.__class__.__name__,
+                          event_topic='SESSION.EXPIRE',
+                          results=immutable_session)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish SESSION.EXPIRE event"
+            raise SessionEventException(msg)
+
+
+class DefaultSessionManager(cache_abcs.CacheHandlerAware,
+                            session_abcs.NativeSessionManager):
+    """
+    Yosai's DefaultSessionManager represents a massive refactoring of Shiro's
+    SessionManager object model.  The refactoring is an ongoing effort to
+    replace a confusing inheritance-based object graph with a compositional
+    design.  This compositional design continues to evolve.  Pull Requests
+    are welcome.
+
+    Touching Sessions
+    ------------------
+    A session's last_access_time must be updated on every request.  Updating
+    the last access timestamp is required for session validation to work
+    correctly as the timestamp is used to determine whether a session has timed
+    out due to inactivity.
+
+    In web applications, the [Shiro Filter] updates the session automatically
+    via the session.touch() method.  For non-web environments (e.g. for RMI),
+    something else must call the touch() method to ensure the session
+    validation logic functions correctly.
+
+    Shiro does not enable auto-touch within the DefaultSessionManager. It is not
+     yet clear why Shiro doesn't.  Until the reason why is revealed, Yosai
+     includes a new auto_touch feature to enable/disable auto-touching.
+    """
+
+    def __init__(self, auto_touch=True):
+        self.delete_invalid_sessions = True
+        self.session_factory = SimpleSessionFactory()
+        self._cache_handler = None
+        self._session_store = CachingSessionStore()
+        self.session_event_handler = SessionEventHandler()
+        self.auto_touch = auto_touch
+
+    @property
+    def session_store(self):
+        return self._session_store
+
+    @session_store.setter
+    def session_store(self, sessionstore):
+        self._session_store = sessionstore
+        self.apply_cache_handler_to_session_store()
+
+    @property
+    def cache_handler(self):
+        return self._cache_handler
+
+    @cache_handler.setter
+    def cache_handler(self, cachehandler):
+        self._cache_handler = cachehandler
+        self.apply_cache_handler_to_session_store()
+
+    def apply_cache_handler_to_session_store(self):
+        try:
+            if isinstance(self.session_store, cache_abcs.CacheHandlerAware):
+                self.session_store.cache_handler = self._cache_handler
+        except AttributeError:
+            msg = ("tried to set a cache manager in a SessionStore that isn\'t"
+                   "defined or configured in the DefaultSessionManager")
+            print(msg)
+            # log warning here
+            return
+
+    # -------------------------------------------------------------------------
+    # Session Lifecycle Methods
+    # -------------------------------------------------------------------------
+
+    def start(self, session_context):
+        # is a SimpleSesson:
+        session = self._create_session(session_context)
+
+        self.on_start(session, session_context)
+        self.session_event_handler.notify_start(session)
+
+        # Don't expose the EIS-tier Session object to the client-tier, but
+        # rather a DelegatingSession:
         return self.create_exposed_session(session, session_context)
 
-    @abstractmethod
-    def create_session(self, session_context):
-        """
-        Creates a new {@code Session Session} instance based on the specified
-        (possibly {@code null}) * initialization data.  Implementing classes
-        must manage the persistent state of the returned session such that it
-        could later be acquired via the {@link #getSession(SessionKey)} method.
+    def stop(self, session_key):
+        session = self._lookup_required_session(session_key)
+        try:
+            msg = ("Stopping session with id [{0}]").format(session.session_id)
+            print(msg)
+            # log here
 
-        :param session_context: the initialization data that can be used by the
-                                implementation or underlying SessionFactory
-                                when instantiating the internal Session
-                                instance
+            session.stop()
+            self.on_stop(session)
 
-        :returns: the new Session instance
+            immutable_session = self.before_invalid_notification(session)
+            self.session_event_handler.notify_stop(immutable_session)
 
-        :raises HostUnauthorizedException:  if the system access control policy
-                                            restricts access based on client
-                                            location/IP and the specified
-                                            host address hasn't been enabled
+        except InvalidSessionException:
+            raise
+        finally:
+            self.after_stopped(session)
 
-        :raises AuthorizationException:  if the system access control policy
-                                         does not allow the currently executing
-                                         caller to start sessions
-        """
-        pass
+    # -------------------------------------------------------------------------
+    # Session Creation Methods
+    # -------------------------------------------------------------------------
 
-    # yosai renames applyGlobalSessionTimeout:
-    def apply_session_timeouts(self, session):
+    # consolidated with do_create_session:
+    def _create_session(self, session_context):
+        session = self.session_factory.create_session(session_context)
 
-        # new to yosai is the use of the absolute timeout and module-level
-        # session_settings
-        session.absolute_timeout = session_settings.absolute_timeout
-        session.idle_timeout = session_settings.idle_timeout
-        self.on_change(session)
+        msg = "Creating session for host " + session.host
+        print(msg)
+        # log trace here
 
-    # yosai makes the following an abstractmethod, unlike shiro, so that
-    # any subclass will state its use or pass, but state it nonetheless
-    @abstractmethod
-    def on_start(self, session, session_context):
-        """
-        Template method that allows subclasses to react to a new session being
-        created.  This method is invoked *before* any session listeners are
-        notified.
+        msg = ("Creating new EIS record for new session instance [{0}]".
+               format(session))
+        print(msg)
+        # log debug here
+        self.session_store.create(session)
 
-        :param session: the session that was just created
-        :param context: the SessionContext that was used to start the session
-        """
-        pass
-
-    def get_session(self, key):
-        session = self.lookup_session(key)
-        if (session):
-            return self.create_exposed_session(session, key)
-        else:
-            return None
-
-    def lookup_session(self, key):
-        return self.do_get_session(key)
-
-    def lookup_required_session(self, key):
-        session = self.lookup_session(key)
-        if (not session):
-            msg = ("Unable to locate required Session instance based "
-                   "on session_key [" + str(key) + "].")
-            raise UnknownSessionException(msg)
         return session
-
-    @abstractmethod
-    def do_get_session(self, session_key):
-        pass
-
-    # yosai introduces the keyword parameterization
-    def create_exposed_session(self, session, key=None, context=None):
-        # shiro ignores key and context parameters
-        return DelegatingSession(self, DefaultSessionKey(session.session_id))
 
     def before_invalid_notification(self, session):
         """
@@ -1017,212 +1066,182 @@ class AbstractNativeSessionManager(event_abcs.EventBusAware,
         """
         return ImmutableProxiedSession(session)
 
-    def notify_start(self, session):
-        for listener in self.listeners:
-            listener.on_start(session)
+    # yosai introduces the keyword parameterization
+    def create_exposed_session(self, session, key=None, context=None):
+        """
+        :type session:  SimpleSession
+        """
+        # shiro ignores key and context parameters
+        return DelegatingSession(self, DefaultSessionKey(session.session_id))
 
-    def notify_stop(self, session):
-        for_notification = self.before_invalid_notification(session)
-        for listener in self.listeners:
-            listener.on_stop(for_notification)
+    # -------------------------------------------------------------------------
+    # Session Lookup Methods
+    # -------------------------------------------------------------------------
 
-    def notify_expiration(self, session):
-        for_notification = self.before_invalid_notification(session)
-        for listener in self.listeners:
-            listener.on_expiration(for_notification)
+    # called by mgt.ApplicationSecurityManager:
+    def get_session(self, key):
+        """
+        :returns: DelegatingSession
+        """
+        # a SimpleSession:
+        session = self._do_get_session(key)
+        if (session):
+            return self.create_exposed_session(session, key)
+        else:
+            return None
+
+    # called internally:
+    def _lookup_required_session(self, key):
+        """
+        :returns: SimpleSession
+        """
+        session = self._do_get_session(key)
+        if (not session):
+            msg = ("Unable to locate required Session instance based "
+                   "on session_key [" + str(key) + "].")
+            raise UnknownSessionException(msg)
+        return session
+
+    def _do_get_session(self, session_key):
+        """
+        :returns: SimpleSession
+        """
+        msg = "Attempting to retrieve session with key " + str(session_key)
+        print(msg)
+        # log here
+
+        session = self._retrieve_session(session_key)
+
+        if self.auto_touch:  # new to yosai
+            session.touch()
+
+        if (session is not None):
+            self.validate(session, session_key)
+
+        # won't be called unless the session is valid (due exceptions):
+        self.on_change(session)  # new to yosai
+
+        return session
+
+    def _retrieve_session(self, session_key):
+        """
+        :returns: SimpleSession
+        """
+        session_id = session_key.session_id
+        if (session_id is None):
+            # log here
+            msg = ("Unable to resolve session ID from SessionKey [{0}]."
+                   "Returning null to indicate a session could not be "
+                   "found.".format(session_key))
+            print(msg)
+            return None
+
+        session = self.session_store.read(session_id)
+
+        if (session is None):
+            # session ID was provided, meaning one is expected to be found,
+            # but we couldn't find one:
+            msg2 = "Could not find session with ID [" + session_id + "]"
+            raise UnknownSessionException(msg2)
+
+        return session
+
+    # -------------------------------------------------------------------------
+    # Session Attribute Methods
+    # -------------------------------------------------------------------------
+
+    # consolidated with check_valid
+    def is_valid(self, session_key):
+        """
+        if the session doesn't exist, _lookup_required_session raises
+        """
+        try:
+            self._lookup_required_session(session_key)
+            return True
+        except InvalidSessionException:
+            return False
 
     def get_start_timestamp(self, session_key):
-        return self.lookup_required_session(session_key).start_timestamp
+        return self._lookup_required_session(session_key).start_timestamp
 
     def get_last_access_time(self, session_key):
-        return self.lookup_required_session(session_key).last_access_time
+        return self._lookup_required_session(session_key).last_access_time
 
     def get_absolute_timeout(self, session_key):
-        return self.lookup_required_session(session_key).absolute_timeout
+        return self._lookup_required_session(session_key).absolute_timeout
 
     def get_idle_timeout(self, session_key):
-        return self.lookup_required_session(session_key).idle_timeout
+        return self._lookup_required_session(session_key).idle_timeout
 
     def set_idle_timeout(self, session_key, idle_time):
-        session = self.lookup_required_session(session_key)
+        session = self._lookup_required_session(session_key)
         session.idle_timeout = idle_time
         self.on_change(session)
 
     def set_absolute_timeout(self, session_key, absolute_time):
-        session = self.lookup_required_session(session_key)
+        session = self._lookup_required_session(session_key)
         session.absolute_timeout = absolute_time
         self.on_change(session)
 
     def touch(self, session_key):
-        session = self.lookup_required_session(session_key)
+        session = self._lookup_required_session(session_key)
         session.touch()
         self.on_change(session)
 
     def get_host(self, session_key):
-        return self.lookup_required_session(session_key).host
+        return self._lookup_required_session(session_key).host
 
     def get_attribute_keys(self, session_key):
-        collection = self.lookup_required_session(session_key).attribute_keys
+        collection = self._lookup_required_session(session_key).attribute_keys
         try:
             return tuple(collection)
         except TypeError:  # collection is None
             return tuple()
 
     def get_attribute(self, session_key, attribute_key):
-        return self.lookup_required_session(session_key).\
+        return self._lookup_required_session(session_key).\
             get_attribute(attribute_key)
 
     def set_attribute(self, session_key, attribute_key, value=None):
         if (value is None):
             self.remove_attribute(session_key, attribute_key)
         else:
-            session = self.lookup_required_session(session_key)
+            session = self._lookup_required_session(session_key)
             session.set_attribute(attribute_key, value)
             self.on_change(session)
 
     def remove_attribute(self, session_key, attribute_key):
-        session = self.lookup_required_session(session_key)
+        session = self._lookup_required_session(session_key)
         removed = session.remove_attribute(attribute_key)
         if (removed is not None):
             self.on_change(session)
         return removed
 
-    def is_valid(self, session_key):
-        try:
-            self.check_valid(session_key)
-            return True
-        except InvalidSessionException:
-            return False
+    # -------------------------------------------------------------------------
+    # Session Teardown Methods
+    # -------------------------------------------------------------------------
 
-    def stop(self, session_key):
-        session = self.lookup_required_session(session_key)
-        try:
-            msg = ("Stopping session with id [" + str(session.session_id) + "]")
-            print(msg)
-            # log here
-            session.stop()
-            self.on_stop(session, session_key)
-            self.notify_stop(session)
-        except InvalidSessionException:
-            raise
-        finally:
-            self.after_stopped(session)
+    def delete(self, session):
+        self.session_store.delete(session)
 
-    def on_stop(self, session, session_key=None):
-        self.on_change(session)
-
-    @abstractmethod
-    def after_stopped(self, session):
-        pass
-
-    def check_valid(self, session_key):
-        # just try to acquire it.  If there's a problem, an exception is raised
-        self.lookup_required_session(session_key)
-
-    @abstractmethod
-    def on_change(self, session):
-        pass
-
-
-class ExecutorServiceSessionValidationScheduler(session_abcs.SessionValidationScheduler):
-    """
-    Note:  Many data stores support TTL (time to live) as a feature.  It
-           is unecessary to run a session-validation/Executor service if
-           you can use the TTL timeout feature.
-
-           yosai vs shiro:
-           Shiro uses a daemon thread for scheduled validation, signaling
-           it when to shutdown.  Python terminates daemon threads much more
-           abruptly than Java, so Yosai will not use them.  Instead, Yosai uses
-           regular threads and an event notification process to gracefully terminate.
-           See:  https://docs.python.org/3/library/threading.html#thread-objects
-
-    """
-    def __init__(self, session_manager, interval):
-        """
-        :param sessionmanager: a ValidatingSessionManager
-        :param interval:  a time interval, in seconds
-        """
-        self.session_manager = session_manager
-        self.interval = interval  # in seconds
-        self._enabled = False
-        self.service = StoppableScheduledExecutor(self.run,
-                                                  interval=self.interval)
-
-    @property
-    def is_enabled(self):
-        return self._enabled
-
-    # StoppableScheduledExecutor validates sessions at fixed intervals
-    def enable_session_validation(self):
-        if (self.interval):
-            self.service.start()
-            self._enabled = True
-
-    def run(self):
-        msg = "Executing session validation..."
-        print(msg)
-        # log here
-
-        start_time = int(round(time.time() * 1000, 2))
-        self.session_manager.validate_sessions()
-        stop_time = int(round(time.time() * 1000, 2))
-
-        msg2 = ("Session validation completed successfully in " +
-                str(stop_time - start_time) + " milliseconds.")
-        print(msg2)
-        # log here
-
-    def disable_session_validation(self):
-        self.service.stop()
-        self.enabled = False
-
-
-class AbstractValidatingSessionManager(session_abcs.ValidatingSessionManager,
-                                       AbstractNativeSessionManager):
-
-    def __init__(self):
-        super().__init__()
-        self.session_validation_scheduler = None
-        self.session_validation_scheduler_enabled =\
-            session_settings.validation_scheduler_enable
-        self.session_validation_interval =\
-            session_settings.validation_time_interval
-
-    def enable_session_validation_if_necessary(self):
-        scheduler = self.session_validation_scheduler
-        if (self.session_validation_scheduler_enabled and
-           (scheduler is None or (not scheduler.is_enabled))):
-            self.enable_session_validation()
-
-    def do_get_session(self, session_key):
-        self.enable_session_validation_if_necessary()
-        msg = "Attempting to retrieve session with key " + str(session_key)
-        print(msg)
-        # log here
-
-        session = self.retrieve_session(session_key)
-        if (session is not None):
-            self.validate(session, session_key)
-
-        return session
-
-    @abstractmethod
-    def retrieve_session(self, session_key):
-        pass
-
-    @abstractmethod
-    def do_create_session(self, session_context):
-        pass
-
-    def create_session(self, session_context):
-        self.enable_session_validation_if_necessary()
-        return self.do_create_session(session_context)
+    # -------------------------------------------------------------------------
+    # Validation Methods
+    # -------------------------------------------------------------------------
 
     def validate(self, session, session_key):
         # session exception hierarchy:  invalid -> stopped -> expired
         try:
-            self.do_validate(session)
+            session.validate()  # can raise Stopped or Expired exceptions
+        except AttributeError:  # means it's not a validating session
+            msg = ("The {0} implementation only supports Validating "
+                   "Session implementations of the {1} interface.  "
+                   "Please either implement this interface in your "
+                   "session implementation or override the {0}"
+                   ".do_validate(Session) method to validate.").\
+                format('AbstractValidatingSessionManager',
+                       'ValidatingSession')
+
+            raise IllegalStateException(msg)
 
         except ExpiredSessionException as ese:
             self.on_expiration(session, ese, session_key)
@@ -1233,6 +1252,31 @@ class AbstractValidatingSessionManager(session_abcs.ValidatingSessionManager,
         except InvalidSessionException as ise:  # a more generalized exception
             self.on_invalidation(session, ise, session_key)
             raise
+
+    # -------------------------------------------------------------------------
+    # Event-driven Methods
+    # -------------------------------------------------------------------------
+
+    # used by DefaultWebSessionManager:
+    def on_start(session, session_context):
+        """
+        placeholder for subclasses to react to a new session being created
+        """
+        pass
+
+    def on_stop(self, session):
+        try:
+            session.last_access_time = session.stop_timestamp
+        except AttributeError:
+            msg = "not working with a SimpleSession instance"
+            print(msg)
+            # log warning here
+
+        self.on_change(session)
+
+    def after_stopped(self, session):
+        if (self.delete_invalid_sessions):
+            self.delete(session)
 
     def on_expiration(self, session, expired_session_exception=None,
                       session_key=None):
@@ -1248,7 +1292,8 @@ class AbstractValidatingSessionManager(session_abcs.ValidatingSessionManager,
                     format(session.session_id)
                 print(msg)
                 # log here
-                self.notify_expiration(session)
+                immutable_session = self.before_invalid_notification(session)
+                self.session_event_handler.notify_expiration(immutable_session)
             except:
                 raise
             finally:
@@ -1261,9 +1306,9 @@ class AbstractValidatingSessionManager(session_abcs.ValidatingSessionManager,
             msg = "on_exception takes either 1 argument or 3 arguments"
             raise IllegalArgumentException(msg)
 
-    @abstractmethod
     def after_expired(self, session):
-        pass
+        if (self.delete_invalid_sessions):
+            self.delete(session)
 
     def on_invalidation(self, session, ise, session_key):
 
@@ -1278,130 +1323,17 @@ class AbstractValidatingSessionManager(session_abcs.ValidatingSessionManager,
 
         try:
             self.on_stop(session)
-            self.notify_stop(session)
+            immutable_session = self.before_invalid_notification(session)
+            self.session_event_handler.notify_stop(immutable_session)
         except:
             raise
         finally:
             self.after_stopped(session)
 
-    def do_validate(self, session):
-        # session.validate will raise exceptions handled further up the stack
-        try:
-            session.validate()  # can raise Stopped or Expired exceptions
-        except AttributeError:  # means it's not a validating session
-            msg = ("The {0} implementation only supports Validating "
-                   "Session implementations of the {1} interface.  "
-                   "Please either implement this interface in your "
-                   "session implementation or override the {0}"
-                   ".do_validate(Session) method to validate.").\
-                format('AbstractValidatingSessionManager',
-                       'ValidatingSession')
-
-            raise IllegalStateException(msg)
-
-    def get_idle_timeout(self, session):
-        return session.idle_timeout
-
-    def get_absolute_timeout(self, session):
-        return session.absolute_timeout
-
-    def create_session_validation_scheduler(self):
-        msg = ("No SessionValidationScheduler set.  Attempting to "
-               "create default instance.")
-        # log here
-        print(msg)
-
-        scheduler =\
-            ExecutorServiceSessionValidationScheduler(
-                session_manager=self, interval=self.session_validation_interval)
-
-        msg2 = ("Created default SessionValidationScheduler instance of "
-                "type [" + scheduler.__class__.__name__ + "].")
-        print(msg2)
-        # log here:
-
-        return scheduler
-
-    def enable_session_validation(self):
-        scheduler = self.session_validation_scheduler
-        if (scheduler is None):
-            print("Creating session validation scheduler")
-            scheduler = self.create_session_validation_scheduler()
-            self.session_validation_scheduler = scheduler
-
-        msg = "Enabling session validation scheduler..."
-        # log here
-        print(msg)
-
-        scheduler.enable_session_validation()
-        self.after_session_validation_enabled()
-
-    @abstractmethod
-    def after_session_validation_enabled(self):
-        pass
-
-    def disable_session_validation(self):
-        self.before_session_validation_disabled()
-        scheduler = self.session_validation_scheduler
-        if (scheduler is not None):
-            try:
-                scheduler.disable_session_validation()
-                msg = "Disabled session validation scheduler."
-                # log here
-                print(msg)
-
-            except:
-                msg2 = ("Unable to disable SessionValidationScheduler. "
-                        "Ignoring (shutting down)...")
-                # log here
-                print(msg2)
-
-            self.session_validation_scheduler = None
-
-    @abstractmethod
-    def before_session_validation_disabled(self):
-        pass
-
-    def validate_sessions(self):
-        msg1 = "Validating all active sessions..."
-        print(msg1)
-        # log here
-
-        invalid_count = 0
-        active_sessions = self.get_active_sessions()
-        print('\n\nactive sessions: ', active_sessions, '\n\n')
-        if (active_sessions):
-            for session in active_sessions:
-                try:
-                    # simulate a lookup key to satisfy the method signature.
-                    # self.could probably be cleaned up in future versions:
-                    session_key = DefaultSessionKey(session.session_id)
-                    self.validate(session, session_key)
-                except InvalidSessionException as ex:
-                    expired = isinstance(ex, ExpiredSessionException)
-                    msg2 = "Invalidated session with id [{s_id}] ({exp})".\
-                           format(s_id=session.get_id(),
-                                  exp="expired" if (expired) else "stopped")
-                    print(msg2)
-                    # log here
-                    invalid_count += 1
-
-        msg3 = "Finished session validation.  "
-        print(msg3)
-        # log here
-
-        if (invalid_count > 0):
-            msg3 += "[" + str(invalid_count) + "] sessions were stopped."
-        else:
-            msg3 += "No sessions were stopped."
-        print(msg3)
-        # log here
-
-        return msg3
-
-    @abstractmethod
-    def get_active_sessions(self):
-        pass
+    def on_change(self, session):
+        if self.auto_touch:  # new to yosai
+            session.touch()
+        self.session_store.update(session)
 
 
 class DefaultSessionContext(MapContext, session_abcs.SessionContext):
@@ -1463,132 +1395,183 @@ class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
                     bool(self._session_storage_enabled))
 
 
-class DefaultSessionManager(AbstractValidatingSessionManager,
-                            cache_abcs.CacheHandlerAware):
+class ExecutorServiceSessionValidationScheduler(session_abcs.SessionValidationScheduler):
     """
-    Default business-tier implementation of a ValidatingSessionManager.
-    All session CRUD operations are delegated to an internal SessionStore.
-    """
+    Note:  Many data stores support TTL (time to live) as a feature.  It
+           is unecessary to run a session-validation/Executor service if
+           you can use the TTL timeout feature.
 
-    def __init__(self):
-        self.delete_invalid_sessions = True
-        self.session_factory = SimpleSessionFactory()
-        self._cache_handler = None
-        self._session_store = MemorySessionStore()  # advised change to CachingSessionStore
+           yosai vs shiro:
+           Shiro uses a daemon thread for scheduled validation, signaling
+           it when to shutdown.  Python terminates daemon threads much more
+           abruptly than Java, so Yosai will not use them.  Instead, Yosai uses
+           regular threads and an event notification process to gracefully terminate.
+           See:  https://docs.python.org/3/library/threading.html#thread-objects
+
+    """
+    def __init__(self, session_manager, interval):
+        """
+        :param sessionmanager: a ValidatingSessionManager
+        :param interval:  a time interval, in seconds
+        """
+        self.session_manager = session_manager
+        self.interval = interval  # in seconds
+        self._enabled = False
+        self.service = StoppableScheduledExecutor(self.run,
+                                                  interval=self.interval)
 
     @property
-    def session_store(self):
-        return self._session_store
+    def is_enabled(self):
+        return self._enabled
 
-    @session_store.setter
-    def session_store(self, sessionstore):
-        self._session_store = sessionstore
-        self.apply_cache_handler_to_session_store()
+    # StoppableScheduledExecutor validates sessions at fixed intervals
+    def enable_session_validation(self):
+        if (self.interval):
+            self.service.start()
+            self._enabled = True
 
-    @property
-    def cache_handler(self):
-        return self._cache_handler
-
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
-        self._cache_handler = cachehandler
-        self.apply_cache_handler_to_session_store()
-
-    def apply_cache_handler_to_session_store(self):
-        try:
-            if isinstance(self.session_store, cache_abcs.CacheHandlerAware):
-                self.session_store.cache_handler = self._cache_handler
-        except AttributeError:
-            msg = ("tried to set a cache manager in a SessionStore that isn\'t"
-                   "defined or configured in the DefaultSessionManager")
-            print(msg)
-            # log warning here
-            return
-
-    def do_create_session(self, session_context):
-        session = self.new_session_instance(session_context)
-
-        msg = "Creating session for host " + session.host
+    def run(self):
+        msg = "Executing session validation..."
         print(msg)
-        # log trace here
+        # log here
 
-        self.create(session)
-        return session
+        start_time = int(round(time.time() * 1000, 2))
+        self.session_manager.validate_sessions()
+        stop_time = int(round(time.time() * 1000, 2))
 
-    def new_session_instance(self, session_context):
-        return self.session_factory.create_session(session_context)
+        msg2 = ("Session validation completed successfully in " +
+                str(stop_time - start_time) + " milliseconds.")
+        print(msg2)
+        # log here
 
-    def create(self, session):
-        msg = ("Creating new EIS record for new session instance [{0}]".
-               format(session))
+    def disable_session_validation(self):
+        self.service.stop()
+        self.enabled = False
+
+
+# yosai refactor:
+class ScheduledSessionValidator:
+    """
+    Use this class if you want to manually control scheduled invalidation
+    of sessions.
+    """
+    def __init__(self, session_validator, session_store):
+
+        self.session_validator = session_validator
+
+        # note:  this session_store requires active_sessions support, which is
+        #        not available from a default SessionStore:
+        self.session_store = session_store
+
+        self.session_validation_scheduler = None  # setter injected
+        self.session_validation_scheduler_enabled =\
+            session_settings.validation_scheduler_enable
+        self.session_validation_interval =\
+            session_settings.validation_time_interval
+
+        self.enable_session_validation_if_necessary()
+
+    def create_session_validation_scheduler(self):
+        msg = ("No SessionValidationScheduler set.  Attempting to "
+               "create default instance.")
+        # log here
         print(msg)
-        # log debug here
 
-        self.session_store.create(session)
+        scheduler = ExecutorServiceSessionValidationScheduler(
+            session_manager=self, interval=self.session_validation_interval)
 
-    def on_stop(self, session):
-        try:
-            session.last_access_time = session.stop_timestamp
-        except AttributeError:
-            msg = "not working with a SimpleSession instance"
-            print(msg)
-            # log warning here
+        msg2 = ("Created default SessionValidationScheduler instance of "
+                "type [" + scheduler.__class__.__name__ + "].")
+        print(msg2)
+        # log here:
 
-        self.on_change(session)
+        return scheduler
 
-    def after_stopped(self, session):
-        if (self.delete_invalid_sessions):
-            self.delete(session)
+    def enable_session_validation_if_necessary(self):
+        scheduler = self.session_validation_scheduler
+        if (self.session_validation_scheduler_enabled and
+           (scheduler is None or (not scheduler.is_enabled))):
+            self.enable_session_validation()
 
-    def on_expiration(self, session):
-        try:
-            session.is_expired = True
-        except AttributeError:
-            msg = ("tried to expire a session but couldn\'t, unlikely "
-                   "working with a SimpleSession instance")
-            print(msg)
-            # log warning here
+    def enable_session_validation(self):
+        scheduler = self.session_validation_scheduler
+        if (scheduler is None):
+            print("Creating session validation scheduler")
+            scheduler = self.create_session_validation_scheduler()
+            self.session_validation_scheduler = scheduler
 
-        self.on_change(session)
+        msg = "Enabling session validation scheduler..."
+        # log here
+        print(msg)
 
-    def after_expired(self, session):
-        if (self.delete_invalid_sessions):
-            self.delete(session)
+        scheduler.enable_session_validation()
+        self.after_session_validation_enabled()
 
-    def on_change(self, session):
-        self.session_store.update(session)
+    def after_session_validation_enabled(self):
+        pass
 
-    def retrieve_session(self, session_key):
-        session_id = self.get_session_id(session_key)
-        if (session_id is None):
-            # log here
-            msg = ("Unable to resolve session ID from SessionKey [{0}]."
-                   "Returning null to indicate a session could not be "
-                   "found.".format(session_key))
-            print(msg)
-            return None
+    def before_session_validation_disabled(self):
+        pass
 
-        session = self.retrieve_session_from_data_source(session_id)
-        if (session is None):
-            # session ID was provided, meaning one is expected to be found,
-            # but we couldn't find one:
-            msg2 = "Could not find session with ID [" + session_id + "]"
-            raise UnknownSessionException(msg2)
+    def disable_session_validation(self):
+        self.before_session_validation_disabled()
+        scheduler = self.session_validation_scheduler
+        if (scheduler is not None):
+            try:
+                scheduler.disable_session_validation()
+                msg = "Disabled session validation scheduler."
+                # log here
+                print(msg)
 
-        return session
+            except:
+                msg2 = ("Unable to disable SessionValidationScheduler. "
+                        "Ignoring (shutting down)...")
+                # log here
+                print(msg2)
 
-    def get_session_id(self, session_key):
-        return session_key.session_id
-
-    def retrieve_session_from_data_source(self, session_id):
-        return self.session_store.read(session_id)
-
-    def delete(self, session):
-        self.session_store.delete(session)
+            self.session_validation_scheduler = None
 
     def get_active_sessions(self):
+        # note:  this requires a SessionStore with active_session support:
         active_sessions = self.session_store.get_active_sessions()
         if (active_sessions is not None):
             return active_sessions
         else:
             return tuple()
+
+    def validate_sessions(self):
+        msg1 = "Validating all active sessions..."
+        print(msg1)
+        # log here
+
+        invalid_count = 0
+        active_sessions = self.get_active_sessions()
+        print('\n\nactive sessions: ', active_sessions, '\n\n')
+        if (active_sessions):
+            for session in active_sessions:
+                try:
+                    # simulate a lookup key to satisfy the method signature.
+                    # self.could probably be cleaned up in future versions:
+                    session_key = DefaultSessionKey(session.session_id)
+                    self.session_validator.validate(session, session_key)
+                except InvalidSessionException as ex:
+                    expired = isinstance(ex, ExpiredSessionException)
+                    msg2 = "Invalidated session with id [{s_id}] ({exp})".\
+                           format(s_id=session.get_id(),
+                                  exp="expired" if (expired) else "stopped")
+                    print(msg2)
+                    # log here
+                    invalid_count += 1
+
+        msg3 = "Finished session validation.  "
+        print(msg3)
+        # log here
+
+        if (invalid_count > 0):
+            msg3 += "[" + str(invalid_count) + "] sessions were stopped."
+        else:
+            msg3 += "No sessions were stopped."
+        print(msg3)
+        # log here
+
+        return msg3
