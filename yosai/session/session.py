@@ -934,38 +934,12 @@ class SessionEventHandler(event_abcs.EventBusAware):
             raise SessionEventException(msg)
 
 
-class DefaultSessionManager(cache_abcs.CacheHandlerAware,
-                            session_abcs.NativeSessionManager):
-    """
-    Yosai's DefaultSessionManager represents a massive refactoring of Shiro's
-    SessionManager object model.  The refactoring is an ongoing effort to
-    replace a confusing inheritance-based object graph with a compositional
-    design.  This compositional design continues to evolve.  Pull Requests
-    are welcome.
+class SessionHandler:
 
-    Touching Sessions
-    ------------------
-    A session's last_access_time must be updated on every request.  Updating
-    the last access timestamp is required for session validation to work
-    correctly as the timestamp is used to determine whether a session has timed
-    out due to inactivity.
-
-    In web applications, the [Shiro Filter] updates the session automatically
-    via the session.touch() method.  For non-web environments (e.g. for RMI),
-    something else must call the touch() method to ensure the session
-    validation logic functions correctly.
-
-    Shiro does not enable auto-touch within the DefaultSessionManager. It is not
-     yet clear why Shiro doesn't.  Until the reason why is revealed, Yosai
-     includes a new auto_touch feature to enable/disable auto-touching.
-    """
-
-    def __init__(self, auto_touch=True):
-        self.delete_invalid_sessions = True
-        self.session_factory = SimpleSessionFactory()
-        self._cache_handler = None
+    def __init__(self, auto_touch=True, session_event_handler=None):
         self._session_store = CachingSessionStore()
-        self.session_event_handler = SessionEventHandler()
+        self._cache_handler = None  # setter injected
+        self.session_event_handler = session_event_handler
         self.auto_touch = auto_touch
 
     @property
@@ -997,59 +971,6 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
             # log warning here
             return
 
-    # -------------------------------------------------------------------------
-    # Session Lifecycle Methods
-    # -------------------------------------------------------------------------
-
-    def start(self, session_context):
-        # is a SimpleSesson:
-        session = self._create_session(session_context)
-
-        self.on_start(session, session_context)
-        self.session_event_handler.notify_start(session)
-
-        # Don't expose the EIS-tier Session object to the client-tier, but
-        # rather a DelegatingSession:
-        return self.create_exposed_session(session, session_context)
-
-    def stop(self, session_key):
-        session = self._lookup_required_session(session_key)
-        try:
-            msg = ("Stopping session with id [{0}]").format(session.session_id)
-            print(msg)
-            # log here
-
-            session.stop()
-            self.on_stop(session)
-
-            immutable_session = self.before_invalid_notification(session)
-            self.session_event_handler.notify_stop(immutable_session)
-
-        except InvalidSessionException:
-            raise
-        finally:
-            self.after_stopped(session)
-
-    # -------------------------------------------------------------------------
-    # Session Creation Methods
-    # -------------------------------------------------------------------------
-
-    # consolidated with do_create_session:
-    def _create_session(self, session_context):
-        session = self.session_factory.create_session(session_context)
-
-        msg = "Creating session for host " + session.host
-        print(msg)
-        # log trace here
-
-        msg = ("Creating new EIS record for new session instance [{0}]".
-               format(session))
-        print(msg)
-        # log debug here
-        self.session_store.create(session)
-
-        return session
-
     def before_invalid_notification(self, session):
         """
          Returns the session instance that should be passed to registered
@@ -1066,62 +987,9 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         """
         return ImmutableProxiedSession(session)
 
-    # yosai introduces the keyword parameterization
-    def create_exposed_session(self, session, key=None, context=None):
-        """
-        :type session:  SimpleSession
-        """
-        # shiro ignores key and context parameters
-        return DelegatingSession(self, DefaultSessionKey(session.session_id))
-
     # -------------------------------------------------------------------------
     # Session Lookup Methods
     # -------------------------------------------------------------------------
-
-    # called by mgt.ApplicationSecurityManager:
-    def get_session(self, key):
-        """
-        :returns: DelegatingSession
-        """
-        # a SimpleSession:
-        session = self._do_get_session(key)
-        if (session):
-            return self.create_exposed_session(session, key)
-        else:
-            return None
-
-    # called internally:
-    def _lookup_required_session(self, key):
-        """
-        :returns: SimpleSession
-        """
-        session = self._do_get_session(key)
-        if (not session):
-            msg = ("Unable to locate required Session instance based "
-                   "on session_key [" + str(key) + "].")
-            raise UnknownSessionException(msg)
-        return session
-
-    def _do_get_session(self, session_key):
-        """
-        :returns: SimpleSession
-        """
-        msg = "Attempting to retrieve session with key " + str(session_key)
-        print(msg)
-        # log here
-
-        session = self._retrieve_session(session_key)
-
-        if self.auto_touch:  # new to yosai
-            session.touch()
-
-        if (session is not None):
-            self.validate(session, session_key)
-
-        # won't be called unless the session is valid (due exceptions):
-        self.on_change(session)  # new to yosai
-
-        return session
 
     def _retrieve_session(self, session_key):
         """
@@ -1146,76 +1014,26 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
 
         return session
 
-    # -------------------------------------------------------------------------
-    # Session Attribute Methods
-    # -------------------------------------------------------------------------
-
-    # consolidated with check_valid
-    def is_valid(self, session_key):
+    def do_get_session(self, session_key):
         """
-        if the session doesn't exist, _lookup_required_session raises
+        :returns: SimpleSession
         """
-        try:
-            self._lookup_required_session(session_key)
-            return True
-        except InvalidSessionException:
-            return False
+        msg = "Attempting to retrieve session with key " + str(session_key)
+        print(msg)
+        # log here
 
-    def get_start_timestamp(self, session_key):
-        return self._lookup_required_session(session_key).start_timestamp
+        session = self._retrieve_session(session_key)
 
-    def get_last_access_time(self, session_key):
-        return self._lookup_required_session(session_key).last_access_time
+        if self.auto_touch:  # new to yosai
+            session.touch()
 
-    def get_absolute_timeout(self, session_key):
-        return self._lookup_required_session(session_key).absolute_timeout
+        if (session is not None):
+            self.validate(session, session_key)
 
-    def get_idle_timeout(self, session_key):
-        return self._lookup_required_session(session_key).idle_timeout
+        # won't be called unless the session is valid (due exceptions):
+        self.on_change(session)  # new to yosai
 
-    def set_idle_timeout(self, session_key, idle_time):
-        session = self._lookup_required_session(session_key)
-        session.idle_timeout = idle_time
-        self.on_change(session)
-
-    def set_absolute_timeout(self, session_key, absolute_time):
-        session = self._lookup_required_session(session_key)
-        session.absolute_timeout = absolute_time
-        self.on_change(session)
-
-    def touch(self, session_key):
-        session = self._lookup_required_session(session_key)
-        session.touch()
-        self.on_change(session)
-
-    def get_host(self, session_key):
-        return self._lookup_required_session(session_key).host
-
-    def get_attribute_keys(self, session_key):
-        collection = self._lookup_required_session(session_key).attribute_keys
-        try:
-            return tuple(collection)
-        except TypeError:  # collection is None
-            return tuple()
-
-    def get_attribute(self, session_key, attribute_key):
-        return self._lookup_required_session(session_key).\
-            get_attribute(attribute_key)
-
-    def set_attribute(self, session_key, attribute_key, value=None):
-        if (value is None):
-            self.remove_attribute(session_key, attribute_key)
-        else:
-            session = self._lookup_required_session(session_key)
-            session.set_attribute(attribute_key, value)
-            self.on_change(session)
-
-    def remove_attribute(self, session_key, attribute_key):
-        session = self._lookup_required_session(session_key)
-        removed = session.remove_attribute(attribute_key)
-        if (removed is not None):
-            self.on_change(session)
-        return removed
+        return session
 
     # -------------------------------------------------------------------------
     # Session Teardown Methods
@@ -1334,6 +1152,218 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         if self.auto_touch:  # new to yosai
             session.touch()
         self.session_store.update(session)
+
+
+class DefaultSessionManager(cache_abcs.CacheHandlerAware,
+                            session_abcs.NativeSessionManager):
+    """
+    Yosai's DefaultSessionManager represents a massive refactoring of Shiro's
+    SessionManager object model.  The refactoring is an ongoing effort to
+    replace a confusing inheritance-based object graph with a compositional
+    design.  This compositional design continues to evolve.  Pull Requests
+    are welcome.
+
+    Touching Sessions
+    ------------------
+    A session's last_access_time must be updated on every request.  Updating
+    the last access timestamp is required for session validation to work
+    correctly as the timestamp is used to determine whether a session has timed
+    out due to inactivity.
+
+    In web applications, the [Shiro Filter] updates the session automatically
+    via the session.touch() method.  For non-web environments (e.g. for RMI),
+    something else must call the touch() method to ensure the session
+    validation logic functions correctly.
+
+    Shiro does not enable auto-touch within the DefaultSessionManager. It is not
+     yet clear why Shiro doesn't.  Until the reason why is revealed, Yosai
+     includes a new auto_touch feature to enable/disable auto-touching.
+    """
+
+    def __init__(self):
+        self.delete_invalid_sessions = True
+        self.session_factory = SimpleSessionFactory()
+        self._cache_handler = None
+        self._session_event_handler = SessionEventHandler()
+        self.session_handler = SessionHandler(self.session_event_handler)
+
+    @property
+    def session_event_handler(self):
+        return self._session_event_handler
+
+    @session_event_handler.setter
+    def session_event_handler(self, handler):
+        self._session_event_handler = handler
+        self.session_handler.session_event_handler = handler
+
+    @property
+    def cache_handler(self):
+        return self._cache_handler
+
+    @cache_handler.setter
+    def cache_handler(self, cachehandler):
+        self._cache_handler = cachehandler
+        self.session_handler.cache_handler = cachehandler
+
+    # -------------------------------------------------------------------------
+    # Session Lifecycle Methods
+    # -------------------------------------------------------------------------
+
+    def start(self, session_context):
+        # is a SimpleSesson:
+        session = self._create_session(session_context)
+
+        self.on_start(session, session_context)
+        self.session_event_handler.notify_start(session)
+
+        # Don't expose the EIS-tier Session object to the client-tier, but
+        # rather a DelegatingSession:
+        return self.create_exposed_session(session, session_context)
+
+    def stop(self, session_key):
+        session = self._lookup_required_session(session_key)
+        try:
+            msg = ("Stopping session with id [{0}]").format(session.session_id)
+            print(msg)
+            # log here
+
+            session.stop()
+            self.on_stop(session)
+
+            immutable_session = self.before_invalid_notification(session)
+            self.session_event_handler.notify_stop(immutable_session)
+
+        except InvalidSessionException:
+            raise
+        finally:
+            self.after_stopped(session)
+
+    # -------------------------------------------------------------------------
+    # Session Creation Methods
+    # -------------------------------------------------------------------------
+
+    # consolidated with do_create_session:
+    def _create_session(self, session_context):
+        session = self.session_factory.create_session(session_context)
+
+        msg = "Creating session for host " + session.host
+        print(msg)
+        # log trace here
+
+        msg = ("Creating new EIS record for new session instance [{0}]".
+               format(session))
+        print(msg)
+        # log debug here
+        self.session_store.create(session)
+
+        return session
+
+    # yosai introduces the keyword parameterization
+    def create_exposed_session(self, session, key=None, context=None):
+        """
+        :type session:  SimpleSession
+        """
+        # shiro ignores key and context parameters
+        return DelegatingSession(self, DefaultSessionKey(session.session_id))
+
+    # -------------------------------------------------------------------------
+    # Session Lookup Methods
+    # -------------------------------------------------------------------------
+
+    # called by mgt.ApplicationSecurityManager:
+    def get_session(self, key):
+        """
+        :returns: DelegatingSession
+        """
+        # a SimpleSession:
+        session = self.session_handler.do_get_session(key)
+        if (session):
+            return self.create_exposed_session(session, key)
+        else:
+            return None
+
+    # called internally:
+    def _lookup_required_session(self, key):
+        """
+        :returns: SimpleSession
+        """
+        session = self.session_handler.do_get_session(key)
+        if (not session):
+            msg = ("Unable to locate required Session instance based "
+                   "on session_key [" + str(key) + "].")
+            raise UnknownSessionException(msg)
+        return session
+
+    # -------------------------------------------------------------------------
+    # Session Attribute Methods
+    # -------------------------------------------------------------------------
+
+    # consolidated with check_valid
+    def is_valid(self, session_key):
+        """
+        if the session doesn't exist, _lookup_required_session raises
+        """
+        try:
+            self._lookup_required_session(session_key)
+            return True
+        except InvalidSessionException:
+            return False
+
+    def get_start_timestamp(self, session_key):
+        return self._lookup_required_session(session_key).start_timestamp
+
+    def get_last_access_time(self, session_key):
+        return self._lookup_required_session(session_key).last_access_time
+
+    def get_absolute_timeout(self, session_key):
+        return self._lookup_required_session(session_key).absolute_timeout
+
+    def get_idle_timeout(self, session_key):
+        return self._lookup_required_session(session_key).idle_timeout
+
+    def set_idle_timeout(self, session_key, idle_time):
+        session = self._lookup_required_session(session_key)
+        session.idle_timeout = idle_time
+        self.on_change(session)
+
+    def set_absolute_timeout(self, session_key, absolute_time):
+        session = self._lookup_required_session(session_key)
+        session.absolute_timeout = absolute_time
+        self.on_change(session)
+
+    def touch(self, session_key):
+        session = self._lookup_required_session(session_key)
+        session.touch()
+        self.on_change(session)
+
+    def get_host(self, session_key):
+        return self._lookup_required_session(session_key).host
+
+    def get_attribute_keys(self, session_key):
+        collection = self._lookup_required_session(session_key).attribute_keys
+        try:
+            return tuple(collection)
+        except TypeError:  # collection is None
+            return tuple()
+
+    def get_attribute(self, session_key, attribute_key):
+        return self._lookup_required_session(session_key).\
+            get_attribute(attribute_key)
+
+    def set_attribute(self, session_key, attribute_key, value=None):
+        if (value is None):
+            self.remove_attribute(session_key, attribute_key)
+        else:
+            session = self._lookup_required_session(session_key)
+            session.set_attribute(attribute_key, value)
+            self.on_change(session)
+
+    def remove_attribute(self, session_key, attribute_key):
+        session = self._lookup_required_session(session_key)
+        removed = session.remove_attribute(attribute_key)
+        if (removed is not None):
+            self.on_change(session)
+        return removed
 
 
 class DefaultSessionContext(MapContext, session_abcs.SessionContext):
