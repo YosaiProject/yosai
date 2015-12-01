@@ -987,6 +987,9 @@ class SessionHandler:
         """
         return ImmutableProxiedSession(session)
 
+    def create_session(self, session):
+        self.session_store.create(session)
+
     # -------------------------------------------------------------------------
     # Session Lookup Methods
     # -------------------------------------------------------------------------
@@ -1185,7 +1188,9 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         self.session_factory = SimpleSessionFactory()
         self._cache_handler = None
         self._session_event_handler = SessionEventHandler()
-        self.session_handler = SessionHandler(self.session_event_handler)
+        self.session_handler =\
+            SessionHandler(auto_touch=True,
+                           session_event_handler=self.session_event_handler)
 
     @property
     def session_event_handler(self):
@@ -1213,7 +1218,7 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         # is a SimpleSesson:
         session = self._create_session(session_context)
 
-        self.on_start(session, session_context)
+        self.session_handler.on_start(session, session_context)
         self.session_event_handler.notify_start(session)
 
         # Don't expose the EIS-tier Session object to the client-tier, but
@@ -1228,7 +1233,7 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
             # log here
 
             session.stop()
-            self.on_stop(session)
+            self.session_handler.on_stop(session)
 
             immutable_session = self.before_invalid_notification(session)
             self.session_event_handler.notify_stop(immutable_session)
@@ -1254,7 +1259,8 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
                format(session))
         print(msg)
         # log debug here
-        self.session_store.create(session)
+
+        self.session_handler.create_session(session)
 
         return session
 
@@ -1324,17 +1330,17 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
     def set_idle_timeout(self, session_key, idle_time):
         session = self._lookup_required_session(session_key)
         session.idle_timeout = idle_time
-        self.on_change(session)
+        self.session_handler.on_change(session)
 
     def set_absolute_timeout(self, session_key, absolute_time):
         session = self._lookup_required_session(session_key)
         session.absolute_timeout = absolute_time
-        self.on_change(session)
+        self.session_handler.on_change(session)
 
     def touch(self, session_key):
         session = self._lookup_required_session(session_key)
         session.touch()
-        self.on_change(session)
+        self.session_handler.on_change(session)
 
     def get_host(self, session_key):
         return self._lookup_required_session(session_key).host
@@ -1356,13 +1362,13 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         else:
             session = self._lookup_required_session(session_key)
             session.set_attribute(attribute_key, value)
-            self.on_change(session)
+            self.session_handler.on_change(session)
 
     def remove_attribute(self, session_key, attribute_key):
         session = self._lookup_required_session(session_key)
         removed = session.remove_attribute(attribute_key)
         if (removed is not None):
-            self.on_change(session)
+            self.session_handler.on_change(session)
         return removed
 
 
