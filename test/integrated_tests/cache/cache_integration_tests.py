@@ -16,9 +16,7 @@ authz_info = IndexedAuthorizationInfo(roles=roles, permissions=perms)
 
 ch = DPCacheHandler()
 
-def creator():
-    return authz_info
 
-ch.get_or_create('authz_info', 'id123', creator)
+ch.get_or_create('authz_info', 'id123', lambda x: authz_info, object)
 
 

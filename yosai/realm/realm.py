@@ -232,10 +232,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         .format(identifier))
                 # log here (debug)
                 print(msg2)
-                account = ch.get_or_create('credentials',
-                                           identifier,
-                                           get_stored_credentials,
-                                           self)
+                account = ch.get_or_create(domain='credentials',
+                                           identifier=identifier,
+                                           creator_func=get_stored_credentials,
+                                           creator=self)
             except CredentialsNotFoundException:
                 # log here
                 msg3 = ("No account credentials found for identifier [{0}].  "
@@ -309,10 +309,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         .format(identifier))
                 # log here (debug)
                 print(msg2)
-                account = ch.get_or_create('authz_info',
-                                           identifier,
-                                           get_stored_authz_info,
-                                           self)
+                account = ch.get_or_create(domain='authz_info',
+                                           identifier=identifier,
+                                           creator_func=get_stored_authz_info,
+                                           creator=self)
             except AuthzInfoNotFoundException:
                 # log here
                 msg3 = ("No account authz_info found for identifier [{0}].  "

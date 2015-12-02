@@ -174,3 +174,5 @@ Packaging
 -----------------------------------------------------------------------------
 
 DelegatingSession is Serializable in Shiro-- investigate why
+
+

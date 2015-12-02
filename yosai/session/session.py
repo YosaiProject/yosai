@@ -234,8 +234,13 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         self._cache_handler = cachehandler
 
     def create(self, session):
+        """
+        caches the session and caches an entry to associate the cached session
+        with the subject 
+        """
         sessionid = super().create(session)
-        self._cache(session=session, session_id=sessionid)
+        self._cache(session, sessionid)
+        self._cache_identifier_to_key_map(session, sessionid)
         return sessionid
 
     def read(self, sessionid):
@@ -270,25 +275,39 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     def _get_cached_session(self, sessionid):
         try:
             # assume that sessionid isn't None
-            return self.cache_handler.get(key='session', identifier=sessionid)
+            return self.cache_handler.get(domain='session',
+                                          identifier=sessionid)
         except AttributeError:
             msg = "no cache parameter nor lazy-defined cache"
             print(msg)
             # log here
         return None
 
-    def _cache(self, session, session_id, cache=None):
+    def _cache_identifier_to_key_map(self, session, session_id):
+        """
+        creates a cache entry within a user's cache space that is used to
+        identify the active session associated with the user
 
+        when a session is associated with a user, it will have an identifier
+        attribute
+        """
         isk = subject_settings.identifiers_session_key
         identifier = str(session.attributes.get(isk))
-        combo_identifier = '{identifier}{delim}{sessionid}'.format(
-            identifier=identifier if identifier is not None else '',
-            delim=':' if identifier is not None else '',
-            sessionid=session_id)
+        if identifier is not None:
+            try:
+                self.cache_handler.set(domain='session',
+                                       identifier=identifier,
+                                       value=session_id)
+            except AttributeError:
+                msg = "no cache parameter nor lazy-defined cache"
+                print(msg)
+            return
+
+    def _cache(self, session, session_id):
 
         try:
-            self.cache_handler.set(key='session',
-                                   identifier=combo_identifier,
+            self.cache_handler.set(domain='session',
+                                   identifier=session_id,
                                    value=session)
         except AttributeError:
             msg = "no cache parameter nor lazy-defined cache"
@@ -296,9 +315,20 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         return
 
     def _uncache(self, session):
+
+        isk = subject_settings.identifiers_session_key
+        identifier = str(session.attributes.get(isk))
+
         try:
             sessionid = session.session_id
-            self.cache_handler.delete(key='session', identifier=sessionid)
+
+            # delete the serialized session object:
+            self.cache_handler.delete(domain='session',
+                                      identifier=sessionid)
+
+            # delete the mapping between a user and session id:
+            self.cache_handler.delete(domain='session',
+                                      identifier=identifier)
         except AttributeError:
             msg = "Tried to uncache a session with incomplete parameters"
             print(msg)
