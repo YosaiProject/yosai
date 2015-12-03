@@ -7,6 +7,7 @@ from yosai import (
     DefaultSessionKey,
     ExpiredSessionException,
     ImmutableProxiedSession,
+    InvalidSessionException,
     event_bus,
     UnknownSessionException,
 )
@@ -151,7 +152,7 @@ def test_session_handler_delete(session_handler, cache_handler, session, capsys)
 
 
 @pytest.mark.parametrize('myminutes', [10, 50])
-def test_sh_idleexpired_session(
+def test_sh_expired_session(
         session_handler, cache_handler, session, myminutes):
     """
     test objective:  validate idle and absolute timeout expiration handling
@@ -182,12 +183,55 @@ def test_sh_idleexpired_session(
     cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
 
     now = datetime.datetime.now(pytz.utc)
-    thirty_ago = datetime.timedelta(minutes=myminutes)
-    cachedsession.last_access_time = now - thirty_ago
+    minutes_ago = datetime.timedelta(minutes=myminutes)
+    cachedsession.last_access_time = now - minutes_ago
 
     sh.on_change(cachedsession)
 
     with pytest.raises(ExpiredSessionException):
+        sh.do_get_session(DefaultSessionKey(sessionid))
+
+        assert event_detected.results == ImmutableProxiedSession(session)
+
+
+def test_sh_stopped_session(
+        session_handler, cache_handler, session, monkeypatch):
+    """
+    test objective:  validate stopped session handling
+
+    session_handler aspects tested:
+        - create_session
+        - do_get_session
+        - on_change
+        - validate
+        - on_invalidation
+        - before_invalid_notification
+        - after_stopped
+    """
+    ch = cache_handler
+    sh = session_handler
+    monkeypatch.setattr(sh, 'auto_touch', False)
+    sh.cache_handler = cache_handler
+
+    event_detected = None
+
+    def event_listener(event):
+        nonlocal event_detected
+        event_detected = event
+
+    event_bus.register(event_listener, 'SESSION.STOP')
+
+    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+                          'user12345678')
+
+    sessionid = sh.create_session(session)
+    cachedsession = ch.get(domain='session', identifier=sessionid)
+
+    now = datetime.datetime.now(pytz.utc)
+    cachedsession.stop_timestamp = now
+    ch.set(domain='session', identifier=sessionid, value=cachedsession)
+
+    with pytest.raises(InvalidSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
         assert event_detected.results == ImmutableProxiedSession(session)

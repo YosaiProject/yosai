@@ -688,7 +688,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             msg = ("Session with id [" + str(self.session_id) + "] has been "
                    "explicitly stopped.  No further interaction under "
                    "this session is allowed.")
-            raise StoppedSessionException(msg)
+            raise StoppedSessionException(msg)  # subclass of InvalidSessionException
 
         # check for expiration
         if (self.is_timed_out()):
@@ -1145,7 +1145,7 @@ class SessionHandler:
 
         # should be a stopped exception if this is reached, but a more
         # generalized invalid exception is checked
-        except InvalidSessionException as ise:  # a more generalized exception
+        except InvalidSessionException as ise:
             self.on_invalidation(session, ise, session_key)
             raise ise
 
@@ -1171,6 +1171,7 @@ class SessionHandler:
         self.on_change(session)
 
     def after_stopped(self, session):
+        # this appears to be redundant
         if (self.delete_invalid_sessions):
             self.delete(session)
 
@@ -1206,6 +1207,7 @@ class SessionHandler:
         if (self.delete_invalid_sessions):
             self.delete(session)
 
+    # DG:  not clear of any use case for this.. -- TBD (invalidation maybe?)
     def on_invalidation(self, session, ise, session_key):
 
         # session exception hierarchy:  invalid -> stopped -> expired
@@ -1223,6 +1225,7 @@ class SessionHandler:
             self.session_event_handler.notify_stop(immutable_session)
         except:
             raise
+        # DG:  this results in a redundant delete operation (from shiro):
         finally:
             self.after_stopped(session)
 
@@ -1314,8 +1317,10 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
 
         except InvalidSessionException:
             raise
+
         finally:
-            self.after_stopped(session)
+            # DG: this results in a redundant delete operation (from shiro).
+            self.session_handler.after_stopped(session)
 
     # -------------------------------------------------------------------------
     # Session Creation Methods
