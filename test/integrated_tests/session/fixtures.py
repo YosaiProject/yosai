@@ -3,6 +3,8 @@ import pytest
 from yosai_dpcache.cache import DPCacheHandler
 from yosai import (
     DefaultSessionKey,
+    DefaultSessionContext,
+    DefaultSessionManager,
     SessionEventHandler,
     SessionHandler,
     SimpleSessionFactory,
@@ -24,8 +26,13 @@ def session_store(cache_handler):
 
 
 @pytest.fixture(scope='function')
-def session():
-    ssf = SimpleSessionFactory()
+def session_factory():
+    return SimpleSessionFactory()
+
+
+@pytest.fixture(scope='function')
+def session(session_factory):
+    ssf = session_factory
     return ssf.create_session()
 
 
@@ -45,3 +52,15 @@ def session_event_handler():
 def session_handler(session_event_handler):
     return SessionHandler(session_event_handler=session_event_handler,
                           auto_touch=True)
+
+
+@pytest.fixture(scope='function')
+def session_manager():
+    return DefaultSessionManager()
+
+
+@pytest.fixture(scope='function')
+def session_context():
+    sc = DefaultSessionContext()
+    sc.host = '127.0.0.1'
+    return sc

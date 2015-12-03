@@ -261,6 +261,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
         if (session.is_valid):
             self._cache(session, session.session_id)
+            self._cache_identifier_to_key_map(session, session.session_id)
         else:
             self._uncache(session)
 
@@ -290,16 +291,21 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         attribute
         """
         isk = subject_settings.identifiers_session_key
-        identifier = str(session.attributes.get(isk))
-        if identifier is not None:
-            try:
-                self.cache_handler.set(domain='session',
-                                       identifier=identifier,
-                                       value=DefaultSessionKey(session_id))
-            except AttributeError:
-                msg = "no cache parameter nor lazy-defined cache"
-                print(msg)
-            return
+        try:
+            identifier = str(session.attributes.get(isk))
+            if identifier is not None:
+                try:
+                    self.cache_handler.set(domain='session',
+                                           identifier=identifier,
+                                           value=DefaultSessionKey(session_id))
+                except AttributeError:
+                    msg = "no cache parameter nor lazy-defined cache"
+                    print(msg)
+                return
+        except AttributeError:
+            msg = 'CacheSessionKeyMap: Could not obtain identifier from session'
+            print(msg)
+            # log warning here
 
     def _cache(self, session, session_id):
 
@@ -832,81 +838,79 @@ class DelegatingSession(session_abcs.Session):
     Note:  Shiro makes DelegatingSession Serializable where as Yosai doesn't (TBD)
     """
 
-    def __init__(self, session_manager, key):
+    def __init__(self, session_manager, sessionkey):
         # omitting None-type checking
-        self.key = key
+        self.session_key = sessionkey
         self.session_manager = session_manager
         self._start_timestamp = None
         self._host = None
 
     @property
     def session_id(self):
-        return self.key.session_id
+        return self.session_key.session_id
 
     @property
     def start_timestamp(self):
         if (not self._start_timestamp):
             self._start_timestamp = self.session_manager.get_start_timestamp(
-                self.key)
+                self.session_key)
         return self._start_timestamp
 
     @property
     def last_access_time(self):
-        return self.session_manager.get_last_access_time(self.key)
+        return self.session_manager.get_last_access_time(self.session_key)
 
     @property
     def idle_timeout(self):
-        return self.session_manager.get_idle_timeout(self.key)
+        return self.session_manager.get_idle_timeout(self.session_key)
 
     @idle_timeout.setter
     def idle_timeout(self, timeout):
-        self.session_manager.set_idle_timeout(self.key, timeout)
+        self.session_manager.set_idle_timeout(self.session_key, timeout)
 
     @property
     def absolute_timeout(self):
-        return self.session_manager.get_absolute_timeout(self.key)
+        return self.session_manager.get_absolute_timeout(self.session_key)
 
     @absolute_timeout.setter
     def absolute_timeout(self, timeout):
-        self.session_manager.set_absolute_timeout(self.key, timeout)
+        self.session_manager.set_absolute_timeout(self.session_key, timeout)
 
     @property
     def host(self):
         if (not self._host):
-            self._host = self.session_manager.get_host(self.key)
+            self._host = self.session_manager.get_host(self.session_key)
 
         return self._host
 
     def touch(self):
-        self.session_manager.touch(self.key)
+        self.session_manager.touch(self.session_key)
 
     def stop(self):
-        self.session_manager.stop(self.key)
+        self.session_manager.stop(self.session_key)
 
     @property
     def attribute_keys(self):
-        return self.session_manager.get_attribute_keys(self.key)
+        return self.session_manager.get_attribute_keys(self.session_key)
 
     def get_attribute(self, attribute_key):
-        return self.session_manager.get_attribute(self.key, attribute_key)
+        return self.session_manager.get_attribute(self.session_key,
+                                                  attribute_key)
 
     def set_attribute(self, attribute_key, value=None):
         if (value is None):
             self.remove_attribute(attribute_key)
         else:
-            self.session_manager.set_attribute(self.key, attribute_key, value)
+            self.session_manager.set_attribute(self.session_key,
+                                               attribute_key,
+                                               value)
 
     def remove_attribute(self, attribute_key):
-        return self.session_manager.remove_attribute(self.key, attribute_key)
+        return self.session_manager.remove_attribute(self.session_key,
+                                                     attribute_key)
 
     def __repr__(self):
-        return ("DelegatingSubject(session_id: {0}, start_timestamp: {1}, "
-                "stop_timestamp: {2}, last_access_time: {3},"
-                "idle_timeout: {4}, absolute_timeout: {5}, host: {6}, "
-                "key: {7})".format(self.session_id, self.start_timestamp,
-                                   self.stop_timestamp, self.last_access_time,
-                                   self.idle_timeout, self.absolute_timeout,
-                                   self.host, self.key))
+        return "DelegatingSubject(session_id: {0})".format(self.session_id)
 
 
 class DefaultSessionKey(session_abcs.SessionKey,
@@ -1093,7 +1097,7 @@ class SessionHandler:
         if (session is None):
             # session ID was provided, meaning one is expected to be found,
             # but we couldn't find one:
-            msg2 = "Could not find session with ID [" + session_id + "]"
+            msg2 = "Could not find session with ID [{0}]".format(session_id)
             raise UnknownSessionException(msg2)
 
         return session
@@ -1103,7 +1107,9 @@ class SessionHandler:
         :type session_key: DefaultSessionKey
         :returns: SimpleSession
         """
-        msg = "Attempting to retrieve session with key " + str(session_key)
+        session_id = session_key.session_id
+        msg = ("do_get_session: Attempting to retrieve session with key " +
+               session_id)
         print(msg)
         # log here
 
@@ -1154,7 +1160,7 @@ class SessionHandler:
     # -------------------------------------------------------------------------
 
     # used by DefaultWebSessionManager:
-    def on_start(session, session_context):
+    def on_start(self, session, session_context):
         """
         placeholder for subclasses to react to a new session being created
         """
@@ -1236,7 +1242,8 @@ class SessionHandler:
 
 
 class DefaultSessionManager(cache_abcs.CacheHandlerAware,
-                            session_abcs.NativeSessionManager):
+                            session_abcs.NativeSessionManager,
+                            event_abcs.EventBusAware):
     """
     Yosai's DefaultSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to
@@ -1268,6 +1275,7 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         self.session_handler =\
             SessionHandler(session_event_handler=self.session_event_handler,
                            auto_touch=True)
+        self._event_bus = None
 
     @property
     def session_event_handler(self):
@@ -1287,6 +1295,15 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         self._cache_handler = cachehandler
         self.session_handler.cache_handler = cachehandler
 
+    @property
+    def event_bus(self):
+        return self._event_bus
+
+    @event_bus.setter
+    def event_bus(self, eventbus):
+        self._event_bus = eventbus
+        self.session_event_handler.event_bus = eventbus
+
     # -------------------------------------------------------------------------
     # Session Lifecycle Methods
     # -------------------------------------------------------------------------
@@ -1296,7 +1313,7 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         session = self._create_session(session_context)
 
         self.session_handler.on_start(session, session_context)
-        self.session_event_handler.notify_start(session)
+        self.session_event_handler.notify_start(session)  # a SimpleSession
 
         # Don't expose the EIS-tier Session object to the client-tier, but
         # rather a DelegatingSession:
@@ -1392,10 +1409,13 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         if the session doesn't exist, _lookup_required_session raises
         """
         try:
-            self._lookup_required_session(session_key)
+            self.check_valid(session_key)
             return True
         except InvalidSessionException:
             return False
+
+    def check_valid(self, session_key):
+        return self._lookup_required_session(session_key)
 
     def get_start_timestamp(self, session_key):
         return self._lookup_required_session(session_key).start_timestamp
