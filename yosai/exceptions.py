@@ -201,7 +201,7 @@ class AuthorizationException(YosaiException):
 class AuthzInfoNotFoundException(AuthorizationException):
     pass
 
-    
+
 class PermissionIndexingException(AuthorizationException):
     pass
 
@@ -354,6 +354,10 @@ class ExpiredSessionException(StoppedSessionException):
 
 
 class UnknownSessionException(InvalidSessionException):
+    pass
+
+
+class SessionCreationException(SessionException):
     pass
 
 

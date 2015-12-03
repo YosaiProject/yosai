@@ -33,6 +33,7 @@ from yosai import (
     LogManager,
     MissingMethodException,
     RandomSessionIDGenerator,
+    SessionCreationException,
     SessionDeleteException,
     SessionEventException,
     StoppableScheduledExecutor,
@@ -120,6 +121,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
     @abstractmethod
     def _do_create(self, session):
         pass
+
 
 class MemorySessionStore(AbstractSessionStore):
     """
@@ -467,6 +469,12 @@ class ImmutableProxiedSession(ProxiedSession):
         raise InvalidSessionException(self.exc_message)
         raise Exception('this exception should never have raised, ALERT!')
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        return (isinstance(other, ImmutableProxiedSession) and
+                other.session_id == self.session_id)
+
 
 class SimpleSession(session_abcs.ValidatingSession,
                     serialize_abcs.Serializable):
@@ -612,11 +620,11 @@ class SimpleSession(session_abcs.ValidatingSession,
         return None
 
     def touch(self):
-        self.last_access_time = datetime.datetime.utcnow()
+        self.last_access_time = datetime.datetime.now(pytz.utc)
 
     def stop(self):
         if (not self.stop_timestamp):
-            self.stop_timestamp = datetime.datetime.utcnow()
+            self.stop_timestamp = datetime.datetime.now(pytz.utc)
 
     def expire(self):
         self.stop()
@@ -652,7 +660,7 @@ class SimpleSession(session_abcs.ValidatingSession,
              be inactive before expiring.  If the session was last accessed
              before this time, it is expired.
             """
-            current_time = datetime.datetime.utcnow()
+            current_time = datetime.datetime.now(pytz.utc)
 
             # Check 1:  Absolute Timeout
             if self.absolute_expiration:
@@ -695,7 +703,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             absolute_timeout = self.absolute_timeout.seconds
             absolute_timeout_min = str(absolute_timeout // 60)
 
-            currenttime = datetime.datetime.utcnow().isoformat()
+            currenttime = datetime.datetime.now(pytz.utc).isoformat()
             session_id = str(self.session_id)
 
             msg2 = ("Session with id [" + session_id + "] has expired. "
@@ -785,7 +793,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             # NOTE:  After you've defined your SimpleSessionAttributesSchema,
             #        the Raw() fields assignment below should be replaced by
             #        the Schema line that follows it
-            attributes = fields.Dict(allow_none=True)
+            _attributes = fields.Dict(allow_none=True)
             # attributes = fields.Nested(cls.SimpleSessionAttributesSchema)
 
             @post_load
@@ -963,7 +971,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
             msg = "Could not publish SESSION.START event"
             raise SessionEventException(msg)
 
-    def notify_stop(self, session):
+    def notify_stop(self, immutable_session):
         """
         :type session:  ImmutableProxiedSession
         """
@@ -976,7 +984,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
             msg = "Could not publish SESSION.STOP event"
             raise SessionEventException(msg)
 
-    def notify_expiration(self, session):
+    def notify_expiration(self, immutable_session):
         """
         :type session:  ImmutableProxiedSession
         """
@@ -992,11 +1000,13 @@ class SessionEventHandler(event_abcs.EventBusAware):
 
 class SessionHandler:
 
-    def __init__(self, auto_touch=False, session_event_handler=None):
+    def __init__(self, session_event_handler, auto_touch=False,
+                 delete_invalid_sessions=True):
+        self.delete_invalid_sessions = delete_invalid_sessions
         self._session_store = CachingSessionStore()
-        self._cache_handler = None  # setter injected
         self.session_event_handler = session_event_handler
         self.auto_touch = auto_touch
+        self._cache_handler = None  # setter injected
 
     @property
     def session_store(self):
@@ -1043,8 +1053,22 @@ class SessionHandler:
         """
         return ImmutableProxiedSession(session)
 
+    # -------------------------------------------------------------------------
+    # Session Creation Methods
+    # -------------------------------------------------------------------------
+
     def create_session(self, session):
-        self.session_store.create(session)
+        """
+        :returns: a session_id string
+        """
+        return self.session_store.create(session)
+
+    # -------------------------------------------------------------------------
+    # Session Teardown Methods
+    # -------------------------------------------------------------------------
+
+    def delete(self, session):
+        self.session_store.delete(session)
 
     # -------------------------------------------------------------------------
     # Session Lookup Methods
@@ -1052,6 +1076,7 @@ class SessionHandler:
 
     def _retrieve_session(self, session_key):
         """
+        :type session_key: DefaultSessionKey
         :returns: SimpleSession
         """
         session_id = session_key.session_id
@@ -1075,6 +1100,7 @@ class SessionHandler:
 
     def do_get_session(self, session_key):
         """
+        :type session_key: DefaultSessionKey
         :returns: SimpleSession
         """
         msg = "Attempting to retrieve session with key " + str(session_key)
@@ -1093,13 +1119,6 @@ class SessionHandler:
             self.on_change(session)
 
         return session
-
-    # -------------------------------------------------------------------------
-    # Session Teardown Methods
-    # -------------------------------------------------------------------------
-
-    def delete(self, session):
-        self.session_store.delete(session)
 
     # -------------------------------------------------------------------------
     # Validation Methods
@@ -1122,13 +1141,13 @@ class SessionHandler:
 
         except ExpiredSessionException as ese:
             self.on_expiration(session, ese, session_key)
-            raise
+            raise ese
 
         # should be a stopped exception if this is reached, but a more
         # generalized invalid exception is checked
         except InvalidSessionException as ise:  # a more generalized exception
             self.on_invalidation(session, ise, session_key)
-            raise
+            raise ise
 
     # -------------------------------------------------------------------------
     # Event-driven Methods
@@ -1240,13 +1259,12 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
     """
 
     def __init__(self):
-        self.delete_invalid_sessions = True
         self.session_factory = SimpleSessionFactory()
-        self._cache_handler = None
         self._session_event_handler = SessionEventHandler()
+        self._cache_handler = None
         self.session_handler =\
-            SessionHandler(auto_touch=True,
-                           session_event_handler=self.session_event_handler)
+            SessionHandler(session_event_handler=self.session_event_handler,
+                           auto_touch=True)
 
     @property
     def session_event_handler(self):
@@ -1316,7 +1334,10 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
         print(msg)
         # log debug here
 
-        self.session_handler.create_session(session)
+        sessionid = self.session_handler.create_session(session)
+        if not sessionid:  # new to yosai
+            msg = 'Failed to obtain a sessionid while creating session.'
+            raise SessionCreationException(msg)
 
         return session
 

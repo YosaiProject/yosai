@@ -67,8 +67,11 @@ class Event:
         return (isinstance(other, Event) and
                 ({key: val for key, val in self.__dict__.items()
                  if key != 'timestamp'} ==
-                {key: val for key, val in other.__dict__.items() 
+                {key: val for key, val in other.__dict__.items()
                  if key != 'timestamp'}))
+
+    def __repr__(self):
+        return "Event({payload})".format(payload=self.__dict__)
 
 class DefaultEventBus(event_abcs.EventBus):
     """
