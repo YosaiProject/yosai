@@ -5,11 +5,13 @@ import pytz
 
 from yosai import (
     DefaultSessionKey,
+    DelegatingSession,
     ExpiredSessionException,
     ImmutableProxiedSession,
     InvalidSessionException,
-    event_bus,
+    SimpleSession,
     UnknownSessionException,
+    event_bus,
 )
 
 
@@ -235,3 +237,29 @@ def test_sh_stopped_session(
         sh.do_get_session(DefaultSessionKey(sessionid))
 
         assert event_detected.results == ImmutableProxiedSession(session)
+
+
+def test_session_manager_start(session_manager, cache_handler, session_context):
+    """
+    test objective:  validate stopped session handling
+
+    session_handler aspects tested:
+        - _create_session
+        - create_exposed_session
+    """
+    sm = session_manager
+    sm.cache_handler = cache_handler
+    sm.event_bus = event_bus
+
+    event_detected = None
+
+    def event_listener(event):
+        nonlocal event_detected
+        event_detected = event
+
+    event_bus.register(event_listener, 'SESSION.START')
+
+    session = sm.start(session_context)
+
+    assert (isinstance(session, DelegatingSession) and
+            isinstance(event_detected.results, SimpleSession))
