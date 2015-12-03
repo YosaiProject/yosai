@@ -24,3 +24,6 @@ them
 Shiro uses a LinkedHashSet to preserve order
 
 general rule is to use no more than 1 level of inheritance
+
+To install PyPubSub:
+    pip install pypubsub --allow-external pypubsub  

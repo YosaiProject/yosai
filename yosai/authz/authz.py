@@ -69,7 +69,7 @@ class WildcardPermission(serialize_abcs.Serializable):
             self.setparts(wildcard_string, case_sensitive)
 
     def setparts(self, wildcard_string,
-                  case_sensitive=DEFAULT_CASE_SENSITIVE):
+                 case_sensitive=DEFAULT_CASE_SENSITIVE):
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
                    "permission strings are properly formatted.")

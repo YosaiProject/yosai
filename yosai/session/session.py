@@ -16,7 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
+import pytz
 import datetime
 import time
 from abc import ABCMeta, abstractmethod
@@ -236,7 +236,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     def create(self, session):
         """
         caches the session and caches an entry to associate the cached session
-        with the subject 
+        with the subject
         """
         sessionid = super().create(session)
         self._cache(session, sessionid)
@@ -257,14 +257,10 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         # for write-through caching:
         # self._do_update(session)
 
-        try:
-            if (session.is_valid):
-                self._cache(session=session, session_id=session.session_id)
-            else:
-                self._uncache(session)
-
-        except AttributeError:
-            self._cache(session=session, session_id=session.session_id)
+        if (session.is_valid):
+            self._cache(session, session.session_id)
+        else:
+            self._uncache(session)
 
     def delete(self, session):
         self._uncache(session)
@@ -297,7 +293,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
             try:
                 self.cache_handler.set(domain='session',
                                        identifier=identifier,
-                                       value=session_id)
+                                       value=DefaultSessionKey(session_id))
             except AttributeError:
                 msg = "no cache parameter nor lazy-defined cache"
                 print(msg)
@@ -485,7 +481,8 @@ class SimpleSession(session_abcs.ValidatingSession,
         self._session_id = None
 
         self._stop_timestamp = None
-        self._start_timestamp = datetime.datetime.utcnow()
+        self._start_timestamp = datetime.datetime.now(pytz.utc)
+
         self._last_access_time = self._start_timestamp
 
         # yosai renames global_session_timeout to idle_timeout and added
@@ -742,11 +739,17 @@ class SimpleSession(session_abcs.ValidatingSession,
     #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
 
     def __eq__(self, other):
-        try:
-            result = (self.session_id == other.session_id)
-        except AttributeError:
-            return (self.__dict__ == other.__dict__)
-        return result
+        if self is other:
+            return True
+        if isinstance(other, session_abcs.ValidatingSession):
+            return (self._session_id == other._session_id and
+                    self._idle_timeout == other._idle_timeout and
+                    self._absolute_timeout == other._absolute_timeout and
+                    self._start_timestamp == other._start_timestamp)
+                    # self._is_expired == other._is_expired and
+                    #self._last_access_time == other._last_access_time)
+
+        return False
 
     def __repr__(self):
         return ("SimpleSession(session_id: {0}, start_timestamp: {1}, "
@@ -898,7 +901,8 @@ class DelegatingSession(session_abcs.Session):
                                    self.host, self.key))
 
 
-class DefaultSessionKey(session_abcs.SessionKey):
+class DefaultSessionKey(session_abcs.SessionKey,
+                        serialize_abcs.Serializable):
 
     def __init__(self, session_id):
         self._session_id = session_id
@@ -916,6 +920,21 @@ class DefaultSessionKey(session_abcs.SessionKey):
             return self.session_id == other.session_id
         except AttributeError:
             return False
+
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+            _session_id = fields.Str(allow_none=True)
+
+            @post_load
+            def make_default_session_key(self, data):
+                mycls = DefaultSessionKey
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+                return instance
+
+        return SerializationSchema
+
 
 # yosai refactor:
 class SessionEventHandler(event_abcs.EventBusAware):
@@ -973,7 +992,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
 
 class SessionHandler:
 
-    def __init__(self, auto_touch=True, session_event_handler=None):
+    def __init__(self, auto_touch=False, session_event_handler=None):
         self._session_store = CachingSessionStore()
         self._cache_handler = None  # setter injected
         self.session_event_handler = session_event_handler
@@ -1064,14 +1083,14 @@ class SessionHandler:
 
         session = self._retrieve_session(session_key)
 
-        if self.auto_touch:  # new to yosai
-            session.touch()
-
+        # first check whether valid and THEN touch it
         if (session is not None):
             self.validate(session, session_key)
 
         # won't be called unless the session is valid (due exceptions):
-        self.on_change(session)  # new to yosai
+        if self.auto_touch:  # new to yosai
+            session.touch()
+            self.on_change(session)
 
         return session
 
