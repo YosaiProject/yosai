@@ -241,9 +241,9 @@ def test_sh_stopped_session(
 
 def test_session_manager_start(session_manager, cache_handler, session_context):
     """
-    test objective:  validate stopped session handling
+    test objective:
 
-    session_handler aspects tested:
+    aspects tested:
         - _create_session
         - create_exposed_session
     """
@@ -263,3 +263,38 @@ def test_session_manager_start(session_manager, cache_handler, session_context):
 
     assert (isinstance(session, DelegatingSession) and
             isinstance(event_detected.results, SimpleSession))
+
+
+def test_session_manager_stop(
+        session_manager, cache_handler, session_context, session_handler):
+    """
+    test objective:
+
+    aspects tested:
+        - stop
+        - _lookup_required_session
+    """
+    sh = session_handler
+    sm = session_manager
+    sm.cache_handler = cache_handler
+    sm.event_bus = event_bus
+
+    event_detected = None
+
+    def event_listener(event):
+        nonlocal event_detected
+        event_detected = event
+
+    event_bus.register(event_listener, 'SESSION.STOP')
+
+    session = sm.start(session_context)  # a DelegatingSession
+    sessionid = session.session_id
+
+    sm.stop(session.session_key)
+
+    with pytest.raises(UnknownSessionException):
+        sh.do_get_session(DefaultSessionKey(sessionid))
+
+        out, err = capsys.readouterr()
+        assert ('Coult not find session' in out and
+                isinstance(event_detected.results, ImmutableProxiedSession))

@@ -173,8 +173,6 @@ Packaging
 
 -----------------------------------------------------------------------------
 
-DelegatingSession is Serializable in Shiro-- investigate why
-
 Add event listening to ModularRealmAuthorizer
  - AuthenticationListener
  - SessionInvalidationListener

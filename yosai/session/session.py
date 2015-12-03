@@ -320,9 +320,6 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
     def _uncache(self, session):
 
-        isk = subject_settings.identifiers_session_key
-        identifier = str(session.attributes.get(isk))
-
         try:
             sessionid = session.session_id
 
@@ -330,9 +327,18 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
             self.cache_handler.delete(domain='session',
                                       identifier=sessionid)
 
-            # delete the mapping between a user and session id:
-            self.cache_handler.delete(domain='session',
-                                      identifier=identifier)
+            try:
+                isk = subject_settings.identifiers_session_key
+                identifier = str(session.attributes.get(isk))
+
+                # delete the mapping between a user and session id:
+                self.cache_handler.delete(domain='session',
+                                          identifier=identifier)
+            except AttributeError:
+                msg = '_uncache: Could not obtain identifier from session'
+                print(msg)
+                # log warning here
+
         except AttributeError:
             msg = "Tried to uncache a session with incomplete parameters"
             print(msg)
@@ -835,7 +841,6 @@ class DelegatingSession(session_abcs.Session):
     and server-side business objects exist in the same namespace, a remote
     method call will not be incurred.
 
-    Note:  Shiro makes DelegatingSession Serializable where as Yosai doesn't (TBD)
     """
 
     def __init__(self, session_manager, sessionkey):
@@ -910,7 +915,7 @@ class DelegatingSession(session_abcs.Session):
                                                      attribute_key)
 
     def __repr__(self):
-        return "DelegatingSubject(session_id: {0})".format(self.session_id)
+        return "DelegatingSession(session_id: {0})".format(self.session_id)
 
 
 class DefaultSessionKey(session_abcs.SessionKey,
@@ -1236,7 +1241,7 @@ class SessionHandler:
             self.after_stopped(session)
 
     def on_change(self, session):
-        if self.auto_touch:  # new to yosai
+        if self.auto_touch and not session.is_stopped:  # new to yosai
             session.touch()
         self.session_store.update(session)
 
@@ -1329,7 +1334,9 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
             session.stop()
             self.session_handler.on_stop(session)
 
-            immutable_session = self.before_invalid_notification(session)
+            immutable_session = \
+                self.session_handler.before_invalid_notification(session)
+
             self.session_event_handler.notify_stop(immutable_session)
 
         except InvalidSessionException:
