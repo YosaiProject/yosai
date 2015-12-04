@@ -5,11 +5,9 @@ from yosai.core import (
     AccountStoreRealm,
     DefaultAuthenticator,
     DefaultEventBus,
-    DefaultPermission,
     DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
     PasswordVerifier,
-    SimpleRole,
     UsernamePasswordToken,
     SecurityUtils
 )
@@ -31,23 +29,6 @@ from .doubles import (
 from .session.doubles import (
     MockDefaultSessionManager,
 )
-
-
-@pytest.fixture(scope='function')
-def permission_collection():
-    return {DefaultPermission(domain={'domain1'}, action={'action1'}),
-            DefaultPermission(domain={'domain2'}, action={'action1', 'action2'}),
-            DefaultPermission(domain={'domain3'}, action={'action1', 'action2', 'action3'}, target={'target1'}),
-            DefaultPermission(domain={'domain4'}, action={'action1', 'action2'}),
-            DefaultPermission(domain={'domain4'}, action={'action3'}, target={'target1'}),
-            DefaultPermission(wildcard_string='*:action5')}
-
-
-@pytest.fixture(scope='function')
-def role_collection():
-    return {SimpleRole(role_identifier='role1'),
-            SimpleRole(role_identifier='role2'),
-            SimpleRole(role_identifier='role3')}
 
 @pytest.fixture(scope='function')
 def mock_account_state():

@@ -1,6 +1,5 @@
 import pytest
 
-from yosai_dpcache.cache import DPCacheHandler
 from yosai.core import (
     DefaultSessionKey,
     DefaultSessionContext,
@@ -11,11 +10,6 @@ from yosai.core import (
     CachingSessionStore,
     event_bus,
 )
-
-
-@pytest.fixture(scope='function')
-def cache_handler():
-    return DPCacheHandler()
 
 
 @pytest.fixture(scope='function')

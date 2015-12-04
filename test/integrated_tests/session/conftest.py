@@ -1,5 +1,4 @@
 from .fixtures import (
-    cache_handler,
     session_context,
     session_event_handler,
     session_factory,
