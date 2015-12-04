@@ -100,15 +100,14 @@ class SerializationManager:
                 return None
                 
             yosai = __import__('yosai.core')
-
             try:
-                cls = getattr(yosai.unpacked['serialized_cls'])
+                cls = getattr(yosai.core, unpacked['serialized_cls'])
                 return cls.deserialize(unpacked)  # only serializables wont raise
             except (AttributeError, TypeError):
                 # assume that its a list of Serializables
                 newlist = []
                 for element in unpacked:
-                    cls = getattr(yosai.element['serialized_cls'])
+                    cls = getattr(yosai.core, element['serialized_cls'])
                     newlist.append(cls.deserialize(element))
                 return newlist
 
