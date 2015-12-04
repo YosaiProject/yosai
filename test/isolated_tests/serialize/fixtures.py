@@ -2,7 +2,7 @@ from .doubles import (
     MockSerializable,
 )
 
-from yosai import(
+from yosai.core import(
     SerializationManager,
 )
 

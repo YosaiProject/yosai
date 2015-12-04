@@ -1,7 +1,7 @@
 from unittest import mock
 import threading
 import time
-from yosai import (
+from yosai.core import (
     StoppableScheduledExecutor,
 )
 

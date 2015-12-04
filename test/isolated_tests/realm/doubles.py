@@ -1,5 +1,5 @@
 
-from yosai import (
+from yosai.core import (
     realm_abcs,
 )
 

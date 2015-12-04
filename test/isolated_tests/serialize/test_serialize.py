@@ -6,7 +6,7 @@ from unittest import mock
 from .doubles import (
     MockSerializable,
 )
-from yosai import (
+from yosai.core import (
     InvalidSerializationFormatException,
     SerializationException,
     serialize_abcs,

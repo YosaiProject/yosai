@@ -2,7 +2,7 @@ import pytest
 from unittest import mock
 from cryptography.fernet import Fernet
 
-from yosai import (
+from yosai.core import (
     AuthenticationException,
     SaveSubjectException,
     DefaultAuthenticator,

@@ -1,7 +1,7 @@
 import pytest
 from unittest import mock
 
-from yosai import (
+from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
     DefaultEventBus,

@@ -1,4 +1,4 @@
-from yosai import (
+from yosai.core import (
     serialize_abcs,
 )
 from marshmallow import Schema, fields, post_load

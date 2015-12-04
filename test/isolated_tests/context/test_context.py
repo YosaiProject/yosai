@@ -1,5 +1,5 @@
 import pytest
-from yosai import (
+from yosai.core import (
     IllegalArgumentException,
     MapContext,
 )

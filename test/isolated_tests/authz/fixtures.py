@@ -2,7 +2,7 @@ import pytest
 import copy
 from unittest.mock import create_autospec
 
-from yosai import (
+from yosai.core import (
     DefaultPermission,
     ModularRealmAuthorizer,
     OrderedSet,

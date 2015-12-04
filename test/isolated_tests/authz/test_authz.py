@@ -2,7 +2,7 @@ import pytest
 import collections
 from unittest import mock
 
-from yosai import (
+from yosai.core import (
     AuthorizationEventException,
     DefaultPermission,
     DefaultPermissionResolver,

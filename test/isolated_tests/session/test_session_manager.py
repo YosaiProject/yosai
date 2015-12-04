@@ -14,7 +14,7 @@ from ..doubles import (
     MockSession,
 )
 
-from yosai import (
+from yosai.core import (
     AbstractValidatingSessionManager,
     CachingSessionStore,
     DefaultSessionSettings,

@@ -2,7 +2,7 @@ import pytest
 from unittest import mock
 from passlib.context import CryptContext
 
-from yosai import (
+from yosai.core import (
     CryptContextException,
     MissingHashAlgorithmException,
     MissingPrivateSaltException,

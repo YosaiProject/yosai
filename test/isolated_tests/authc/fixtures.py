@@ -4,7 +4,7 @@ from unittest import mock
 from ..doubles import (
     MockAccount,
 )
-from yosai import (
+from yosai.core import (
     AccountStoreRealm,
     IncorrectCredentialsException,
     settings,

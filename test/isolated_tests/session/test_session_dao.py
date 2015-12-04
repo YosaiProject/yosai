@@ -1,6 +1,6 @@
 import pytest
 from unittest import mock
-from yosai import (
+from yosai.core import (
     AbstractSessionStore,
     IllegalArgumentException,
     IllegalStateException,

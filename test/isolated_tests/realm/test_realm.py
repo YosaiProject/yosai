@@ -1,6 +1,6 @@
 import pytest
 
-from yosai import (
+from yosai.core import (
     AccountStoreRealm,
     CacheCredentialsException,
     ClearCacheCredentialsException,

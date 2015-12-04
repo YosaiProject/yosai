@@ -1,4 +1,4 @@
-from yosai import (
+from yosai.core import (
     DefaultSecurityManager,
 )
 

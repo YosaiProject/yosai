@@ -4,7 +4,7 @@ import imp
 import os
 import sys
 
-from yosai import (
+from yosai.core import (
     LazySettings,
     Settings,
 )

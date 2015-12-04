@@ -1,7 +1,7 @@
 import pytest
 import datetime
 
-from yosai import (
+from yosai.core import (
     Event,
     DefaultEventBus,
     EventBusMessageDataException,

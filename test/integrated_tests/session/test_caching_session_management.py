@@ -2,7 +2,7 @@ import pytest
 import datetime
 import pytz
 
-from yosai import (
+from yosai.core import (
     DefaultSessionKey,
     DelegatingSession,
     ExpiredSessionException,

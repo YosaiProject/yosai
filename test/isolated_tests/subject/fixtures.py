@@ -1,7 +1,7 @@
 import pytest
 from collections import defaultdict
 
-from yosai import (
+from yosai.core import (
     DefaultSubjectContext,
     DefaultSubjectFactory,
     DefaultSubjectStore,

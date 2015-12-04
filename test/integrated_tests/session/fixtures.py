@@ -1,7 +1,7 @@
 import pytest
 
 from yosai_dpcache.cache import DPCacheHandler
-from yosai import (
+from yosai.core import (
     DefaultSessionKey,
     DefaultSessionContext,
     DefaultNativeSessionManager,

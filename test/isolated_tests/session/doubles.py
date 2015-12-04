@@ -1,5 +1,5 @@
 import datetime
-from yosai import (
+from yosai.core import (
     AbstractNativeSessionManager,
     AbstractSessionStore,
     AbstractValidatingSessionManager,

@@ -2,7 +2,7 @@ import pytest
 from unittest import mock
 from collections import OrderedDict
 
-from yosai import (
+from yosai.core import (
     DefaultPermission,
     IllegalArgumentException,
     IllegalStateException,
