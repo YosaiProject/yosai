@@ -1354,7 +1354,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     def _create_session(self, session_context):
         session = self.session_factory.create_session(session_context)
 
-        msg = "Creating session for host " + session.host
+        msg = "Creating session. "
         print(msg)
         # log trace here
 
