@@ -1,5 +1,4 @@
 import pytest
-import threading
 import datetime
 import pytz
 
@@ -266,7 +265,8 @@ def test_session_manager_start(session_manager, cache_handler, session_context):
 
 
 def test_session_manager_stop(
-        session_manager, cache_handler, session_context, session_handler):
+        session_manager, cache_handler, session_context, session_handler,
+        capsys):
     """
     test objective:
 
@@ -298,3 +298,73 @@ def test_session_manager_stop(
         out, err = capsys.readouterr()
         assert ('Coult not find session' in out and
                 isinstance(event_detected.results, ImmutableProxiedSession))
+
+
+def test_delegatingsession_getters(
+        session_manager, cache_handler, session_context):
+    """
+    test objective:  verify the pass-through getter methods
+
+    session manager aspects tested:
+        - get_X attribute methods
+    """
+    sm = session_manager
+    sm.cache_handler = cache_handler
+    sm.event_bus = event_bus
+
+    session = sm.start(session_context)  # returns a DelegatingSession
+
+    assert (session.session_id is not None and
+            session.start_timestamp is not None and
+            session.last_access_time is not None and
+            session.idle_timeout is not None and
+            session.absolute_timeout is not None and
+            session.host is not None)
+
+
+def test_delegatingsession_setters(
+        session_manager, cache_handler, session_context):
+    sm = session_manager
+    sm.cache_handler = cache_handler
+    sm.event_bus = event_bus
+
+    session = sm.start(session_context)  # returns a DelegatingSession
+    session.idle_timeout = datetime.timedelta(minutes=90)
+    assert session.idle_timeout == datetime.timedelta(minutes=90)
+
+    session.absolute_timeout = datetime.timedelta(minutes=120)
+    assert session.absolute_timeout == datetime.timedelta(minutes=120)
+
+    old_last_access = session.last_access_time
+    session.touch()
+    assert session.last_access_time > old_last_access
+
+    is_valid = sm.is_valid(session.session_key)
+    assert is_valid
+    session.stop()
+    is_valid = sm.is_valid(session.session_key)
+    assert not is_valid
+
+
+def test_delegatingsession_attributes(
+        session_manager, cache_handler, session_context):
+    """
+    test objective:  verify the pass-through attribute methods
+
+    """
+    sm = session_manager
+    sm.cache_handler = cache_handler
+    sm.event_bus = event_bus
+
+    session = sm.start(session_context)  # returns a DelegatingSession
+
+    session.set_attribute('test', 'testing')
+    result = session.get_attribute('test')
+
+    assert result == 'testing'
+
+    session.remove_attribute('test')
+
+    result = session.get_attribute('test')
+
+    assert result is None
