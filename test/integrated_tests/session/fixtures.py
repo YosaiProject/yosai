@@ -4,7 +4,7 @@ from yosai_dpcache.cache import DPCacheHandler
 from yosai import (
     DefaultSessionKey,
     DefaultSessionContext,
-    DefaultSessionManager,
+    DefaultNativeSessionManager,
     SessionEventHandler,
     SessionHandler,
     SimpleSessionFactory,
@@ -56,7 +56,7 @@ def session_handler(session_event_handler):
 
 @pytest.fixture(scope='function')
 def session_manager():
-    return DefaultSessionManager()
+    return DefaultNativeSessionManager()
 
 
 @pytest.fixture(scope='function')

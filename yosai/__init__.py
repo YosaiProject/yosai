@@ -186,7 +186,7 @@ from yosai.session.session import (
     CachingSessionStore,
     DefaultSessionContext,
     DefaultSessionKey,
-    DefaultSessionManager,
+    DefaultNativeSessionManager,
     DelegatingSession,
     DefaultSessionStorageEvaluator,
     ExecutorServiceSessionValidationScheduler,

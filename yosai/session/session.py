@@ -1041,7 +1041,7 @@ class SessionHandler:
                 self.session_store.cache_handler = self._cache_handler
         except AttributeError:
             msg = ("tried to set a cache manager in a SessionStore that isn\'t"
-                   "defined or configured in the DefaultSessionManager")
+                   "defined or configured in the DefaultNativeSessionManager")
             print(msg)
             # log warning here
             return
@@ -1246,11 +1246,11 @@ class SessionHandler:
         self.session_store.update(session)
 
 
-class DefaultSessionManager(cache_abcs.CacheHandlerAware,
+class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
                             session_abcs.NativeSessionManager,
                             event_abcs.EventBusAware):
     """
-    Yosai's DefaultSessionManager represents a massive refactoring of Shiro's
+    Yosai's DefaultNativeSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to
     replace a confusing inheritance-based object graph with a compositional
     design.  This compositional design continues to evolve.  Pull Requests
@@ -1268,7 +1268,7 @@ class DefaultSessionManager(cache_abcs.CacheHandlerAware,
     something else must call the touch() method to ensure the session
     validation logic functions correctly.
 
-    Shiro does not enable auto-touch within the DefaultSessionManager. It is not
+    Shiro does not enable auto-touch within the DefaultNativeSessionManager. It is not
      yet clear why Shiro doesn't.  Until the reason why is revealed, Yosai
      includes a new auto_touch feature to enable/disable auto-touching.
     """

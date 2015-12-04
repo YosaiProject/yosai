@@ -30,7 +30,7 @@ from yosai import(
     DefaultAuthenticator,
     DefaultMGTSettings,
     DefaultPermission,
-    DefaultSessionManager,
+    DefaultNativeSessionManager,
     DefaultSessionContext,
     DefaultSessionKey,
     DefaultSubjectContext,
