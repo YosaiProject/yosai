@@ -178,3 +178,5 @@ Add event listening to ModularRealmAuthorizer
  - SessionInvalidationListener
  - AuthzInfoInvalidationListener
 
+perhaps DelegatingSession can be ported to a weakref solution..
+

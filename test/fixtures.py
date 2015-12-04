@@ -24,6 +24,12 @@ def credential_resolver():
 
 
 @pytest.fixture(scope='function')
+def indexed_authz_info(permission_collection, role_collection):
+    return IndexedAuthorizationInfo(roles=role_collection,
+                                    permissions=permission_collection)
+
+
+@pytest.fixture(scope='function')
 def permission_collection():
     return {DefaultPermission(domain={'domain1'}, action={'action1'}),
             DefaultPermission(domain={'domain2'}, action={'action1', 'action2'}),

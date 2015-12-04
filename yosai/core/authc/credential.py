@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -55,7 +55,7 @@ class PasswordVerifier(authc_abcs.CredentialsVerifier):
         except AttributeError:
             raise PasswordVerifierInvalidTokenException
 
-    def get_stored_password(self, account): 
+    def get_stored_password(self, account):
         try:
             return account.credentials
         except AttributeError:
@@ -75,33 +75,33 @@ class SimpleCredentialsVerifier(authc_abcs.CredentialsVerifier):
         try:
             return credential_source.credentials
         except (AttributeError, TypeError):
-            raise MissingCredentialsException  # new to Yosai 
+            raise MissingCredentialsException  # new to Yosai
 
     def credentials_match(self, authc_token, account):
         try:
             return self.equals(authc_token.credentials, account.credentials)
         except (AttributeError, TypeError):
-            raise MissingCredentialsException  # new to Yosai 
+            raise MissingCredentialsException  # new to Yosai
 
     def equals(self, token_credentials, account_credentials):
         """
-        returns bool confirming whether the token_credentials are equal to the 
+        returns bool confirming whether the token_credentials are equal to the
         account_credentials
         """
         # log here
         msg = ("Performing credentials equality check for tokenCredentials "
                "of type [{0}] and accountCredentials of type [{1}]".
-               format(token_credentials.__class__.__name__, 
+               format(token_credentials.__class__.__name__,
                       account_credentials.__class__.__name__))
-        print(msg)            
-        
-        if (isinstance(token_credentials, str)): 
+        print(msg)
+
+        if (isinstance(token_credentials, str)):
             token_credentials = bytearray(token_credentials, 'utf-8')
         if (isinstance(account_credentials, str)):
             account_credentials = bytearray(account_credentials, 'utf-8')
 
         return token_credentials == account_credentials
-        
+
 
 class AllowAllCredentialsVerifier(authc_abcs.CredentialsVerifier):
 

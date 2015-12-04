@@ -6,13 +6,13 @@ from yosai.core import (
     DefaultPermission,
     ModularRealmAuthorizer,
     OrderedSet,
-    IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
     SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
     event_bus,
 )
+
 
 from .doubles import (
     MockAuthzAccountStoreRealm,
@@ -55,12 +55,6 @@ def test_permission_collection():
              DefaultPermission('domain_b:action_b'),
              DefaultPermission('domain_c:action_c')}
     return perms
-
-
-@pytest.fixture(scope='function')
-def indexed_authz_info(permission_collection, role_collection):
-    return IndexedAuthorizationInfo(roles=role_collection,
-                                    permissions=permission_collection)
 
 
 @pytest.fixture(scope='function')

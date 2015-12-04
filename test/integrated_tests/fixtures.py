@@ -21,14 +21,14 @@ def alchemy_store():
 @pytest.fixture(scope='function')
 def account_store_realm(cache_handler, permission_resolver,
                         role_resolver, credential_resolver,
-                        authz_info_resolver):
+                        authz_info_resolver, alchemy_store):
     asr = AccountStoreRealm()
 
     asr.cache_handler = cache_handler
     asr.account_store = alchemy_store
-    asr.permission_resolver = permission_resolver 
-    asr.credential_resolver = credential_resolver 
-    asr.authz_info_resolver = authz_info_resolver 
-    asr.role_resolver = role_resolver 
+    asr.permission_resolver = permission_resolver
+    asr.credential_resolver = credential_resolver
+    asr.authz_info_resolver = authz_info_resolver
+    asr.role_resolver = role_resolver
 
     return asr

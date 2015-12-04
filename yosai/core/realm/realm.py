@@ -18,6 +18,7 @@ under the License.
 """
 
 from yosai.core import (
+    Account,
     AccountStoreRealmAuthenticationException,
     AuthzInfoNotFoundException,
     CacheCredentialsException,
@@ -223,7 +224,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 print(msg)
                 account = self.account_store.get_credentials(identifier)
                 if account is None:
-                    msg = "Could not get credentials for {0}".format(identifier)
+                    msg = "Could not get stored credentials for {0}".format(identifier)
                     raise CredentialsNotFoundException(msg)
                 return account.credentials
 
@@ -232,10 +233,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         .format(identifier))
                 # log here (debug)
                 print(msg2)
-                account = ch.get_or_create(domain='credentials',
-                                           identifier=identifier,
-                                           creator_func=get_stored_credentials,
-                                           creator=self)
+                credentials = ch.get_or_create(domain='credentials',
+                                               identifier=identifier,
+                                               creator_func=get_stored_credentials,
+                                               creator=self)
+                account = Account(account_id=identifier,
+                                  credentials=credentials)
             except CredentialsNotFoundException:
                 # log here
                 msg3 = ("No account credentials found for identifier [{0}].  "

@@ -140,6 +140,11 @@ from yosai.core.subject.subjectsettings import (
     subject_settings,
 )
 
+from yosai.core.account.account import (
+    Account,
+)
+
+
 # log_path = settings.LOGGING_CONFIG_PATH
 # print(log_path)
 # logger = LogManager().get_logger()
@@ -310,10 +315,6 @@ from yosai.core.authz.decorators import (
     requires_role,
 )
 
-
-from yosai.core.account.account import (
-    Account,
-)
 
 
 # sm_config = mgt_settings.security_manager_config
