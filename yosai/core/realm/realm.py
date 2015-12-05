@@ -312,10 +312,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         .format(identifier))
                 # log here (debug)
                 print(msg2)
-                account = ch.get_or_create(domain='authz_info',
-                                           identifier=identifier,
-                                           creator_func=get_stored_authz_info,
-                                           creator=self)
+                authz_info = ch.get_or_create(domain='authz_info',
+                                              identifier=identifier,
+                                              creator_func=get_stored_authz_info,
+                                              creator=self)
+
             except AuthzInfoNotFoundException:
                 # log here
                 msg3 = ("No account authz_info found for identifier [{0}].  "
@@ -328,7 +329,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # log here (exception)
             raise RealmMisconfiguredException(msg)
 
-        return account
+        return authz_info
 
     def is_permitted(self, identifier_s, permission_s):
         """
