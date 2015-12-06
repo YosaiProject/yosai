@@ -8,7 +8,6 @@ from yosai.core import (
     DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
     PasswordVerifier,
-    UsernamePasswordToken,
     SecurityUtils
 )
 
@@ -59,14 +58,6 @@ def return_true(**kwargs):
 @pytest.fixture(scope='function')
 def default_accountstorerealm():
     return AccountStoreRealm()
-
-
-@pytest.fixture(scope='function')
-def username_password_token():
-    return UsernamePasswordToken(username='user123',
-                                 password='secret',
-                                 remember_me=False,
-                                 host='127.0.0.1')
 
 
 @pytest.fixture(scope='function')

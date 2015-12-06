@@ -19,5 +19,4 @@ from .fixtures import (
     mock_token,
     patched_event_bus,
     return_true,
-    username_password_token,
 )

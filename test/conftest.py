@@ -6,4 +6,5 @@ from .fixtures import (
     permission_resolver,
     role_collection,
     role_resolver,
+    username_password_token,
 )
