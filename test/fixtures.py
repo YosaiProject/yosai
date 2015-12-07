@@ -99,7 +99,12 @@ def user_thedude(request, cache_handler):
 
     request.addfinalizer(remove_user)
 
-    return thedude 
+    request.module.thedude = thedude
+
+
+@pytest.fixture(scope='function')
+def the_dude(request):
+    return request.module.thedude
 
 
 @pytest.fixture(scope='module')
