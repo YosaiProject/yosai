@@ -318,6 +318,8 @@ class AbstractAuthcService:
         """
 
         if (isinstance(source, bytearray)):
+
+            # TBD:  combine with the private salt correctly with passlib's salt
             credential = bytes(source)
 
             # the moment you no longer need a password, clear it because
@@ -420,7 +422,7 @@ class CredentialResolver(authc_abcs.CredentialResolver):
         """
         :type credential: String
         """
-        pass  # never used 
+        pass  # never used
 
     def __call__(self, credential):
         """
