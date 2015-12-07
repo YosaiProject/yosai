@@ -57,7 +57,7 @@ class PasswordVerifier(authc_abcs.CredentialsVerifier):
 
     def get_stored_password(self, account):
         try:
-            return account.credentials
+            return account.credentials.credential
         except AttributeError:
             raise PasswordVerifierInvalidAccountException
 

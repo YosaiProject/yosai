@@ -16,8 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
-from marshmallow import Schema, fields, post_load
+from marshmallow import Schema, fields, post_load, post_dump
 
 from yosai.core import (
     AccountException,
@@ -203,7 +202,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
                     raise UnknownAccountException(msg2)
 
             except Exception as ex:
-                print('ex is: ', ex)
                 ae = None
                 if isinstance(ex, AuthenticationException):
                     ae = AuthenticationException()
@@ -320,7 +318,7 @@ class AbstractAuthcService:
         if (isinstance(source, bytearray)):
 
             # TBD:  combine with the private salt correctly with passlib's salt
-            credential = bytes(source)
+            credential = source
 
             # the moment you no longer need a password, clear it because
             # it is a lingering copy in memory -- prepared_pass remains
@@ -373,7 +371,8 @@ class DefaultPasswordService(AbstractAuthcService):
     def passwords_match(self, password, saved):
         """
         :param password: the password requiring authentication, passed by user
-        :type password: bytearray
+        :type password: bytes
+
         :param saved: the password saved for the corresponding account, in
                       the MCF Format as created by passlib
 
@@ -384,8 +383,8 @@ class DefaultPasswordService(AbstractAuthcService):
             - passlib determines the format and compatability
         """
         try:
-            prepared_pass = self.prepare_password(password)  # s/b bytes
-            return self.crypt_context.verify(prepared_pass, saved)
+            print('\n\n ____ about to verify: ', password, '--- against:', saved)
+            return self.crypt_context.verify(password, saved)
 
         except (AttributeError, TypeError):
             raise PasswordMatchException('unrecognized attribute type')
@@ -394,6 +393,9 @@ class DefaultPasswordService(AbstractAuthcService):
 class Credential(serialize_abcs.Serializable):
 
     def __init__(self, credential):
+        """
+        :type credential: bytestring
+        """
         self.credential = credential
 
     @classmethod
@@ -406,7 +408,7 @@ class Credential(serialize_abcs.Serializable):
             def make_credential(self, data):
                 mycls = Credential
                 instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
+                instance.credential = bytes(data['credential'], 'utf-8')
                 return instance
 
         return SerializationSchema
@@ -422,7 +424,7 @@ class CredentialResolver(authc_abcs.CredentialResolver):
         """
         :type credential: String
         """
-        pass  # never used
+        return self.credential_class(credential)
 
     def __call__(self, credential):
         """
