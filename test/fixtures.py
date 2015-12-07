@@ -103,16 +103,16 @@ def user_thedude(request, cache_handler):
 
 
 @pytest.fixture(scope='function')
-def the_dude(request):
-    return request.module.thedude
+def the_dude_identifier(request):
+    return request.module.thedude.identifier
 
 
 @pytest.fixture(scope='module')
-def thedude_credentials(request, user_thedude, cache_handler):
+def thedude_credentials(request, cache_handler):
 
     cc = CryptContext(["bcrypt_sha256"])
     credentials = cc.encrypt("letsgobowling")
-
+    user_thedude = request.module.the_dude
     thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
     credential = Credential(user_id=user_thedude.pk_id,
                             credential=credentials,
@@ -122,12 +122,12 @@ def thedude_credentials(request, user_thedude, cache_handler):
     session.add(credential)
     session.commit()
     session.close()
-
+    
     def remove_credentials():
         nonlocal cache_handler
-        nonlocal session
         cache_handler.delete(domain="credentials",
                              identifier=user_thedude.identifier)
+        session = Session()
         session.delete(credential)
         session.commit()
         session.close()
@@ -136,21 +136,9 @@ def thedude_credentials(request, user_thedude, cache_handler):
 
 
 @pytest.fixture(scope='module')
-def thedude_authz_info(request, user_thedude, cache_handler):
+def thedude_authz_info(request, cache_handler):
     
-    def remove_authz_info():
-        nonlocal cache_handler
-        nonlocal session
-        nonlocal roles, domains, actions, resources
-        cache_handler.delete(domain="authz_info",
-                             identifier=user_thedude.identifier)
-        for x in (roles + domains + actions + resources):
-            session.delete(x)
-
-        session.commit()
-
-    request.addfinalizer(remove_authz_info)
-
+    user_thedude = request.module.the_dude
     domains = [Domain(name='money'),
                Domain(name='leatherduffelbag')]
 
@@ -173,7 +161,7 @@ def thedude_authz_info(request, user_thedude, cache_handler):
              Role(title='bankcustomer')]
 
     session = Session()
-    session.add_all(users + roles + domains + actions + resources)
+    session.add_all(roles + domains + actions + resources)
 
     users = dict((user.first_name+'_'+user.last_name, user) for user in session.query(User).all())
     domains = dict((domain.name, domain) for domain in session.query(Domain).all())
@@ -226,3 +214,20 @@ def thedude_authz_info(request, user_thedude, cache_handler):
 
     session.commit()
     session.close()
+    
+    def remove_authz_info():
+        nonlocal cache_handler
+        session = Session()
+        nonlocal roles, domains, actions, resources
+
+        # cascading deletes clear the association tables:
+        cache_handler.delete(domain="authz_info",
+                             identifier=user_thedude.identifier)
+        for x in (roles + domains + actions + resources):
+            session.delete(x)
+
+        session.commit()
+        session.close()
+
+    request.addfinalizer(remove_authz_info)
+
