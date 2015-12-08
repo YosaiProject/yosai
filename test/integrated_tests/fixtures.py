@@ -70,7 +70,7 @@ def account_store_realm(cache_handler, permission_resolver,
 #    engine = create_engine('sqlite://')
 
 @pytest.fixture(scope='module')
-def thedude(request, cache_handler):
+def thedude(cache_handler, request):
     thedude = UserModel(first_name='Jeffrey',
                         last_name='Lebowski',
                         identifier='thedude')
@@ -79,18 +79,21 @@ def thedude(request, cache_handler):
     session.add(thedude)
     session.commit()
 
-    def remove_user():
-        nonlocal cache_handler
-        session.delete(thedude)
-        session.commit()
-
-    request.addfinalizer(remove_user)
-
     return thedude
 
 
 @pytest.fixture(scope='module')
-def thedude_credentials(request, cache_handler, thedude):
+def clear_cache(cache_handler, request, thedude):
+    def remove_credentials():
+        nonlocal cache_handler
+        cache_handler.delete(domain="credentials",
+                             identifier=thedude.identifier)
+
+    request.addfinalizer(remove_credentials)
+    
+
+@pytest.fixture(scope='module')
+def thedude_credentials(request, thedude, clear_cache):
     password = "letsgobowling"
     cc = CryptContext(["bcrypt_sha256"])
     credentials = cc.encrypt(password)
@@ -99,13 +102,6 @@ def thedude_credentials(request, cache_handler, thedude):
                             credential=credentials,
                             expiration_dt=thirty_from_now)
 
-    def remove_credentials():
-        nonlocal cache_handler
-        session.delete(credential)
-        session.commit()
-
-    request.addfinalizer(remove_credentials)
-    
     session = Session()
     session.add(credential)
     session.commit()
@@ -122,8 +118,8 @@ def valid_username_password_token(thedude, thedude_credentials):
 
 
 @pytest.fixture(scope='module')
-def invalid_username_password_token(thedude):
-    return UsernamePasswordToken(username=thedude.identifier,
+def invalid_username_password_token():
+    return UsernamePasswordToken(username='thedude',
                                  password='never_use__password__',
                                  remember_me=False,
                                  host='127.0.0.1')

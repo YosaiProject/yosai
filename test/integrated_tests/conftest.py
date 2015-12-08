@@ -1,7 +1,8 @@
 from .fixtures import (
-    cache_handler,
     alchemy_store,
     account_store_realm,
+    cache_handler,
+    clear_cache,
     thedude,
     thedude_credentials,
     valid_username_password_token,

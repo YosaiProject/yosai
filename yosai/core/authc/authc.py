@@ -383,7 +383,6 @@ class DefaultPasswordService(AbstractAuthcService):
             - passlib determines the format and compatability
         """
         try:
-            print('\n\n ____ about to verify: ', password, '--- against:', saved)
             return self.crypt_context.verify(password, saved)
 
         except (AttributeError, TypeError):
