@@ -558,7 +558,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
     def apply_credential_resolver(self, target_s):
 
         def validate_apply(target):
-            if isinstance(target, authz_abcs.CredentialResolverAware):
+            if isinstance(target, authc_abcs.CredentialResolverAware):
                 target.credential_resolver = self.credential_resolver
 
         self.apply_target_s(validate_apply, target_s)

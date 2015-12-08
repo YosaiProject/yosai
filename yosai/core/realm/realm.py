@@ -284,7 +284,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # Authorization
     # --------------------------------------------------------------------------
 
-    def get_authorization_info(self, identifier):
+    def get_authorization_info(self, identifier_s):
         """
         The default caching policy is to cache an account's authorization info,
         obtained from an account store so to facilitate subsequent authorization
@@ -295,6 +295,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
+        identifier = identifier_s  # this is the step where more complex
+                                   # identifiers need to be handled
         try:
             def get_stored_authz_info(self):
                 msg = ("Could not obtain cached authz_info for [{0}].  "
@@ -317,7 +319,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                                               identifier=identifier,
                                               creator_func=get_stored_authz_info,
                                               creator=self)
-
+                account = Account(account_id=identifier,
+                                  authz_info=authz_info)
             except AuthzInfoNotFoundException:
                 # log here
                 msg3 = ("No account authz_info found for identifier [{0}].  "
@@ -330,7 +333,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # log here (exception)
             raise RealmMisconfiguredException(msg)
 
-        return authz_info
+        return account
 
     def is_permitted(self, identifier_s, permission_s):
         """

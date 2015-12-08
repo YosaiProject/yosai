@@ -157,7 +157,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         'at least one successful', which was often not desired and caused
         unnecessary I/O.  """
         self.authentication_strategy = strategy
-        self.realms = None  # this gets set by DefaultSecurityManager as a tuple
+        self._realms = None
         self._event_bus = None
         self._credential_resolver = None
 
@@ -170,6 +170,18 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         self._event_bus = eventbus
 
     @property
+    def realms(self):
+        return self._realms
+
+    @realms.setter
+    def realms(self, realms):
+        """
+        :type realms: Tuple
+        """
+        self._realms = realms
+        self.apply_credential_resolver_to_realms()
+
+    @property
     def credential_resolver(self):
         return self._credential_resolver
 
@@ -180,7 +192,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
 
     def apply_credential_resolver_to_realms(self):
         resolver = copy.copy(self._credential_resolver)
-        realms = copy.copy(self.realms)
+        realms = copy.copy(self._realms)
         if (resolver and realms):
             for realm in realms:
                 if isinstance(realm, authc_abcs.CredentialResolverAware):

@@ -638,12 +638,12 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :returns: a frozenset of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted
         """
-
         self.assert_realms_configured()
 
         results = collections.defaultdict(bool)  # defaults to False
 
-        for permission, is_permitted in self._is_permitted(identifier_s, permission_s):
+        is_permitted_results = self._is_permitted(identifier_s, permission_s)
+        for permission, is_permitted in is_permitted_results:
             # permit expected format is: (Permission, Boolean)
             # As long as one realm returns True for a Permission, that Permission
             # is granted.  Given that (True or False == True), assign accordingly:
@@ -722,7 +722,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :param roleid_s: a collection of 1..N Role identifier_s
         :type roleid_s: Set of String(s)
 
-        :returns: a frozenset of tuple(s), containing the Role and a Boolean
+        :returns: a frozenset of tuple(s), containing the roleid and a Boolean
                   indicating whether the user is a member of the Role
         """
         self.assert_realms_configured()
@@ -812,23 +812,23 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             msg = "Could not publish AUTHORIZATION.RESULTS event"
             raise AuthorizationEventException(msg)
 
-    def notify_success(self, identifier_s, permission_s):
+    def notify_success(self, identifier_s, items):
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.GRANTED',
                           identifier_s=identifier_s,
-                          permission_s=permission_s)
+                          items=items)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.GRANTED event"
             raise AuthorizationEventException(msg)
 
-    def notify_failure(self, identifier_s, permission_s):
+    def notify_failure(self, identifier_s, items):
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.DENIED',
                           identifier_s=identifier_s,
-                          permission_s=permission_s)
+                          items=items)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.DENIED event"
