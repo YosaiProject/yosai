@@ -461,7 +461,6 @@ class DefaultPermission(WildcardPermission):
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
                              authz_abcs.AuthzInfoResolverAware,
-                             authz_abcs.CredentialResolverAware,
                              authz_abcs.PermissionResolverAware,
                              authz_abcs.RoleResolverAware,
                              event_abcs.EventBusAware):
@@ -483,11 +482,13 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     :type realms:  Tuple
     """
     def __init__(self, realms=None):
+        """
+        :type realms: tuple
+        """
         self._realms = tuple()
         self._authz_info_resolver = None
         self._permission_resolver = None
         self._role_resolver = None  # new to yosai
-        self._credential_resolver = None
         self._event_bus = None
         # by default, yosai.core.does not support role -> permission resolution
 
@@ -536,24 +537,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             for realm in realms:
                 if isinstance(realm, authz_abcs.AuthzInfoResolverAware):
                     realm.authz_info_resolver = resolver
-            self._realms = realms
-
-    @property
-    def credential_resolver(self):
-        return self._credential_resolver
-
-    @credential_resolver.setter
-    def credential_resolver(self, credentialresolver):
-        self._credential_resolver = credentialresolver
-        self.apply_credential_resolver_to_realms()
-
-    def apply_credential_resolver_to_realms(self):
-        resolver = copy.copy(self._credential_resolver)
-        realms = copy.copy(self._realms)
-        if (resolver and realms):
-            for realm in realms:
-                if isinstance(realm, authz_abcs.CredentialResolverAware):
-                    realm.credential_resolver = resolver
             self._realms = realms
 
     @property

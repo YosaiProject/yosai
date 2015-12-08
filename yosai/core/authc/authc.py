@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 from marshmallow import Schema, fields, post_load, post_dump
-
+import copy
 from yosai.core import (
     AccountException,
     AuthenticationException,
@@ -146,7 +146,9 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
 # Yosai deprecates SuccessfulAuthenticationEvent
 
 
-class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
+class DefaultAuthenticator(authc_abcs.Authenticator,
+                           authc_abcs.CredentialResolverAware,
+                           event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
     def __init__(self, strategy=FirstRealmSuccessfulStrategy()):
@@ -157,6 +159,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
         self.authentication_strategy = strategy
         self.realms = None  # this gets set by DefaultSecurityManager as a tuple
         self._event_bus = None
+        self._credential_resolver = None
 
     @property
     def event_bus(self):
@@ -165,6 +168,24 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
     @event_bus.setter
     def event_bus(self, eventbus):
         self._event_bus = eventbus
+
+    @property
+    def credential_resolver(self):
+        return self._credential_resolver
+
+    @credential_resolver.setter
+    def credential_resolver(self, credentialresolver):
+        self._credential_resolver = credentialresolver
+        self.apply_credential_resolver_to_realms()
+
+    def apply_credential_resolver_to_realms(self):
+        resolver = copy.copy(self._credential_resolver)
+        realms = copy.copy(self.realms)
+        if (resolver and realms):
+            for realm in realms:
+                if isinstance(realm, authc_abcs.CredentialResolverAware):
+                    realm.credential_resolver = resolver
+            self._realms = realms
 
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):

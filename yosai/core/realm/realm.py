@@ -37,6 +37,7 @@ from yosai.core import (
     SimpleRole,
     SimpleRoleVerifier,
     UsernamePasswordToken,
+    authc_abcs,
     authz_abcs,
     cache_abcs,
     realm_abcs,
@@ -47,7 +48,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
                         authz_abcs.AuthzInfoResolverAware,
                         cache_abcs.CacheHandlerAware,
-                        authz_abcs.CredentialResolverAware,
+                        authc_abcs.CredentialResolverAware,
                         authz_abcs.PermissionResolverAware,
                         authz_abcs.RoleResolverAware):
     """

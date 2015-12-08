@@ -199,20 +199,6 @@ class AuthzInfoResolverAware(metaclass=ABCMeta):
 
 
 # new to yosai.core.
-class CredentialResolverAware(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def credential_resolver(self):
-        pass
-
-    @credential_resolver.setter
-    @abstractmethod
-    def credential_resolver(self, credentialresolver):
-        pass
-
-
-# new to yosai.core.
 class RoleResolverAware(metaclass=ABCMeta):
 
     @property
