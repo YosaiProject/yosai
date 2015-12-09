@@ -20,6 +20,7 @@ under the License.
 from abc import ABCMeta, abstractmethod
 from marshmallow import fields
 
+
 class Serializable(metaclass=ABCMeta):
 
     @classmethod

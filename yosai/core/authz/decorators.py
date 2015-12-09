@@ -47,7 +47,7 @@ def requires_role(_roleid_s, logical_operator=all):
     upon them.
 
     :param roleid_s:   a collection of the role(s) required, specified by
-                       identifier (such as a role name)
+                       identifiers (such as a role name)
     :type roleid_s:  a Str or List of Strings
 
     :param logical_operator:  indicates whether all or at least one permission

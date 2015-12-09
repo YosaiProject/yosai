@@ -5,6 +5,7 @@ from yosai.core import (
 )
 from os import urandom
 
+
 class UUIDSessionIDGenerator(session_abcs.SessionIDGenerator):
 
     @classmethod
@@ -21,6 +22,3 @@ class RandomSessionIDGenerator(session_abcs.SessionIDGenerator):
     def generate_id(self, session):
         # session argument is ignored
         return sha256(sha512(urandom(20)).digest()).hexdigest()
-
-
-

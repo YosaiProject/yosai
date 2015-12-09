@@ -18,11 +18,7 @@ under the License.
 """
 
 from abc import ABCMeta, abstractmethod
-from yosai.core import (
-    IllegalStateException,
-    UnknownSessionException,
-)
-import uuid
+
 
 class Session(metaclass=ABCMeta):
     """
@@ -534,7 +530,7 @@ class SessionContext(metaclass=ABCMeta):
         since knowing the host allows for more flexibility when securing a
         system: by requiring an host, access control policies can also ensure
         access is restricted to specific client *locations* in addition to
-        Subject identifier, if so desired.
+        Subject identifiers, if so desired.
 
         Caveat - if clients to your system are on a public network (as would
         be the case for a public web site), odds are high the clients can be

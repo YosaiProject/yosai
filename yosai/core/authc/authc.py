@@ -19,24 +19,18 @@ under the License.
 from marshmallow import Schema, fields, post_load, post_dump
 import copy
 from yosai.core import (
-    AccountException,
     AuthenticationException,
     AuthenticationEventException,
     Event,
     InvalidTokenPasswordException,
     LogManager,
-    MissingPrivateSaltException,
     PasswordMatchException,
     PreparePasswordException,
-    RealmAttributesException,  # new in Yosai
-    settings,
     UnknownAccountException,
     UnsupportedTokenException,
-    YosaiException,
     event_abcs,
     authc_abcs,
     serialize_abcs,
-    AuthenticationSettings,
     CryptContextFactory,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
@@ -64,7 +58,7 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self.password = password
         self.is_remember_me = remember_me
         self.username = username
-        self.identifier = username  # used in public api  DG:  TBD - I Dont like
+        self.identifiers = username  # used in public api  DG:  TBD - I Dont like
         self.credentials = password  # used in public apiDG:  TBD - I Dont like
 
     # DG:  these properties are required implementations of the abcs
@@ -107,12 +101,15 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self._username = username
 
     @property
-    def identifier(self):
-        return self._identifier
+    def identifiers(self):
+        return self._identifiers
 
-    @identifier.setter
-    def identifier(self, identifier):
-        self._identifier = identifier
+    @identifiers.setter
+    def identifiers(self, identifiers):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
+        self._identifiers = identifiers
 
     @property
     def credentials(self):

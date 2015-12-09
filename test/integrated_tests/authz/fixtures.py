@@ -36,7 +36,7 @@ def clear_cached_authz_info(cache_handler, request):
     def remove_authz_info():
         nonlocal cache_handler
         cache_handler.delete(domain="authz_info",
-                             identifier='thedude')
+                             identifiers='thedude')
 
     request.addfinalizer(remove_authz_info)
 
@@ -115,7 +115,7 @@ def thedude_authz_info(request, cache_handler, thedude,
     landlord.permissions.extend([perm6, perm7, perm8])
 
     userquery = session.query(UserModel)
-    thedude = userquery.filter(UserModel.identifier == 'thedude').scalar()
+    thedude = userquery.filter(UserModel.identifiers == 'thedude').scalar()
     thedude.roles.extend([bankcustomer, courier, tenant])
 
     session.commit()

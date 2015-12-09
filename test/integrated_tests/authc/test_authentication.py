@@ -1,13 +1,14 @@
 import pytest
 from yosai.core import (
-    AuthenticationException, 
+    AuthenticationException,
     Credential,
     UsernamePasswordToken,
     event_bus,
 )
 
 def test_authentication_using_accountstore_success(
-        capsys, default_authenticator, valid_username_password_token):
+        capsys, default_authenticator, valid_username_password_token,
+        thedude_credentials):
 
     da = default_authenticator
     event_detected = None
@@ -20,7 +21,7 @@ def test_authentication_using_accountstore_success(
     account = da.authenticate_account(valid_username_password_token)
     out, err = capsys.readouterr()
     assert (event_detected.account == account and
-            ("Could not obtain cached" in out and "No account" not in out)) 
+            ("Could not obtain cached" in out and "No account" not in out))
 
 
 def test_authentication_using_cache_success(
@@ -37,18 +38,19 @@ def test_authentication_using_cache_success(
 
     # failed first attempt is required because a successful authentication
     # wipes cache automatically:
-    cred = Credential(thedude_credentials) 
-    cache_handler.set(domain='credentials', identifier='thedude', value=cred)
+    cred = Credential(thedude_credentials)
+    cache_handler.set(domain='credentials', identifiers='thedude', value=cred)
     account = da.authenticate_account(valid_username_password_token)
     out, err = capsys.readouterr()
 
     assert (event_detected.account == account and
             ("Could not obtain cached" not in out) and
-            account.account_id == valid_username_password_token.identifier)
+            account.account_id == valid_username_password_token.identifiers)
 
 
 def test_authentication_using_accountstore_pw_failure(
-        capsys, default_authenticator, invalid_username_password_token):
+        capsys, default_authenticator, invalid_username_password_token,
+        thedude_credentials):
 
     da = default_authenticator
     event_detected = None
@@ -66,7 +68,7 @@ def test_authentication_using_accountstore_pw_failure(
                 ("Could not obtain cached" in out and "No account" not in out))
 
 def test_authentication_using_cache_pw_failure(
-        capsys, default_authenticator, invalid_username_password_token, 
+        capsys, default_authenticator, invalid_username_password_token,
         cache_handler, thedude_credentials):
 
     da = default_authenticator
@@ -77,8 +79,8 @@ def test_authentication_using_cache_pw_failure(
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
-    cred = Credential(thedude_credentials) 
-    cache_handler.set(domain='credentials', identifier='thedude', value=cred)
+    cred = Credential(thedude_credentials)
+    cache_handler.set(domain='credentials', identifiers='thedude', value=cred)
 
     with pytest.raises(AuthenticationException):
         da.authenticate_account(invalid_username_password_token)
@@ -86,7 +88,7 @@ def test_authentication_using_cache_pw_failure(
 
         assert (event_detected.authc_token == invalid_username_password_token and
                 ("Could not obtain cached" not in out))
- 
+
 
 def test_authentication_using_accountstore_user_not_found(
         default_authenticator):
@@ -98,7 +100,7 @@ def test_authentication_using_accountstore_user_not_found(
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
-    dumb_token = UsernamePasswordToken(username='dumb', 
+    dumb_token = UsernamePasswordToken(username='dumb',
                                        password='token',
                                        remember_me=False,
                                        host='127.0.0.1')

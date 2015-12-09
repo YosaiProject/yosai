@@ -11,7 +11,7 @@ perms = {DefaultPermission(domain={'domain1'}, action={'action1'}),
          DefaultPermission(domain={'domain4'}, action={'action3'}, target={'target1'}),
          DefaultPermission(wildcard_string='*:action5')}
 
-roles = {SimpleRole(role_identifier='role1'), SimpleRole(role_identifier='role2'), SimpleRole(role_identifier='role3')}
+roles = {SimpleRole(role_identifiers='role1'), SimpleRole(role_identifiers='role2'), SimpleRole(role_identifiers='role3')}
 
 authz_info = IndexedAuthorizationInfo(roles=roles, permissions=perms)
 

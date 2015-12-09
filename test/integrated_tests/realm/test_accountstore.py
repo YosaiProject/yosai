@@ -7,11 +7,11 @@ from yosai.core import (
 import pytest
 
 
-@pytest.mark.parametrize('identifier, expected_in, expected_out, expected_class',
+@pytest.mark.parametrize('identifiers, expected_in, expected_out, expected_class',
                          [('thedude', "Could not obtain cached", "No account", Account),
                           ('thedude', "get cached", "Could not obtain cached", Account),
                           ('anonymous', "No account", "blabla", type(None))])
-def test_get_credentials(identifier, expected_in, expected_out, expected_class,
+def test_get_credentials(identifiers, expected_in, expected_out, expected_class,
                          capsys, account_store_realm):
     """
     I) Obtains from account store, caches
@@ -20,7 +20,7 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
     """
     asr = account_store_realm
 
-    result = asr.get_credentials(identifier=identifier)
+    result = asr.get_credentials(identifiers=identifiers)
 
     out, err = capsys.readouterr()
     assert (expected_in in out and
@@ -29,14 +29,14 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
     assert isinstance(result, expected_class)
 
 
-@pytest.mark.parametrize('identifier, expected_in, expected_out, expected_class',
+@pytest.mark.parametrize('identifiers, expected_in, expected_out, expected_class',
                          [('thedude',
                            "Could not obtain cached", "No account",
                            IndexedAuthorizationInfo),
                           ('thedude', "get cached", "Could not obtain cached",
                            IndexedAuthorizationInfo),
                           ('anonymous', "No account", "blabla", type(None))])
-def test_get_authz_info(identifier, expected_in, expected_out, expected_class,
+def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
                         capsys, account_store_realm):
     """
     I) Obtains from account store, caches
@@ -45,7 +45,7 @@ def test_get_authz_info(identifier, expected_in, expected_out, expected_class,
     """
     asr = account_store_realm
 
-    result = asr.get_authorization_info(identifier=identifier)
+    result = asr.get_authorization_info(identifiers=identifiers)
 
     out, err = capsys.readouterr()
     assert (expected_in in out and

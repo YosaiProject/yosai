@@ -46,12 +46,12 @@ class Authorizer(metaclass=ABCMeta):
     An Authorizer performs authorization (access control) operations
     for any given Subject (aka 'application user').
 
-    Each method requires a subject identifier to perform the action for the
+    Each method requires a subject identifiers to perform the action for the
     corresponding Subject/user.
 
-    This identifier argument is usually an object representing a user database
+    This identifiers argument is usually an object representing a user database
     primary key or a String username or something similar that uniquely
-    identifies an application user.  The runtime value of the this identifier
+    identifies an application user.  The runtime value of the this identifiers
     is application-specific and provided by the application's configured
     Realms.
 
@@ -65,7 +65,7 @@ class Authorizer(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def is_permitted(self, identifier, permission_s):
+    def is_permitted(self, identifiers, permission_s):
         """
         Returns True if the corresponding subject/user is permitted to perform
         an action or access a resource summarized by the specified permission.
@@ -73,8 +73,8 @@ class Authorizer(metaclass=ABCMeta):
         More specifically, this method determines whether any Permission(s)
         associated with the subject imply the specified permission.
 
-        :param identifier: the application-specific subject/user identifier(s)
-        :type identifier: a set
+        :param identifiers: the application-specific subject/user identifiers(s)
+        :type identifiers: SimpleIdentifierCollection
 
         :param permission_s: the permission(s) being checked
         :type permission_s: List of Permission object(s) or String(s)
@@ -86,23 +86,32 @@ class Authorizer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted_collective(self, identifier, permission_s, logical_operator):
+    def is_permitted_collective(self, identifiers, permission_s, logical_operator):
         pass
 
     @abstractmethod
-    def check_permission(self, identifier, permission_s, logical_operator):
+    def check_permission(self, identifiers, permission_s, logical_operator):
         pass
 
     @abstractmethod
-    def has_role(self, identifier, roleid_s):
+    def has_role(self, identifiers, roleid_s):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
         pass
 
     @abstractmethod
-    def has_role_collective(self, identifier, roleid_s, logical_operator):
+    def has_role_collective(self, identifiers, roleid_s, logical_operator):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
         pass
 
     @abstractmethod
-    def check_role(self, identifier, role_s, logical_operator):
+    def check_role(self, identifiers, role_s, logical_operator):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
         pass
 
 
@@ -305,8 +314,10 @@ class PermissionVerifier(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted(self, identifier, permission_s):
+    def is_permitted(self, identifiers, permission_s):
         """
+        :type identifiers:  SimpleIdentifierCollection
+
         :param permission_s: a collection of one or more Permission objects
         :type permission_s: set
 
@@ -322,7 +333,7 @@ class RoleVerifier(metaclass=ABCMeta):
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :param roleid_s: a collection of 1..N Role identifier
+        :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
 
         :yields: tuple(roleid, Boolean)

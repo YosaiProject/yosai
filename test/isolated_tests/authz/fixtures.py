@@ -39,7 +39,7 @@ def modular_realm_authorizer_patched(
 
 @pytest.fixture(scope='function')
 def populated_simple_role():
-    return SimpleRole(role_identifier='role1')
+    return SimpleRole('role1')
 
 @pytest.fixture(scope='function')
 def default_wildcard_permission():

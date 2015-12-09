@@ -65,7 +65,10 @@ class RealmFactory(metaclass=ABCMeta):
 class Realm(metaclass=ABCMeta):
 
     @abstractmethod
-    def do_clear_cache(self, identifier):
+    def do_clear_cache(self, identifiers):
+        """
+        :type identifiers:  SimpleRealmCollection
+        """
         pass
 
 
@@ -124,15 +127,24 @@ class AuthorizingRealm(Realm):
         pass
 
     @abstractmethod
-    def get_authorization_info(self, identifier):
+    def get_authorization_info(self, identifiers):
+        """
+        :type identifiers:  SimpleRealmCollection
+        """
         pass
 
     @abstractmethod
-    def is_permitted(self, identifier, permission_s):
+    def is_permitted(self, identifiers, permission_s):
+        """
+        :type identifiers:  SimpleRealmCollection
+        """
         pass
 
     @abstractmethod
-    def has_role(self, identifier, roleid_s):
+    def has_role(self, identifiers, roleid_s):
+        """
+        :type identifiers:  SimpleRealmCollection
+        """
         pass
 
     # By default, Yosai does not support resolution of Role to Permission:

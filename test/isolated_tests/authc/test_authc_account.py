@@ -74,7 +74,7 @@ def test_append_realm_account_with_attributes_no_overwrite_realmattrs_success(
     dca = default_composite_account
     dca.overwrite = False
     dca.append_realm_account('realm1', full_mock_account)
-    assert dca.get_realm_attributes('realm1') == full_mock_account.identifier
+    assert dca.get_realm_attributes('realm1') == full_mock_account.identifiers
 
 def test_append_realm_account_with_attributes_no_overwrite_merge_success(
         default_composite_account, full_mock_account):
@@ -85,7 +85,7 @@ def test_append_realm_account_with_attributes_no_overwrite_merge_success(
     dca = default_composite_account
     dca.overwrite = False
     dca.append_realm_account('realm1', full_mock_account)
-    assert dca.identifier == full_mock_account.identifier
+    assert dca.identifiers == full_mock_account.identifiers
 
 def test_append_realm_account_with_attributes_no_overwrite_nomerge_success(
         default_composite_account, full_mock_account):
@@ -98,10 +98,10 @@ def test_append_realm_account_with_attributes_no_overwrite_nomerge_success(
     dca.overwrite = False
     dca.append_realm_account('realm1', full_mock_account)
     attrs = {'attr4': 4, 'attr5': 5}
-    full_mock_account.identifier.update(attrs)
+    full_mock_account.identifiers.update(attrs)
     dca.append_realm_account('realm1', full_mock_account)  # with 5 attributes 
     assert len(dca.get_realm_attributes('realm1')) ==\
-        len(full_mock_account.identifier)
+        len(full_mock_account.identifiers)
 
 def test_append_realm_account_with_attributes_overwrite_success(
         default_composite_account, full_mock_account):
@@ -114,9 +114,9 @@ def test_append_realm_account_with_attributes_overwrite_success(
     dca.overwrite = False
     dca.append_realm_account('realm1', full_mock_account)
     attrs = {'attr1': 'one', 'attr2': 'two', 'attr3': 'three'}
-    full_mock_account.identifier.update(attrs)
+    full_mock_account.identifiers.update(attrs)
     dca.append_realm_account('realm1', full_mock_account)  # with 5 attributes 
-    assert dca.get_realm_attributes('realm1') == full_mock_account.identifier
+    assert dca.get_realm_attributes('realm1') == full_mock_account.identifiers
 
 
 def test_append_realm_account_with_attributes_update_fails(
@@ -127,7 +127,7 @@ def test_append_realm_account_with_attributes_update_fails(
     """
 
     dca = default_composite_account
-    monkeypatch.setattr(full_mock_account, '_identifier', (1, 2, 3, 4, 5))
+    monkeypatch.setattr(full_mock_account, '_identifiers', (1, 2, 3, 4, 5))
     with pytest.raises(RealmAttributesException):
         dca.append_realm_account('realm1', full_mock_account)
 
@@ -136,6 +136,6 @@ def test_append_realm_account_without_attributes(
         default_composite_account, full_mock_account, monkeypatch):
     
     dca = default_composite_account
-    monkeypatch.delattr(full_mock_account, '_identifier')
+    monkeypatch.delattr(full_mock_account, '_identifiers')
     dca.append_realm_account('realm1', full_mock_account)
     assert not dca.get_realm_attributes('realm1')

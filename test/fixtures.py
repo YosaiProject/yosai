@@ -44,9 +44,9 @@ def permission_resolver():
 
 @pytest.fixture(scope='function')
 def role_collection():
-    return {SimpleRole(role_identifier='role1'),
-            SimpleRole(role_identifier='role2'),
-            SimpleRole(role_identifier='role3')}
+    return {SimpleRole(role_identifiers='role1'),
+            SimpleRole(role_identifiers='role2'),
+            SimpleRole(role_identifiers='role3')}
 
 
 @pytest.fixture(scope='module')

@@ -226,11 +226,11 @@ def test_sh_stopped_session(
                           'user12345678')
 
     sessionid = sh.create_session(session)
-    cachedsession = ch.get(domain='session', identifier=sessionid)
+    cachedsession = ch.get(domain='session', identifiers=sessionid)
 
     now = datetime.datetime.now(pytz.utc)
     cachedsession.stop_timestamp = now
-    ch.set(domain='session', identifier=sessionid, value=cachedsession)
+    ch.set(domain='session', identifiers=sessionid, value=cachedsession)
 
     with pytest.raises(InvalidSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))

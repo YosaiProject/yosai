@@ -19,11 +19,11 @@ under the License.
 import pytz
 import datetime
 import time
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from marshmallow import Schema, fields, post_load
 
+
 from yosai.core import (
-    AbstractMethodException,
     Event,
     MapContext,
     ExpiredSessionException,
@@ -31,17 +31,12 @@ from yosai.core import (
     IllegalStateException,
     InvalidSessionException,
     LogManager,
-    MissingMethodException,
     RandomSessionIDGenerator,
     SessionCreationException,
-    SessionDeleteException,
     SessionEventException,
     StoppableScheduledExecutor,
     StoppedSessionException,
-    UncacheSessionException,
     UnknownSessionException,
-    UnrecognizedAttributeException,
-    settings,
     session_settings,
     subject_settings,
     cache_abcs,
@@ -242,7 +237,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         """
         sessionid = super().create(session)
         self._cache(session, sessionid)
-        self._cache_identifier_to_key_map(session, sessionid)
+        self._cache_identifiers_to_key_map(session, sessionid)
         return sessionid
 
     def read(self, sessionid):
@@ -261,7 +256,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
         if (session.is_valid):
             self._cache(session, session.session_id)
-            self._cache_identifier_to_key_map(session, session.session_id)
+            self._cache_identifiers_to_key_map(session, session.session_id)
         else:
             self._uncache(session)
 
@@ -282,28 +277,28 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
             # log here
         return None
 
-    def _cache_identifier_to_key_map(self, session, session_id):
+    def _cache_identifiers_to_key_map(self, session, session_id):
         """
         creates a cache entry within a user's cache space that is used to
         identify the active session associated with the user
 
-        when a session is associated with a user, it will have an identifier
+        when a session is associated with a user, it will have an identifiers
         attribute
         """
         isk = subject_settings.identifiers_session_key
         try:
-            identifier = str(session.attributes.get(isk))
-            if identifier is not None:
+            identifiers = str(session.attributes.get(isk))
+            if identifiers is not None:
                 try:
                     self.cache_handler.set(domain='session',
-                                           identifier=identifier,
+                                           identifier=identifiers,
                                            value=DefaultSessionKey(session_id))
                 except AttributeError:
                     msg = "no cache parameter nor lazy-defined cache"
                     print(msg)
                 return
         except AttributeError:
-            msg = 'CacheSessionKeyMap: Could not obtain identifier from session'
+            msg = 'CacheSessionKeyMap: Could not obtain identifiers from session'
             print(msg)
             # log warning here
 
@@ -329,13 +324,13 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
             try:
                 isk = subject_settings.identifiers_session_key
-                identifier = str(session.attributes.get(isk))
+                identifiers = str(session.attributes.get(isk))
 
                 # delete the mapping between a user and session id:
                 self.cache_handler.delete(domain='session',
-                                          identifier=identifier)
+                                          identifier=identifiers)
             except AttributeError:
-                msg = '_uncache: Could not obtain identifier from session'
+                msg = '_uncache: Could not obtain identifiers from session'
                 print(msg)
                 # log warning here
 

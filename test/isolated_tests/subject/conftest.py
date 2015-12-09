@@ -6,6 +6,6 @@ from .fixtures import (
     subject_builder,
     subject_builder_context,
     subject_context,
-    simple_identifier_collection,
+    simple_identifiers_collection,
     sic_serialized,
 )

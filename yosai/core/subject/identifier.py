@@ -25,6 +25,7 @@ from yosai.core import (
 from marshmallow import Schema, fields, post_dump, pre_load, post_load
 import copy
 
+
 class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                                  serialize_abcs.Serializable):
 

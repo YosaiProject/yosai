@@ -4,6 +4,7 @@ from yosai.core import (
 
 import datetime
 
+
 class DefaultSessionSettings:
     """
     DefaultSessionSettings is a settings proxy.  It is new for Yosai.

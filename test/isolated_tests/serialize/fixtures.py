@@ -40,7 +40,7 @@ def serialized_indexed_authorization_info():
                         [{'parts': {'action': ['action1', 'action2', 'action3'],
                                     'domain': ['domain1'],
                                     'target': ['target1', 'target2']}}]}),
-            '_roles': [{'identifier': 'role123'}]}
+            '_roles': [{'identifiers': 'role123'}]}
 
 
 @pytest.fixture(scope='function')
@@ -48,7 +48,7 @@ def serialized_simple_role():
     return {'serialized_cls': 'SimpleRole',
             'serialized_dist_version': '0.1.0',
             'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
-            'identifier': 'role123'}
+            'identifiers': 'role123'}
 
 
 @pytest.fixture(scope='function')
@@ -85,12 +85,12 @@ def serialized_simple_session():
 
 
 @pytest.fixture(scope='function')
-def serialized_simple_identifier_collection():
+def serialized_simple_identifiers_collection():
     return {'serialized_cls': 'SimpleIdentifierCollection',
             'serialized_dist_version': '0.1.0',
             'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
-            'realm_identifiers': {'realm1': ['identifier1', 'identifier2'],
-                                  'realm2': ['identifier1', 'identifier2']}}
+            'realm_identifiers': {'realm1': ['identifiers1', 'identifiers2'],
+                                  'realm2': ['identifiers1', 'identifiers2']}}
 
 @pytest.fixture(scope='function',
                 params= [{'serialized_cls': 'SimpleSession',
@@ -107,8 +107,8 @@ def serialized_simple_identifier_collection():
                          {'serialized_cls': 'SimpleIdentifierCollection',
                           'serialized_dist_version': '0.1.0',
                           'serialized_record_dt': '2015-09-28T11:39:01.000000+00:00',
-                          'realm_identifiers': {'realm1': ['identifier1', 'identifier2'],
-                                                'realm2': ['identifier1', 'identifier2']}}])
+                          'realm_identifiers': {'realm1': ['identifiers1', 'identifiers2'],
+                                                'realm2': ['identifiers1', 'identifiers2']}}])
 def serialized(request):
     return request.param
 
@@ -116,14 +116,14 @@ def serialized(request):
 @pytest.fixture(scope='function')
 def serializeds(serialized_indexed_authorization_info,
                 serialized_simple_session,
-                serialized_simple_identifier_collection,
+                serialized_simple_identifiers_collection,
                 serialized_wildcard_permission,
                 serialized_default_permission,
                 serialized_simple_role):
     return [serialized_indexed_authorization_info,
             serialized_simple_role,
             serialized_simple_session,
-            serialized_simple_identifier_collection,
+            serialized_simple_identifiers_collection,
             serialized_wildcard_permission,
             serialized_default_permission]
 
