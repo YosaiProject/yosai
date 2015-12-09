@@ -33,7 +33,7 @@ from .session.doubles import (
 def mock_account_state():
     return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO',
                       'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
-            'identifier_s': {'givenname': 'Napolean',
+            'identifier': {'givenname': 'Napolean',
                             'surname': 'Dynamite',
                             'email': 'napoleandynamite@example.com',
                             'username': 'napodyna',
@@ -46,7 +46,7 @@ def full_mock_account(mock_account_state, role_collection,
     mas = mock_account_state
     return MockAccount(account_id=8675309,
                        credentials=mas['creds'],
-                       identifier_s=mas['identifier_s'],
+                       identifier=mas['identifier'],
                        roles=role_collection,
                        permissions=permission_collection)
 

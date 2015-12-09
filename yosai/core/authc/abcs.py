@@ -58,14 +58,14 @@ class AuthenticationListener(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def on_logout(self, identifier_s):
+    def on_logout(self, identifier):
         """
         Callback triggered when a {@code Subject} logs-out of the system.
 
         This method will only be triggered when a Subject explicitly logs-out
         of the session.  It will not be triggered if their Session times out.
 
-        :param identifier_s: the identifying identifier_s of the Subject logging
+        :param identifier: the identifying identifier of the Subject logging
                            out.
         """
         pass
@@ -73,7 +73,7 @@ class AuthenticationListener(metaclass=ABCMeta):
 
 class AuthenticationToken(metaclass=ABCMeta):
     """
-    An AuthenticationToken is a consolidation of an account's identifier_s and
+    An AuthenticationToken is a consolidation of an account's identifier and
     supporting credentials submitted by a user during an authentication
     attempt.
 
@@ -88,7 +88,7 @@ class AuthenticationToken(metaclass=ABCMeta):
 
     Because applications represent user data and credentials in different ways,
     implementations of this interface are application-specific.  You are free
-    to acquire a user's identifier_s and credentials however you wish (e.g. web
+    to acquire a user's identifier and credentials however you wish (e.g. web
     form, Swing form, fingerprint identification, etc) and then submit them to
     the Yosai framework in the form of an implementation of this interface.
 
@@ -182,7 +182,7 @@ class HostAuthenticationToken(AuthenticationToken):
 class LogoutAware(metaclass=ABCMeta):
 
     @abstractmethod
-    def on_logout(self, identifier_s):
+    def on_logout(self, identifier):
         pass
 
 

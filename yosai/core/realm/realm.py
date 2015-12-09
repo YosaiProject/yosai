@@ -160,24 +160,24 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def role_verifier(self, verifier):
         self._role_verifier = verifier
 
-    def do_clear_cache(self, identifier_s):
-        msg = "Clearing cache for: " + str(identifier_s)
+    def do_clear_cache(self, identifier):
+        msg = "Clearing cache for: " + str(identifier)
         print(msg)
         # log info here
 
-        self.clear_cached_credentials(identifier_s)
-        self.clear_cached_authorization_info(identifier_s)
+        self.clear_cached_credentials(identifier)
+        self.clear_cached_authorization_info(identifier)
 
-    def clear_cached_credentials(self, identifier_s):
+    def clear_cached_credentials(self, identifier):
         """
         When cached credentials are no longer needed, they can be manually
         cleared with this method.  However, account credentials should be
         cached with a short expiration time (TTL), making the manual clearing
         of cached credentials an alternative use case.
         """
-        self.cache_handler.delete('credentials', identifier_s)
+        self.cache_handler.delete('credentials', identifier)
 
-    def clear_cached_authorization_info(self, identifier_s):
+    def clear_cached_authorization_info(self, identifier):
         """
         This process prevents stale authorization data from being used.
         If any authorization data for an account is changed at runtime, such as
@@ -187,7 +187,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
         """
-        self.cache_handler.delete('authz_info', identifier_s)
+        self.cache_handler.delete('authz_info', identifier)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -284,7 +284,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # Authorization
     # --------------------------------------------------------------------------
 
-    def get_authorization_info(self, identifier_s):
+    def get_authorization_info(self, identifier):
         """
         The default caching policy is to cache an account's authorization info,
         obtained from an account store so to facilitate subsequent authorization
@@ -295,7 +295,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
-        identifier = identifier_s  # this is the step where more complex
+        identifier = identifier  # this is the step where more complex
                                    # identifiers need to be handled
         try:
             def get_stored_authz_info(self):
@@ -335,7 +335,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         return account
 
-    def is_permitted(self, identifier_s, permission_s):
+    def is_permitted(self, identifier, permission_s):
         """
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
@@ -344,18 +344,18 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :yields: tuple(Permission, Boolean)
         """
 
-        authz_info = self.get_authorization_info(identifier_s).authz_info
+        authz_info = self.get_authorization_info(identifier).authz_info
         yield from self.permission_verifier.is_permitted(authz_info,
                                                          permission_s)
 
-    def has_role(self, identifier_s, roleid_s):
+    def has_role(self, identifier, roleid_s):
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :param roleid_s: a collection of 1..N Role identifier_s
+        :param roleid_s: a collection of 1..N Role identifier
         :type roleid_s: Set of String(s)
 
         :yields: tuple(roleid, Boolean)
         """
-        authz_info = self.get_authorization_info(identifier_s).authz_info
+        authz_info = self.get_authorization_info(identifier).authz_info
         yield from self.role_verifier.has_role(authz_info, roleid_s)

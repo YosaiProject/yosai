@@ -66,9 +66,9 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
     def account_id(self):  # DG:  not happy about naming it id
         return self._account_id
 
-    # renamed from "attributes" to identifier_s
+    # renamed from "attributes" to identifier
     @property
-    def identifier_s(self):
+    def identifier(self):
         return self._merged_attrs
 
     @property
@@ -92,7 +92,7 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
     def append_realm_account(self, realm_name, account):
         self._account_id.set_realm_account_id(realm_name, account.account_id)
 
-        realm_attributes = getattr(account, 'identifier_s', None)
+        realm_attributes = getattr(account, 'identifier', None)
         if (realm_attributes is None):
             realm_attributes = {}
 

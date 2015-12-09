@@ -62,7 +62,7 @@ class IdentifierCollection(metaclass=ABCMeta):
 class MutableIdentifierCollection(IdentifierCollection):
 
     @abstractmethod
-    def add(self, identifier_s, realm_name, identifier_collection):
+    def add(self, identifier, realm_name, identifier_collection):
         pass
 
     @abstractmethod
@@ -73,11 +73,11 @@ class MutableIdentifierCollection(IdentifierCollection):
 class IdentifierMap(IdentifierCollection):
 
     @abstractmethod
-    def get_realm_identifier_s(self, realm_name):
+    def get_realm_identifier(self, realm_name):
         pass
 
     @abstractmethod
-    def set_realm_identifier_s(self, realm_name, identifier_s):
+    def set_realm_identifier(self, realm_name, identifier):
         pass
 
     @abstractmethod
@@ -131,16 +131,16 @@ class SubjectContext(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifier_s(self):
+    def identifier(self):
         pass
 
-    @identifier_s.setter
+    @identifier.setter
     @abstractmethod
-    def identifier_s(self, identifier_s):
+    def identifier(self, identifier):
         pass
 
     @abstractmethod
-    def resolve_identifier_s(self):
+    def resolve_identifier(self):
         pass
 
     @property
@@ -233,7 +233,7 @@ class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifier_s(self):
+    def identifier(self):
         pass
 
     @abstractmethod
@@ -249,15 +249,15 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def has_role(self, role_identifier_s):
+    def has_role(self, role_identifier):
         pass
 
     @abstractmethod
-    def has_role_collective(self, role_identifier_s, logical_operator):
+    def has_role_collective(self, role_identifier, logical_operator):
         pass
 
     @abstractmethod
-    def check_role(self, role_identifier_s, logical_operator):
+    def check_role(self, role_identifier, logical_operator):
         pass
 
     @abstractmethod
@@ -293,7 +293,7 @@ class Subject(metaclass=ABCMeta):
     #    pass
 
     @abstractmethod
-    def run_as(self, identifier_s):
+    def run_as(self, identifier):
         pass
 
     @abstractmethod
@@ -301,7 +301,7 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_previous_identifier_s(self):
+    def get_previous_identifier(self):
         pass
 
     @abstractmethod

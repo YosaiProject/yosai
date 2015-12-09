@@ -354,7 +354,7 @@ def test_requires_user_succeeds(monkeypatch, mock_subject):
     a decorated method that requires a 'User-Subject' succeeds to obtain
     a User status and then is called
     """
-    monkeypatch.setattr(mock_subject, '_identifier_s', True)
+    monkeypatch.setattr(mock_subject, '_identifier', True)
     monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_user
@@ -373,7 +373,7 @@ def test_requires_user_raises(monkeypatch, mock_subject):
     a decorated method that requires a 'User-Subject' fails to obtain
     a User status and raises
     """
-    monkeypatch.setattr(mock_subject, '_identifier_s', None)
+    monkeypatch.setattr(mock_subject, '_identifier', None)
     monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_user
@@ -393,7 +393,7 @@ def test_requires_guest_succeeds(monkeypatch, mock_subject):
     finding one
     """
 
-    monkeypatch.setattr(mock_subject, '_identifier_s', None)
+    monkeypatch.setattr(mock_subject, '_identifier', None)
     monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
 
     @requires_guest

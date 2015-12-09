@@ -602,16 +602,16 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # and improve code readability
 
     # new to Yosai:
-    def _has_role(self, identifier_s, roleid_s):
+    def _has_role(self, identifier, roleid_s):
         """
         :type roleid_s: Set of String(s)
         """
         for realm in self.authorizing_realms:
             # the realm's has_role returns a generator
-            yield from realm.has_role(identifier_s, roleid_s)
+            yield from realm.has_role(identifier, roleid_s)
 
     # new to Yosai:
-    def _is_permitted(self, identifier_s, permission_s):
+    def _is_permitted(self, identifier, permission_s):
         """
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -619,9 +619,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         for realm in self.authorizing_realms:
             # the realm's is_permitted returns a generator
-            yield from realm.is_permitted(identifier_s, permission_s)
+            yield from realm.is_permitted(identifier, permission_s)
 
-    def is_permitted(self, identifier_s, permission_s):
+    def is_permitted(self, identifier, permission_s):
         """
         Yosai differs from Shiro in how it handles String-typed Permission
         parameters.  Rather than supporting *args of String-typed Permissions,
@@ -629,8 +629,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         while determining permissions a bit more pythonically.  This may
         be refactored later.
 
-        :param identifier_s: a collection of identifier_s
-        :type identifier_s: Set
+        :param identifier: a collection of identifier
+        :type identifier: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -642,7 +642,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         results = collections.defaultdict(bool)  # defaults to False
 
-        is_permitted_results = self._is_permitted(identifier_s, permission_s)
+        is_permitted_results = self._is_permitted(identifier, permission_s)
         for permission, is_permitted in is_permitted_results:
             # permit expected format is: (Permission, Boolean)
             # As long as one realm returns True for a Permission, that Permission
@@ -650,15 +650,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             results[permission] = results[permission] or is_permitted
 
         results = frozenset(results.items())
-        self.notify_results(identifier_s, results)  # for audit trail
+        self.notify_results(identifier, results)  # for audit trail
         return results
 
     # yosai.core.refactored is_permitted_all to support ANY or ALL operations
-    def is_permitted_collective(self, identifier_s,
+    def is_permitted_collective(self, identifier,
                                 permission_s, logical_operator):
         """
-        :param identifier_s: a collection of Identifier objects
-        :type identifier_s: set
+        :param identifier: a collection of Identifier objects
+        :type identifier: set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -672,27 +672,27 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         self.assert_realms_configured()
 
         # interim_results is a frozenset of tuples:
-        interim_results = self.is_permitted(identifier_s, permission_s)
+        interim_results = self.is_permitted(identifier, permission_s)
 
         results = logical_operator(is_permitted for perm, is_permitted
                                    in interim_results)
 
         if results:
-            self.notify_success(identifier_s, permission_s)
+            self.notify_success(identifier, permission_s)
         else:
-            self.notify_failure(identifier_s, permission_s)
+            self.notify_failure(identifier, permission_s)
 
         return results
 
     # yosai.core.consolidates check_permission functionality to one method:
-    def check_permission(self, identifier_s, permission_s, logical_operator):
+    def check_permission(self, identifier, permission_s, logical_operator):
         """
         like Yosai's authentication process, the authorization process will
         raise an Exception to halt further authz checking once Yosai determines
         that a Subject is unauthorized to receive the requested permission
 
-        :param identifier_s: a collection of identifier_s
-        :type identifier_s: Set
+        :param identifier: a collection of identifier
+        :type identifier: Set
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
@@ -704,7 +704,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_realms_configured()
-        permitted = self.is_permitted_collective(identifier_s,
+        permitted = self.is_permitted_collective(identifier,
                                                  permission_s,
                                                  logical_operator)
         if not permitted:
@@ -714,12 +714,12 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise UnauthorizedException(msg)
 
     # yosai.core.consolidates has_role functionality to one method:
-    def has_role(self, identifier_s, roleid_s):
+    def has_role(self, identifier, roleid_s):
         """
-        :param identifier_s: a collection of identifier_s
-        :type identifier_s: Set
+        :param identifier: a collection of identifier
+        :type identifier: Set
 
-        :param roleid_s: a collection of 1..N Role identifier_s
+        :param roleid_s: a collection of 1..N Role identifier
         :type roleid_s: Set of String(s)
 
         :returns: a frozenset of tuple(s), containing the roleid and a Boolean
@@ -729,7 +729,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         results = collections.defaultdict(bool)  # defaults to False
 
-        for roleid, has_role in self._has_role(identifier_s, roleid_s):
+        for roleid, has_role in self._has_role(identifier, roleid_s):
             # checkrole expected format is: (roleid, Boolean)
             # As long as one realm returns True for a roleid, a subject is
             # considered a member of that Role.
@@ -737,15 +737,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             results[roleid] = results[roleid] or has_role
 
         results = frozenset(results.items())
-        self.notify_results(identifier_s, results)
+        self.notify_results(identifier, results)
         return results
 
-    def has_role_collective(self, identifier_s, roleid_s, logical_operator):
+    def has_role_collective(self, identifier, roleid_s, logical_operator):
         """
-        :param identifier_s: a collection of identifier_s
-        :type identifier_s: Set
+        :param identifier: a collection of identifier
+        :type identifier: Set
 
-        :param roleid_s: a collection of 1..N Role identifier_s
+        :param roleid_s: a collection of 1..N Role identifier
         :type roleid_s: Set of String(s)
 
         :param logical_operator:  indicates whether all or at least one
@@ -757,24 +757,24 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         self.assert_realms_configured()
 
         # interim_results is a frozenset of tuples:
-        interim_results = self.has_role(identifier_s, roleid_s)
+        interim_results = self.has_role(identifier, roleid_s)
 
         results = logical_operator(has_role for roleid, has_role
                                    in interim_results)
 
         if results:
-            self.notify_success(identifier_s, roleid_s)
+            self.notify_success(identifier, roleid_s)
         else:
-            self.notify_failure(identifier_s, roleid_s)
+            self.notify_failure(identifier, roleid_s)
 
         return results
 
-    def check_role(self, identifier_s, roleid_s, logical_operator):
+    def check_role(self, identifier, roleid_s, logical_operator):
         """
-        :param identifier_s: a collection of identifier_s
-        :type identifier_s: Set
+        :param identifier: a collection of identifier
+        :type identifier: Set
 
-        :param roleid_s: 1..N role identifier_s
+        :param roleid_s: 1..N role identifier
         :type roleid_s:  a String or Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
@@ -784,7 +784,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         self.assert_realms_configured()
-        has_role_s = self.has_role_collective(identifier_s,
+        has_role_s = self.has_role_collective(identifier,
                                               roleid_s, logical_operator)
         if not has_role_s:
             msg = "Subject does not have role(s) assigned."
@@ -797,7 +797,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # --------------------------------------------------------------------------
 
     # notify_results is intended for audit trail
-    def notify_results(self, identifier_s, results):
+    def notify_results(self, identifier, results):
         """
         :param results:  permission or role based results, created by
                          is_permitted or has_role, respectively
@@ -805,29 +805,29 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.RESULTS',
-                          identifier_s=identifier_s,
+                          identifier=identifier,
                           results=results)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.RESULTS event"
             raise AuthorizationEventException(msg)
 
-    def notify_success(self, identifier_s, items):
+    def notify_success(self, identifier, items):
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.GRANTED',
-                          identifier_s=identifier_s,
+                          identifier=identifier,
                           items=items)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.GRANTED event"
             raise AuthorizationEventException(msg)
 
-    def notify_failure(self, identifier_s, items):
+    def notify_failure(self, identifier, items):
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHORIZATION.DENIED',
-                          identifier_s=identifier_s,
+                          identifier=identifier,
                           items=items)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
@@ -905,7 +905,7 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :param roleid_s: a collection of 1..N Role identifier_s
+        :param roleid_s: a collection of 1..N Role identifier
         :type roleid_s: Set of String(s)
 
         :yields: tuple(roleid, Boolean)

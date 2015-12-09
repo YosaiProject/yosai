@@ -32,7 +32,7 @@ def requires_user(fn):
     Requires that the calling Subject be *either* authenticated *or* remembered
     via RememberMe services before allowing access.
 
-    This method essentially ensures that subject.identifier_s IS NOT None
+    This method essentially ensures that subject.identifier IS NOT None
 
     :raises UnauthenticatedException: indicating that the decorated method is
                                       not allowed to be executed because the
@@ -45,7 +45,7 @@ def requires_user(fn):
 
         subject = SecurityUtils.get_subject()
 
-        if subject.identifier_s is None:
+        if subject.identifier is None:
             msg = ("Attempting to perform a user-only operation.  The "
                    "current Subject is NOT a user (they haven't been "
                    "authenticated or remembered from a previous login). "
@@ -62,7 +62,7 @@ def requires_guest(fn):
     a user -- the Subject is not yet authenticated nor remembered through
     RememberMe services.
 
-    This method essentially ensures that subject.identifier_s IS None
+    This method essentially ensures that subject.identifier IS None
 
     :raises UnauthenticatedException: indicating that the decorated method is
                                       not allowed to be executed because the
@@ -74,7 +74,7 @@ def requires_guest(fn):
 
         subject = SecurityUtils.get_subject()
 
-        if subject.identifier_s is not None:
+        if subject.identifier is not None:
             msg = ("Attempting to perform a guest-only operation.  The "
                    "current Subject is NOT a guest (they have either been "
                    "authenticated or remembered from a previous login). "

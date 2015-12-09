@@ -36,12 +36,12 @@ def default_subject_context(subject_context):
 @pytest.fixture(scope='function')
 def simple_identifier_collection():
     return SimpleIdentifierCollection(realm_name='realm1',
-                                      identifier_s='username')
+                                      identifier='username')
 
 
 @pytest.fixture(scope='function')
 def sic_serialized():
-    return {'realm_identifier_s': {'realm1': ['username']}}
+    return {'realm_identifier': {'realm1': ['username']}}
 
 
 @pytest.fixture(scope='function')
@@ -52,7 +52,7 @@ def default_subject_store():
 @pytest.fixture(scope='function')
 def delegating_subject(
         mock_session, simple_identifier_collection, mock_security_manager):
-    return DelegatingSubject(identifier_s=simple_identifier_collection,
+    return DelegatingSubject(identifier=simple_identifier_collection,
                              authenticated=False,
                              host='127.0.0.1',
                              session=mock_session,
@@ -67,7 +67,7 @@ def subject_builder_context(
                 host='127.0.0.1',
                 session_id='sessionid123',
                 session=mock_session,
-                identifier_s=simple_identifier_collection,
+                identifier=simple_identifier_collection,
                 session_creation_enabled=True,
                 authenticated=True,
                 attribute1='attribute1',

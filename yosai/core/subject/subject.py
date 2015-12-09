@@ -130,35 +130,35 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             self.none_safe_put(self.get_key('SUBJECT'), subject)
 
     @property
-    def identifier_s(self):
+    def identifier(self):
         return self.get(self.get_key('IDENTIFIERS'))
 
-    @identifier_s.setter
-    def identifier_s(self, identifier_s):
-        self.none_safe_put(self.get_key('IDENTIFIERS'), identifier_s)
+    @identifier.setter
+    def identifier(self, identifier):
+        self.none_safe_put(self.get_key('IDENTIFIERS'), identifier)
 
-    def resolve_identifier_s(self):
-        identifier_s = self.identifier_s
+    def resolve_identifier(self):
+        identifier = self.identifier
 
-        if not identifier_s:
+        if not identifier:
             # note that the sequence matters:
             for entity in [self.account, self.subject]:
                 try:
-                    identifier_s = entity.identifier_s
+                    identifier = entity.identifier
                 except AttributeError:
                     continue
                 else:
                     break
         # otherwise, use the session key as the identifier:
-        if not identifier_s:
+        if not identifier:
             session = self.resolve_session()
             try:
-                identifier_s = session.get_attribute(
+                identifier = session.get_attribute(
                     self.get_key('IDENTIFIERS_SESSION_KEY'))
             except AttributeError:
                 pass
 
-        return identifier_s
+        return identifier
 
     @property
     def session(self):
@@ -268,7 +268,7 @@ class DelegatingSubject(subject_abcs.Subject):
     as DelegatingSession is to DefaultNativeSessionManager.
 
     This implementation does not maintain state such as roles and permissions
-    (only Subject identifier_s, such as usernames or user primary keys) for
+    (only Subject identifier, such as usernames or user primary keys) for
     better performance in a stateless architecture.  It instead asks the
     underlying SecurityManager every time to perform the authorization check.
 
@@ -302,7 +302,7 @@ class DelegatingSubject(subject_abcs.Subject):
     """
 
     def __init__(self,
-                 identifier_s=None,
+                 identifier=None,
                  authenticated=False,
                  host=None,
                  session=None,
@@ -310,7 +310,7 @@ class DelegatingSubject(subject_abcs.Subject):
                  security_manager=None):
 
         self.security_manager = security_manager
-        self.identifier_s = identifier_s
+        self.identifier = identifier
         self.authenticated = authenticated
         self.host = host
 
@@ -320,7 +320,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.session = None
 
         self.session_creation_enabled = session_creation_enabled
-        self.run_as_identifier_s_session_key = (
+        self.run_as_identifier_session_key = (
             self.__class__.__name__ + ".RUN_AS_IDENTIFIERS_SESSION_KEY")
 
     def decorate(self, session):
@@ -348,35 +348,35 @@ class DelegatingSubject(subject_abcs.Subject):
             raise SecurityManagerNotSetException(msg)
 
     @property
-    def has_identifier_s(self):
-        return (self._identifier_s is not None)
+    def has_identifier(self):
+        return (self._identifier is not None)
 
-    def get_primary_identifier(self, identifier_s):
+    def get_primary_identifier(self, identifier):
         try:
-            return identifier_s.primary_identifier
+            return identifier.primary_identifier
         except:
             return None
 
     @property
     def identifier(self):
-        self.get_primary_identifier(self.identifier_s)
+        self.get_primary_identifier(self.identifier)
 
     @property
-    def identifier_s(self):
+    def identifier(self):
         # expecting a List of IdentifierCollection objects:
-        run_as_identifier_s = self.get_run_as_identifier_s_stack()
-        if (not run_as_identifier_s):
-            if not hasattr(self, '_identifier_s'):
-                self._identifier_s = None
-            return self._identifier_s
+        run_as_identifier = self.get_run_as_identifiertack()
+        if (not run_as_identifier):
+            if not hasattr(self, '_identifier'):
+                self._identifier = None
+            return self._identifier
         else:
-            return run_as_identifier_s[0]
+            return run_as_identifier[0]
 
-    @identifier_s.setter
-    def identifier_s(self, identifier_s):
-        if (isinstance(identifier_s, subject_abcs.IdentifierCollection) or
-                identifier_s is None):
-            self._identifier_s = identifier_s
+    @identifier.setter
+    def identifier(self, identifier):
+        if (isinstance(identifier, subject_abcs.IdentifierCollection) or
+                identifier is None):
+            self._identifier = identifier
         else:
             raise IllegalArgumentException('must use IdentifierCollection')
 
@@ -388,12 +388,12 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: a List of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is         """
 
-        if self.has_identifier_s:
+        if self.has_identifier:
             self.check_security_manager()
             return (self.security_manager.is_permitted(
-                    self.identifier_s, permission_s))
+                    self.identifier, permission_s))
 
-        msg = 'Cannot check permission when identifier_s aren\'t set!'
+        msg = 'Cannot check permission when identifier aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
     # refactored is_permitted_all:
@@ -408,21 +408,21 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: a Boolean
         """
         sm = self.security_manager
-        if self.has_identifier_s:
-            return sm.is_permitted_collective(self.identifier_s,
+        if self.has_identifier:
+            return sm.is_permitted_collective(self.identifier,
                                               permission_s,
                                               logical_operator)
 
-        msg = 'Cannot check permission when identifier_s aren\'t set!'
+        msg = 'Cannot check permission when identifier aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
     def assert_authz_check_possible(self):
-        if not self.identifier_s:
+        if not self.identifier:
             msg = (
                 "This subject is anonymous - it does not have any " +
-                "identifying identifier_s and authorization operations " +
+                "identifying identifier and authorization operations " +
                 "required an identity to check against.  A Subject " +
-                "instance will acquire these identifying identifier_s " +
+                "instance will acquire these identifying identifier " +
                 "automatically after a successful login is performed be " +
                 "executing " + self.__class__.__name__ +
                 ".login(Account) or when 'Remember Me' " +
@@ -446,33 +446,33 @@ class DelegatingSubject(subject_abcs.Subject):
         :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_authz_check_possible()
-        if self.has_identifier_s:
-            self.security_manager.check_permission(self.identifier_s,
+        if self.has_identifier:
+            self.security_manager.check_permission(self.identifier,
                                                    permission_s,
                                                    logical_operator)
         else:
-            msg = 'Cannot check permission when identifier_s aren\'t set!'
+            msg = 'Cannot check permission when identifier aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
     def has_role(self, roleid_s):
         """
-        :param roleid_s: 1..N role identifier_s (string)
+        :param roleid_s: 1..N role identifier (string)
         :type roleid_s:  a String or List of Strings
 
         :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
         """
 
-        if self.has_identifier_s:
-            return self.security_manager.has_role(self.identifier_s,
+        if self.has_identifier:
+            return self.security_manager.has_role(self.identifier,
                                                   roleid_s)
-        msg = 'Cannot check roles when identifier_s aren\'t set!'
+        msg = 'Cannot check roles when identifier aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
     # refactored has_all_roles:
     def has_role_collective(self, roleid_s, logical_operator):
         """
-        :param roleid_s: 1..N role identifier_s
+        :param roleid_s: 1..N role identifier
         :type roleid_s:  a String or List of Strings
 
         :param logical_operator:  indicates whether all or at least one
@@ -481,13 +481,13 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :returns: a Boolean
         """
-        if self.has_identifier_s:
-            return (self.has_identifier_s and
-                    self.security_manager.has_role_collective(self.identifier_s,
+        if self.has_identifier:
+            return (self.has_identifier and
+                    self.security_manager.has_role_collective(self.identifier,
                                                               roleid_s,
                                                               logical_operator))
         else:
-            msg = 'Cannot check roles when identifier_s aren\'t set!'
+            msg = 'Cannot check roles when identifier aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
     def check_role(self, role_ids, logical_operator):
@@ -501,12 +501,12 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
-        if self.has_identifier_s:
-            self.security_manager.check_role(self.identifier_s,
+        if self.has_identifier:
+            self.security_manager.check_role(self.identifier,
                                              role_ids,
                                              logical_operator)
         else:
-            msg = 'Cannot check roles when identifier_s aren\'t set!'
+            msg = 'Cannot check roles when identifier aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
     def login(self, authc_token):
@@ -516,23 +516,23 @@ class DelegatingSubject(subject_abcs.Subject):
         # login raises an AuthenticationException if it fails to authenticate:
         subject = self.security_manager.login(subject=self,
                                               authc_token=authc_token)
-        identifier_s = None
+        identifier = None
         host = None
         if isinstance(subject, DelegatingSubject):
             # directly reference the attributes in case there are assumed
-            # identities (Run-As) -- we don't want to lose the 'real' identifier_s
-            identifier_s = subject._identifier_s
+            # identities (Run-As) -- we don't want to lose the 'real' identifier
+            identifier = subject._identifier
             host = subject.host
         else:
-            identifier_s = subject.identifier_s  # use the property accessor
+            identifier = subject.identifier  # use the property accessor
 
-        if not identifier_s:
+        if not identifier:
             msg = ("Identifiers returned from security_manager.login(authc_token" +
                    ") returned None or empty value. This value must be" +
                    " non-None and populated with one or more elements.")
             raise IllegalStateException(msg)
 
-        self.identifier_s = identifier_s
+        self.identifier = identifier
         self.authenticated = True
 
         if not host:
@@ -565,7 +565,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     @property
     def is_remembered(self):
-        return (bool(self.identifier_s) and (not self.authenticated))
+        return (bool(self.identifier) and (not self.authenticated))
 
     @property
     def session(self):
@@ -633,7 +633,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.security_manager.logout(self)
         finally:
             self._session = None
-            self._identifier_s = None
+            self._identifier = None
             self._authenticated = False
 
             # Don't set securityManager to None here - the Subject can still be
@@ -680,8 +680,8 @@ class DelegatingSubject(subject_abcs.Subject):
     #    if isinstance(_able, Callable):
     #        return SubjectCallable(self, _able)
 
-    def run_as(self, identifier_s):
-        if (not self.has_identifier_s):
+    def run_as(self, identifier):
+        if (not self.has_identifier):
             msg = ("This subject does not yet have an identity.  Assuming the "
                    "identity of another Subject is only allowed for Subjects "
                    "with an existing identity.  Try logging this subject in "
@@ -689,72 +689,74 @@ class DelegatingSubject(subject_abcs.Subject):
                    "to build ad hoc Subject instances with identities as "
                    "necessary.")
             raise IllegalStateException(msg)
-        self.push_identity(identifier_s)
+        self.push_identity(identifier)
 
     @property
     def is_run_as(self):
-        return bool(self.get_run_as_identifier_s_stack())
+        return bool(self.get_run_as_identifiertack())
 
-    def get_previous_identifier_s(self):
-        previous_identifier_s = None
-        stack = self.get_run_as_identifier_s_stack()  # TBD:  must confirm logic
+    def get_previous_identifier(self):
+        previous_identifier = None
+        stack = self.get_run_as_identifiertack()  # TBD:  must confirm logic
 
         if stack:
             if (len(stack) == 1):
-                previous_identifier_s = self.identifier_s
+                previous_identifier = self.identifier
             else:
                 # always get the one behind the current
-                previous_identifier_s = stack[1]
-        return previous_identifier_s
+                previous_identifier = stack[1]
+        return previous_identifier
 
     def release_run_as(self):
         return self.pop_identity()
 
-    def get_run_as_identifier_s_stack(self):
+    def get_run_as_identifiertack(self):
         """
         :returns: an IdentifierCollection
         """
         session = self.get_session(False)
-        stack = collections.deque()
-        rapkey = session.get_attribute(self.run_as_identifier_s_session_key)
+        if session:
+            stack = collections.deque()
+            rapkey = session.get_attribute(self.run_as_identifier_session_key)
 
-        if rapkey:  # don't insert None
-            stack.appendleft(rapkey)
+            if rapkey:  # don't insert None
+                stack.appendleft(rapkey)
 
-        return stack
+            return stack
+        return None
 
     def clear_run_as_identities(self):
         session = self.get_session(False)
         if (session is not None):
-            session.remove_attribute(self.run_as_identifier_s_session_key)
+            session.remove_attribute(self.run_as_identifier_session_key)
 
-    def push_identity(self, identifier_s):
+    def push_identity(self, identifier):
         """
-        :type identifier_s: IdentifierCollection
+        :type identifier: IdentifierCollection
         """
-        if (not identifier_s):
-            msg = ("Specified Subject identifier_s cannot be None or empty "
+        if (not identifier):
+            msg = ("Specified Subject identifier cannot be None or empty "
                    "for 'run as' functionality.")
             raise IllegalArgumentException(msg)
 
-        stack = self.get_run_as_identifier_s_stack()
+        stack = self.get_run_as_identifiertack()
         if (not stack):
             stack = collections.deque()
 
-        stack.appendleft(identifier_s)
+        stack.appendleft(identifier)
         session = self.get_session()
-        session.set_attribute(self.run_as_identifier_s_session_key, stack)
+        session.set_attribute(self.run_as_identifier_session_key, stack)
 
     def pop_identity(self):
         popped = None
-        stack = self.get_run_as_identifier_s_stack()
+        stack = self.get_run_as_identifiertack()
 
         if (stack):
             popped = stack.popleft()
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()
-                session.set_attribute(self.run_as_identifier_s_session_key, stack)
+                session.set_attribute(self.run_as_identifier_session_key, stack)
 
             else:
                 # stack is empty, remove it from the session:
@@ -900,7 +902,7 @@ class DefaultSubjectStore:
     def save_to_session(self, subject):
 
         """
-        Saves the subject's state (it's identifying attributes (identifier_s) and
+        Saves the subject's state (it's identifying attributes (identifier) and
         authentication state) to its session.  The session can be retrieved at
         a later time (typically from a SessionManager) and used to re-create
         the Subject instance.
@@ -910,48 +912,48 @@ class DefaultSubjectStore:
         """
         # performs merge logic, only updating the Subject's session if it
         # does not match the current state:
-        self.merge_identifier_s(subject)
+        self.merge_identifier(subject)
         self.merge_authentication_state(subject)
 
     # was mergePrincipals:
-    def merge_identifier_s(self, subject):
+    def merge_identifier(self, subject):
         """
         Merges the Subject's identifying attributes with those that are
         saved in the Subject's session.  This method only updates the Subject's
-        session when the session's identifier_s are different than those of the
+        session when the session's identifier are different than those of the
         Subject instance.
 
         :param subject: the Subject whose identifying attributes will
                         potentially merge with those in the Subject's session
         """
-        current_identifier_s = None
+        current_identifier = None
         if subject.is_run_as:
             # avoid the other steps of attribute access when referencing by
             # property by referencing the underlying attribute directly:
-            current_identifier_s = subject._identifier_s
+            current_identifier = subject._identifier
 
-        if not current_identifier_s:
+        if not current_identifier:
             # if direct attribute access did not work, use the property-
             # decorated attribute access method:
-            current_identifier_s = subject.identifier_s
+            current_identifier = subject.identifier
 
         session = subject.get_session(False)
 
         if (not session):
-            if (current_identifier_s):
+            if (current_identifier):
                 session = subject.get_session(True)
-                session.set_attribute(self.dsc_isk, current_identifier_s)
-            # otherwise no session and no identifier_s - nothing to save
+                session.set_attribute(self.dsc_isk, current_identifier)
+            # otherwise no session and no identifier - nothing to save
         else:
-            existing_identifier_s = session.get_attribute(self.dsc_isk)
+            existing_identifier = session.get_attribute(self.dsc_isk)
 
-            if (not current_identifier_s):
-                if (existing_identifier_s):
+            if (not current_identifier):
+                if (existing_identifier):
                     session.remove_attribute(self.dsc_isk)
                 # otherwise both are null or empty - no need to update session
             else:
-                if not (current_identifier_s == existing_identifier_s):
-                    session.set_attribute(self.dsc_isk, current_identifier_s)
+                if not (current_identifier == existing_identifier):
+                    session.set_attribute(self.dsc_isk, current_identifier)
                 # otherwise they're the same - no need to update the session
 
     def merge_authentication_state(self, subject):
@@ -1001,7 +1003,7 @@ class SubjectBuilder:
                  host=None,
                  session_id=None,
                  session=None,
-                 identifier_s=None,
+                 identifier=None,
                  session_creation_enabled=True,
                  authenticated=False,
                  **context_attributes):
@@ -1020,7 +1022,7 @@ class SubjectBuilder:
             self.subject_context.host = host
             self.subject_context.session_id = session_id
             self.subject_context.session = session
-            self.subject_context.identifier_s = identifier_s
+            self.subject_context.identifier = identifier
             self.subject_context.session_creation_enabled = session_creation_enabled
             self.subject_context.authenticated = authenticated
 
@@ -1074,11 +1076,11 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         security_manager = subject_context.resolve_security_manager()
         session = subject_context.resolve_session()
         session_creation_enabled = subject_context.session_creation_enabled
-        identifier_s = subject_context.resolve_identifier_s()
+        identifier = subject_context.resolve_identifier()
         authenticated = subject_context.resolve_authenticated()
         host = subject_context.resolve_host()
 
-        return DelegatingSubject(identifier_s, authenticated, host, session,
+        return DelegatingSubject(identifier, authenticated, host, session,
                                  session_creation_enabled, security_manager)
 
 # moved from its own security_utils module so as to avoid circular importing:

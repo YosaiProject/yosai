@@ -65,7 +65,7 @@ class Authorizer(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def is_permitted(self, identifier_s, permission_s):
+    def is_permitted(self, identifier, permission_s):
         """
         Returns True if the corresponding subject/user is permitted to perform
         an action or access a resource summarized by the specified permission.
@@ -73,8 +73,8 @@ class Authorizer(metaclass=ABCMeta):
         More specifically, this method determines whether any Permission(s)
         associated with the subject imply the specified permission.
 
-        :param identifier_s: the application-specific subject/user identifier(s)
-        :type identifier_s: a set
+        :param identifier: the application-specific subject/user identifier(s)
+        :type identifier: a set
 
         :param permission_s: the permission(s) being checked
         :type permission_s: List of Permission object(s) or String(s)
@@ -86,23 +86,23 @@ class Authorizer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted_collective(self, identifier_s, permission_s, logical_operator):
+    def is_permitted_collective(self, identifier, permission_s, logical_operator):
         pass
 
     @abstractmethod
-    def check_permission(self, identifier_s, permission_s, logical_operator):
+    def check_permission(self, identifier, permission_s, logical_operator):
         pass
 
     @abstractmethod
-    def has_role(self, identifier_s, roleid_s):
+    def has_role(self, identifier, roleid_s):
         pass
 
     @abstractmethod
-    def has_role_collective(self, identifier_s, roleid_s, logical_operator):
+    def has_role_collective(self, identifier, roleid_s, logical_operator):
         pass
 
     @abstractmethod
-    def check_role(self, identifier_s, role_s, logical_operator):
+    def check_role(self, identifier, role_s, logical_operator):
         pass
 
 
@@ -305,7 +305,7 @@ class PermissionVerifier(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def is_permitted(self, identifier_s, permission_s):
+    def is_permitted(self, identifier, permission_s):
         """
         :param permission_s: a collection of one or more Permission objects
         :type permission_s: set
@@ -322,7 +322,7 @@ class RoleVerifier(metaclass=ABCMeta):
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :param roleid_s: a collection of 1..N Role identifier_s
+        :param roleid_s: a collection of 1..N Role identifier
         :type roleid_s: Set of String(s)
 
         :yields: tuple(roleid, Boolean)
