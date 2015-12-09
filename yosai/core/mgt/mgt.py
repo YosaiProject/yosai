@@ -17,7 +17,6 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from cryptography.exceptions import InvalidToken
 from cryptography.fernet import Fernet
 from abc import ABCMeta, abstractmethod
 import copy
@@ -28,14 +27,12 @@ from yosai.core import(
     Credential,
     CredentialResolver,
     DefaultAuthenticator,
-    DefaultMGTSettings,
     DefaultPermission,
     DefaultNativeSessionManager,
     DefaultSessionContext,
     DefaultSessionKey,
     DefaultSubjectContext,
     DeleteSubjectException,
-    DefaultEventBus,
     IllegalArgumentException,
     IndexedAuthorizationInfo,
     InvalidSessionException,
@@ -46,8 +43,6 @@ from yosai.core import(
     SaveSubjectException,
     SerializationManager,
     SimpleRole,
-    UnavailableSecurityManagerException,
-    UnrecognizedAttributeException,
     event_bus,
     mgt_settings,
     mgt_abcs,
@@ -382,7 +377,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
 
 # also known as ApplicationSecurityManager in Shiro 2.0 alpha:
-class DefaultSecurityManager(mgt_abcs.SecurityManager,
+class NativeSecurityManager(mgt_abcs.SecurityManager,
                              event_abcs.EventBusAware,
                              cache_abcs.CacheHandlerAware):
 
@@ -392,7 +387,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
                  cache_handler=None,
                  authenticator=DefaultAuthenticator(),
                  authorizer=ModularRealmAuthorizer(),
-                 session_manager=None,
+                 session_manager=DefaultNativeSessionManager(),
                  remember_me_manager=None,
                  subject_store=None,
                  subject_factory=None,
@@ -434,6 +429,7 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
 
             self.apply_event_bus(self._authenticator)
             self.apply_cache_handler(self._authenticator)
+            self.apply_credential_resolver(self._authenticator)
 
         else:
             msg = "authenticator parameter must have a value"
@@ -449,6 +445,9 @@ class DefaultSecurityManager(mgt_abcs.SecurityManager,
             self._authorizer = authorizer
             self.apply_event_bus(self._authorizer)
             self.apply_cache_handler(self._authorizer)
+            self.apply_role_resolver(self._authorizer)
+            self.apply_permission_resolver(self._authorizer)
+            self.apply_authz_info_resolver(self._authorizer)
         else:
             msg = "authorizer parameter must have a value"
             raise IllegalArgumentException(msg)

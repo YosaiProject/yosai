@@ -299,7 +299,7 @@ from yosai.core.mgt.mgt_settings import(
 
 from yosai.core.mgt.mgt import (
     AbstractRememberMeManager,
-    DefaultSecurityManager,
+    NativeSecurityManager,
 )
 
 

@@ -1247,8 +1247,8 @@ class SessionHandler:
 
 
 class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
-                            session_abcs.NativeSessionManager,
-                            event_abcs.EventBusAware):
+                                  session_abcs.NativeSessionManager,
+                                  event_abcs.EventBusAware):
     """
     Yosai's DefaultNativeSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to

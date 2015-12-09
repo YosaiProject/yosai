@@ -18,7 +18,7 @@ under the License.
 """
 
 from yosai import settings, LogManager
-from yosai import DefaultSecurityManager, SecurityUtils, event_bus
+from yosai import NativeSecurityManager, SecurityUtils, event_bus
 
 
 def initialize_yosai():
@@ -44,6 +44,6 @@ def configure_security_manager():
     # account store
     # credentials cache handler
     # authorization info cache handler
-    security_manager = DefaultSecurityManager(event_bus=event_bus)
+    security_manager = NativeSecurityManager(event_bus=event_bus)
 
     SecurityUtils.set_security_manager(security_manager)

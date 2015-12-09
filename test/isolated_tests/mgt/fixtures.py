@@ -1,5 +1,5 @@
 from yosai.core import (
-    DefaultSecurityManager,
+    NativeSecurityManager,
 )
 
 import pytest
@@ -10,7 +10,7 @@ from .doubles import (
 
 @pytest.fixture(scope='function')
 def default_security_manager():
-    return DefaultSecurityManager()
+    return NativeSecurityManager()
 
 @pytest.fixture(scope='function')
 def dependencies_for_injection(default_security_manager):

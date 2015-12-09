@@ -6,7 +6,7 @@ from yosai.core import (
     AuthenticationException,
     SaveSubjectException,
     DefaultAuthenticator,
-    DefaultSecurityManager,
+    NativeSecurityManager,
     DefaultSessionKey,
     DefaultSubjectContext,
     DeleteSubjectException,
@@ -28,7 +28,7 @@ from .doubles import (
 )
 
 # ------------------------------------------------------------------------------
-# DefaultSecurityManager
+# NativeSecurityManager
 # ------------------------------------------------------------------------------
 
 def test_dsm_setauthenticator_da(
@@ -44,11 +44,11 @@ def test_dsm_setauthenticator_da(
     monkeypatch.setattr(dsm, 'realms', 'verified')
     da = default_authenticator
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'apply_event_bus') as mock_aev:
         mock_aev.return_value = None
 
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'apply_cache_manager') as mock_acm:
             mock_acm.return_value = None
             dsm.authenticator = da
@@ -80,11 +80,11 @@ def test_dsm_setauthorizer(default_security_manager):
     """
     dsm = default_security_manager
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'apply_event_bus') as mock_aev:
         mock_aev.return_value = None
 
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'apply_cache_manager') as mock_acm:
             mock_acm.return_value = None
             dsm.authorizer = 'authorizer'
@@ -117,10 +117,10 @@ def test_dsm_set_cachemanager(default_security_manager):
     """
     dsm = default_security_manager
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'get_dependencies_for_injection') as dsm_gdfi:
         dsm_gdfi.return_value = {'val1', 'val2'}
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'apply_cache_manager') as dsm_acm:
             dsm_acm.return_value = None
 
@@ -149,10 +149,10 @@ def test_dsm_set_eventbus(default_security_manager):
     sets attribute and calls method
     """
     dsm = default_security_manager
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'get_dependencies_for_injection') as dsm_gdfi:
         dsm_gdfi.return_value = {'val1', 'val2'}
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'apply_event_bus') as dsm_aeb:
             dsm_aeb.return_value = None
 
@@ -195,10 +195,10 @@ def test_set_realms(
     monkeypatch.setattr(dsm, 'authenticator', authenticator)
     monkeypatch.setattr(dsm, 'authorizer', authorizer)
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'apply_event_bus') as dsm_aeb:
         dsm_aeb.return_value = None
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'apply_cache_manager') as dsm_acm:
             dsm_acm.return_value = None
 
@@ -656,14 +656,14 @@ def test_dsm_login_success(default_security_manager):
         on_successful_login is called, and then logged_in is returned
     """
     dsm = default_security_manager
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'authenticate_account') as dsm_ac:
         dsm_ac.return_value = 'account'
 
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'create_subject') as dsm_cs:
             dsm_cs.return_value = 'logged_in'
-            with mock.patch.object(DefaultSecurityManager,
+            with mock.patch.object(NativeSecurityManager,
                                    'on_successful_login') as dsm_osl:
                 dsm_osl.return_value = None
 
@@ -685,11 +685,11 @@ def test_dsm_login_raises_then_succeeds(default_security_manager):
     """
     dsm = default_security_manager
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'authenticate_account') as dsm_ac:
         dsm_ac.side_effect = AuthenticationException
 
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'on_failed_login') as dsm_ofl:
             dsm_ofl.return_value = None
 
@@ -710,11 +710,11 @@ def test_dsm_login_raises_then_raises(default_security_manager, capsys):
     """
     dsm = default_security_manager
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'authenticate_account') as dsm_ac:
         dsm_ac.side_effect = AuthenticationException
 
-        with mock.patch.object(DefaultSecurityManager,
+        with mock.patch.object(NativeSecurityManager,
                                'on_failed_login') as dsm_ofl:
             dsm_ofl.side_effect = Exception
 
@@ -736,7 +736,7 @@ def test_dsm_on_successful_login(default_security_manager):
     """
     dsm = default_security_manager
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'remember_me_successful_login') as dsm_rmsl:
         dsm_rmsl.return_value = None
 
@@ -752,7 +752,7 @@ def test_dsm_onfailed_login(default_security_manager):
     passes call on to remember_me_failed_login
     """
     dsm = default_security_manager
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'remember_me_failed_login') as dsm_rmfl:
         dsm_rmfl.return_value = None
         dsm.on_failed_login('authc_token', 'authc_exc', 'subject')
@@ -767,7 +767,7 @@ def test_dsm_before_logout(default_security_manager):
     passes call on to remember_me_logout
     """
     dsm = default_security_manager
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'remember_me_logout') as dsm_rml:
         dsm_rml.return_value = None
 
@@ -949,7 +949,7 @@ def test_dsm_resolve_session_contextsessionisnone(
 
     monkeypatch.setattr(msc, 'resolve_session', lambda: None)
 
-    with mock.patch.object(DefaultSecurityManager,
+    with mock.patch.object(NativeSecurityManager,
                            'resolve_context_session') as dsm_rcs:
         dsm_rcs.return_value = None
         result = dsm.resolve_session(msc)

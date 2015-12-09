@@ -51,6 +51,15 @@ import copy
 
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
+    A SubjectContext assists a SecurityManager and SubjectFactory with the
+    configuration of new Subject instances.  It employs a number of heuristics
+    to acquire data for its attributes, exhausting all available resources at
+    its disposal (heuristic resolution of data).
+
+    Most Yosai users will never instantiate a SubjectContext object directly
+    but rather will use a SubjectBuilder, which internally uses a SubjectContext,
+    to build Subject instances.
+
     Yosai notes:  Shiro uses the getTypedValue method to validate objects
                   as it obtains them from the MapContext.  I've decided that
                   this checking is unecessary overhead in Python and to
@@ -254,9 +263,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
 class DelegatingSubject(subject_abcs.Subject):
     """
-    Implementation of the Subject interface that delegates method calls to an
-    underlying SecurityManager instance for security checks.  It is essentially
-    a SecurityManager proxy.
+    A DelegatingSubject delegates method calls to an underlying SecurityManager
+    instance for security checks.  It is essentially a SecurityManager proxy,
+    as DelegatingSession is to DefaultNativeSessionManager.
 
     This implementation does not maintain state such as roles and permissions
     (only Subject identifier_s, such as usernames or user primary keys) for
@@ -282,7 +291,7 @@ class DelegatingSubject(subject_abcs.Subject):
     Yosai includes 'Run-As' functionality.  A Run-As scenario is one where
     a user, such as an Admin or Developer, assumes the identity of another
     user so that the Admin/Developer may experience Yosai as the target user
-    would (as if the target had logged in).  This helps w/ customer support or
+    would (as if the target had logged in).  This helps w/ customer support,
     debugging, etc.
 
     Concurrency
@@ -804,11 +813,11 @@ class DefaultSubjectStore:
     DefaultSessionStorageEvaluator, you can disable Session usage for Subject
     state entirely by configuring that instance directly, e.g.:
 
-        SessionStore.session_storage_evaluator.session_storage_enabled = False
+        session_store.session_storage_evaluator.session_storage_enabled = False
 
-    or, for example, within yosai.core.settings.json  (TBD)
+    or, for example, when initializing the SecurityManager:
 
-        securityManager.subjectStore.sessionStorageEvaluator.sessionStorageEnabled = False
+        SecurityManager.subject_store.session_storage_evaluator.session_storage_enabled = False
 
     However, *Note:*
     ONLY do this if your application is 100% stateless and you *DO NOT* need
@@ -830,11 +839,7 @@ class DefaultSubjectStore:
 
     To support the hybrid *per-Subject* approach, you will need to create your
     own implementation of the SessionStorageEvaluator interface and configure
-    it by setting your session_storage_evaluator property-attribute or
-    by using a settings file such as yosai.core.settings.json:
-
-        myEvaluator = CustomSessionStorageEvaluator
-        securityManager.subjectStore.sessionStorageEvaluator = myEvaluator
+    it by setting your session_storage_evaluator property-attribute
 
     Unless overridden, the default evaluator is a
     DefaultSessionStorageEvaluator, which enables session usage for Subject
