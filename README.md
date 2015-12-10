@@ -46,7 +46,8 @@ improve coverage and to consider last-minute updates.
 
 Yosai is being released with batteries included so that it may be used in a 
 project without requiring additional module implementation.  To achieve this goal:
-1. two integration projects were added to The Yosai Project, providing
+
+* two integration projects were added to The Yosai Project, providing
 access to a peristence layer and caching: 
 
 ###I) Yosai AlchemyStore
@@ -67,7 +68,7 @@ Currently, the Redis integration has been tested.  If you would like to
 add other backends, your pull request is welcome.  Note that dogpile.cache's
 other backends are not compatible from off the shelf.
 
-2.  port of Shiro's /web package , used to help integrate Yosai with web applications
+* port of Shiro's /web package , used to help integrate Yosai with web applications
 
 
 Pytest unit testing coverage stats will follow shortly.  The last tally
