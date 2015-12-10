@@ -53,11 +53,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             - as of shiro v2 alpha rev1693638, shiro doesn't (yet)
     """
 
-    def __init__(self):
+    def __init__(self, name=None):
         #  DG:  this needs to be updated so that positional arguments
         #       are used to construct the object rather than mutator methods
 
-        self.name = 'AccountStoreRealm' + str(id(self))  # DG:  replace later..
+        self.name = name  # should be named during yosai initialization 
         self._account_store = None
         self._cache_handler = None
 
