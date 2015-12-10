@@ -2,8 +2,6 @@ from yosai.core import (
     account_abcs,
 )
 
-from marshmallow import Schema, fields, post_load
-
 
 class Account(account_abcs.Account):
     """
@@ -11,11 +9,11 @@ class Account(account_abcs.Account):
     with an account
     """
 
-    def __init__(self, account_id=None, credentials=None, identifiers=None,
+    def __init__(self, account_id=None, credentials=None, attributes=None,
                  authz_info=None):
         self.account_id = account_id
         self.credentials = credentials
-        self.identifiers = identifiers
+        self.attributes = attributes
         self.authz_info = authz_info
 
     @property
@@ -35,12 +33,12 @@ class Account(account_abcs.Account):
         self._credentials = credentials
 
     @property
-    def identifiers(self):
-        return self._identifiers
+    def attributes(self):
+        return self._attributes
 
-    @identifiers.setter
-    def identifiers(self, identifiers):
-        self._identifiers = identifiers
+    @attributes.setter
+    def attributes(self, attributes):
+        self._attributes = attributes
 
     @property
     def authz_info(self):
@@ -49,23 +47,3 @@ class Account(account_abcs.Account):
     @authz_info.setter
     def authz_info(self, authz_info):
         self._authz_info = authz_info
-
-    # this is a placeholder for later -- TBD
-    @classmethod
-    def serialization_schema(cls):
-
-        class SerializationSchema(Schema):
-            pass
-
-            @post_load
-            def make_account(self, data):
-                mycls = Account
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-
-        return SerializationSchema
-
-    # omitting credentials from print output:
-    def __repr__(self):
-        return "Account(account_id={0}, authz_info={1})".format(
-            self.account_id, self.authz_info)

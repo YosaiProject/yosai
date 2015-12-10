@@ -155,7 +155,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             session = self.resolve_session()
             try:
                 identifiers = session.get_attribute(
-                    self.get_key('IDENTIFIERS_SESSION_KEY'))
+                    self.get_key('identifiers_session_key'))
             except AttributeError:
                 identifiers = None
 
@@ -213,7 +213,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             session = self.resolve_session()
             if (session is not None):
                 authc = session.get_attribute(
-                    self.get_key('AUTHENTICATED_SESSION_KEY'))
+                    self.get_key('authenticated_session_key'))
 
         return bool(authc)
 
@@ -321,8 +321,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.session = None
 
         self.session_creation_enabled = session_creation_enabled
-        self.run_as_identifier_session_key = (
-            self.__class__.__name__ + ".RUN_AS_IDENTIFIERS_SESSION_KEY")
+        self.run_as_identifier_session_key = 'run_as_identifiers_session_key'
 
     def decorate(self, session):
         return self.StoppingAwareProxiedSession(session, self)

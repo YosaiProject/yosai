@@ -22,11 +22,13 @@ from yosai.core import (
     serialize_abcs,
 )
 
+
 # not pythonic, will change later:
 class AccountId(metaclass=ABCMeta):
     @abstractmethod
     def __repr__(self):
         pass
+
 
 class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
     """
@@ -94,9 +96,9 @@ class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
     # yosai.core.renamed "attributes" to identifiers:
     @property
     @abstractmethod
-    def identifiers(self):
+    def attributes(self):
         """
-        Returns an *immutable* view of the Account's IDENTIFYING attributes,
+        Returns an *immutable* view of the Account's attributes,
         excluding the AccountID, accessible to the application.  Once the
         account is obtained, an application developer can access them as
         desired, for example:
