@@ -35,7 +35,8 @@ from yosai.core import (
 
 import copy
 import collections
-from marshmallow import Schema, fields, post_load, post_dump, pre_load
+from marshmallow import Schema, fields, post_load, post_dump
+
 
 class AllPermission:
 

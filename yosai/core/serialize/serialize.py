@@ -29,7 +29,7 @@ import rapidjson
 import pkg_resources
 import copy
 from marshmallow import fields, missing
-import pprint
+
 
 class SerializationManager:
     """
@@ -98,7 +98,7 @@ class SerializationManager:
 
             if not unpacked:
                 return None
-                
+
             yosai = __import__('yosai.core')
             try:
                 cls = getattr(yosai.core, unpacked['serialized_cls'])

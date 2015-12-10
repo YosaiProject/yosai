@@ -38,12 +38,12 @@ class IdentifierCollection(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def from_realm(self, realm_name):
+    def from_source(self, realm_name):
         pass
 
     @property
     @abstractmethod
-    def realm_names(self):
+    def source_names(self):
         pass
 
     @property

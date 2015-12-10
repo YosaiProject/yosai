@@ -135,9 +135,11 @@ from yosai.core.logging.s_logging import (
     LogManager,
 )
 
-from yosai.core.subject.subjectsettings import (
-    SubjectSettings,
-    subject_settings,
+from yosai.core.serialize.serialize import (
+    CollectionDict,
+    JSONSerializer,
+    MSGPackSerializer,
+    SerializationManager,
 )
 
 from yosai.core.account.account import (
@@ -185,6 +187,11 @@ from yosai.core.context.context import (
 )
 
 
+from yosai.core.subject.identifier import (
+    SimpleIdentifierCollection,
+)
+
+
 from yosai.core.session.session import (
     AbstractSessionStore,
     SessionEventHandler,
@@ -207,11 +214,6 @@ from yosai.core.session.session import (
 )
 
 
-from yosai.core.subject.identifier import (
-    SimpleIdentifierCollection,
-)
-
-
 thread_local = threading.local()  # use only one global instance
 
 from yosai.core.subject.subject import(
@@ -223,13 +225,6 @@ from yosai.core.subject.subject import(
     SubjectBuilder,
 )
 
-
-from yosai.core.serialize.serialize import (
-    CollectionDict,
-    JSONSerializer,
-    MSGPackSerializer,
-    SerializationManager,
-)
 
 from yosai.core.authc.authc_account import (
     DefaultCompositeAccountId,

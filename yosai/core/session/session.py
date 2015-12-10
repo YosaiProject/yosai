@@ -21,7 +21,7 @@ import datetime
 import time
 from abc import abstractmethod
 from marshmallow import Schema, fields, post_load
-
+import collections
 
 from yosai.core import (
     Event,
@@ -32,13 +32,13 @@ from yosai.core import (
     InvalidSessionException,
     LogManager,
     RandomSessionIDGenerator,
+    SimpleIdentifierCollection,
     SessionCreationException,
     SessionEventException,
     StoppableScheduledExecutor,
     StoppedSessionException,
     UnknownSessionException,
     session_settings,
-    subject_settings,
     cache_abcs,
     event_abcs,
     serialize_abcs,
@@ -191,8 +191,13 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     automatic expiration of absolute timeout within cache. Absolute timeout is
     set as the cache entry's expiration time.
 
-    Unlike Shiro, Yosai implements the CRUD operations within CachingSessionStore
-    rather than defer implementation further to subclasses.
+    Unlike Shiro:
+    - Yosai implements the CRUD operations within CachingSessionStore
+    rather than defer implementation further to subclasses
+    - Yosai comments out support for a write-through caching strategy
+    - Yosai uses an IdentifierCollection with session caching as part of its
+      caching strategy
+
 
     Write-Through Caching
     -----------------------
@@ -787,6 +792,20 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     @classmethod
     def serialization_schema(cls):
+
+        class SessionAttributesSchema(Schema):
+            identifiers = fields.Nested(
+                SimpleIdentifierCollection.serialization_schema(),
+                attribute='identifiers_session_key')
+
+            authenticated = fields.Boolean(
+                attribute='authenticated_session_key')
+
+            run_as_identifiers = fields.Nested(
+                SimpleIdentifierCollection.serialization_schema(),
+                attribute='run_as_identifier_session_key',
+                many=True)
+
         class SerializationSchema(Schema):
             _session_id = fields.Str(allow_none=True)
             _start_timestamp = fields.DateTime(allow_none=True)  # iso is default
@@ -800,14 +819,20 @@ class SimpleSession(session_abcs.ValidatingSession,
             # NOTE:  After you've defined your SimpleSessionAttributesSchema,
             #        the Raw() fields assignment below should be replaced by
             #        the Schema line that follows it
-            _attributes = fields.Dict(allow_none=True)
-            # attributes = fields.Nested(cls.SimpleSessionAttributesSchema)
+            _attributes = fields.Nested(SessionAttributesSchema,
+                                        allow_none=True)
 
             @post_load
             def make_simple_session(self, data):
                 mycls = SimpleSession
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
+
+                if 'run_as_identifier_session_key' in data['_attributes']:
+                    data['_attributes']['run_as_identifier_session_key'] =\
+                        collections.deque(
+                        data['_attributes']['run_as_identifier_session_key'])
+
                 return instance
 
         return SerializationSchema

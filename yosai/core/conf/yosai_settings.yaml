@@ -62,9 +62,3 @@ SESSION_CONFIG:
 
 MGT_CONFIG:
     DEFAULT_CIPHER_KEY: you need to update this using the fernet keygen
-
-
-SUBJECT_CONFIG:
-    subject_context:
-        identifiers_session_key: 'DefaultSubjectContext.IDENTIFIERS_SESSION_KEY'
-        authenticated_session_key: 'DefaultSubjectContext.AUTHENTICATED_SESSION_KEY'

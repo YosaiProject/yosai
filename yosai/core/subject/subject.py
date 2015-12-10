@@ -32,7 +32,6 @@ from yosai.core import (
     IdentifiersNotSetException,
     IllegalArgumentException,
     IllegalStateException,
-    InvalidSessionException,
     LogManager,
     ProxiedSession,
     SecurityManagerNotSetException,
@@ -42,13 +41,10 @@ from yosai.core import (
     UnavailableSecurityManagerException,
     UnsupportedOperationException,
     thread_local,
-    concurrency_abcs,
     mgt_abcs,
     session_abcs,
     subject_abcs,
-    subject_settings,
 )
-import copy
 
 
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
@@ -866,8 +862,8 @@ class DefaultSubjectStore:
         # subject if the session has not yet been persisted
         self._session_storage_evaluator = DefaultSessionStorageEvaluator()
 
-        self.dsc_isk = subject_settings.identifiers_session_key
-        self.dsc_ask = subject_settings.authenticated_session_key
+        self.dsc_isk = 'identifiers_session_key'
+        self.dsc_ask = 'authenticated_session_key'
 
     def is_session_storage_enabled(self, subject):
         """
