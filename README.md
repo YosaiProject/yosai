@@ -37,16 +37,21 @@ In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortre
 PROJECT STATUS
 ==============
 
-##11/10/2015 Status
+12/10/2015
+---------------------
+
+Integration testing of the yosai.core package is well under way.  God willing,
+I will finish within the next week.  Outlier unit testing follows, so as to
+improve coverage and to consider last-minute updates.
 
 Yosai is being released with batteries included so that it may be used in a 
-project without requiring additional module implementation.  To achieve this goal, 
-two projects are currently under way to provide data store interaction and 
-caching:  
+project without requiring additional module implementation.  To achieve this goal:
+1. two integration projects were added to The Yosai Project, providing
+access to a peristence layer and caching: 
 
 ###I) Yosai AlchemyStore
 An AccountStore implemented with SQLAlchemy.  The project includes a 
-basic RBAC data model that uses a flat, non-heirarchical design.
+basic RBAC data model that uses a flat, non-heirarchical design.  
 
 ###II) Yosai DPCache
 This is an integration of the dogpile.cache project.  Yosai reduces objects
@@ -58,11 +63,15 @@ dogpile lock mechanism.  A “dogpile” lock is one that allows a single thread
 generate an expensive resource while other threads use the “old” value until
 the “new” value is ready.
 
+Currently, the Redis integration has been tested.  If you would like to 
+add other backends, your pull request is welcome.  Note that dogpile.cache's
+other backends are not compatible from off the shelf.
 
-10/20/2015 Status
------------------
+2.  port of Shiro's /web package , used to help integrate Yosai with web applications
 
-Pytest unit testing coverage stats are as follows:
+
+Pytest unit testing coverage stats will follow shortly.  The last tally
+was from October:
 
 |Name                                  | Stmts |Miss  | Cover |
 |:--------------------------------------|:-------:|:------:|:-------:|
