@@ -457,8 +457,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if (cachehandler):
             self._cache_handler = cachehandler
             self.apply_cache_handler(self.realms)
-            self.authenticator.realms = self.realm_s
-            self.authorizer.realms = self.realm_s
+            self.authenticator.realms = self.realms
+            self.authorizer.realms = self.realms
             self.apply_cache_handler(self.session_manager)
 
         else:
