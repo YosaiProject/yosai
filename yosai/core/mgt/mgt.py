@@ -407,10 +407,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.credential_resolver = credential_resolver
         self.permission_resolver = permission_resolver
         self.role_resolver = role_resolver
-        self._authenticator = authenticator
-        self._authorizer = authorizer
-        self.realms = realms
         self.session_manager = session_manager
+        self.realms = realms
+        self.authenticator = authenticator
+        self.authorizer = authorizer
         self.remember_me_manager = remember_me_manager
         self.subject_store = subject_store
         self.subject_factory = subject_factory
@@ -443,6 +443,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def authorizer(self, authorizer):
         if authorizer:
             self._authorizer = authorizer
+            self._authorizer.realms = self.realms
             self.apply_event_bus(self._authorizer)
         else:
             msg = "authorizer parameter must have a value"
@@ -478,7 +479,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if eventbus:
             self._event_bus = eventbus
             self.authenticator.event_bus = self._event_bus
-            self.authorzer.event_bus = self._event_bus
+            self.authorizer.event_bus = self._event_bus
             self.session_manager.event_bus = self._event_bus
 
         else:
@@ -505,8 +506,16 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self.apply_permission_resolver(self._realms)
             self.apply_role_resolver(self._realms)
 
-            self.authenticator.realms = self._realms
-            self.authorizer.realms = self._realms
+            try:
+                self.authenticator.realms = self._realms
+            except AttributeError:
+                msg = "no authenticator attribute set yet"
+                # log debug here
+            try:
+                self.authorizer.realms = self._realms
+            except AttributeError:
+                msg = "no authorizer attribute set yet"
+                # log debug here
 
     @property
     def session_manager(self):
