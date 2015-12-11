@@ -17,7 +17,6 @@ specific language governing permissions and limitations
 under the License.
 """
 import collections
-import pdb
 # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
 # from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
@@ -197,8 +196,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         """
         :returns: Boolean
         """
-        authc = self.get(self.get_key('AUTHENTICATED'))
-        return authc
+        return self.get(self.get_key('AUTHENTICATED'))
 
     @authenticated.setter
     def authenticated(self, authc):
@@ -206,18 +204,19 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     def resolve_authenticated(self):
         authc = self.authenticated
+
         if authc is None:
             #  presence of one indicates a successful authentication attempt:
             #  See whethere there is an Account object.  If one exists, the very
-            authc = self.account
+            authc = bool(self.account.account_id)
         if authc is None:
             #  fall back to a session check:
             session = self.resolve_session()
             if (session is not None):
-                authc = session.get_attribute(
-                    self.get_key('authenticated_session_key'))
+                authc = bool(session.get_attribute(
+                    self.get_key('authenticated_session_key')))
 
-        return bool(authc)
+        return authc
 
     # yosai.core.renamed AuthenticationInfo to Account:
     @property
@@ -558,18 +557,14 @@ class DelegatingSubject(subject_abcs.Subject):
 
     @property
     def authenticated(self):
-        if not hasattr(self, '_authenticated'):
-            self._authenticated = None
         return self._authenticated
 
     @authenticated.setter
     def authenticated(self, authc):
-        if (isinstance(authc, bool) or authc is None):
-            self._authenticated = authc
-        else:
-            msg = ('DelegatingSubject.authenticated.setter:  wrong objtype')
-            print(msg)
-            raise IllegalArgumentException(msg)
+        """
+        :type authc: bool
+        """
+        self._authenticated = authc
 
     @property
     def is_remembered(self):
@@ -1071,7 +1066,7 @@ class SubjectBuilder:
             self.subject_context.put(attribute_key, attribute_value)
 
     def build_subject(self):
-        return self.security_manager.create_subject(self.subject_context)
+        return self.security_manager.create_subject(subject_context=self.subject_context)
 
 
 # moved from /mgt, reconciled, ready to test:

@@ -305,7 +305,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
-        identifier = identifiers.from_source('AccountStoreRealm')  #TBD
+        # the following popping off an identifier is subject to change: (TBD)
+        identifier = identifiers.from_source('AccountStoreRealm').pop()
 
         try:
             def get_stored_authz_info(self):
@@ -351,7 +352,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
-                             and NEVER comingled
+                             and NEVER comingled types
         :type permission_s: list of either String(s) or Permission(s)
 
         :yields: tuple(Permission, Boolean)

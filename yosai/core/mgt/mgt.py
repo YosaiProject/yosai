@@ -19,7 +19,6 @@ under the License.
 from cryptography.fernet import Fernet
 from abc import abstractmethod
 import copy
-import pdb
 from yosai.core import(
     AuthenticationException,
     AuthzInfoResolver,
@@ -727,8 +726,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                        existing_subject=None,
                        subject_context=None):
 
-        if not subject_context:
+        if subject_context is None:
             context = self.create_subject_context()
+
             context.authenticated = True
             context.authentication_token = authc_token
             context.account = account
