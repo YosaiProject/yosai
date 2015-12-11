@@ -458,9 +458,6 @@ class DefaultPermission(WildcardPermission):
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
-                             authz_abcs.AuthzInfoResolverAware,
-                             authz_abcs.PermissionResolverAware,
-                             authz_abcs.RoleResolverAware,
                              event_abcs.EventBusAware):
 
     """
@@ -484,10 +481,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type realms: tuple
         """
         self._realms = tuple()
-        self._authz_info_resolver = None
-        self._permission_resolver = None
-        self._role_resolver = None  # new to yosai
         self._event_bus = None
+        # yosai omits resolver setting, leaving it to securitymanager instead
         # by default, yosai.core.does not support role -> permission resolution
 
     @property
@@ -507,84 +502,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         :type realms: Tuple
         """
-        self._realms = realms
-        self.apply_permission_resolver_to_realms()
-        self.apply_role_resolver_to_realms()
-
-    @property
-    def authorizing_realms(self):
-        """
-        new to Yosai: a generator expression filters out non-authz realms
-        """
-        return (realm for realm in self._realms
-                if isinstance(realm, realm_abcs.AuthorizingRealm))
-
-    @property
-    def authz_info_resolver(self):
-        return self._authz_info_resolver
-
-    @authz_info_resolver.setter
-    def authz_info_resolver(self, authz_info_resolver):
-        self._authz_info_resolver = authz_info_resolver
-        self.apply_authz_info_resolver_to_realms()
-
-    def apply_authz_info_resolver_to_realms(self):
-        resolver = copy.copy(self._authz_info_resolver)
-        realms = copy.copy(self._realms)
-        if (resolver and realms):
-            for realm in realms:
-                if isinstance(realm, authz_abcs.AuthzInfoResolverAware):
-                    realm.authz_info_resolver = resolver
-            self._realms = realms
-
-    @property
-    def permission_resolver(self):
-        """
-        This is the permission resolver that is used on EVERY configured
-        realm wrapped by the ModularRealmAuthorizer.  A permission_resolver
-        equal to None indicates that each individual realm is accountable for
-        configuring its permission resolver.
-        """
-        return self._permission_resolver
-
-    @permission_resolver.setter
-    def permission_resolver(self, resolver):
-        """
-        the permission resolver set here is applied to EVERY realm that is
-        wrapped by the ModularRealmAuthorizer
-        """
-        self._permission_resolver = resolver
-        self.apply_permission_resolver_to_realms()
-
-    def apply_permission_resolver_to_realms(self):
-        resolver = copy.copy(self._permission_resolver)
-        realms = copy.copy(self._realms)
-        if (resolver and realms):
-            for realm in realms:
-                # interface contract validation:
-                if isinstance(realm, authz_abcs.PermissionResolverAware):
-                    realm.permission_resolver = resolver
-            self._realms = realms
-
-    # role resolver is new to yosai
-    @property
-    def role_resolver(self):
-        return self._role_resolver
-
-    @role_resolver.setter
-    def role_resolver(self, resolver):
-        self._role_resolver = resolver
-        self.apply_role_resolver_to_realms()
-
-    def apply_role_resolver_to_realms(self):
-        resolver = copy.copy(self._role_resolver)
-        realms = copy.copy(self._realms)
-        if (resolver and realms):
-            for realm in realms:
-                # interface contract validation:
-                if isinstance(realm, authz_abcs.RoleResolverAware):
-                    realm.role_resolver = resolver
-            self._realms = realms
+        # this eliminates the need for an authorizing_realms attribute:
+        self._realms = (realm for realm in realms
+                        if isinstance(realm, realm_abcs.AuthorizingRealm))
 
     def assert_realms_configured(self):
         if (not self.realms):
@@ -605,7 +525,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type identifiers:  SimpleIdentifierCollection
         :type roleid_s: Set of String(s)
         """
-        for realm in self.authorizing_realms:
+        for realm in self.realms:
             # the realm's has_role returns a generator
             yield from realm.has_role(identifiers, roleid_s)
 
@@ -618,7 +538,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type permission_s: List of Permission object(s) or String(s)
         """
 
-        for realm in self.authorizing_realms:
+        for realm in self.realms:
             # the realm's is_permitted returns a generator
             yield from realm.is_permitted(identifiers, permission_s)
 
@@ -838,8 +758,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # --------------------------------------------------------------------------
 
     def __repr__(self):
-        return ("ModularRealmAuthorizer(authorizing_realms={0})".
-                format(self.authorizing_realms))
+        return ("ModularRealmAuthorizer(realms={0})".
+                format(self.realms))
 
 
 class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,

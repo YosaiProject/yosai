@@ -149,7 +149,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                     identifiers = self.subject.identifiers
                 except AttributeError:
                     pass
-        #pdb.set_trace()
+
         # otherwise, use the session key as the identifier:
         if not identifiers:
             session = self.resolve_session()
@@ -158,7 +158,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                     self.get_key('identifiers_session_key'))
             except AttributeError:
                 identifiers = None
-
+        pdb.set_trace()
         return identifiers
 
     @property

@@ -35,7 +35,9 @@ from yosai.core import (
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
     authc_settings,
+    realm_abcs,
 )
+
 
 class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
                             authc_abcs.RememberMeAuthenticationToken):
@@ -143,7 +145,6 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
 
 
 class DefaultAuthenticator(authc_abcs.Authenticator,
-                           authc_abcs.CredentialResolverAware,
                            event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
@@ -174,26 +175,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         """
         :type realms: Tuple
         """
-        self._realms = realms
-        self.apply_credential_resolver_to_realms()
-
-    @property
-    def credential_resolver(self):
-        return self._credential_resolver
-
-    @credential_resolver.setter
-    def credential_resolver(self, credentialresolver):
-        self._credential_resolver = credentialresolver
-        self.apply_credential_resolver_to_realms()
-
-    def apply_credential_resolver_to_realms(self):
-        resolver = copy.copy(self._credential_resolver)
-        realms = copy.copy(self._realms)
-        if (resolver and realms):
-            for realm in realms:
-                if isinstance(realm, authc_abcs.CredentialResolverAware):
-                    realm.credential_resolver = resolver
-            self._realms = realms
+        self._realms = (realm for realm in realms
+                        if isinstance(realm, realm_abcs.AuthenticatingRealm))
 
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):

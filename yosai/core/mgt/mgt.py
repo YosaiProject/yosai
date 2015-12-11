@@ -428,13 +428,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def authenticator(self, authenticator):
         if authenticator:
             self._authenticator = authenticator
-
-            if (isinstance(self._authenticator, DefaultAuthenticator)):
-                self._authenticator.realms = self.realms
-
+            self._authenticator.realms = self.realms
             self.apply_event_bus(self._authenticator)
-            self.apply_cache_handler(self._authenticator)
-            self.apply_credential_resolver(self._authenticator)
 
         else:
             msg = "authenticator parameter must have a value"
@@ -449,10 +444,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if authorizer:
             self._authorizer = authorizer
             self.apply_event_bus(self._authorizer)
-            self.apply_cache_handler(self._authorizer)
-            self.apply_role_resolver(self._authorizer)
-            self.apply_permission_resolver(self._authorizer)
-            self.apply_authz_info_resolver(self._authorizer)
         else:
             msg = "authorizer parameter must have a value"
             raise IllegalArgumentException(msg)
@@ -462,11 +453,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         return self._cache_handler
 
     @cache_handler.setter
-    def cache_handler(self, cachemanager):
-        if (cachemanager):
-            self._cache_handler = cachemanager
-            self.apply_cache_handler(
-                self.get_dependencies_for_injection(self._cache_handler))
+    def cache_handler(self, cachehandler):
+        if (cachehandler):
+            self._cache_handler = cachehandler
+            self.apply_cache_handler(self.realms)
+            self.authenticator.realms = self.realm_s
+            self.authorizer.realms = self.realm_s
+            self.apply_cache_handler(self.session_manager)
 
         else:
             msg = ('Incorrect parameter.  If you want to disable caching, '
@@ -489,32 +482,38 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             msg = 'eventbus parameter must have a value'
             raise IllegalArgumentException(msg)
 
-    def set_realms(self, realm_s):
+    @property
+    def realms(self):
+        return self._realms
+
+    @realms.setter
+    def realms(self, realm_s):
         """
         :realm_s: an immutable collection of one or more realms
         :type realm_s: tuple
         """
         if realm_s:
-            self.apply_event_bus(realm_s)
-            self.apply_cache_handler(realm_s)  # TBD:  must update to use cache handlers!
+            self._realms = realm_s
+            self.apply_cache_handler(self._realm_s)
 
-            # new to yosai.core.(shiro v2 alpha is missing it):
-            self.apply_credential_resolver(realm_s)
-            self.apply_authz_info_resolver(realm_s)
-            self.apply_permission_resolver(realm_s)
-            self.apply_role_resolver(realm_s)
+            # new to yosai.core (shiro v2 alpha is missing it):
+            self.apply_credential_resolver(self._realm_s)
+            self.apply_authz_info_resolver(self._realm_s)
+            self.apply_permission_resolver(self._realm_s)
+            self.apply_role_resolver(self._realm_s)
 
-            authc = self.authenticator
-            if (isinstance(authc, DefaultAuthenticator)):
-                authc.realms = realm_s
+            self.authenticator.realms = self._realm_s
+            self.authorizer.realms = self._realm_s
 
-            authz = self.authorizer
-            if (isinstance(authz, ModularRealmAuthorizer)):
-                authz.realms = realm_s
+    @property
+    def session_manager(self):
+        return self._session_manager
 
-        else:
-            msg = 'Cannot pass None as a parameter value for realms'
-            raise IllegalArgumentException(msg)
+    @session_manager.setter
+    def session_manager(self, sessionmanager):
+        self._session_manager = sessionmanager
+        self.apply_cache_handler(self._session_manager)
+        self.apply_event_bus(self._session_manager)
 
     # new to yosai.core. helper method:
     def apply_target_s(self, validate_apply, target_s):
@@ -582,22 +581,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 target.role_resolver = self.role_resolver
 
         self.apply_target_s(validate_apply, target_s)
-
-    def get_dependencies_for_injection(self, ignore):
-        deps = {self._event_bus, self._cache_handler, self.realms,
-                self.authenticator, self.authorizer,
-                self.session_manager, self.subject_store,
-                self.subject_factory, self.permission_resolver,
-                self.role_resolver, self.credential_resolver}
-        try:
-            deps.remove(ignore)
-        except KeyError:
-            msg = ("Could not remove " + str(ignore) +
-                   " from dependencies_for_injection: ")
-            print(msg)
-            # log warning here
-
-        return deps
 
     """
     * ===================================================================== *
@@ -758,6 +741,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         # remember_me -- translate that here first if possible before handing
         # off to the subject_factory:
         context = self.resolve_identifiers(context)
+
         subject = self.do_create_subject(context)  # DelegatingSubject
 
         # save this subject for future reference if necessary:
@@ -829,7 +813,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 print(msg)
                 # log info here, including exc_info=ex
             raise
-        pdb.set_trace()
         logged_in = self.create_subject(authc_token=authc_token,
                                         account=account,
                                         existing_subject=subject)
@@ -933,6 +916,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def resolve_identifiers(self, subject_context):
         identifiers = subject_context.resolve_identifiers()
+        pdb.set_trace()
         if (not identifiers):
             msg = ("No identity (identifier_collection) found in the "
                    "subject_context.  Looking for a remembered identity.")
