@@ -503,8 +503,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type realms: Tuple
         """
         # this eliminates the need for an authorizing_realms attribute:
-        self._realms = (realm for realm in realms
-                        if isinstance(realm, realm_abcs.AuthorizingRealm))
+        self._realms = tuple(realm for realm in realms
+                             if isinstance(realm, realm_abcs.AuthorizingRealm))
 
     def assert_realms_configured(self):
         if (not self.realms):
