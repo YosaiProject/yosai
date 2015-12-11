@@ -732,6 +732,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             context.authenticated = True
             context.authentication_token = authc_token
             context.account = account
+            # context.identifiers = account.account_id  # new to yosai
             if (existing_subject):
                 context.subject = existing_subject
 
@@ -752,6 +753,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         # Similarly, the subject_factory should not require any concept of
         # remember_me -- translate that here first if possible before handing
         # off to the subject_factory:
+
         context = self.resolve_identifiers(context)
 
         subject = self.do_create_subject(context)  # DelegatingSubject
@@ -825,6 +827,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 print(msg)
                 # log info here, including exc_info=ex
             raise
+
         logged_in = self.create_subject(authc_token=authc_token,
                                         account=account,
                                         existing_subject=subject)
@@ -927,8 +930,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     # yosai.core.omits is_empty method
 
     def resolve_identifiers(self, subject_context):
+        """
+        ensures that a subject_context has identifiers and if it doesn't will
+        attempt to locate them using heuristics
+        """
         identifiers = subject_context.resolve_identifiers()
-        pdb.set_trace()
+
         if (not identifiers):
             msg = ("No identity (identifier_collection) found in the "
                    "subject_context.  Looking for a remembered identity.")

@@ -141,14 +141,17 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         identifiers = self.identifiers
 
         if not identifiers:
+            # account.account_id is a SimpleIdentifierCollection:
             try:
-                # account.account_id is a SimpleIdentifierCollection:
                 identifiers = self.account.account_id
             except AttributeError:
-                try:
-                    identifiers = self.subject.identifiers
-                except AttributeError:
-                    pass
+                pass
+
+        if not identifiers:
+            try:
+                identifiers = self.subject.identifiers
+            except AttributeError:
+                pass
 
         # otherwise, use the session key as the identifier:
         if not identifiers:
@@ -158,7 +161,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                     self.get_key('identifiers_session_key'))
             except AttributeError:
                 identifiers = None
-        pdb.set_trace()
         return identifiers
 
     @property
@@ -369,7 +371,7 @@ class DelegatingSubject(subject_abcs.Subject):
         # expecting a List of IdentifierCollection objects:
         run_as_identifiers = self.get_run_as_identifiers_stack()
         if (not run_as_identifiers):
-            if not hasattr(self, '_identifier'):
+            if not hasattr(self, '_identifiers'):
                 self._identifiers = None
             return self._identifiers
         else:
@@ -1086,8 +1088,12 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         authenticated = subject_context.resolve_authenticated()
         host = subject_context.resolve_host()
 
-        return DelegatingSubject(identifiers, authenticated, host, session,
-                                 session_creation_enabled, security_manager)
+        return DelegatingSubject(identifiers=identifiers,
+                                 authenticated=authenticated,
+                                 host=host,
+                                 session=session,
+                                 session_creation_enabled=session_creation_enabled,
+                                 security_manager=security_manager)
 
 # moved from its own security_utils module so as to avoid circular importing:
 class SecurityUtils:
