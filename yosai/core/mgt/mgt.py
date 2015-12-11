@@ -456,9 +456,11 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def cache_handler(self, cachehandler):
         if (cachehandler):
             self._cache_handler = cachehandler
+
             self.apply_cache_handler(self.realms)
             self.authenticator.realms = self.realms
             self.authorizer.realms = self.realms
+
             self.apply_cache_handler(self.session_manager)
 
         else:
@@ -475,8 +477,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def event_bus(self, eventbus):
         if eventbus:
             self._event_bus = eventbus
-            self.apply_event_bus(
-                self.get_dependencies_for_injection(self._event_bus))
+            self.authenticator.event_bus = self._event_bus
+            self.authorzer.event_bus = self._event_bus
+            self.session_manager.event_bus = self._event_bus
 
         else:
             msg = 'eventbus parameter must have a value'
