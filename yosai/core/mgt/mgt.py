@@ -16,11 +16,10 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
 from cryptography.fernet import Fernet
 from abc import abstractmethod
 import copy
-
+import pdb
 from yosai.core import(
     AuthenticationException,
     AuthzInfoResolver,
@@ -818,6 +817,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 # log warn, including exc_info = ex
 
     def login(self, subject, authc_token):
+
         try:
             account = self.authenticate_account(authc_token)
         except AuthenticationException as authc_ex:
@@ -830,7 +830,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 # log info here, including exc_info=ex
             raise
         pdb.set_trace()
-        logged_in = self.create_subject(authc_token, account, subject)
+        logged_in = self.create_subject(authc_token=authc_token,
+                                        account=account,
+                                        existing_subject=subject)
         self.on_successful_login(authc_token, account, logged_in)
         return logged_in
 
@@ -851,7 +853,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def save(self, subject):
         try:
-            # pdb.set_trace()
             self.subject_store.save(subject)
         except AttributeError:
             msg = "no subject_store is defined, so cannot save subject"

@@ -63,7 +63,7 @@ def account_store_realm(cache_handler, alchemy_store):
 def thedude(cache_handler, request):
     thedude = UserModel(first_name='Jeffrey',
                         last_name='Lebowski',
-                        identifiers='thedude')
+                        identifier='thedude')
 
     session = Session()
     session.add(thedude)
@@ -93,7 +93,7 @@ def clear_cached_credentials(cache_handler, request, thedude):
     def remove_credentials():
         nonlocal cache_handler
         cache_handler.delete(domain="credentials",
-                             identifiers=thedude.identifiers)
+                             identifier=thedude.identifier)
 
     request.addfinalizer(remove_credentials)
 

@@ -16,9 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
 import collections
-
+import pdb
 # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
 # from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
@@ -143,13 +142,14 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
         if not identifiers:
             try:
+                # account.account_id is a SimpleIdentifierCollection:
                 identifiers = self.account.account_id
             except AttributeError:
                 try:
                     identifiers = self.subject.identifiers
                 except AttributeError:
                     pass
-
+        #pdb.set_trace()
         # otherwise, use the session key as the identifier:
         if not identifiers:
             session = self.resolve_session()
@@ -522,7 +522,6 @@ class DelegatingSubject(subject_abcs.Subject):
         # login raises an AuthenticationException if it fails to authenticate:
         subject = self.security_manager.login(subject=self,
                                               authc_token=authc_token)
-        # pdb.set_trace()
         identifiers = None
         host = None
         if isinstance(subject, DelegatingSubject):

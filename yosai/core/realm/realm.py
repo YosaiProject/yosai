@@ -27,6 +27,7 @@ from yosai.core import (
     LogManager,
     PasswordVerifier,
     RealmMisconfiguredException,
+    SimpleIdentifierCollection,
     SimpleRoleVerifier,
     UsernamePasswordToken,
     authc_abcs,
@@ -57,7 +58,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         #  DG:  this needs to be updated so that positional arguments
         #       are used to construct the object rather than mutator methods
 
-        self.name = name  # should be named during yosai initialization 
+        self.name = name  # should be named during yosai initialization
         self._account_store = None
         self._cache_handler = None
 
@@ -154,7 +155,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     def do_clear_cache(self, identifiers):
         """
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
         """
         msg = "Clearing cache for: " + str(identifiers)
         print(msg)
@@ -170,7 +171,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         cached with a short expiration time (TTL), making the manual clearing
         of cached credentials an alternative use case.
 
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
         """
         self.cache_handler.delete('credentials', identifiers)
 
@@ -184,7 +185,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
 
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
         """
         self.cache_handler.delete('authz_info', identifiers)
 
@@ -198,7 +199,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
 
-    def get_credentials(self, identifiers):
+    def get_credentials(self, identifier):
         """
         The default authentication caching policy is to cache an account's
         credentials that are queried from an account store, for a specific
@@ -210,7 +211,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         available from cache and used to match credentials, boosting
         performance.
 
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
         :returns: an Account object
         """
         account = None
@@ -220,30 +221,30 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             def get_stored_credentials(self):
                 msg = ("Could not obtain cached credentials for [{0}].  "
                        "Will try to acquire credentials from account store."
-                       .format(identifiers))
+                       .format(identifier))
                 # log here (debug)
                 print(msg)
-                account = self.account_store.get_credentials(identifiers)
+                account = self.account_store.get_credentials(identifier)
                 if account is None:
-                    msg = "Could not get stored credentials for {0}".format(identifiers)
+                    msg = "Could not get stored credentials for {0}".format(identifier)
                     raise CredentialsNotFoundException(msg)
                 return account.credentials
 
             try:
                 msg2 = ("Attempting to get cached credentials for [{0}]"
-                        .format(identifiers))
+                        .format(identifier))
                 # log here (debug)
                 print(msg2)
                 credentials = ch.get_or_create(domain='credentials',
-                                               identifiers=identifiers,
+                                               identifier=identifier,
                                                creator_func=get_stored_credentials,
                                                creator=self)
-                account = Account(account_id=identifiers,
+                account = Account(account_id=identifier,
                                   credentials=credentials)
             except CredentialsNotFoundException:
                 # log here
                 msg3 = ("No account credentials found for identifiers [{0}].  "
-                        "Returning None.".format(identifiers))
+                        "Returning None.".format(identifier))
                 print(msg3)
 
         except AttributeError:
@@ -257,18 +258,25 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # yosai.core.refactors:
     def authenticate_account(self, authc_token):
         try:
-            identifiers = authc_token.identifiers
+            identifier = authc_token.identifier
         except AttributeError:
             msg = 'Failed to obtain authc_token.identifiers'
             raise InvalidArgumentException(msg)
 
-        account = self.get_credentials(identifiers)
+        account = self.get_credentials(identifier)
 
         self.assert_credentials_match(authc_token, account)
-
         # at this point, authentication is confirmed, so clear
         # the cache of credentials (however, they should have a short ttl anyway)
-        self.clear_cached_credentials(identifiers)
+        self.clear_cached_credentials(identifier)
+        authc_token.clear()
+
+        identifiers = SimpleIdentifierCollection(source_name='AccountStoreRealm',
+                                                 identifiers={account.account_id})
+
+        # new to yosai: until a better approach is found, is the overriding /
+        # enrichment of the account_id attribute with a SIC
+        account.account_id = identifiers
         return account
 
     def assert_credentials_match(self, authc_token, account):
@@ -290,43 +298,43 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         obtained from an account store so to facilitate subsequent authorization
         checks. In order to cache, a realm must have a CacheHandler.
 
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
 
         :returns: an AuthorizationInfo object
         """
         account = None
         ch = self.cache_handler
 
-        identifiers = identifiers  # this is the step where more complex
-                                   # identifierss need to be handled
+        identifier = identifiers.from_source('AccountStoreRealm')  #TBD
+
         try:
             def get_stored_authz_info(self):
                 msg = ("Could not obtain cached authz_info for [{0}].  "
                        "Will try to acquire authz_info from account store."
-                       .format(identifiers))
+                       .format(identifier))
                 # log here (debug)
                 print(msg)
-                account = self.account_store.get_authz_info(identifiers)
+                account = self.account_store.get_authz_info(identifier)
                 if account is None:
-                    msg = "Could not get authz_info for {0}".format(identifiers)
+                    msg = "Could not get authz_info for {0}".format(identifier)
                     raise AuthzInfoNotFoundException(msg)
                 return account.authz_info
 
             try:
                 msg2 = ("Attempting to get cached authz_info for [{0}]"
-                        .format(identifiers))
+                        .format(identifier))
                 # log here (debug)
                 print(msg2)
                 authz_info = ch.get_or_create(domain='authz_info',
-                                              identifiers=identifiers,
+                                              identifier=identifier,
                                               creator_func=get_stored_authz_info,
                                               creator=self)
-                account = Account(account_id=identifiers,
+                account = Account(account_id=identifier,
                                   authz_info=authz_info)
             except AuthzInfoNotFoundException:
                 # log here
-                msg3 = ("No account authz_info found for identifiers [{0}].  "
-                        "Returning None.".format(identifiers))
+                msg3 = ("No account authz_info found for identifier [{0}].  "
+                        "Returning None.".format(identifier))
                 print(msg3)
 
         except AttributeError:
@@ -339,7 +347,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     def is_permitted(self, identifiers, permission_s):
         """
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
 
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
@@ -357,7 +365,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :type identifiers:  SimpleRealmCollection
+        :type identifiers:  SimpleIdentifierCollection
 
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)

@@ -131,16 +131,16 @@ class SubjectContext(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifier(self):
+    def identifiers(self):
         pass
 
-    @identifier.setter
+    @identifiers.setter
     @abstractmethod
-    def identifier(self, identifier):
+    def identifiers(self, identifiers):
         pass
 
     @abstractmethod
-    def resolve_identifier(self):
+    def resolve_identifiers(self):
         pass
 
     @property
@@ -228,12 +228,12 @@ class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifier(self):
+    def identifiers(self):
         pass
 
     @property
     @abstractmethod
-    def identifier(self):
+    def identifiers(self):
         pass
 
     @abstractmethod
@@ -293,7 +293,7 @@ class Subject(metaclass=ABCMeta):
     #    pass
 
     @abstractmethod
-    def run_as(self, identifier):
+    def run_as(self, identifiers):
         pass
 
     @abstractmethod
@@ -301,7 +301,7 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_previous_identifier(self):
+    def get_previous_identifiers(self):
         pass
 
     @abstractmethod

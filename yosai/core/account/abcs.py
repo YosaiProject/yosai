@@ -30,7 +30,7 @@ class AccountId(metaclass=ABCMeta):
         pass
 
 
-class Account(serialize_abcs.Serializable, metaclass=ABCMeta):
+class Account(metaclass=ABCMeta):
     """
     An Account is a unique identity within an AccountStore  that has a set of
     attributes.  An account may represent a human being, but this is not

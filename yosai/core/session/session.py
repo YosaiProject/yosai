@@ -20,7 +20,7 @@ import pytz
 import datetime
 import time
 from abc import abstractmethod
-from marshmallow import Schema, fields, post_load
+from marshmallow import Schema, fields, post_load, pre_load
 import collections
 
 from yosai.core import (
@@ -289,14 +289,16 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
         when a session is associated with a user, it will have an identifiers
         attribute
+
+        including a primary identifier is new to yosai
         """
-        isk = subject_settings.identifiers_session_key
+        isk = 'identifiers_session_key'
         try:
-            identifiers = str(session.attributes.get(isk))
+            identifiers = session.get_attribute(isk)
             if identifiers is not None:
                 try:
                     self.cache_handler.set(domain='session',
-                                           identifier=identifiers,
+                                           identifier=identifiers.primary_identifier,
                                            value=DefaultSessionKey(session_id))
                 except AttributeError:
                     msg = "no cache parameter nor lazy-defined cache"
@@ -780,16 +782,6 @@ class SimpleSession(session_abcs.ValidatingSession,
                                     self.idle_timeout, self.absolute_timeout,
                                     self.is_expired, self.host))
 
-    class SimpleSessionAttributesSchema(Schema):
-        # Define key/value here for the attributes dictionary
-        # e.g.:
-        #  attribute1 = fields.Str()
-        pass
-
-        @post_load
-        def make_ss_attributes(self, data):
-            return dict(data)
-
     @classmethod
     def serialization_schema(cls):
 
@@ -822,16 +814,24 @@ class SimpleSession(session_abcs.ValidatingSession,
             _attributes = fields.Nested(SessionAttributesSchema,
                                         allow_none=True)
 
+            @pre_load
+            def convert_que(self, data):
+                try:
+                    if 'run_as_identifier_session_key' in data['_attributes']:
+                        data['_attributes']['run_as_identifier_session_key'] =\
+                            collections.deque(
+                            data['_attributes']['run_as_identifier_session_key'])
+                except TypeError:
+                    msg = "Note:  run_as_identifier_session_key attribute N/A."
+                    print(msg)
+                    # log debug here
+                    pass
+
             @post_load
             def make_simple_session(self, data):
                 mycls = SimpleSession
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
-
-                if 'run_as_identifier_session_key' in data['_attributes']:
-                    data['_attributes']['run_as_identifier_session_key'] =\
-                        collections.deque(
-                        data['_attributes']['run_as_identifier_session_key'])
 
                 return instance
 

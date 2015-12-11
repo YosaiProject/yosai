@@ -112,7 +112,7 @@ class AuthenticationToken(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifiers(self):
+    def identifier(self):
         """
         Returns the account identity submitted during the authentication
         process.

@@ -45,8 +45,10 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         """
         :param username: the username submitted for authentication
         :type username: str
+
         :param password: the password submitted for authentication
-        :type password: bytearray
+        :type password: bytearray or string
+
         :param remember_me:  if the user wishes their identity to be
                              remembered across sessions
         :type remember_me: bool
@@ -58,7 +60,7 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self.password = password
         self.is_remember_me = remember_me
         self.username = username
-        self.identifiers = username  # used in public api  DG:  TBD - I Dont like
+        self.identifier = username  # used in public api  DG:  TBD - I Dont like
         self.credentials = password  # used in public apiDG:  TBD - I Dont like
 
     # DG:  these properties are required implementations of the abcs
@@ -101,15 +103,12 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self._username = username
 
     @property
-    def identifiers(self):
-        return self._identifiers
+    def identifier(self):
+        return self._identifier
 
-    @identifiers.setter
-    def identifiers(self, identifiers):
-        """
-        :type identifiers:  SimpleIdentifierCollection
-        """
-        self._identifiers = identifiers
+    @identifier.setter
+    def identifier(self, identifier):
+        self._identifier = identifier
 
     @property
     def credentials(self):
@@ -120,7 +119,7 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
         self._credentials = credentials
 
     def clear(self):
-        self.username = None
+        self.identifier = None
         self.host = None
         self.remember_me = False
 
