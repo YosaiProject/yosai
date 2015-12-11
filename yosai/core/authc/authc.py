@@ -175,8 +175,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         """
         :type realms: Tuple
         """
-        self._realms = (realm for realm in realms
-                        if isinstance(realm, realm_abcs.AuthenticatingRealm))
+        self._realms = tuple(realm for realm in realms
+                             if isinstance(realm, realm_abcs.AuthenticatingRealm))
 
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):
