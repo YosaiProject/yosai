@@ -407,9 +407,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.credential_resolver = credential_resolver
         self.permission_resolver = permission_resolver
         self.role_resolver = role_resolver
+        self._authenticator = authenticator
+        self._authorizer = authorizer
         self.realms = realms
-        self.authenticator = authenticator
-        self.authorizer = authorizer
         self.session_manager = session_manager
         self.remember_me_manager = remember_me_manager
         self.subject_store = subject_store
@@ -494,16 +494,16 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         """
         if realm_s:
             self._realms = realm_s
-            self.apply_cache_handler(self._realm_s)
+            self.apply_cache_handler(self._realms)
 
             # new to yosai.core (shiro v2 alpha is missing it):
-            self.apply_credential_resolver(self._realm_s)
-            self.apply_authz_info_resolver(self._realm_s)
-            self.apply_permission_resolver(self._realm_s)
-            self.apply_role_resolver(self._realm_s)
+            self.apply_credential_resolver(self._realms)
+            self.apply_authz_info_resolver(self._realms)
+            self.apply_permission_resolver(self._realms)
+            self.apply_role_resolver(self._realms)
 
-            self.authenticator.realms = self._realm_s
-            self.authorizer.realms = self._realm_s
+            self.authenticator.realms = self._realms
+            self.authorizer.realms = self._realms
 
     @property
     def session_manager(self):
