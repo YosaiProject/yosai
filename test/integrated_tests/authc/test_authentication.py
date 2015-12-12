@@ -2,8 +2,10 @@ import pytest
 from yosai.core import (
     AuthenticationException,
     Credential,
+    SerializationManager,
     UsernamePasswordToken,
     event_bus,
+    AuthenticationException,
 )
 
 def test_authentication_using_accountstore_success(
@@ -36,16 +38,15 @@ def test_authentication_using_cache_success(
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
-    # failed first attempt is required because a successful authentication
-    # wipes cache automatically:
-    cred = Credential(thedude_credentials)
-    cache_handler.set(domain='credentials', identifiers='thedude', value=cred)
-    account = da.authenticate_account(valid_username_password_token)
-    out, err = capsys.readouterr()
+    with pytest.raises(AuthenticationException):
+        da.authenticate_account(invalid_username_password_token)
+    
+        account = da.authenticate_account(valid_username_password_token)
+        out, err = capsys.readouterr()
 
-    assert (event_detected.account == account and
-            ("Could not obtain cached" not in out) and
-            account.account_id == valid_username_password_token.identifiers)
+        assert (event_detected.account == account and
+                ("Could not obtain cached" not in out) and
+                account.account_id == valid_username_password_token.identifier)
 
 
 def test_authentication_using_accountstore_pw_failure(
@@ -80,7 +81,7 @@ def test_authentication_using_cache_pw_failure(
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
     cred = Credential(thedude_credentials)
-    cache_handler.set(domain='credentials', identifiers='thedude', value=cred)
+    cache_handler.set(domain='credentials', identifier='thedude', value=cred)
 
     with pytest.raises(AuthenticationException):
         da.authenticate_account(invalid_username_password_token)

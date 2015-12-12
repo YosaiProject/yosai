@@ -9,6 +9,7 @@ from yosai.core import (
     ImmutableProxiedSession,
     InvalidSessionException,
     SimpleSession,
+    SimpleIdentifierCollection,
     UnknownSessionException,
     event_bus,
 )
@@ -27,9 +28,9 @@ def test_create_cache_session(session_store, session, cache_handler):
         - session.__eq__
     """
     css = session_store
-
-    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
-                          'user12345678')
+    sic = SimpleIdentifierCollection(source_name='AccountStoreRealm', 
+                                     identifiers={'user12345678'})
+    session.set_attribute('identifiers_session_key', sic) 
     sessionid = css.create(session)
 
     cached_session = css.read(sessionid)
@@ -56,9 +57,12 @@ def test_delete_cached_session(session_store, session, cache_handler):
     """
 
     css = session_store
-    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
-                          'user12345678')
-    sessionid = session.session_id
+
+    sic = SimpleIdentifierCollection(source_name='AccountStoreRealm', 
+                                     identifiers={'user12345678'})
+    session.set_attribute('identifiers_session_key', sic) 
+    sessionid = css.create(session)
+
     css.delete(session)
 
     cached_session = css.read(sessionid)
@@ -226,11 +230,11 @@ def test_sh_stopped_session(
                           'user12345678')
 
     sessionid = sh.create_session(session)
-    cachedsession = ch.get(domain='session', identifiers=sessionid)
+    cachedsession = ch.get(domain='session', identifier=sessionid)
 
     now = datetime.datetime.now(pytz.utc)
     cachedsession.stop_timestamp = now
-    ch.set(domain='session', identifiers=sessionid, value=cachedsession)
+    ch.set(domain='session', identifier=sessionid, value=cachedsession)
 
     with pytest.raises(InvalidSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
@@ -358,13 +362,13 @@ def test_delegatingsession_attributes(
 
     session = sm.start(session_context)  # returns a DelegatingSession
 
-    session.set_attribute('test', 'testing')
-    result = session.get_attribute('test')
+    session.set_attribute('authenticated_session_key', True)
+    result = session.get_attribute('authenticated_session_key')
 
-    assert result == 'testing'
+    assert result is True
 
-    session.remove_attribute('test')
+    session.remove_attribute('authenticated_session_key')
 
-    result = session.get_attribute('test')
+    result = session.get_attribute('authenticated_session_key')
 
     assert result is None

@@ -330,12 +330,11 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                       identifier=sessionid)
 
             try:
-                isk = 'identifiers_session_key'
-                identifiers = str(session.attributes.get(isk))
-
+                identifiers = session.get_attribute('identifiers_session_key')
+                primary_id = identifiers.primary_identifier
                 # delete the mapping between a user and session id:
                 self.cache_handler.delete(domain='session',
-                                          identifier=identifiers)
+                                          identifier=primary_id)
             except AttributeError:
                 msg = '_uncache: Could not obtain identifiers from session'
                 print(msg)

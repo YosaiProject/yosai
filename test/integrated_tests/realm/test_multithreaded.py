@@ -4,10 +4,8 @@ import random
 import collections
 import pprint 
 
-from yosai import DefaultPermission
-from yosai import IndexedAuthorizationInfo
-from yosai import SerializationManager
-from yosai import SimpleRole
+from yosai.core import (DefaultPermission, IndexedAuthorizationInfo,
+                        SerializationManager, SimpleRole)
 
 from yosai_dpcache.cache.region import make_region
 from proxybackend import SerializationProxy

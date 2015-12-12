@@ -300,7 +300,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :type identifiers:  SimpleIdentifierCollection
 
-        :returns: an AuthorizationInfo object
+        :returns: Account
         """
         account = None
         ch = self.cache_handler

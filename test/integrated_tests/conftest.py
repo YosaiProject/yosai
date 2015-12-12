@@ -3,6 +3,7 @@ from .fixtures import (
     account_store_realm,
     cache_handler,
     clear_cached_credentials,
+    clear_cached_authz_info,
     configured_securityutils,
     invalid_username_password_token,
     native_security_manager,
@@ -11,5 +12,6 @@ from .fixtures import (
     thedude_identifier,
     test_db,
     thedude_credentials,
+    thedude_authz_info,
     valid_username_password_token,
 )
