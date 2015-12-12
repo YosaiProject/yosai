@@ -41,7 +41,7 @@ from yosai.core import(
     PermissionResolver,
     RoleResolver,
     SaveSubjectException,
-    SimpleIdentifierCollection,
+    SimpleSession,
     SerializationManager,
     SimpleRole,
     event_bus,
@@ -390,6 +390,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  authenticator=DefaultAuthenticator(),
                  authorizer=ModularRealmAuthorizer(),
                  session_manager=DefaultNativeSessionManager(),
+                 session_attributes_schema=None,
                  remember_me_manager=None,
                  subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
                  subject_factory=DefaultSubjectFactory(),  # unlike shiro, yosai defaults
@@ -399,6 +400,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  role_resolver=RoleResolver(SimpleRole)):
         """
         :type realms: tuple
+        :type session_attributes_schema: marshmallow.Schema
         """
         self._event_bus = event_bus
         self._cache_handler = cache_handler
@@ -414,6 +416,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.subject_store = subject_store
         self.subject_factory = subject_factory
 
+        # inject the schema into SimpleSession at SecurityManager init:
+        if session_attributes_schema:
+            SimpleSession.AttributesSchema = session_attributes_schema
     """
     * ===================================================================== *
     * Getters and Setters                                                   *
@@ -523,6 +528,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     @session_manager.setter
     def session_manager(self, sessionmanager):
         self._session_manager = sessionmanager
+
         self.apply_cache_handler(self._session_manager)
         self.apply_event_bus(self._session_manager)
 

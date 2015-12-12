@@ -1,3 +1,5 @@
+from marshmallow import Schema, fields
+
 from yosai.core import (
     AccountStoreRealm,
     NativeSecurityManager,
@@ -144,7 +146,12 @@ def thedude_credentials(request, thedude, clear_cached_credentials):
 
 @pytest.fixture(scope='module')
 def native_security_manager(account_store_realm, cache_handler):
-    nsm = NativeSecurityManager(realms=(account_store_realm,))
+
+    class AttributesSchema(Schema):
+        name = fields.String()
+
+    nsm = NativeSecurityManager(realms=(account_store_realm,),
+                                session_attributes_schema=AttributesSchema)
     nsm.cache_handler = cache_handler
     nsm.event_bus = event_bus
     return nsm

@@ -446,7 +446,8 @@ class ProxiedSession(session_abcs.Session):
         self._delegate.remove_attribute(key)
 
     def __repr__(self):
-        return "ProxiedSession(session_id={0})".format(self.session_id)
+        return "ProxiedSession(session_id={0}, attributes={1})".format(
+            self.session_id, self.attribute_keys)
 
 
 class ImmutableProxiedSession(ProxiedSession):
@@ -842,7 +843,7 @@ class SimpleSession(session_abcs.ValidatingSession,
                                     self.idle_timeout, self.absolute_timeout,
                                     self.is_expired, self.host))
 
-    class SessionAttributesSchema(Schema):
+    class AttributesSchema(Schema):
         pass
 
     @classmethod
@@ -877,7 +878,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             _internal_attributes = fields.Nested(InternalSessionAttributesSchema,
                                                  allow_none=True)
 
-            _attributes = fields.Nested(cls.SessionAttributesSchema,
+            _attributes = fields.Nested(cls.AttributesSchema,
                                         allow_none=True)
 
             @pre_load
@@ -908,7 +909,7 @@ class SimpleSessionFactory(session_abcs.SessionFactory):
 
     @classmethod
     def create_session(cls, session_context=None):
-        return SimpleSession(host=getattr(session_context, 'host', None))
+        return SimpleSession(host=session_context.host)
 
 
 class DelegatingSession(session_abcs.Session):
