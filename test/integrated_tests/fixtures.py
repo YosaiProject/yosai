@@ -56,12 +56,12 @@ def cache_handler():
 
 
 @pytest.fixture(scope='module')
-def alchemy_store(test_db):
+def alchemy_store():
     return AlchemyAccountStore()
 
 
 @pytest.fixture(scope='module')
-def account_store_realm(cache_handler, alchemy_store, permission_resolver, 
+def account_store_realm(cache_handler, alchemy_store, permission_resolver,
                         role_resolver, authz_info_resolver, credential_resolver):
 
     asr = AccountStoreRealm()
@@ -87,7 +87,7 @@ def thedude_identifier():
                                       identifiers={'thedude'})
 
 @pytest.fixture(scope='module')
-def thedude(cache_handler, request, thedude_identifier):
+def thedude(test_db, cache_handler, request, thedude_identifier):
     thedude = UserModel(first_name='Jeffrey',
                         last_name='Lebowski',
                         identifier='thedude')
@@ -247,4 +247,3 @@ def thedude_authz_info(request, cache_handler, thedude, clear_cached_authz_info)
     thedude.roles.extend([bankcustomer, courier, tenant])
 
     session.commit()
-

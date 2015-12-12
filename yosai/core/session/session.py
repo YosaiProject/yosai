@@ -294,7 +294,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         """
         isk = 'identifiers_session_key'
         try:
-            identifiers = session.get_attribute(isk)
+            identifiers = session.get_internal_attribute(isk)
             if identifiers is not None:
                 try:
                     self.cache_handler.set(domain='session',
@@ -330,7 +330,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                       identifier=sessionid)
 
             try:
-                identifiers = session.get_attribute('identifiers_session_key')
+                identifiers = session.get_internal_attribute('identifiers_session_key')
                 primary_id = identifiers.primary_identifier
                 # delete the mapping between a user and session id:
                 self.cache_handler.delete(domain='session',
@@ -377,6 +377,10 @@ class ProxiedSession(session_abcs.Session):
     """
 
     def __init__(self, target_session):
+        """
+        unlike shiro, yosai differentiates session attributes for internal use
+        from session attributes for external use
+        """
         # the proxied instance:
         self._delegate = target_session
         self._session_id = None
@@ -423,6 +427,15 @@ class ProxiedSession(session_abcs.Session):
     def attribute_keys(self):
         return self._delegate.attribute_keys
 
+    def get_internal_attribute(self, key):
+        return self._delegate.get_internal_attribute(key)
+
+    def set_internal_attribute(self, key, value):
+        self._delegate.set_internal_attribute(key, value)
+
+    def remove_internal_attribute(self, key):
+        self._delegate.remove_internal_attribute(key)
+
     def get_attribute(self, key):
         return self._delegate.get_attribute(key)
 
@@ -451,7 +464,9 @@ class ImmutableProxiedSession(ProxiedSession):
         * idle_timeout.setter, absolute_timeout.setter
         * touch()
         * stop()
+        * set_internal_attribute(key,value)
         * set_attribute(key,value)
+        * remove_internal_attribute(key)
         * remove_attribute(key)
 
     Any other method invocation not listed above will result in a
@@ -475,8 +490,15 @@ class ImmutableProxiedSession(ProxiedSession):
     def stop(self):
         raise InvalidSessionException(self.exc_message)
 
+    def set_internal_attribute(self, key, value):
+        raise InvalidSessionException(self.exc_message)
+
     def set_attribute(self, key, value):
         raise InvalidSessionException(self.exc_message)
+
+    def remove_internal_attribute(self, key):
+        raise InvalidSessionException(self.exc_message)
+        raise Exception('this exception should never have raised, ALERT!')
 
     def remove_attribute(self, key):
         raise InvalidSessionException(self.exc_message)
@@ -498,6 +520,7 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     def __init__(self, host=None):
         self._attributes = None
+        self._internal_attributes = None
         self._is_expired = None
         self._session_id = None
 
@@ -538,6 +561,20 @@ class SimpleSession(session_abcs.ValidatingSession,
         if (self.attributes is None):
             return None
         return set(self.attributes)  # a set of keys
+
+    @property
+    def internal_attributes(self):
+        return self._internal_attributes
+
+    @internal_attributes.setter
+    def internal_attributes(self, attrs):
+        self._internal_attributes = attrs
+
+    @property
+    def internal_attribute_keys(self):
+        if (self.internal_attributes is None):
+            return None
+        return set(self.internal_attributes)  # a set of keys
 
     @property
     def host(self):
@@ -730,6 +767,29 @@ class SimpleSession(session_abcs.ValidatingSession,
             # log here
             raise ExpiredSessionException(msg2)
 
+    def get_internal_attributes_lazy(self):
+        if (self.internal_attributes is None):
+            self.internal_attributes = {}
+        return self.internal_attributes
+
+    def get_internal_attribute(self, key):
+        if (not self.internal_attributes):
+            return None
+
+        return self.internal_attributes.get(key)
+
+    def set_internal_attribute(self, key, value=None):
+        if (not value):
+            self.remove_internal_attribute(key)
+        else:
+            self.get_internal_attributes_lazy()[key] = value
+
+    def remove_internal_attribute(self, key):
+        if (not self.internal_attributes):
+            return None
+        else:
+            return self.internal_attributes.pop(key, None)
+
     def get_attributes_lazy(self):
         if (self.attributes is None):
             self.attributes = {}
@@ -752,6 +812,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             return None
         else:
             return self.attributes.pop(key, None)
+
 
     # deleted on_equals as it is unecessary in python
     # deleted hashcode method as python's __hash__ may be fine -- TBD!
@@ -781,10 +842,13 @@ class SimpleSession(session_abcs.ValidatingSession,
                                     self.idle_timeout, self.absolute_timeout,
                                     self.is_expired, self.host))
 
+    class SessionAttributesSchema(Schema):
+        pass
+
     @classmethod
     def serialization_schema(cls):
 
-        class SessionAttributesSchema(Schema):
+        class InternalSessionAttributesSchema(Schema):
             identifiers = fields.Nested(
                 SimpleIdentifierCollection.serialization_schema(),
                 attribute='identifiers_session_key')
@@ -810,16 +874,19 @@ class SimpleSession(session_abcs.ValidatingSession,
             # NOTE:  After you've defined your SimpleSessionAttributesSchema,
             #        the Raw() fields assignment below should be replaced by
             #        the Schema line that follows it
-            _attributes = fields.Nested(SessionAttributesSchema,
+            _internal_attributes = fields.Nested(InternalSessionAttributesSchema,
+                                                 allow_none=True)
+
+            _attributes = fields.Nested(cls.SessionAttributesSchema,
                                         allow_none=True)
 
             @pre_load
             def convert_que(self, data):
                 try:
-                    if 'run_as_identifier_session_key' in data['_attributes']:
-                        data['_attributes']['run_as_identifier_session_key'] =\
+                    if 'run_as_identifier_session_key' in data['_internal_attributes']:
+                        data['_internal_attributes']['run_as_identifier_session_key'] =\
                             collections.deque(
-                            data['_attributes']['run_as_identifier_session_key'])
+                            data['_internal_attributes']['run_as_identifier_session_key'])
                 except TypeError:
                     msg = "Note:  run_as_identifier_session_key attribute N/A."
                     print(msg)
@@ -912,6 +979,26 @@ class DelegatingSession(session_abcs.Session):
 
     def stop(self):
         self.session_manager.stop(self.session_key)
+
+    @property
+    def internal_attribute_keys(self):
+        return self.session_manager.get_internal_attribute_keys(self.session_key)
+
+    def get_internal_attribute(self, attribute_key):
+        return self.session_manager.get_internal_attribute(self.session_key,
+                                                           attribute_key)
+
+    def set_internal_attribute(self, attribute_key, value=None):
+        if (value is None):
+            self.remove_internal_attribute(attribute_key)
+        else:
+            self.session_manager.set_internal_attribute(self.session_key,
+                                                        attribute_key,
+                                                        value)
+
+    def remove_internal_attribute(self, attribute_key):
+        return self.session_manager.remove_internal_attribute(self.session_key,
+                                                              attribute_key)
 
     @property
     def attribute_keys(self):
@@ -1472,6 +1559,32 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     def get_host(self, session_key):
         return self._lookup_required_session(session_key).host
+
+    def get_internal_attribute_keys(self, session_key):
+        collection = self._lookup_required_session(session_key).internal_attribute_keys
+        try:
+            return tuple(collection)
+        except TypeError:  # collection is None
+            return tuple()
+
+    def get_internal_attribute(self, session_key, attribute_key):
+        return self._lookup_required_session(session_key).\
+            get_internal_attribute(attribute_key)
+
+    def set_internal_attribute(self, session_key, attribute_key, value=None):
+        if (value is None):
+            self.remove_internal_attribute(session_key, attribute_key)
+        else:
+            session = self._lookup_required_session(session_key)
+            session.set_internal_attribute(attribute_key, value)
+            self.session_handler.on_change(session)
+
+    def remove_internal_attribute(self, session_key, attribute_key):
+        session = self._lookup_required_session(session_key)
+        removed = session.remove_internal_attribute(attribute_key)
+        if (removed is not None):
+            self.session_handler.on_change(session)
+        return removed
 
     def get_attribute_keys(self, session_key):
         collection = self._lookup_required_session(session_key).attribute_keys

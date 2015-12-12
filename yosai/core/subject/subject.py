@@ -156,7 +156,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         if not identifiers:
             session = self.resolve_session()
             try:
-                identifiers = session.get_attribute(
+                identifiers = session.get_internal_attribute(
                     self.get_key('identifiers_session_key'))
             except AttributeError:
                 identifiers = None
@@ -213,7 +213,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             #  fall back to a session check:
             session = self.resolve_session()
             if (session is not None):
-                authc = bool(session.get_attribute(
+                authc = bool(session.get_internal_attribute(
                     self.get_key('authenticated_session_key')))
 
         return authc
@@ -720,7 +720,7 @@ class DelegatingSubject(subject_abcs.Subject):
         session = self.get_session(False)
         if session:
             stack = collections.deque()
-            rapkey = session.get_attribute(self.run_as_identifier_session_key)
+            rapkey = session.get_internal_attribute(self.run_as_identifier_session_key)
 
             if rapkey:  # don't insert None
                 stack.appendleft(rapkey)
@@ -731,7 +731,7 @@ class DelegatingSubject(subject_abcs.Subject):
     def clear_run_as_identities(self):
         session = self.get_session(False)
         if (session is not None):
-            session.remove_attribute(self.run_as_identifier_session_key)
+            session.remove_internal_attribute(self.run_as_identifier_session_key)
 
     def push_identity(self, identifiers):
         """
@@ -748,7 +748,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         stack.appendleft(identifiers)
         session = self.get_session()
-        session.set_attribute(self.run_as_identifier_session_key, stack)
+        session.set_internal_attribute(self.run_as_identifier_session_key, stack)
 
     def pop_identity(self):
         popped = None
@@ -759,7 +759,7 @@ class DelegatingSubject(subject_abcs.Subject):
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()
-                session.set_attribute(self.run_as_identifier_session_key, stack)
+                session.set_internal_attribute(self.run_as_identifier_session_key, stack)
 
             else:
                 # stack is empty, remove it from the session:
@@ -945,18 +945,18 @@ class DefaultSubjectStore:
         if (not session):
             if (current_identifiers):
                 session = subject.get_session(True)
-                session.set_attribute(self.dsc_isk, current_identifiers)
+                session.set_internal_attribute(self.dsc_isk, current_identifiers)
             # otherwise no session and no identifier - nothing to save
         else:
-            existing_identifiers = session.get_attribute(self.dsc_isk)
+            existing_identifiers = session.get_internal_attribute(self.dsc_isk)
 
             if (not current_identifiers):
                 if (existing_identifiers):
-                    session.remove_attribute(self.dsc_isk)
+                    session.remove_internal_attribute(self.dsc_isk)
                 # otherwise both are null or empty - no need to update session
             else:
                 if not (current_identifiers == existing_identifiers):
-                    session.set_attribute(self.dsc_isk, current_identifiers)
+                    session.set_internal_attribute(self.dsc_isk, current_identifiers)
                 # otherwise they're the same - no need to update the session
 
     def merge_authentication_state(self, subject):
@@ -965,27 +965,27 @@ class DefaultSubjectStore:
         if (not session):
             if (subject.authenticated):
                 session = subject.get_session()
-                session.set_attribute(self.dsc_ask, True)
+                session.set_internal_attribute(self.dsc_ask, True)
             # otherwise no session and not authenticated - nothing to save
         else:
-            existing_authc = session.get_attribute(self.dsc_ask)
+            existing_authc = session.get_internal_attribute(self.dsc_ask)
 
             if (subject.authenticated):
                 if (existing_authc is None):  # either doesnt exist or set None
-                    session.set_attribute(self.dsc_ask, True)
+                    session.set_internal_attribute(self.dsc_ask, True)
                 # otherwise authc state matches - no need to update the session
             else:
                 if (existing_authc is not None):
                     # existing doesn't match the current state - remove it:
-                    session.remove_attribute(self.dsc_ask)
+                    session.remove_internal_attribute(self.dsc_ask)
                 # otherwise not in the session and not authenticated and
                 # no need to update the session
 
     def remove_from_session(self, subject):
         session = subject.get_session(False)
         if (session):
-            session.remove_attribute(self.dsc_ask)
-            session.remove_attribute(self.dsc_isk)
+            session.remove_internal_attribute(self.dsc_ask)
+            session.remove_internal_attribute(self.dsc_isk)
 
     def delete(self, subject):
         self.remove_from_session(subject)

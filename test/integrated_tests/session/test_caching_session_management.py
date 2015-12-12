@@ -20,7 +20,7 @@ def test_create_cache_session(session_store, session, cache_handler):
     test objective:  cache new session entry and read session from cache
 
     aspects tested:
-        - session.set_attribute
+        - session.set_internal_attribute
         - session_store.create
         - session_store.read
         - session_store.delete
@@ -30,7 +30,7 @@ def test_create_cache_session(session_store, session, cache_handler):
     css = session_store
     sic = SimpleIdentifierCollection(source_name='AccountStoreRealm', 
                                      identifiers={'user12345678'})
-    session.set_attribute('identifiers_session_key', sic) 
+    session.set_internal_attribute('identifiers_session_key', sic) 
     sessionid = css.create(session)
 
     cached_session = css.read(sessionid)
@@ -45,7 +45,7 @@ def test_update_cached_session(session_store, session):
     """
 
     css = session_store
-    session.set_attribute('testing', 'testing123')
+    session.set_internal_attribute('testing', 'testing123')
     css.update(session)
     cached_session = css.read(session.session_id)
     assert cached_session == session
@@ -60,7 +60,7 @@ def test_delete_cached_session(session_store, session, cache_handler):
 
     sic = SimpleIdentifierCollection(source_name='AccountStoreRealm', 
                                      identifiers={'user12345678'})
-    session.set_attribute('identifiers_session_key', sic) 
+    session.set_internal_attribute('identifiers_session_key', sic) 
     sessionid = css.create(session)
 
     css.delete(session)
@@ -128,7 +128,7 @@ def test_session_handler_create_dgs(session_handler, cache_handler, session):
     sh = session_handler
     sh.cache_handler = cache_handler
 
-    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
                           'user12345678')
     sessionid = sh.create_session(session)
     cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
@@ -143,7 +143,7 @@ def test_session_handler_delete(session_handler, cache_handler, session, capsys)
     sh = session_handler
     sh.cache_handler = cache_handler
 
-    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
                           'user12345678')
 
     sessionid = sh.create_session(session)
@@ -182,7 +182,7 @@ def test_sh_expired_session(
 
     event_bus.register(event_listener, 'SESSION.EXPIRE')
 
-    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
                           'user12345678')
     sessionid = sh.create_session(session)
     cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
@@ -226,7 +226,7 @@ def test_sh_stopped_session(
 
     event_bus.register(event_listener, 'SESSION.STOP')
 
-    session.set_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
                           'user12345678')
 
     sessionid = sh.create_session(session)
@@ -310,7 +310,7 @@ def test_delegatingsession_getters(
     test objective:  verify the pass-through getter methods
 
     session manager aspects tested:
-        - get_X attribute methods
+        - get_X internal_attribute methods
     """
     sm = session_manager
     sm.cache_handler = cache_handler
@@ -350,10 +350,10 @@ def test_delegatingsession_setters(
     assert not is_valid
 
 
-def test_delegatingsession_attributes(
+def test_delegatingsession_internal_attributes(
         session_manager, cache_handler, session_context):
     """
-    test objective:  verify the pass-through attribute methods
+    test objective:  verify the pass-through internal_attribute methods
 
     """
     sm = session_manager
@@ -362,13 +362,13 @@ def test_delegatingsession_attributes(
 
     session = sm.start(session_context)  # returns a DelegatingSession
 
-    session.set_attribute('authenticated_session_key', True)
-    result = session.get_attribute('authenticated_session_key')
+    session.set_internal_attribute('authenticated_session_key', True)
+    result = session.get_internal_attribute('authenticated_session_key')
 
     assert result is True
 
-    session.remove_attribute('authenticated_session_key')
+    session.remove_internal_attribute('authenticated_session_key')
 
-    result = session.get_attribute('authenticated_session_key')
+    result = session.get_internal_attribute('authenticated_session_key')
 
     assert result is None
