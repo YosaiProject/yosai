@@ -868,7 +868,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
     @property
     def roleids(self):
-        return {role.identifiers for role in self._roles}
+        return {role.identifier for role in self._roles}
 
     @property
     def permissions(self):

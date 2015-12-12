@@ -22,12 +22,14 @@ from yosai_alchemystore.models.models import (
 @pytest.fixture(scope='module')
 def modular_realm_authorizer(account_store_realm, permission_resolver,
                              role_resolver, authz_info_resolver):
+
     mra = ModularRealmAuthorizer()
+    asr = account_store_realm
+    asr.permission_resolver = permission_resolver
+    asr.authz_info_resolver = authz_info_resolver
+    asr.role_resolver = role_resolver
     mra.realms = (account_store_realm,)
     mra.event_bus = event_bus
-    mra.permission_resolver = permission_resolver
-    mra.authz_info_resolver = authz_info_resolver
-    mra.role_resolver = role_resolver
     return mra
 
 
@@ -42,8 +44,7 @@ def clear_cached_authz_info(cache_handler, request):
 
 
 @pytest.fixture(scope='module')
-def thedude_authz_info(request, cache_handler, thedude,
-                       clear_cached_authz_info):
+def thedude_authz_info(request, cache_handler, thedude):
 
     domains = [DomainModel(name='money'),
                DomainModel(name='leatherduffelbag')]
