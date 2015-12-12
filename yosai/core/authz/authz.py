@@ -564,6 +564,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         results = collections.defaultdict(bool)  # defaults to False
 
         is_permitted_results = self._is_permitted(identifiers, permission_s)
+
         for permission, is_permitted in is_permitted_results:
             # permit expected format is: (Permission, Boolean)
             # As long as one realm returns True for a Permission, that Permission

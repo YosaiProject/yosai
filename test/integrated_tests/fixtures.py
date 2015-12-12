@@ -4,6 +4,7 @@ from yosai.core import (
     event_bus,
     UsernamePasswordToken,
     SecurityUtils,
+    SimpleIdentifierCollection,
 )
 
 from yosai_alchemystore import (
@@ -60,7 +61,12 @@ def account_store_realm(cache_handler, alchemy_store):
 #    engine = create_engine('sqlite://')
 
 @pytest.fixture(scope='module')
-def thedude(cache_handler, request):
+def thedude_identifier():
+    return SimpleIdentifierCollection(source_name='AccountStoreRealm',
+                                      identifiers={'thedude'})
+
+@pytest.fixture(scope='module')
+def thedude(cache_handler, request, thedude_identifier):
     thedude = UserModel(first_name='Jeffrey',
                         last_name='Lebowski',
                         identifier='thedude')
@@ -93,7 +99,7 @@ def clear_cached_credentials(cache_handler, request, thedude):
     def remove_credentials():
         nonlocal cache_handler
         cache_handler.delete(domain="credentials",
-                             identifier=thedude.identifier)
+                             identifier=thedude.primary_identifier)
 
     request.addfinalizer(remove_credentials)
 

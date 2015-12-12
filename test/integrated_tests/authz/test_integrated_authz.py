@@ -6,7 +6,7 @@ import pytest
 
 
 def test_is_permitted(permission_resolver, modular_realm_authorizer,
-                      thedude_authz_info):
+                      thedude_authz_info, thedude_identifier):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
@@ -29,13 +29,14 @@ def test_is_permitted(permission_resolver, modular_realm_authorizer,
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
-    results = mra.is_permitted('thedude', perms)
+    results = mra.is_permitted(thedude_identifier, perms)
     assert (expected_results == results and
             event_detected.results == results)
 
 
 def test_is_permitted_collective(
-        permission_resolver, modular_realm_authorizer, thedude_authz_info):
+        permission_resolver, modular_realm_authorizer, thedude_authz_info,
+        thedude_identifier):
 
     mra = modular_realm_authorizer
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
@@ -45,12 +46,13 @@ def test_is_permitted_collective(
 
     perms = [perm1, perm2, perm3, perm4]
 
-    assert ((mra.is_permitted_collective('thedude', perms, any) is True) and
-            (mra.is_permitted_collective('thedude', perms, all) is False))
+    assert ((mra.is_permitted_collective(thedude_identifier, perms, any) is True) and
+            (mra.is_permitted_collective(thedude_identifier, perms, all) is False))
 
 
 def test_check_permission_succeeds(
-        permission_resolver, modular_realm_authorizer, thedude_authz_info):
+        permission_resolver, modular_realm_authorizer, thedude_authz_info,
+        thedude_identifier):
 
     mra = modular_realm_authorizer
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
@@ -67,12 +69,13 @@ def test_check_permission_succeeds(
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
-    assert (mra.check_permission('thedude', perms, any) is None and
+    assert (mra.check_permission(thedude_identifier, perms, any) is None and
             event_detected.items == perms)
 
 
 def test_check_permission_raises(
-        permission_resolver, modular_realm_authorizer, thedude_authz_info):
+        permission_resolver, modular_realm_authorizer, thedude_authz_info,
+        thedude_identifier):
 
     mra = modular_realm_authorizer
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
@@ -90,11 +93,11 @@ def test_check_permission_raises(
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     with pytest.raises(UnauthorizedException):
-        mra.check_permission('thedude', perms, all)
+        mra.check_permission(thedude_identifier, perms, all)
         assert event_detected.items == perms
 
 
-def test_has_role(modular_realm_authorizer):
+def test_has_role(modular_realm_authorizer, thedude_identifier):
 
     mra = modular_realm_authorizer
 
@@ -111,22 +114,22 @@ def test_has_role(modular_realm_authorizer):
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
-    result = mra.has_role('thedude', roles)
+    result = mra.has_role(thedude_identifier, roles)
 
     assert (expected_results == result and
             event_detected.results == result)
 
-def test_has_role_collective(modular_realm_authorizer):
+def test_has_role_collective(modular_realm_authorizer, thedude_identifier):
 
     mra = modular_realm_authorizer
 
     roles = {'bankcustomer', 'courier', 'thief'}
 
-    assert ((mra.has_role_collective('thedude', roles, all) is False) and
-            (mra.has_role_collective('thedude', roles, any) is True))
+    assert ((mra.has_role_collective(thedude_identifier, roles, all) is False) and
+            (mra.has_role_collective(thedude_identifier, roles, any) is True))
 
 
-def test_check_role_succeeds(modular_realm_authorizer):
+def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier):
 
     mra = modular_realm_authorizer
     roles = {'bankcustomer', 'courier', 'thief'}
@@ -138,11 +141,11 @@ def test_check_role_succeeds(modular_realm_authorizer):
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
-    assert (mra.check_role('thedude', roles, any) is None and
+    assert (mra.check_role(thedude_identifier, roles, any) is None and
             event_detected.items == roles)
 
 
-def test_check_role_raises(modular_realm_authorizer):
+def test_check_role_raises(thedude_identifier, modular_realm_authorizer):
 
     mra = modular_realm_authorizer
     roles = {'bankcustomer', 'courier', 'thief'}
@@ -155,6 +158,6 @@ def test_check_role_raises(modular_realm_authorizer):
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     with pytest.raises(UnauthorizedException):
-        mra.check_role('thedude', roles, all)
+        mra.check_role(thedude_identifier, roles, all)
 
         assert event_detected.items == roles

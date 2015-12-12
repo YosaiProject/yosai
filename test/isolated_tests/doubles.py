@@ -1,5 +1,4 @@
 from yosai.core import (
-    CacheKeyRemovalException,
     DelegatingSubject,
     MapContext,
     account_abcs,
@@ -109,10 +108,7 @@ class MockCache(cache_abcs.Cache):
         self.kvstore[key] = value
 
     def remove(self, key):
-        try:
-            return self.kvstore.pop(key)
-        except KeyError:
-            raise CacheKeyRemovalException
+        return self.kvstore.pop(key)
 
 
 class MockCacheManager(cache_abcs.CacheManager):

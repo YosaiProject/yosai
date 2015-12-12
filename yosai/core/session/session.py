@@ -330,7 +330,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                       identifier=sessionid)
 
             try:
-                isk = subject_settings.identifiers_session_key
+                isk = 'identifiers_session_key'
                 identifiers = str(session.attributes.get(isk))
 
                 # delete the mapping between a user and session id:

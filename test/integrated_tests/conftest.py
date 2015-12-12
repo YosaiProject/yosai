@@ -8,6 +8,7 @@ from .fixtures import (
     native_security_manager,
     new_subject,
     thedude,
+    thedude_identifier,
     test_db,
     thedude_credentials,
     valid_username_password_token,

@@ -305,8 +305,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
-        # the following popping off an identifier is subject to change: (TBD)
-        identifier = identifiers.from_source('AccountStoreRealm').pop()
+        # the following is subject to change: (TBD)
+        identifier = next(iter(identifiers.from_source('AccountStoreRealm')))
 
         try:
             def get_stored_authz_info(self):
@@ -348,6 +348,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     def is_permitted(self, identifiers, permission_s):
         """
+        If the authorization info cannot be obtained from the accountstore,
+        permission check tuple yields False.
+
         :type identifiers:  SimpleIdentifierCollection
 
         :param permission_s: a collection of one or more permissions, represented
@@ -358,13 +361,24 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :yields: tuple(Permission, Boolean)
         """
 
-        authz_info = self.get_authorization_info(identifiers).authz_info
-        yield from self.permission_verifier.is_permitted(authz_info,
-                                                         permission_s)
+        account = self.get_authorization_info(identifiers)
+
+        if account is None:
+            msg = 'is_permitted:  authz_info returned None for [{0}]'.\
+                format(identifiers)
+            # log warning here
+            for permission in permission_s:
+                yield (permission, False)
+        else:
+            yield from self.permission_verifier.is_permitted(account.authz_info,
+                                                             permission_s)
 
     def has_role(self, identifiers, roleid_s):
         """
         Confirms whether a subject is a member of one or more roles.
+
+        If the authorization info cannot be obtained from the accountstore,
+        role check tuple yields False.
 
         :type identifiers:  SimpleIdentifierCollection
 
@@ -373,5 +387,13 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :yields: tuple(roleid, Boolean)
         """
-        authz_info = self.get_authorization_info(identifiers).authz_info
-        yield from self.role_verifier.has_role(authz_info, roleid_s)
+        account = self.get_authorization_info(identifiers)
+
+        if account is None:
+            msg = 'has_role:  authz_info returned None for [{0}]'.\
+                format(identifiers)
+            # log warning here
+            for roleid in roleid_s:
+                yield (roleid, False)
+        else:
+            yield from self.role_verifier.has_role(account.authz_info, roleid_s)
