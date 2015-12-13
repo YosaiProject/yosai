@@ -14,5 +14,6 @@ from .fixtures import (
     thedude_credentials,
     thedude_authz_info,
     thedude_testpermissions,
+    thedude_testroles,
     valid_username_password_token,
 )

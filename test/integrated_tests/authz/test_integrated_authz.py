@@ -33,7 +33,7 @@ def test_is_permitted_collective(
 
     mra = modular_realm_authorizer
     tp = thedude_testpermissions
-    
+
     assert ((mra.is_permitted_collective(thedude_identifier, tp['perms'], any) is True) and
             (mra.is_permitted_collective(thedude_identifier, tp['perms'], all) is False))
 
@@ -96,6 +96,7 @@ def test_has_role(modular_realm_authorizer, thedude_identifier):
     assert (expected_results == result and
             event_detected.results == result)
 
+
 def test_has_role_collective(modular_realm_authorizer, thedude_identifier):
 
     mra = modular_realm_authorizer
@@ -144,11 +145,11 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
 def test_is_permitted_account_doesnt_exist(
         modular_realm_authorizer, permission_resolver):
     """
-    when an account cannot be obtained from the account_store, all 
+    when an account cannot be obtained from the account_store, all
     permissions checked return False
     """
     mra = modular_realm_authorizer
-   
+
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
     perm2 = permission_resolver('money:withdrawal')
     perm3 = permission_resolver('leatherduffelbag:transport:theringer')
@@ -173,4 +174,3 @@ def test_is_permitted_account_doesnt_exist(
     results = mra.is_permitted(unrecognized_identifier, perms)
     assert (expected_results == results and
             event_detected.results == results)
-

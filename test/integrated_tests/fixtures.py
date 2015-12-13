@@ -269,3 +269,14 @@ def thedude_testpermissions(thedude_authz_info, permission_resolver):
                                   (perm3, True), (perm4, False)])
 
     return dict(perms=perms, expected_results=expected_results)
+
+
+@pytest.fixture(scope='module')
+def thedude_testroles(thedude_authz_info):
+    roles = {'bankcustomer', 'courier', 'thief'}
+
+    expected_results = frozenset([('bankcustomer', True),
+                                  ('courier', True),
+                                  ('thief', False)])
+
+    return dict(roles=roles, expected_results=expected_results)

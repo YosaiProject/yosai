@@ -102,16 +102,12 @@ def test_check_permission_raises(
         new_subject.check_permission(tp['perms'], all)
         assert event_detected.items == tp['perms']
 
+        new_subject.logout()
 
-def test_has_role(valid_username_password_token, thedude_permissions,
-    new_subject):
+def test_has_role(valid_username_password_token, thedude_testroles,
+                  new_subject, thedude_authz_info):
 
-    roles = {'bankcustomer', 'courier', 'thief'}
-
-    expected_results = frozenset([('bankcustomer', True),
-                                  ('courier', True),
-                                  ('thief', False)])
-
+    tr = thedude_testroles
     event_detected = None
 
     def event_listener(event):
@@ -119,7 +115,24 @@ def test_has_role(valid_username_password_token, thedude_permissions,
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
-    result = mra.has_role(thedude_identifier, roles)
+    new_subject.login(valid_username_password_token)
+    result = new_subject.has_role(tr['roles'])
 
-    assert (expected_results == result and
+    assert (tr['expected_results'] == result and
             event_detected.results == result)
+
+    new_subject.logout()
+
+def test_authenticated_subject_has_role_collective(
+        thedude_authz_info, new_subject, thedude_testroles,
+        valid_username_password_token):
+
+    tr = thedude_testroles
+
+    new_subject.login(valid_username_password_token)
+
+    assert ((new_subject.has_role_collective(tr['roles'], all) is False) and
+            (new_subject.has_role_collective(tr['roles'], any) is True))
+
+    new_subject.logout()
+    
