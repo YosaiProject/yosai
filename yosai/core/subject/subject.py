@@ -517,9 +517,12 @@ class DelegatingSubject(subject_abcs.Subject):
             raise IdentifiersNotSetException(msg)
 
     def login(self, authc_token):
-
+        """
+        authc_token's password is cleartext that is stored as a bytearray.
+        The authc_token password is cleared in memory, within the authc_token,
+        when authentication is successful.
+        """
         self.clear_run_as_identities_internal()
-
         # login raises an AuthenticationException if it fails to authenticate:
         subject = self.security_manager.login(subject=self,
                                               authc_token=authc_token)

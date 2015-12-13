@@ -245,16 +245,14 @@ from yosai.core.authc.context import (
 )
 
 from yosai.core.authc.authc import (
-    AbstractAuthcService,
     Credential,
     CredentialResolver,
     DefaultAuthenticator,
-    DefaultHashService,
-    DefaultPasswordService,
     UsernamePasswordToken,
 )
 
 from yosai.core.authc.credential import (
+    DefaultPasswordService,
     PasswordVerifier,
     SimpleCredentialsVerifier,
     AllowAllCredentialsVerifier,

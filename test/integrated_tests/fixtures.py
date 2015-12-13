@@ -101,7 +101,7 @@ def thedude(test_db, cache_handler, request, thedude_identifier):
     return thedude
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')  # because successful login clears password
 def valid_username_password_token():
     return UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
@@ -254,3 +254,18 @@ def thedude_authz_info(request, cache_handler, thedude, clear_cached_authz_info)
     thedude.roles.extend([bankcustomer, courier, tenant])
 
     session.commit()
+
+
+@pytest.fixture(scope='module')
+def thedude_testpermissions(thedude_authz_info, permission_resolver):
+    perm1 = permission_resolver('money:write:bankcheck_19911109069')
+    perm2 = permission_resolver('money:withdrawal')
+    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
+    perm4 = permission_resolver('leatherduffelbag:access:theringer')
+
+    perms = [perm1, perm2, perm3, perm4]
+
+    expected_results = frozenset([(perm1, True), (perm2, False),
+                                  (perm3, True), (perm4, False)])
+
+    return dict(perms=perms, expected_results=expected_results)

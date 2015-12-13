@@ -416,9 +416,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.subject_store = subject_store
         self.subject_factory = subject_factory
 
-        # inject the schema into SimpleSession at SecurityManager init:
         if session_attributes_schema:
-            SimpleSession.AttributesSchema = session_attributes_schema
+            SimpleSession.set_attributes_schema(session_attributes_schema)
     """
     * ===================================================================== *
     * Getters and Setters                                                   *

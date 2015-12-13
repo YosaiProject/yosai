@@ -18,13 +18,46 @@ under the License.
 """
 
 from yosai.core import (
+    CryptContextFactory,
     IllegalStateException,
     MissingCredentialsException,
     PasswordVerifierInvalidAccountException,
     PasswordVerifierInvalidTokenException,
     authc_abcs,
-    DefaultPasswordService,
+    authc_settings,
 )
+
+
+class DefaultPasswordService:
+
+    def __init__(self):
+        # using default algorithm when generating crypt context:
+        self.crypt_context = CryptContextFactory(authc_settings).\
+            create_crypt_context()
+        # self.private_salt = bytearray(authc_settings.private_salt, 'utf-8')
+
+        # in Yosai, hash formatting is taken care of by passlib
+
+    def passwords_match(self, password, saved):
+        """
+        :param password: the password requiring authentication, passed by user
+        :type password: bytes
+
+        :param saved: the password saved for the corresponding account, in
+                      the MCF Format as created by passlib
+
+        :returns: a Boolean confirmation of whether plaintext equals saved
+
+        Unlike Shiro:
+            - Yosai expects saved to be a str and never a binary Hash
+            - passlib determines the format and compatability
+        """
+        try:
+            return self.crypt_context.verify(password, saved)
+
+        except (AttributeError, TypeError):
+            raise PasswordMatchException('unrecognized attribute type')
+
 
 
 class PasswordVerifier(authc_abcs.CredentialsVerifier):

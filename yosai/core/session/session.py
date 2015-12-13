@@ -427,6 +427,10 @@ class ProxiedSession(session_abcs.Session):
     def attribute_keys(self):
         return self._delegate.attribute_keys
 
+    @property
+    def internal_attribute_keys(self):
+        return self._delegate.internal_attribute_keys
+
     def get_internal_attribute(self, key):
         return self._delegate.get_internal_attribute(key)
 
@@ -847,6 +851,10 @@ class SimpleSession(session_abcs.ValidatingSession,
         pass
 
     @classmethod
+    def set_attributes_schema(cls, schema):
+        cls.AttributesSchema = schema
+
+    @classmethod
     def serialization_schema(cls):
 
         class InternalSessionAttributesSchema(Schema):
@@ -909,7 +917,7 @@ class SimpleSessionFactory(session_abcs.SessionFactory):
 
     @classmethod
     def create_session(cls, session_context=None):
-        return SimpleSession(host=session_context.host)
+        return SimpleSession(host=getattr(session_context, 'host', None))
 
 
 class DelegatingSession(session_abcs.Session):

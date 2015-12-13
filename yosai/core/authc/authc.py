@@ -31,7 +31,6 @@ from yosai.core import (
     event_abcs,
     authc_abcs,
     serialize_abcs,
-    CryptContextFactory,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
     authc_settings,
@@ -296,109 +295,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     def __repr__(self):
         return "<DefaultAuthenticator(event_bus={0}, strategy={0})>".\
             format(self.event_bus, self.authentication_strategy)
-
-
-class AbstractAuthcService:
-    # this class is new to Yosai
-    def __init__(self):
-        # using default algorithm when generating crypt context:
-        self.crypt_context = CryptContextFactory(authc_settings).\
-            create_crypt_context()
-        self.private_salt = bytearray(authc_settings.private_salt, 'utf-8')
-
-    def clear_source(self, source):
-        try:
-            for index in range(len(source)):
-                source[index] = 0  # this becomes 0x00
-        except TypeError:
-            msg = 'Expected a bytearray source'
-            raise InvalidTokenPasswordException(msg)
-
-    def prepare_password(self, source):
-        """
-          A few differences between Shiro and Yosai regarding salts:
-          1) Shiro generates its own public salt whereas Yosai defers salt
-             creation to passlib
-          2) Shiro concatenates the PUBLIC SALT with its PRIVATE SALT (pepper).
-             Unlike Shiro, Yosai isn't peppering.
-          3) to minimize copies of the password in memory, 'source' is
-             cleared from memory the moment it is prepared
-
-        :type source: bytearray
-        """
-
-        if (isinstance(source, bytearray)):
-
-            # TBD:  combine with the private salt correctly with passlib's salt
-            credential = source
-
-            # the moment you no longer need a password, clear it because
-            # it is a lingering copy in memory -- prepared_pass remains
-            self.clear_source(source)
-
-        else:
-            msg = "could not prepare password -- must use bytearrays"
-            raise PreparePasswordException(msg)
-
-        return credential
-
-
-class DefaultHashService(AbstractAuthcService):
-
-    def __init__(self):
-        super().__init__()
-
-    def compute_hash(self, source):
-        """
-        note that Yosai omits HashRequest overhead used in Shiro
-        :returns: dict
-        """
-
-        # Shiro's SimpleHash functionality is replaced by that of passlib's
-        # CryptoContext API.  With that given, rather than return a SimpleHash
-        # object from this compute method, Yosai now simply returns a dict
-        result = {}
-        prepared_bytes = self.prepare_password(source)
-        result['ciphertext'] = bytearray(
-            self.crypt_context.encrypt(prepared_bytes), 'utf-8')
-        result['config'] = self.crypt_context.to_dict()
-
-        return result  # DG:  this design is unique to Yosai, not Shiro
-
-    def __repr__(self):
-        return "<{0}(crypt_context={1})>".\
-            format(self.__class__.__name__, self.crypt_context)
-
-    # DG: removed combine method
-
-# DG omitted HashRequest definition
-
-
-class DefaultPasswordService(AbstractAuthcService):
-
-    def __init__(self):
-        super().__init__()
-        # in Yosai, hash formatting is taken care of by passlib
-
-    def passwords_match(self, password, saved):
-        """
-        :param password: the password requiring authentication, passed by user
-        :type password: bytes
-
-        :param saved: the password saved for the corresponding account, in
-                      the MCF Format as created by passlib
-
-        :returns: a Boolean confirmation of whether plaintext equals saved
-
-        Unlike Shiro:
-            - Yosai expects saved to be a str and never a binary Hash
-            - passlib determines the format and compatability
-        """
-        try:
-            return self.crypt_context.verify(password, saved)
-
-        except (AttributeError, TypeError):
-            raise PasswordMatchException('unrecognized attribute type')
 
 
 class Credential(serialize_abcs.Serializable):

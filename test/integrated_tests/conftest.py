@@ -13,5 +13,6 @@ from .fixtures import (
     test_db,
     thedude_credentials,
     thedude_authz_info,
+    thedude_testpermissions,
     valid_username_password_token,
 )

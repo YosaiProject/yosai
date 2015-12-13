@@ -7,22 +7,14 @@ import pytest
 
 
 def test_is_permitted(permission_resolver, modular_realm_authorizer,
-                      thedude_authz_info, thedude_identifier):
+                      thedude_authz_info, thedude_identifier,
+                      thedude_testpermissions):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
     """
     mra = modular_realm_authorizer
-    perm1 = permission_resolver('money:write:bankcheck_19911109069')
-    perm2 = permission_resolver('money:withdrawal')
-    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm4 = permission_resolver('leatherduffelbag:access:theringer')
-
-    perms = [perm1, perm2, perm3, perm4]
-
-    expected_results = frozenset([(perm1, True), (perm2, False),
-                                  (perm3, True), (perm4, False)])
-
+    tp = thedude_testpermissions
     event_detected = None
 
     def event_listener(event):
@@ -30,39 +22,28 @@ def test_is_permitted(permission_resolver, modular_realm_authorizer,
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
-    results = mra.is_permitted(thedude_identifier, perms)
-    assert (expected_results == results and
+    results = mra.is_permitted(thedude_identifier, tp['perms'])
+    assert (tp['expected_results'] == results and
             event_detected.results == results)
 
 
 def test_is_permitted_collective(
         permission_resolver, modular_realm_authorizer, thedude_authz_info,
-        thedude_identifier):
+        thedude_identifier, thedude_testpermissions):
 
     mra = modular_realm_authorizer
-    perm1 = permission_resolver('money:write:bankcheck_19911109069')
-    perm2 = permission_resolver('money:withdrawal')
-    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm4 = permission_resolver('leatherduffelbag:access:theringer')
-
-    perms = [perm1, perm2, perm3, perm4]
-
-    assert ((mra.is_permitted_collective(thedude_identifier, perms, any) is True) and
-            (mra.is_permitted_collective(thedude_identifier, perms, all) is False))
+    tp = thedude_testpermissions
+    
+    assert ((mra.is_permitted_collective(thedude_identifier, tp['perms'], any) is True) and
+            (mra.is_permitted_collective(thedude_identifier, tp['perms'], all) is False))
 
 
 def test_check_permission_succeeds(
         permission_resolver, modular_realm_authorizer, thedude_authz_info,
-        thedude_identifier):
+        thedude_identifier, thedude_testpermissions):
 
     mra = modular_realm_authorizer
-    perm1 = permission_resolver('money:write:bankcheck_19911109069')
-    perm2 = permission_resolver('money:withdrawal')
-    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm4 = permission_resolver('leatherduffelbag:access:theringer')
-
-    perms = [perm1, perm2, perm3, perm4]
-
+    tp = thedude_testpermissions
     event_detected = None
 
     def event_listener(event):
@@ -70,21 +51,16 @@ def test_check_permission_succeeds(
         event_detected = event
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
-    assert (mra.check_permission(thedude_identifier, perms, any) is None and
-            event_detected.items == perms)
+    assert (mra.check_permission(thedude_identifier, tp['perms'], any) is None and
+            event_detected.items == tp['perms'])
 
 
 def test_check_permission_raises(
         permission_resolver, modular_realm_authorizer, thedude_authz_info,
-        thedude_identifier):
+        thedude_identifier, thedude_testpermissions):
 
     mra = modular_realm_authorizer
-    perm1 = permission_resolver('money:write:bankcheck_19911109069')
-    perm2 = permission_resolver('money:withdrawal')
-    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm4 = permission_resolver('leatherduffelbag:access:theringer')
-
-    perms = [perm1, perm2, perm3, perm4]
+    tp = thedude_testpermissions
 
     event_detected = None
 
@@ -94,8 +70,8 @@ def test_check_permission_raises(
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     with pytest.raises(UnauthorizedException):
-        mra.check_permission(thedude_identifier, perms, all)
-        assert event_detected.items == perms
+        mra.check_permission(thedude_identifier, tp['perms'], all)
+        assert event_detected.items == tp['perms']
 
 
 def test_has_role(modular_realm_authorizer, thedude_identifier):
@@ -166,17 +142,13 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
 
 
 def test_is_permitted_account_doesnt_exist(
-    modular_realm_authorizer, permission_resolver):
+        modular_realm_authorizer, permission_resolver):
     """
     when an account cannot be obtained from the account_store, all 
     permissions checked return False
     """
     mra = modular_realm_authorizer
-
-    unrecognized_identifier = \
-        SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                  identifiers={'jackietreehorn'})
-
+   
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
     perm2 = permission_resolver('money:withdrawal')
     perm3 = permission_resolver('leatherduffelbag:transport:theringer')
@@ -186,6 +158,10 @@ def test_is_permitted_account_doesnt_exist(
 
     expected_results = frozenset([(perm1, False), (perm2, False),
                                   (perm3, False), (perm4, False)])
+
+    unrecognized_identifier = \
+        SimpleIdentifierCollection(source_name='AccountStoreRealm',
+                                   identifiers={'jackietreehorn'})
 
     event_detected = None
 
