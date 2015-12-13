@@ -62,7 +62,7 @@ def test_authenticated_subject_is_permitted_collective(
 
 def test_authenticated_subject_check_permission_succeeds(
         thedude_authz_info, thedude_testpermissions, new_subject,
-        valid_username_password_token):
+        valid_username_password_token, thedude_credentials):
 
     tp = thedude_testpermissions
     event_detected = None
@@ -85,7 +85,7 @@ def test_authenticated_subject_check_permission_succeeds(
 
 def test_check_permission_raises(
         permission_resolver, thedude_authz_info, thedude_testpermissions,
-        new_subject, valid_username_password_token):
+        new_subject, valid_username_password_token, thedude_credentials):
 
     tp = thedude_testpermissions
 
@@ -105,7 +105,7 @@ def test_check_permission_raises(
         new_subject.logout()
 
 def test_has_role(valid_username_password_token, thedude_testroles,
-                  new_subject, thedude_authz_info):
+                  new_subject, thedude_authz_info, thedude_credentials):
 
     tr = thedude_testroles
     event_detected = None
@@ -125,7 +125,7 @@ def test_has_role(valid_username_password_token, thedude_testroles,
 
 def test_authenticated_subject_has_role_collective(
         thedude_authz_info, new_subject, thedude_testroles,
-        valid_username_password_token):
+        valid_username_password_token, thedude_credentials):
 
     tr = thedude_testroles
 
@@ -135,4 +135,45 @@ def test_authenticated_subject_has_role_collective(
             (new_subject.has_role_collective(tr['roles'], any) is True))
 
     new_subject.logout()
-    
+
+
+def test_check_role_succeeds(
+        thedude_authz_info, new_subject, thedude_testroles,
+        valid_username_password_token, thedude_credentials):
+
+    tr = thedude_testroles
+
+    event_detected = None
+
+    def event_listener(event):
+        nonlocal event_detected
+        event_detected = event
+    event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
+
+    new_subject.login(valid_username_password_token)
+    assert (new_subject.check_role(tr['roles'], any) is None and
+            event_detected.items == tr['roles'])
+
+    new_subject.logout()
+
+
+def test_check_role_raises(
+        thedude_authz_info, new_subject, thedude_testroles,
+        valid_username_password_token, thedude_credentials):
+
+    tr = thedude_testroles
+
+    event_detected = None
+
+    def event_listener(event):
+        nonlocal event_detected
+        event_detected = event
+    event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
+
+    new_subject.login(valid_username_password_token)
+    with pytest.raises(UnauthorizedException):
+        new_subject.check_role(tr['roles'], all)
+
+        assert event_detected.items == tr['roles']
+
+        new_subject.logout()
