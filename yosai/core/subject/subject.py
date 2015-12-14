@@ -781,11 +781,11 @@ class DelegatingSubject(subject_abcs.Subject):
             super().__init__(target_session)
             self.owner = owning_subject
 
-        def stop(self):
+        def stop(self, identifiers):
             """
             :raises InvalidSessionException:
             """
-            super().stop()
+            super().stop(identifiers)
             self.owner.session_stopped()
 
     def __repr__(self):

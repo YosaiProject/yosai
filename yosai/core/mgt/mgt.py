@@ -994,7 +994,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         self.before_logout(subject)
 
-        identifiers = subject.identifiers
+        identifiers = copy.copy(subject.identifiers)   # copy is new to yosai
         if (identifiers):
             msg = ("Logging out subject with primary identifier {0}".format(
                    identifiers.primary_identifier))
@@ -1009,17 +1009,18 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             # log debug here, including exc_info = ex
         finally:
             try:
-                self.stop_session(subject)
+                # passing identifiers is new to yosai:
+                self.stop_session(subject, identifiers)
             except Exception as ex2:
                 msg2 = ("Unable to cleanly stop Session for Subject. "
                         "Ignoring (logging out).", ex2)
                 print(msg2)
                 # log debug here, including exc_info = ex
 
-    def stop_session(self, subject):
+    def stop_session(self, subject, identifiers):
         session = subject.get_session(False)
         if (session):
-            session.stop()
+            session.stop(identifiers)
 
     def get_remembered_identity(self, subject_context):
         rmm = self.remember_me_manager

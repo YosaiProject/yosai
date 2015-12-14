@@ -420,8 +420,8 @@ class ProxiedSession(session_abcs.Session):
     def touch(self):
         self._delegate.touch()
 
-    def stop(self):
-        self._delegate.stop()
+    def stop(self, identifiers):
+        self._delegate.stop(identifiers)
 
     @property
     def attribute_keys(self):
@@ -492,7 +492,7 @@ class ImmutableProxiedSession(ProxiedSession):
     def touch(self):
         raise InvalidSessionException(self.exc_message)
 
-    def stop(self):
+    def stop(self, identifiers):
         raise InvalidSessionException(self.exc_message)
 
     def set_internal_attribute(self, key, value):
@@ -992,8 +992,8 @@ class DelegatingSession(session_abcs.Session):
     def touch(self):
         self.session_manager.touch(self.session_key)
 
-    def stop(self):
-        self.session_manager.stop(self.session_key)
+    def stop(self, identifiers):
+        self.session_manager.stop(self.session_key, identifiers)
 
     @property
     def internal_attribute_keys(self):
@@ -1443,7 +1443,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         # rather a DelegatingSession:
         return self.create_exposed_session(session, session_context)
 
-    def stop(self, session_key):
+    def stop(self, session_key, identifiers):
         session = self._lookup_required_session(session_key)
         try:
             msg = ("Stopping session with id [{0}]").format(session.session_id)
@@ -1453,8 +1453,11 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
             session.stop()
             self.session_handler.on_stop(session)
 
-            identifiers = session.get_internal_attribute('identifiers_session_key')
-            self.session_event_handler.notify_stop(identifiers)
+            idents = session.get_internal_attribute('identifiers_session_key')
+            if not idents:
+                idents = identifiers
+
+            self.session_event_handler.notify_stop(idents)
 
         except InvalidSessionException:
             raise
