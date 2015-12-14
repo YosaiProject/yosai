@@ -20,7 +20,7 @@ import pytz
 import datetime
 import time
 from abc import abstractmethod
-from marshmallow import Schema, fields, post_load, pre_load
+from marshmallow import Schema, fields, post_load, pre_load, pre_dump
 import collections
 
 from yosai.core import (
@@ -524,8 +524,8 @@ class SimpleSession(session_abcs.ValidatingSession,
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
     def __init__(self, host=None):
-        self._attributes = None
-        self._internal_attributes = None
+        self._attributes = {}
+        self._internal_attributes = {}
         self._is_expired = None
         self._session_id = None
 
@@ -858,17 +858,36 @@ class SimpleSession(session_abcs.ValidatingSession,
     def serialization_schema(cls):
 
         class InternalSessionAttributesSchema(Schema):
-            identifiers = fields.Nested(
+            identifiers_session_key = fields.Nested(
                 SimpleIdentifierCollection.serialization_schema(),
-                attribute='identifiers_session_key')
+                attribute='identifiers_session_key',
+                allow_none=False)
 
-            authenticated = fields.Boolean(
-                attribute='authenticated_session_key')
+            authenticated_session_key = fields.Boolean(
+                attribute='authenticated_session_key',
+                allow_none=False)
 
-            run_as_identifiers = fields.Nested(
+            run_as_identifiers_session_key = fields.Nested(
                 SimpleIdentifierCollection.serialization_schema(),
-                attribute='run_as_identifier_session_key',
-                many=True)
+                attribute='run_as_identifiers_session_key',
+                many=True,
+                allow_none=False)
+
+            @post_load
+            def make_internal_attributes(self, data):
+                try:
+                    raisk = 'run_as_identifiers_session_key'
+                    runas = data.get(raisk)
+                    if runas:
+                        que = collections.deque(runas)
+                        data[raisk] = que
+                except TypeError:
+                    msg = "Note:  run_as_identifiers_session_key attribute N/A."
+                    print(msg)
+                    # log debug here
+                    pass
+                return data
+
 
         class SerializationSchema(Schema):
             _session_id = fields.Str(allow_none=True)
@@ -888,19 +907,6 @@ class SimpleSession(session_abcs.ValidatingSession,
 
             _attributes = fields.Nested(cls.AttributesSchema,
                                         allow_none=True)
-
-            @pre_load
-            def convert_que(self, data):
-                try:
-                    if 'run_as_identifier_session_key' in data['_internal_attributes']:
-                        data['_internal_attributes']['run_as_identifier_session_key'] =\
-                            collections.deque(
-                            data['_internal_attributes']['run_as_identifier_session_key'])
-                except TypeError:
-                    msg = "Note:  run_as_identifier_session_key attribute N/A."
-                    print(msg)
-                    # log debug here
-                    pass
 
             @post_load
             def make_simple_session(self, data):

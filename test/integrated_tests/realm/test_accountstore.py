@@ -42,7 +42,7 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
                           (SimpleIdentifierCollection(source_name='AccountStoreRealm', identifiers={'anonymous'}),
                            "No account", "blabla", type(None))])
 def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
-                        capsys, account_store_realm, thedude_authz_info):
+                        capsys, account_store_realm, authz_info):
     """
     I) Obtains from account store, caches
     II) Obtains from cache

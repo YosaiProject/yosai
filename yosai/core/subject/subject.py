@@ -322,7 +322,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.session = None
 
         self.session_creation_enabled = session_creation_enabled
-        self.run_as_identifier_session_key = 'run_as_identifiers_session_key'
+        self.run_as_identifiers_session_key = 'run_as_identifiers_session_key'
 
     def decorate(self, session):
         return self.StoppingAwareProxiedSession(session, self)
@@ -369,9 +369,8 @@ class DelegatingSubject(subject_abcs.Subject):
     def identifiers(self):
         # expecting a List of IdentifierCollection objects:
         run_as_identifiers = self.get_run_as_identifiers_stack()
+
         if (not run_as_identifiers):
-            if not hasattr(self, '_identifiers'):
-                self._identifiers = None
             return self._identifiers
         else:
             return run_as_identifiers[0]
@@ -687,6 +686,9 @@ class DelegatingSubject(subject_abcs.Subject):
     #        return SubjectCallable(self, _able)
 
     def run_as(self, identifiers):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
         if (not self.has_identifiers):
             msg = ("This subject does not yet have an identity.  Assuming the "
                    "identity of another Subject is only allowed for Subjects "
@@ -702,6 +704,9 @@ class DelegatingSubject(subject_abcs.Subject):
         return bool(self.get_run_as_identifiers_stack())
 
     def get_previous_identifiers(self):
+        """
+        :returns: SimpleIdentifierCollection
+        """
         previous_identifiers = None
         stack = self.get_run_as_identifiers_stack()  # TBD:  must confirm logic
 
@@ -721,20 +726,17 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: an IdentifierCollection
         """
         session = self.get_session(False)
-        if session:
-            stack = collections.deque()
-            rapkey = session.get_internal_attribute(self.run_as_identifier_session_key)
-
-            if rapkey:  # don't insert None
-                stack.appendleft(rapkey)
-
-            return stack
-        return None
+        try:
+            return session.get_internal_attribute(
+                self.run_as_identifiers_session_key)
+        except AttributeError:
+            return None
 
     def clear_run_as_identities(self):
         session = self.get_session(False)
         if (session is not None):
-            session.remove_internal_attribute(self.run_as_identifier_session_key)
+            session.remove_internal_attribute(
+                self.run_as_identifiers_session_key)
 
     def push_identity(self, identifiers):
         """
@@ -751,9 +753,12 @@ class DelegatingSubject(subject_abcs.Subject):
 
         stack.appendleft(identifiers)
         session = self.get_session()
-        session.set_internal_attribute(self.run_as_identifier_session_key, stack)
+        session.set_internal_attribute(self.run_as_identifiers_session_key, stack)
 
     def pop_identity(self):
+        """
+        :returns: SimpleIdentifierCollection
+        """
         popped = None
         stack = self.get_run_as_identifiers_stack()
 
@@ -762,7 +767,7 @@ class DelegatingSubject(subject_abcs.Subject):
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()
-                session.set_internal_attribute(self.run_as_identifier_session_key, stack)
+                session.set_internal_attribute(self.run_as_identifiers_session_key, stack)
 
             else:
                 # stack is empty, remove it from the session:

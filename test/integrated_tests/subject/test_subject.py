@@ -28,7 +28,7 @@ def test_authenticated_subject_session_attribute_logout(
 
 def test_authenticated_subject_is_permitted(
         new_subject, valid_username_password_token,
-        thedude_credentials, thedude_authz_info, thedude_testpermissions):
+        thedude_credentials, authz_info, thedude_testpermissions):
 
     tp = thedude_testpermissions
 
@@ -45,7 +45,7 @@ def test_authenticated_subject_is_permitted(
 
 def test_authenticated_subject_is_permitted_collective(
         new_subject, valid_username_password_token,
-        thedude_credentials, thedude_authz_info, thedude_testpermissions):
+        thedude_credentials, authz_info, thedude_testpermissions):
 
     tp = thedude_testpermissions
 
@@ -61,7 +61,7 @@ def test_authenticated_subject_is_permitted_collective(
 
 
 def test_authenticated_subject_check_permission_succeeds(
-        thedude_authz_info, thedude_testpermissions, new_subject,
+        authz_info, thedude_testpermissions, new_subject,
         valid_username_password_token, thedude_credentials):
 
     tp = thedude_testpermissions
@@ -84,7 +84,7 @@ def test_authenticated_subject_check_permission_succeeds(
 
 
 def test_check_permission_raises(
-        permission_resolver, thedude_authz_info, thedude_testpermissions,
+        permission_resolver, authz_info, thedude_testpermissions,
         new_subject, valid_username_password_token, thedude_credentials):
 
     tp = thedude_testpermissions
@@ -105,7 +105,7 @@ def test_check_permission_raises(
         new_subject.logout()
 
 def test_has_role(valid_username_password_token, thedude_testroles,
-                  new_subject, thedude_authz_info, thedude_credentials):
+                  new_subject, authz_info, thedude_credentials):
 
     tr = thedude_testroles
     event_detected = None
@@ -124,7 +124,7 @@ def test_has_role(valid_username_password_token, thedude_testroles,
     new_subject.logout()
 
 def test_authenticated_subject_has_role_collective(
-        thedude_authz_info, new_subject, thedude_testroles,
+        authz_info, new_subject, thedude_testroles,
         valid_username_password_token, thedude_credentials):
 
     tr = thedude_testroles
@@ -138,7 +138,7 @@ def test_authenticated_subject_has_role_collective(
 
 
 def test_check_role_succeeds(
-        thedude_authz_info, new_subject, thedude_testroles,
+        authz_info, new_subject, thedude_testroles,
         valid_username_password_token, thedude_credentials):
 
     tr = thedude_testroles
@@ -158,7 +158,7 @@ def test_check_role_succeeds(
 
 
 def test_check_role_raises(
-        thedude_authz_info, new_subject, thedude_testroles,
+        authz_info, new_subject, thedude_testroles,
         valid_username_password_token, thedude_credentials):
 
     tr = thedude_testroles
@@ -177,3 +177,27 @@ def test_check_role_raises(
         assert event_detected.items == tr['roles']
 
         new_subject.logout()
+
+
+def test_run_as(new_subject, walter_identifier, jackie_identifier,
+                jackie, walter, thedude_credentials, thedude, authz_info,
+                jackie_testpermissions, walter_testpermissions,
+                valid_username_password_token):
+
+    jp = jackie_testpermissions
+    wp = walter_testpermissions
+
+    new_subject.login(valid_username_password_token)
+
+    print('\n\n^^^^^^^^^^^ ONE: subject.identifiers:' , new_subject.identifiers)
+
+    new_subject.run_as(jackie_identifier)
+    jackieresults = new_subject.is_permitted(jp['perms'])
+    assert jackieresults == jp['expected_results']
+
+    print('\n\n^^^^^^^^^^^ TWO: subject.identifiers:' , new_subject.identifiers)
+    new_subject.run_as(walter_identifier)
+    walterresults = new_subject.is_permitted(wp['perms'])
+    assert walterresults == wp['expected_results']
+
+    print('\n\n^^^^^^^^^^^ THREE: subject.identifiers:' , new_subject.identifiers)
