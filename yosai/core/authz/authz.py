@@ -194,7 +194,7 @@ class WildcardPermission(serialize_abcs.Serializable):
             @post_dump
             def convert_sets(self, data):
                 for attribute, value in data['parts'].items():
-                    data['parts'][attribute] = list(value)
+                    data['parts'][attribute] = [value]
                 return data
 
         return SerializationSchema
@@ -451,7 +451,7 @@ class DefaultPermission(WildcardPermission):
             @post_dump
             def convert_sets(self, data):
                 for attribute, value in data['parts'].items():
-                    data['parts'][attribute] = list(value)
+                    data['parts'][attribute] = [value]
                 return data
 
         return SerializationSchema
@@ -943,11 +943,6 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
                                    allow_none=True)
             _permissions = CollectionDict(fields.Nested(
                 DefaultPermission.serialization_schema()), allow_none=True)
-
-            # sets can't be serialized so convert to list
-            # @post_dump
-            # def convert_roles(self, data):
-            #     data['_roles'] = list(data['_roles'])
 
             @post_load
             def make_authz_info(self, data):

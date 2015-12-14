@@ -21,6 +21,7 @@ import copy
 from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
+    CacheInvalidator,
     Event,
     InvalidTokenPasswordException,
     LogManager,
@@ -156,6 +157,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         self._realms = None
         self._event_bus = None
         self._credential_resolver = None
+        self.cache_invalidator = CacheInvalidator()
 
     @property
     def event_bus(self):
@@ -164,6 +166,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     @event_bus.setter
     def event_bus(self, eventbus):
         self._event_bus = eventbus
+        self.cache_invalidator.event_bus = self._event_bus
 
     @property
     def realms(self):
@@ -176,6 +179,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         """
         self._realms = tuple(realm for realm in realms
                              if isinstance(realm, realm_abcs.AuthenticatingRealm))
+        self.cache_invalidator.realms = self._realms
 
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):

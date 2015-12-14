@@ -4,14 +4,14 @@ from yosai.core import (
 )
 
 
-def requires_permission(_permission_s, logical_operator=all):
+def requires_permission(permission_s, logical_operator=all):
     """
     Requires that the calling Subject be authorized to the extent that is
     required to satisfy the permission_s specified and the logical operation
     upon them.
 
-    :param permissions:   the permission(s) required
-    :type permissions:  a Str or List of Strings
+    :param permission_s:   the permission(s) required
+    :type permission_s:  a List of Strings or List of Permission instances
 
     :param logical_operator:  indicates whether all or at least one permission
                               is true (and, any)
@@ -28,8 +28,6 @@ def requires_permission(_permission_s, logical_operator=all):
     def outer_wrap(fn):
         @functools.wraps(fn)
         def inner_wrap(*args, **kwargs):
-
-            permission_s = list(_permission_s)  # in case it's a single
 
             subject = SecurityUtils.get_subject()
 
@@ -48,7 +46,7 @@ def requires_role(_roleid_s, logical_operator=all):
 
     :param roleid_s:   a collection of the role(s) required, specified by
                        identifiers (such as a role name)
-    :type roleid_s:  a Str or List of Strings
+    :type roleid_s:  a List of Strings
 
     :param logical_operator:  indicates whether all or at least one permission
                               is true (and, any)
@@ -64,11 +62,9 @@ def requires_role(_roleid_s, logical_operator=all):
         @functools.wraps(fn)
         def inner_wrap(*args, **kwargs):
 
-            roleid_s = list(_roleid_s)  # in case it's a single string
-
             subject = SecurityUtils.get_subject()
 
-            subject.check_role(roleid_s, logical_operator)
+            subject.check_role(_roleid_s, logical_operator)
 
             return fn(*args, **kwargs)
         return inner_wrap
