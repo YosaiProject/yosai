@@ -172,6 +172,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :param identifier: the identifier of a specific source, extracted from
                            the SimpleIdentifierCollection (identifiers)
         """
+        msg = "Clearing cached credentials for [{0}]".format(identifier)
+        print(msg)
+        # log info here
         self.cache_handler.delete('credentials', identifier)
 
     def clear_cached_authorization_info(self, identifier):
@@ -187,6 +190,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :param identifier: the identifier of a specific source, extracted from
                            the SimpleIdentifierCollection (identifiers)
         """
+        msg = "Clearing cached authz_info for [{0}]".format(identifier)
+        print(msg)
+        # log info here
         self.cache_handler.delete('authz_info', identifier)
 
     # --------------------------------------------------------------------------
