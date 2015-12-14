@@ -17,41 +17,11 @@ specific language governing permissions and limitations
 under the License.
 """
 
-update DefaultSecurityManager set_realms and apply_cache_manager methods to 
-use cache handlers rather than realms
-
-update the SubjectStore to use a cache handler, so to be consistent with
-how realms cache
-
-Interfaces have been defined in the Shiro 2.0 alpha yet have no
-corresponding concrete class implementation using them.  I presume this is 
-due to their discretionary nature and that their implementation is subject
-to change among the datastores used.  Requiring Concrete Implementations:
-   - Account
-   - AccountStore
-   - AccountCacheResolver
-   - AccountCacheKeyResolver
-   - CacheManager
-
-Porting annotations to python decorators
-
 refactoring shiro thread-based concurrency to an appropriate concurrency 
 solution in python
     - porting callables, runnables, etc (used in DelegatingSubject)
 
-add eventbus functionality to the ModularRealmAuthorizor, and inject the 
-eventbus from the DefaultSecurityManager into the MRA
-
-write unit tests for remaining /session/session_untested classes, and migrate
-the classes to session.py
-
-port-refactor /config/IniSecurityManagerFactory
-
-add versioning to Yosai
-
-add packaging to Yosai
-
-determine git workflow (rebase likely)
+add semantic versioning to Yosai
 
 add the "fingerprint" attribute wherever the host attribute is currently captured
 
@@ -91,12 +61,6 @@ interface with yosai settings
 porting functionality provided by servlet web-filter facility to pythonic decorators
 to be used by web frameworks
 
-consolidate authz.is_permitted and authz.has_role, using a generic get_results
-method that takes the private method to use (_is_permitted or _has_role) as an argument
-    - replace existing unit tests with new ones
-
-adopt Pyramid's scaffolding implementation
-
 tighten up who sets the resolver objects and where
  - there seems to be overlap between ModularRealmAuthorizer and DefaultSecurityManager
    with respects to injecting into realms
@@ -114,9 +78,6 @@ an expired session clears authorization and session cache
 
 a refreshed authorization cache is one that replaces an invalidated authorization cache
 and has a TTL that is in synch with the user's session
-
-add get_or_create_multi support in yosai_dpcache, yosai_alchemystore, and 
-within AccountStoreRealm
 
 make the ModularRealmAuthorizer a session listener, invalidating authz cache
 when a session expires
