@@ -194,7 +194,7 @@ class WildcardPermission(serialize_abcs.Serializable):
             @post_dump
             def convert_sets(self, data):
                 for attribute, value in data['parts'].items():
-                    data['parts'][attribute] = [value]
+                    data['parts'][attribute] = list(value)
                 return data
 
         return SerializationSchema
@@ -451,7 +451,7 @@ class DefaultPermission(WildcardPermission):
             @post_dump
             def convert_sets(self, data):
                 for attribute, value in data['parts'].items():
-                    data['parts'][attribute] = [value]
+                    data['parts'][attribute] = list(value)
                 return data
 
         return SerializationSchema
@@ -476,11 +476,11 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
     :type realms:  Tuple
     """
-    def __init__(self, realms=None):
+    def __init__(self):
         """
         :type realms: tuple
         """
-        self._realms = tuple()
+        self._realms = None
         self._event_bus = None
         # yosai omits resolver setting, leaving it to securitymanager instead
         # by default, yosai.core.does not support role -> permission resolution
@@ -729,9 +729,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                 realm_identifier = event.identifiers.from_source(realm.name)
                 if realm_identifier:
                     realm.clear_cached_authorization_info(realm_identifier)
-
-        self.event_bus.register(clear_cache, 'SESSION.EXPIRE')
-        self.event_bus.register(clear_cache, 'SESSION.STOP')
+        if self.event_bus:
+            self.event_bus.register(clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.register(clear_cache, 'SESSION.STOP')
 
     # notify_results is intended for audit trail
     def notify_results(self, identifiers, results):

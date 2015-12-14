@@ -276,7 +276,6 @@ from yosai.core.authz.authz import (
 
 from yosai.core.realm.realm import (
     AccountStoreRealm,
-    CacheInvalidator,
 )
 
 

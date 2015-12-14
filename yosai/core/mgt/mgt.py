@@ -433,8 +433,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def authenticator(self, authenticator):
         if authenticator:
             self._authenticator = authenticator
-            self._authenticator.realms = self.realms
             self.apply_event_bus(self._authenticator)
+            self._authenticator.realms = self.realms
 
         else:
             msg = "authenticator parameter must have a value"
@@ -448,8 +448,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def authorizer(self, authorizer):
         if authorizer:
             self._authorizer = authorizer
-            self._authorizer.realms = self.realms
             self.apply_event_bus(self._authorizer)
+            self._authorizer.realms = self.realms
         else:
             msg = "authorizer parameter must have a value"
             raise IllegalArgumentException(msg)

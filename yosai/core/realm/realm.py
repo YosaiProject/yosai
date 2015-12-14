@@ -272,10 +272,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = self.get_credentials(identifier)
 
         self.assert_credentials_match(authc_token, account)
+
+        # TBD:  clear immediately or keep for life of session:
         # at this point, authentication is confirmed, so clear
         # the cache of credentials (however, they should have a short ttl anyway)
-        self.clear_cached_credentials(identifier)
-        authc_token.clear()
+        # self.clear_cached_credentials(identifier)
+        # authc_token.clear()
 
         identifiers = SimpleIdentifierCollection(source_name=self.name,
                                                  identifier=account.account_id)

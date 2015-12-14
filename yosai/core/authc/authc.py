@@ -21,7 +21,6 @@ import copy
 from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
-    CacheInvalidator,
     Event,
     InvalidTokenPasswordException,
     LogManager,
@@ -157,7 +156,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         self._realms = None
         self._event_bus = None
         self._credential_resolver = None
-        self._cache_invalidator = None
 
     @property
     def event_bus(self):
@@ -166,7 +164,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     @event_bus.setter
     def event_bus(self, eventbus):
         self._event_bus = eventbus
-        self.cache_invalidator.event_bus = self._event_bus
 
     @property
     def cache_invalidator(self):
@@ -291,7 +288,9 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                 if realm_identifier:
                     realm.clear_cached_credentials(realm_identifier)
 
-        self.event_bus.register(clear_cache, 'SESSION.STOP')  # on logout
+        if self.event_bus:
+            self.event_bus.register(clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.register(clear_cache, 'SESSION.STOP')
 
     def notify_success(self, authc_token, account):
         try:

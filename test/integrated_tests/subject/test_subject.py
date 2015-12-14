@@ -196,3 +196,13 @@ def test_run_as(new_subject, walter_identifier, jackie_identifier,
     new_subject.run_as(walter_identifier)
     walterresults = new_subject.is_permitted(wp['perms'])
     assert walterresults == wp['expected_results']
+
+
+def test_session_stop_clears_cache(
+    new_subject, thedude_credentials, thedude, authz_info,
+        valid_username_password_token, thedude_testpermissions):
+
+    tp = thedude_testpermissions
+
+    new_subject.login(valid_username_password_token)  # caches credentials
+    new_subject.is_permitted(tp['perms'])  # caches authz_info

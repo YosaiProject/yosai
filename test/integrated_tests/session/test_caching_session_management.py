@@ -28,9 +28,9 @@ def test_create_cache_session(session_store, session, cache_handler):
         - session.__eq__
     """
     css = session_store
-    sic = SimpleIdentifierCollection(source_name='AccountStoreRealm', 
+    sic = SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                      identifier='user12345678')
-    session.set_internal_attribute('identifiers_session_key', sic) 
+    session.set_internal_attribute('identifiers_session_key', sic)
     sessionid = css.create(session)
 
     cached_session = css.read(sessionid)
@@ -58,9 +58,9 @@ def test_delete_cached_session(session_store, session, cache_handler):
 
     css = session_store
 
-    sic = SimpleIdentifierCollection(source_name='AccountStoreRealm', 
+    sic = SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                      identifier='user12345678')
-    session.set_internal_attribute('identifiers_session_key', sic) 
+    session.set_internal_attribute('identifiers_session_key', sic)
     sessionid = css.create(session)
 
     css.delete(session)
