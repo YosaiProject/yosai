@@ -505,6 +505,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         # this eliminates the need for an authorizing_realms attribute:
         self._realms = tuple(realm for realm in realms
                              if isinstance(realm, realm_abcs.AuthorizingRealm))
+        self.register_cache_clear_listener()
 
     def assert_realms_configured(self):
         if (not self.realms):
@@ -717,6 +718,20 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # --------------------------------------------------------------------------
     # Event Communication
     # --------------------------------------------------------------------------
+
+    def register_cache_clear_listener(self):
+
+        realms = self.realms
+
+        def clear_cache(event):
+            nonlocal realms
+            for realm in realms:
+                realm_identifier = event.identifiers.from_source(realm.name)
+                if realm_identifier:
+                    realm.clear_cached_authorization_info(realm_identifier)
+
+        self.event_bus.register(clear_cache, 'SESSION.EXPIRE')
+        self.event_bus.register(clear_cache, 'SESSION.STOP')
 
     # notify_results is intended for audit trail
     def notify_results(self, identifiers, results):

@@ -38,7 +38,7 @@ def requires_permission(permission_s, logical_operator=all):
     return outer_wrap
 
 
-def requires_role(_roleid_s, logical_operator=all):
+def requires_role(roleid_s, logical_operator=all):
     """
     Requires that the calling Subject be authorized to the extent that is
     required to satisfy the roleid_s specified and the logical operation
@@ -64,7 +64,7 @@ def requires_role(_roleid_s, logical_operator=all):
 
             subject = SecurityUtils.get_subject()
 
-            subject.check_role(_roleid_s, logical_operator)
+            subject.check_role(roleid_s, logical_operator)
 
             return fn(*args, **kwargs)
         return inner_wrap

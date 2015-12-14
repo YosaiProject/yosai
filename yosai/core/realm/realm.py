@@ -396,34 +396,3 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 yield (roleid, False)
         else:
             yield from self.role_verifier.has_role(account.authz_info, roleid_s)
-
-
-class CacheInvalidator(event_abcs.EventBusAware):
-
-    def __init__(self):
-        self._event_bus = None  # setter injected
-        self.realms = None  # setter injected
-
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        self._event_bus = eventbus
-
-    def subscribe(self, topic=None, realms=None):
-        """
-        :param topics:  the event subscription topics to subscribe to
-        :type topics: tuple
-        """
-        realms = self.realms
-
-        def clear_cache(event):
-            nonlocal realms
-            for realm in realms:
-                realm_identifier = event.identifiers.from_source(realm.name)
-                if realm_identifier:
-                    realm.do_clear_cache(realm_identifier)
-
-        self.event_bus.register(clear_cache, topic)

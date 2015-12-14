@@ -157,7 +157,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         self._realms = None
         self._event_bus = None
         self._credential_resolver = None
-        self.cache_invalidator = CacheInvalidator()
+        self._cache_invalidator = None
 
     @property
     def event_bus(self):
@@ -167,6 +167,14 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     def event_bus(self, eventbus):
         self._event_bus = eventbus
         self.cache_invalidator.event_bus = self._event_bus
+
+    @property
+    def cache_invalidator(self):
+        return self._cache_invalidator
+
+    @cache_invalidator.setter
+    def cache_invalidator(self, cacheinvalidator):
+        self._cache_invalidator = cacheinvalidator
 
     @property
     def realms(self):
@@ -179,7 +187,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         """
         self._realms = tuple(realm for realm in realms
                              if isinstance(realm, realm_abcs.AuthenticatingRealm))
-        self.cache_invalidator.realms = self._realms
+        self.register_cache_clear_listener()
 
     def authenticate_single_realm_account(self, realm, authc_token):
         if (not realm.supports(authc_token)):
@@ -272,17 +280,18 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     # Event Communication
     # --------------------------------------------------------------------------
 
-    def register_logout_listener(self):
+    def register_cache_clear_listener(self):
+
         realms = self.realms
 
-        def clear_authc_cache(event):
+        def clear_cache(event):
             nonlocal realms
             for realm in realms:
                 realm_identifier = event.identifiers.from_source(realm.name)
                 if realm_identifier:
                     realm.clear_cached_credentials(realm_identifier)
 
-        self.event_bus.register(clear_authc_cache, 'USER.LOGOUT')
+        self.event_bus.register(clear_cache, 'SESSION.STOP')  # on logout
 
     def notify_success(self, authc_token, account):
         try:
