@@ -33,10 +33,12 @@ from yosai.core import(
     DefaultSubjectFactory,
     DefaultSubjectStore,
     DeleteSubjectException,
+    Event,
     IllegalArgumentException,
     IndexedAuthorizationInfo,
     InvalidSessionException,
     LogManager,
+    LogoutEventException,
     ModularRealmAuthorizer,
     PermissionResolver,
     RoleResolver,
@@ -998,9 +1000,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                    identifiers.primary_identifier))
             print(msg)
             # log debug here
-            authc = self.authenticator
-            if (isinstance(authc, authc_abcs.LogoutAware)):
-                authc.on_logout(identifiers)
+
+            # new to yosai, publishes to event_bus:
+            self.notify_logout(identifiers)
 
         try:
             self.delete(subject)
@@ -1034,3 +1036,23 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 print(msg)
                 # log warn here , including exc_info = ex
         return None
+
+    def notify_logout(self, identifiers):
+        """
+        Triggers cache clearing operation(s).
+
+        Currently, notify_logout event will clear authentication cache but not
+        authorization cache.  Session expiration is called at logout, and session
+        expiration transmits a session expiration event.  The session expire
+        event triggers authorization info cache clear.  Therefore, logout event
+        listening is unecessary for clearing authorization info as doing so
+        would be redundant.
+        """
+        try:
+            event = Event(source=self.__class__.__name__,
+                          event_topic='USER.LOGOUT',
+                          identifiers=identifiers)
+            self.event_bus.publish(event.event_topic, event=event)
+        except AttributeError:
+            msg = "Could not publish USER.LOGOUT event"
+            raise LogoutEventException(msg)

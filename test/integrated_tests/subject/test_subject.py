@@ -189,15 +189,10 @@ def test_run_as(new_subject, walter_identifier, jackie_identifier,
 
     new_subject.login(valid_username_password_token)
 
-    print('\n\n^^^^^^^^^^^ ONE: subject.identifiers:' , new_subject.identifiers)
-
     new_subject.run_as(jackie_identifier)
     jackieresults = new_subject.is_permitted(jp['perms'])
     assert jackieresults == jp['expected_results']
 
-    print('\n\n^^^^^^^^^^^ TWO: subject.identifiers:' , new_subject.identifiers)
     new_subject.run_as(walter_identifier)
     walterresults = new_subject.is_permitted(wp['perms'])
     assert walterresults == wp['expected_results']
-
-    print('\n\n^^^^^^^^^^^ THREE: subject.identifiers:' , new_subject.identifiers)

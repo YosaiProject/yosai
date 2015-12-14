@@ -36,7 +36,7 @@ class IdentifierMismatchException(YosaiException):
 class IllegalArgumentException(YosaiException):
     """
     When None is passed as an argument, it is considered a more extreme
-    issue than one where an argument of an unexpected type is passed, raising 
+    issue than one where an argument of an unexpected type is passed, raising
     an InvalidArgumentException instead.
     """
     pass
@@ -273,9 +273,12 @@ class AuthenticationEventException(EventException):
     pass
 
 
-class SessionEventException(EventException):
+class LogoutEventException(EventException):
     pass
 
+
+class SessionEventException(EventException):
+    pass
 
 
 # ---------------------------------------------------------------------------

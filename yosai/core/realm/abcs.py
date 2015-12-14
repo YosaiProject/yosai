@@ -102,6 +102,9 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
     def assert_credentials_match(self, authc_token, account):
         pass
 
+    @abstractmethod
+    def clear_cached_credentials(self, identifiers):
+        pass
 
 # new to yosai.core.
 class AuthorizingRealm(Realm):
@@ -145,6 +148,10 @@ class AuthorizingRealm(Realm):
         """
         :type identifiers:  SimpleRealmCollection
         """
+        pass
+
+    @abstractmethod
+    def clear_cached_authorization_info(self, identifiers):
         pass
 
     # By default, Yosai does not support resolution of Role to Permission:

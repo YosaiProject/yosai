@@ -157,7 +157,7 @@ Cache Invalidator
 -------------------
 EventListener
         - implements a SessionEventListener interface
-        - invalidates cached authorization_info for expired sessions
+        - invalidates cached authorization_info for expired and stopped sessions
             - remove the clear cache features from accountstorerealm
 
 StaleAuthzInfoListener

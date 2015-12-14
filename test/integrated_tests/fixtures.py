@@ -65,7 +65,7 @@ def alchemy_store():
 def account_store_realm(cache_handler, alchemy_store, permission_resolver,
                         role_resolver, authz_info_resolver, credential_resolver):
 
-    asr = AccountStoreRealm()
+    asr = AccountStoreRealm(name='AccountStoreRealm')
 
     asr.cache_handler = cache_handler
     asr.account_store = alchemy_store
@@ -85,7 +85,7 @@ def account_store_realm(cache_handler, alchemy_store, permission_resolver,
 @pytest.fixture(scope='module')
 def thedude_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                      identifiers={'thedude'})
+                                      identifier='thedude')
 
 @pytest.fixture(scope='module')
 def thedude(test_db, cache_handler, request, thedude_identifier):
@@ -103,7 +103,7 @@ def thedude(test_db, cache_handler, request, thedude_identifier):
 @pytest.fixture(scope='module')
 def jackie_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                      identifiers={'jackie'})
+                                      identifier='jackie')
 
 
 @pytest.fixture(scope='module')
@@ -122,7 +122,7 @@ def jackie(test_db, cache_handler, request, jackie_identifier):
 @pytest.fixture(scope='module')
 def walter_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                      identifiers={'walter'})
+                                      identifier='walter')
 
 
 @pytest.fixture(scope='module')

@@ -76,6 +76,7 @@ from .exceptions import (
     InvalidSerializationFormatException,
     InvalidTokenPasswordException,
     LockedAccountException,
+    LogoutEventException,
     MisconfiguredException,
     MissingCredentialsException,
     MissingHashAlgorithmException,

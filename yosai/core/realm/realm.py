@@ -54,11 +54,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             - as of shiro v2 alpha rev1693638, shiro doesn't (yet)
     """
 
-    def __init__(self, name=None):
-        #  DG:  this needs to be updated so that positional arguments
-        #       are used to construct the object rather than mutator methods
-
-        self.name = name  # should be named during yosai initialization
+    def __init__(self, name):
+        self.name = name
         self._account_store = None
         self._cache_handler = None
 
@@ -153,29 +150,31 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def role_verifier(self, verifier):
         self._role_verifier = verifier
 
-    def do_clear_cache(self, identifiers):
+    def do_clear_cache(self, identifier):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :param identifier: the identifier of a specific source, extracted from
+                           the SimpleIdentifierCollection (identifiers)
         """
-        msg = "Clearing cache for: " + str(identifiers)
+        msg = "Clearing cache for: " + str(identifier)
         print(msg)
         # log info here
 
-        self.clear_cached_credentials(identifiers)
-        self.clear_cached_authorization_info(identifiers)
+        self.clear_cached_credentials(identifier)
+        self.clear_cached_authorization_info(identifier)
 
-    def clear_cached_credentials(self, identifiers):
+    def clear_cached_credentials(self, identifier):
         """
         When cached credentials are no longer needed, they can be manually
-        cleared with this method.  However, account credentials should be
+        cleared with this method.  However, account credentials may be
         cached with a short expiration time (TTL), making the manual clearing
         of cached credentials an alternative use case.
 
-        :type identifiers:  SimpleIdentifierCollection
+        :param identifier: the identifier of a specific source, extracted from
+                           the SimpleIdentifierCollection (identifiers)
         """
-        self.cache_handler.delete('credentials', identifiers)
+        self.cache_handler.delete('credentials', identifier)
 
-    def clear_cached_authorization_info(self, identifiers):
+    def clear_cached_authorization_info(self, identifier):
         """
         This process prevents stale authorization data from being used.
         If any authorization data for an account is changed at runtime, such as
@@ -185,9 +184,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         get_authorization_info(PrincipalCollection) will acquire the account's
         fresh authorization data, which is cached for efficient re-use.
 
-        :type identifiers:  SimpleIdentifierCollection
+        :param identifier: the identifier of a specific source, extracted from
+                           the SimpleIdentifierCollection (identifiers)
         """
-        self.cache_handler.delete('authz_info', identifiers)
+        self.cache_handler.delete('authz_info', identifier)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -271,8 +271,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self.clear_cached_credentials(identifier)
         authc_token.clear()
 
-        identifiers = SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                                 identifiers={account.account_id})
+        identifiers = SimpleIdentifierCollection(source_name=self.name,
+                                                 identifier=account.account_id)
 
         # new to yosai: until a better approach is found, is the overriding /
         # enrichment of the account_id attribute with a SIC
@@ -305,8 +305,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
-        # the following is subject to change: (TBD)
-        identifier = next(iter(identifiers.from_source('AccountStoreRealm')))
+        identifier = identifiers.from_source(self.name)
 
         try:
             def get_stored_authz_info(self):

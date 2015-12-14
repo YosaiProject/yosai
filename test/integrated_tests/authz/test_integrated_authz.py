@@ -162,7 +162,7 @@ def test_is_permitted_account_doesnt_exist(
 
     unrecognized_identifier = \
         SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                   identifiers={'jackietreehorn'})
+                                   identifier='jackietreehorn')
 
     event_detected = None
 

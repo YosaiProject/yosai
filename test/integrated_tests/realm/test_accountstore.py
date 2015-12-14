@@ -33,13 +33,13 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
 
 
 @pytest.mark.parametrize('identifiers, expected_in, expected_out, expected_class',
-                         [(SimpleIdentifierCollection(source_name='AccountStoreRealm', identifiers={'thedude'}),
+                         [(SimpleIdentifierCollection(source_name='AccountStoreRealm', identifier='thedude'),
                            "Could not obtain cached", "No account",
                            Account),
-                          (SimpleIdentifierCollection(source_name='AccountStoreRealm', identifiers={'thedude'}),
+                          (SimpleIdentifierCollection(source_name='AccountStoreRealm', identifier='thedude'),
                            "get cached", "Could not obtain cached",
                            Account),
-                          (SimpleIdentifierCollection(source_name='AccountStoreRealm', identifiers={'anonymous'}),
+                          (SimpleIdentifierCollection(source_name='AccountStoreRealm', identifier='anonymous'),
                            "No account", "blabla", type(None))])
 def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
                         capsys, account_store_realm, authz_info):

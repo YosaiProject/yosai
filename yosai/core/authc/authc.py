@@ -268,6 +268,18 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     # Event Communication
     # --------------------------------------------------------------------------
 
+    def register_logout_listener(self):
+        realms = self.realms
+
+        def clear_authc_cache(event):
+            nonlocal realms
+            for realm in realms:
+                realm_identifier = event.identifiers.from_source(realm.name)
+                if realm_identifier:
+                    realm.clear_cached_credentials(realm_identifier)
+
+        self.event_bus.register(clear_authc_cache, 'USER.LOGOUT')
+
     def notify_success(self, authc_token, account):
         try:
             event = Event(source=self.__class__.__name__,
