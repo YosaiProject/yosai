@@ -55,6 +55,7 @@ from .exceptions import (
     EventBusSubscriptionException,
     EventBusTopicException,
     EventException,
+    EventRegistrationException,
     ExecutionException,
     ExcessiveAttemptsException,
     ExpiredCredentialsException,

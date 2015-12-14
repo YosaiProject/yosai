@@ -1088,40 +1088,40 @@ class SessionEventHandler(event_abcs.EventBusAware):
     def event_bus(self, event_bus):
         self._event_bus = event_bus
 
-    def notify_start(self, session):
+    def notify_start(self, identifiers):
         """
-        :param session:  a mutable Session
+        :type identifiers:  SimpleIdentifierCollection
         """
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.START',
-                          results=session)
+                          results=identifiers)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish SESSION.START event"
             raise SessionEventException(msg)
 
-    def notify_stop(self, immutable_session):
+    def notify_stop(self, identifiers):
         """
-        :type session:  ImmutableProxiedSession
+        :type identifiers:  SimpleIdentifierCollection
         """
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.STOP',
-                          results=immutable_session)
-            self.event_bus.publish(event.event_topic, event=event)
+                          results=identifiers)
+            self.event_bus.publish('SESSION.STOP', event=event)
         except AttributeError:
             msg = "Could not publish SESSION.STOP event"
             raise SessionEventException(msg)
 
-    def notify_expiration(self, immutable_session):
+    def notify_expiration(self, identifiers):
         """
-        :type session:  ImmutableProxiedSession
+        :type identifiers:  SimpleIdentifierCollection
         """
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.EXPIRE',
-                          results=immutable_session)
+                          results=identifiers)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish SESSION.EXPIRE event"
@@ -1339,9 +1339,7 @@ class SessionHandler:
         if (self.delete_invalid_sessions):
             self.delete(session)
 
-    # DG:  not clear of any use case for this.. -- TBD (invalidation maybe?)
     def on_invalidation(self, session, ise, session_key):
-
         # session exception hierarchy:  invalid -> stopped -> expired
         if (isinstance(ise, ExpiredSessionException)):
             self.on_expiration(session, ise, session_key)
@@ -1353,8 +1351,8 @@ class SessionHandler:
 
         try:
             self.on_stop(session)
-            immutable_session = self.before_invalid_notification(session)
-            self.session_event_handler.notify_stop(immutable_session)
+            identifiers = session.get_internal_attribute('identifiers_session_key')
+            self.session_event_handler.notify_stop(identifiers)
         except:
             raise
         # DG:  this results in a redundant delete operation (from shiro):
@@ -1455,10 +1453,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
             session.stop()
             self.session_handler.on_stop(session)
 
-            immutable_session = \
-                self.session_handler.before_invalid_notification(session)
-
-            self.session_event_handler.notify_stop(immutable_session)
+            identifiers = session.get_internal_attribute('identifiers_session_key')
+            self.session_event_handler.notify_stop(identifiers)
 
         except InvalidSessionException:
             raise

@@ -73,6 +73,7 @@ class Event:
     def __repr__(self):
         return "Event({payload})".format(payload=self.__dict__)
 
+
 class DefaultEventBus(event_abcs.EventBus):
     """
     Yosai's EventBus is a proxy to pypubsub.  Its API is unique to Yosai,
@@ -90,7 +91,6 @@ class DefaultEventBus(event_abcs.EventBus):
         # self._event_bus.addTopicDefnProvider( kwargs_topics, pub.TOPIC_TREE_FROM_CLASS )
 
     def is_registered(self, listener, topic_name):
-
         try:
             return self._event_bus.isSubscribed(listener, topic_name)
         except TopicNameError:
@@ -198,15 +198,19 @@ class DefaultEventBus(event_abcs.EventBus):
 class EventLogger:
     """ monitors and logs all event traffic over pypubsub """
 
-    def __init__(self):
-        self._event_bus = None
+    def __init__(self, event_bus):
+        self._event_bus = event_bus
         self.subscribe_to_all_topics()
 
     def subscribe_to_all_topics(self):
-        self._event_bus.subscribe(self.log_event, self._event_bus.ALL_TOPICS)
+        self._event_bus.register(self.log_event, pub.ALL_TOPICS)
 
     def log_event(topicObj=pub.AUTO_TOPIC, **kwargs):
         pass  # define later, using structlog if possible
 
+
+def snoop(topicObj=pub.AUTO_TOPIC, **mesgData):
+    print('\n*>*> topic "%s": %s' % (topicObj.getName(), mesgData))
+pub.subscribe(snoop, pub.ALL_TOPICS)
 
 event_bus = DefaultEventBus()  # pseudo-singleton

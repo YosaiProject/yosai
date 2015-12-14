@@ -197,12 +197,22 @@ def test_run_as(new_subject, walter_identifier, jackie_identifier,
     walterresults = new_subject.is_permitted(wp['perms'])
     assert walterresults == wp['expected_results']
 
+    new_subject.logout()
 
-def test_session_stop_clears_cache(
-    new_subject, thedude_credentials, thedude, authz_info,
-        valid_username_password_token, thedude_testpermissions):
+
+def test_session_logout_clears_cache(
+    new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
+        valid_username_password_token, thedude_testpermissions, capsys):
 
     tp = thedude_testpermissions
 
     new_subject.login(valid_username_password_token)  # caches credentials
     new_subject.is_permitted(tp['perms'])  # caches authz_info
+
+    session = new_subject.get_session()
+    session.stop()
+
+    out, err = capsys.readouterr()
+    
+    assert ('Clearing cached credentials for [thedude]' in out and
+            'Clearing cached authz_info for [thedude]' in out)

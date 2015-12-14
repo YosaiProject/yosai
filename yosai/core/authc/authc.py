@@ -277,20 +277,18 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     # Event Communication
     # --------------------------------------------------------------------------
 
+    def clear_cache(self, event=None):
+        for realm in self.realms:
+            realm_identifier = event.results.from_source(realm.name)
+            if realm_identifier:
+                realm.clear_cached_credentials(realm_identifier)
+
     def register_cache_clear_listener(self):
-
-        realms = self.realms
-
-        def clear_cache(event):
-            nonlocal realms
-            for realm in realms:
-                realm_identifier = event.identifiers.from_source(realm.name)
-                if realm_identifier:
-                    realm.clear_cached_credentials(realm_identifier)
-
         if self.event_bus:
-            self.event_bus.register(clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.register(clear_cache, 'SESSION.STOP')
+            self.event_bus.register(self.clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.register(self.clear_cache, 'SESSION.STOP')
+            self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
 
     def notify_success(self, authc_token, account):
         try:

@@ -281,6 +281,9 @@ class SessionEventException(EventException):
     pass
 
 
+class EventRegistrationException(EventException):
+    pass
+
 # ---------------------------------------------------------------------------
 # ---- Realm Exceptions
 # ---------------------------------------------------------------------------
