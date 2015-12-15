@@ -180,10 +180,10 @@ def test_check_role_raises(
         new_subject.logout()
 
 
-def test_run_as(new_subject, walter_identifier, jackie_identifier,
-                jackie, walter, thedude_credentials, thedude, authz_info,
-                jackie_testpermissions, walter_testpermissions,
-                valid_username_password_token):
+def test_run_as_pop(new_subject, walter_identifier, jackie_identifier,
+                    jackie, walter, thedude_credentials, thedude, authz_info,
+                    jackie_testpermissions, walter_testpermissions,
+                    valid_username_password_token):
 
     jp = jackie_testpermissions
     wp = walter_testpermissions
@@ -197,6 +197,9 @@ def test_run_as(new_subject, walter_identifier, jackie_identifier,
     new_subject.run_as(walter_identifier)
     walterresults = new_subject.is_permitted(wp['perms'])
     assert walterresults == wp['expected_results']
+
+    new_subject.pop_identity()
+    assert new_subject.identifiers == jackie_identifier
 
     new_subject.logout()
 
@@ -236,6 +239,17 @@ def test_session_stop_clears_cache(
             'Clearing cached authz_info for [thedude]' in out)
 
 
+def test_login_clears_cache(
+    new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
+        valid_username_password_token, capsys):
+
+    new_subject.login(valid_username_password_token)  # caches credentials
+
+    out, err = capsys.readouterr()
+    print(out)
+    assert 'Clearing cached authz_info for [thedude]' in out
+
+
 def test_session_expiration_clears_cache(
     new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
         valid_username_password_token, thedude_testpermissions, capsys,
@@ -251,14 +265,13 @@ def test_session_expiration_clears_cache(
 
     twenty_ago = datetime.timedelta(minutes=30)
     print('\n\n---------> old session last access time: ', session.last_access_time)
-    session.last_access_time = session.last_access_time - twenty_ago 
+    session.last_access_time = session.last_access_time - twenty_ago
     print('\n\n-----------> new session last access time: ', session.last_access_time)
     cache_handler.set('session', session.session_id, session)
 
     session = new_subject.get_session()
-    
+
     out, err = capsys.readouterr()
 
     assert ('Clearing cached credentials for [thedude]' in out and
             'Clearing cached authz_info for [thedude]' in out)
-

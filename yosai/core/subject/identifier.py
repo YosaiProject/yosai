@@ -53,7 +53,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         :type source_name: String
         :type identifier_collection: a SimpleIdentifierCollection
         """
-        self.source_identifiers = defaultdict(set)
+        self.source_identifiers = {}
         self._primary_identifier = None
 
         if identifier_collection:
@@ -77,9 +77,8 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                 print(msg)
                 # log warning here
                 return None
-            else:
-                self._primary_identifier = primary_identifier
-                return primary_identifier
+            self._primary_identifier = primary_identifier
+            return primary_identifier
         return self._primary_identifier
 
     # there is no primary_identifier setter because it should not be manually set
@@ -142,10 +141,12 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
     def __repr__(self):
         keyvals = ','.join(str(key) + '=' + str(value) for (key, value) in
                            self.source_identifiers.items())
-        return "SimpleIdentifierCollection(" + keyvals + ")"
+        return "SimpleIdentifierCollection({0}, primary_identifier={1})".format(
+                self.source_identifiers, self.primary_identifier)
 
     @classmethod
     def serialization_schema(cls):
+
         """
         Note about serialization
         -------------------------
@@ -156,7 +157,8 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         consisting of the actual realms(sources) used.
         """
         class SerializationSchema(Schema):
-            source_identifiers = fields.Dict()
+            source_identifiers = fields.Dict(allow_none=True)
+            _primary_identifier = fields.String(allow_none=True)
 
             @post_load
             def make_authz_info(self, data):

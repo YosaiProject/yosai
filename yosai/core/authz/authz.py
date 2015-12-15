@@ -730,8 +730,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
             self.event_bus.register(self.clear_cache, 'SESSION.EXPIRE')
             self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.register(self.clear_cache, 'SESSION.START')
-            self.event_bus.is_registered(self.clear_cache, 'SESSION.START')
+            self.event_bus.register(self.clear_cache, 'AUTHENTICATION.SUCCEEDED')
+            self.event_bus.is_registered(self.clear_cache, 'AUTHENTICATION.SUCCEEDED')
 
     # notify_results is intended for audit trail
     def notify_results(self, identifiers, results):

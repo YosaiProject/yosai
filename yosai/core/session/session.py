@@ -1088,14 +1088,14 @@ class SessionEventHandler(event_abcs.EventBusAware):
     def event_bus(self, event_bus):
         self._event_bus = event_bus
 
-    def notify_start(self, identifiers):
+    def notify_start(self, session):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type session:  SimpleSession
         """
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.START',
-                          results=identifiers)
+                          results=session)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish SESSION.START event"
@@ -1437,7 +1437,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         session = self._create_session(session_context)
 
         self.session_handler.on_start(session, session_context)
-        self.session_event_handler.notify_start(session)  # a SimpleSession
+
+        self.session_event_handler.notify_start(session)
 
         # Don't expose the EIS-tier Session object to the client-tier, but
         # rather a DelegatingSession:

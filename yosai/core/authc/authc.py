@@ -256,7 +256,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                     format(authc_token, account))
             print(msg5)
 
-            self.notify_success(authc_token, account)
+            self.notify_success(account)
 
             return account
 
@@ -290,12 +290,11 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
             self.event_bus.register(self.clear_cache, 'SESSION.STOP')
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
 
-    def notify_success(self, authc_token, account):
+    def notify_success(self, account):
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHENTICATION.SUCCEEDED',
-                          authc_token=authc_token,
-                          account=account)
+                          results=account.account_id)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"

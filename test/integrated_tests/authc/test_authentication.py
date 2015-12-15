@@ -15,14 +15,14 @@ def test_authentication_using_accountstore_success(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(event=None):
         nonlocal event_detected
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     account = da.authenticate_account(valid_username_password_token)
     out, err = capsys.readouterr()
-    assert (event_detected.account == account and
+    assert (event_detected.results == account.account_id and
             ("Could not obtain cached" in out and "No account" not in out))
 
 
@@ -33,7 +33,7 @@ def test_authentication_using_cache_success(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(event=None):
         nonlocal event_detected
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
@@ -44,7 +44,7 @@ def test_authentication_using_cache_success(
         account = da.authenticate_account(valid_username_password_token)
         out, err = capsys.readouterr()
 
-        assert (event_detected.account == account and
+        assert (event_detected.results == account.account_id and
                 ("Could not obtain cached" not in out) and
                 account.account_id == valid_username_password_token.identifier)
 
@@ -56,7 +56,7 @@ def test_authentication_using_accountstore_pw_failure(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(event=None):
         nonlocal event_detected
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
@@ -65,7 +65,7 @@ def test_authentication_using_accountstore_pw_failure(
         account = da.authenticate_account(invalid_username_password_token)
         out, err = capsys.readouterr()
 
-        assert (event_detected.account == account and
+        assert (event_detected.results == account.account_id and
                 ("Could not obtain cached" in out and "No account" not in out))
 
 def test_authentication_using_cache_pw_failure(
@@ -75,7 +75,7 @@ def test_authentication_using_cache_pw_failure(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(event=None):
         nonlocal event_detected
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
@@ -96,7 +96,7 @@ def test_authentication_using_accountstore_user_not_found(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(event=None):
         nonlocal event_detected
         event_detected = event
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
