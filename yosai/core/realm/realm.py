@@ -30,6 +30,7 @@ from yosai.core import (
     SimpleIdentifierCollection,
     SimpleRoleVerifier,
     UsernamePasswordToken,
+    account_abcs,
     authc_abcs,
     authz_abcs,
     cache_abcs,
@@ -76,7 +77,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._account_store
 
     @account_store.setter
-    def account_store(self, accountstore):
+    def account_store(self, accountstore: account_abcs.AccountStore):
         self._account_store = accountstore
 
     @property
@@ -84,7 +85,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._credentials_verifier
 
     @credentials_verifier.setter
-    def credentials_verifier(self, credentialsmatcher):
+    def credentials_verifier(self, credentialsmatcher: authc_abcs.CredentialsVerifier):
         self._credentials_verifier = credentialsmatcher
 
     @property
@@ -92,7 +93,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._cache_handler
 
     @cache_handler.setter
-    def cache_handler(self, cachehandler):
+    def cache_handler(self, cachehandler: cache_abcs.CacheHandler):
         self._cache_handler = cachehandler
 
     @property
@@ -100,7 +101,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._authz_info_resolver
 
     @authz_info_resolver.setter
-    def authz_info_resolver(self, authz_info_resolver):
+    def authz_info_resolver(self, authz_info_resolver: authz_abcs.AuthzInfoResolver):
         self._authz_info_resolver = authz_info_resolver
         self.account_store.authz_info_resolver = authz_info_resolver
 
