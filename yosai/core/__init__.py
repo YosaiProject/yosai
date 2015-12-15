@@ -206,7 +206,6 @@ from yosai.core.session.session import (
     ExecutorServiceSessionValidationScheduler,
     # EnterpriseCacheSessionStore,
     MemorySessionStore,
-    ImmutableProxiedSession,
     ProxiedSession,
     # SessionTokenGenerator,
     ScheduledSessionValidator,

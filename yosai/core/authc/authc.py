@@ -36,6 +36,7 @@ from yosai.core import (
     authc_settings,
     realm_abcs,
 )
+import collections
 
 
 class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
@@ -279,7 +280,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
 
     def clear_cache(self, event=None):
         for realm in self.realms:
-            realm_identifier = event.results.from_source(realm.name)
+            identifiers = event.results.identifiers
+            realm_identifier = identifiers.from_source(realm.name)
             if realm_identifier:
                 realm.clear_cached_credentials(realm_identifier)
 
@@ -291,10 +293,15 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
 
     def notify_success(self, account):
+
+        account_tuple = collections.namedtuple(
+            'account_tuple', ['identifiers'])
+        myaccount = account_tuple(account.account_id)
+
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='AUTHENTICATION.SUCCEEDED',
-                          results=account.account_id)
+                          results=myaccount)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"

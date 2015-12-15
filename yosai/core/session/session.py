@@ -453,68 +453,7 @@ class ProxiedSession(session_abcs.Session):
         return "ProxiedSession(session_id={0}, attributes={1})".format(
             self.session_id, self.attribute_keys)
 
-
-class ImmutableProxiedSession(ProxiedSession):
-    """
-    Implementation of the Session interface that proxies another
-    Session, but does not allow any 'write' operations to the underlying
-    session. It allows 'read' operations only.
-
-    Instances of this class are sent to the Eventbus to ensure that event
-    listening recipients will not be able to modify the session's contents.
-
-    The Session write operations are defined as follows.  A call to any of
-    these methods/setters on this proxy will immediately raise an
-    InvalidSessionException:
-        * idle_timeout.setter, absolute_timeout.setter
-        * touch()
-        * stop()
-        * set_internal_attribute(key,value)
-        * set_attribute(key,value)
-        * remove_internal_attribute(key)
-        * remove_attribute(key)
-
-    Any other method invocation not listed above will result in a
-    corresponding call to the underlying Session.
-    """
-    def __init__(self, target_session):
-        super().__init__(target_session)
-        self.exc_message = ("This session is immutable and read-only - it "
-                            "cannot be altered.  This is usually because "
-                            "the session has been stopped or expired.")
-
-    def set_idle_timeout(self, idle_timeout):
-        raise InvalidSessionException(self.exc_message)
-
-    def set_absolute_timeout(self, absolute_timeout):
-        raise InvalidSessionException(self.exc_message)
-
-    def touch(self):
-        raise InvalidSessionException(self.exc_message)
-
-    def stop(self, identifiers):
-        raise InvalidSessionException(self.exc_message)
-
-    def set_internal_attribute(self, key, value):
-        raise InvalidSessionException(self.exc_message)
-
-    def set_attribute(self, key, value):
-        raise InvalidSessionException(self.exc_message)
-
-    def remove_internal_attribute(self, key):
-        raise InvalidSessionException(self.exc_message)
-        raise Exception('this exception should never have raised, ALERT!')
-
-    def remove_attribute(self, key):
-        raise InvalidSessionException(self.exc_message)
-        raise Exception('this exception should never have raised, ALERT!')
-
-    def __eq__(self, other):
-        if self is other:
-            return True
-        return (isinstance(other, ImmutableProxiedSession) and
-                other.session_id == self.session_id)
-
+# removed ImmutableProxiedSession because it can't be sent over the eventbus
 
 class SimpleSession(session_abcs.ValidatingSession,
                     serialize_abcs.Serializable):
@@ -1095,33 +1034,33 @@ class SessionEventHandler(event_abcs.EventBusAware):
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.START',
-                          results=session)
+                          results=session.session_id)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish SESSION.START event"
             raise SessionEventException(msg)
 
-    def notify_stop(self, identifiers):
+    def notify_stop(self, session_tuple):
         """
         :type identifiers:  SimpleIdentifierCollection
         """
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.STOP',
-                          results=identifiers)
+                          results=session_tuple)
             self.event_bus.publish('SESSION.STOP', event=event)
         except AttributeError:
             msg = "Could not publish SESSION.STOP event"
             raise SessionEventException(msg)
 
-    def notify_expiration(self, identifiers):
+    def notify_expiration(self, session_tuple):
         """
         :type identifiers:  SimpleIdentifierCollection
         """
         try:
             event = Event(source=self.__class__.__name__,
                           event_topic='SESSION.EXPIRE',
-                          results=identifiers)
+                          results=session_tuple)
             self.event_bus.publish(event.event_topic, event=event)
         except AttributeError:
             msg = "Could not publish SESSION.EXPIRE event"
@@ -1166,22 +1105,6 @@ class SessionHandler:
             print(msg)
             # log warning here
             return
-
-    def before_invalid_notification(self, session):
-        """
-         Returns the session instance that should be passed to registered
-         SessionListener(s) for notification that the session has been
-         invalidated (stopped or expired).
-
-         The default implementation returns an ImmutableProxiedSession instance
-         to ensure that the specified {@code session} argument is not modified
-         by any listeners.
-
-         :param session: the Session object to be invalidated
-         :returns: the Session instance that is passed to registered
-                   SessionListener(s) as part of the notification process
-        """
-        return ImmutableProxiedSession(session)
 
     # -------------------------------------------------------------------------
     # Session Creation Methods
@@ -1321,8 +1244,14 @@ class SessionHandler:
                     format(session.session_id)
                 print(msg)
                 # log here
-                immutable_session = self.before_invalid_notification(session)
-                self.session_event_handler.notify_expiration(immutable_session)
+
+                identifiers = session.get_internal_attribute('identifiers_session_key')
+
+                session_tuple = collections.namedtuple(
+                    'session_tuple', ['identifiers', 'session_key'])
+                mysession = session_tuple(identifiers, session_key)
+
+                self.session_event_handler.notify_expiration(mysession)
             except:
                 raise
             finally:
@@ -1352,7 +1281,12 @@ class SessionHandler:
         try:
             self.on_stop(session)
             identifiers = session.get_internal_attribute('identifiers_session_key')
-            self.session_event_handler.notify_stop(identifiers)
+
+            session_tuple = collections.namedtuple(
+                'session_tuple', ['identifiers', 'session_key'])
+            mysession = session_tuple(identifiers, session_key)
+
+            self.session_event_handler.notify_stop(mysession)
         except:
             raise
         # DG:  this results in a redundant delete operation (from shiro):

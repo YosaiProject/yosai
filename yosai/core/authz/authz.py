@@ -720,7 +720,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # --------------------------------------------------------------------------
 
     def clear_cache(self, event=None):
-        identifier = event.results.primary_identifier
+        identifiers = event.results.identifiers
+        identifier = identifiers.primary_identifier
         for realm in self.realms:
             realm.clear_cached_authorization_info(identifier)
 

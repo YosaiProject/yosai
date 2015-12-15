@@ -1,6 +1,7 @@
 import pytest
 from yosai.core import (
     AuthenticationException,
+    ExpiredSessionException,
     IdentifiersNotSetException,
     UnauthorizedException,
     UnauthenticatedException,
@@ -250,7 +251,7 @@ def test_login_clears_cache(
     assert 'Clearing cached authz_info for [thedude]' in out
 
 
-def test_session_expiration_clears_cache(
+def test_session_idle_expiration_clears_cache(
     new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
         valid_username_password_token, thedude_testpermissions, capsys,
         cache_handler):
@@ -264,14 +265,15 @@ def test_session_expiration_clears_cache(
     session = cache_handler.get('session', identifier=session.session_id)
 
     twenty_ago = datetime.timedelta(minutes=30)
-    print('\n\n---------> old session last access time: ', session.last_access_time)
     session.last_access_time = session.last_access_time - twenty_ago
-    print('\n\n-----------> new session last access time: ', session.last_access_time)
     cache_handler.set('session', session.session_id, session)
+    session = cache_handler.get('session', identifier=session.session_id)
 
     session = new_subject.get_session()
 
-    out, err = capsys.readouterr()
+    with pytest.raises(ExpiredSessionException):
+        session.last_access_time  # this triggers the expiration
 
-    assert ('Clearing cached credentials for [thedude]' in out and
-            'Clearing cached authz_info for [thedude]' in out)
+        out, err = capsys.readouterr()
+        assert ('Clearing cached credentials for [thedude]' in out and
+                'Clearing cached authz_info for [thedude]' in out)
