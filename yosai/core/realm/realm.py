@@ -313,7 +313,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
-        identifier = identifiers.from_source(self.name)
+        identifier = identifiers.primary_identifier  # TBD
 
         try:
             def get_stored_authz_info(self):

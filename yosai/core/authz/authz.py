@@ -720,18 +720,18 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # --------------------------------------------------------------------------
 
     def clear_cache(self, event=None):
+        identifier = event.results.primary_identifier
         for realm in self.realms:
-            realm_identifier = event.results.from_source(realm.name)
-            if realm_identifier:
-                realm.clear_cached_authorization_info(realm_identifier)
+            realm.clear_cached_authorization_info(identifier)
 
     def register_cache_clear_listener(self):
         if self.event_bus:
-            self.event_bus.register(self.clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
             self.event_bus.register(self.clear_cache, 'SESSION.STOP')
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
-
+            self.event_bus.register(self.clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.register(self.clear_cache, 'SESSION.START')
+            self.event_bus.is_registered(self.clear_cache, 'SESSION.START')
 
     # notify_results is intended for audit trail
     def notify_results(self, identifiers, results):

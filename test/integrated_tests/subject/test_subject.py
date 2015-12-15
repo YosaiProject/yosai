@@ -6,6 +6,7 @@ from yosai.core import (
     UnauthenticatedException,
     event_bus,
 )
+import datetime
 
 
 def test_subject_invalid_login(new_subject, invalid_username_password_token,
@@ -233,3 +234,31 @@ def test_session_stop_clears_cache(
 
     assert ('Clearing cached credentials for [thedude]' in out and
             'Clearing cached authz_info for [thedude]' in out)
+
+
+def test_session_expiration_clears_cache(
+    new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
+        valid_username_password_token, thedude_testpermissions, capsys,
+        cache_handler):
+
+    tp = thedude_testpermissions
+
+    new_subject.login(valid_username_password_token)  # caches credentials
+    new_subject.is_permitted(tp['perms'])  # caches authz_info
+
+    session = new_subject.get_session()
+    session = cache_handler.get('session', identifier=session.session_id)
+
+    twenty_ago = datetime.timedelta(minutes=30)
+    print('\n\n---------> old session last access time: ', session.last_access_time)
+    session.last_access_time = session.last_access_time - twenty_ago 
+    print('\n\n-----------> new session last access time: ', session.last_access_time)
+    cache_handler.set('session', session.session_id, session)
+
+    session = new_subject.get_session()
+    
+    out, err = capsys.readouterr()
+
+    assert ('Clearing cached credentials for [thedude]' in out and
+            'Clearing cached authz_info for [thedude]' in out)
+
