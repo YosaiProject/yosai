@@ -3,8 +3,10 @@ from yosai.core import (
     AuthenticationException,
     ExpiredSessionException,
     IdentifiersNotSetException,
+    IllegalStateException,
     UnauthorizedException,
     UnauthenticatedException,
+    UnknownSessionException,
     event_bus,
 )
 import datetime
@@ -178,7 +180,13 @@ def test_check_role_raises(
 
         assert event_detected.items == tr['roles']
 
-        new_subject.logout()
+
+
+def test_run_as_raises(new_subject, walter, walter_identifier):
+    new_subject.logout()
+    # a login is required , so this should raise:
+    with pytest.raises(IllegalStateException):
+        new_subject.run_as(walter_identifier)
 
 
 def test_run_as_pop(new_subject, walter_identifier, jackie_identifier,
@@ -277,3 +285,22 @@ def test_session_idle_expiration_clears_cache(
         out, err = capsys.readouterr()
         assert ('Clearing cached credentials for [thedude]' in out and
                 'Clearing cached authz_info for [thedude]' in out)
+
+
+def test_absolute_expired_session(
+        new_subject, valid_username_password_token,
+        thedude_credentials, authz_info, thedude_testpermissions,
+        cache_handler):
+
+    tp = thedude_testpermissions
+
+    new_subject.login(valid_username_password_token)
+    session = new_subject.get_session()
+    results = new_subject.is_permitted(tp['perms'])
+    assert results == tp['expected_results']
+
+    # when time has reached the TTL, the cache entry is removed:
+    cache_handler.delete('session', identifier=session.session_id)
+
+    with pytest.raises(UnknownSessionException):
+        new_subject.is_permitted(tp['perms'])
