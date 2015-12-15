@@ -1,14 +1,13 @@
 import pytest
 import datetime
 import pytz
+from collections import namedtuple
 
 from yosai.core import (
     DefaultSessionKey,
     DelegatingSession,
     ExpiredSessionException,
-    ImmutableProxiedSession,
     InvalidSessionException,
-    SimpleSession,
     SimpleIdentifierCollection,
     UnknownSessionException,
     event_bus,
@@ -70,22 +69,11 @@ def test_delete_cached_session(session_store, session, cache_handler):
     assert cached_session is None
     assert cached_session_token is None
 
-
-def test_seh_notify_start(session_event_handler, session):
-
-    seh = session_event_handler
-    event_detected = None
-
-    def event_listener(event):
-        nonlocal event_detected
-        event_detected = event
-    event_bus.register(event_listener, 'SESSION.START')
-
-    seh.notify_start(session)
-    assert event_detected.results == session
-
+# can't test notify_start without conflicting with other listeners
 
 def test_seh_notify_stop(session_event_handler, session):
+    session_tuple = namedtuple(
+                    'session_tuple', ['identifiers', 'session_key'])
 
     seh = session_event_handler
     event_detected = None
@@ -95,8 +83,10 @@ def test_seh_notify_stop(session_event_handler, session):
         event_detected = event
     event_bus.register(event_listener, 'SESSION.STOP')
 
-    seh.notify_stop(session)
-    assert event_detected.results == session
+    mysession = session_tuple(None, session.session_id)
+
+    seh.notify_stop(mysession)
+    assert event_detected.results == mysession
 
 
 def test_seh_notify_expiration(session_event_handler, session):
@@ -196,7 +186,7 @@ def test_sh_expired_session(
     with pytest.raises(ExpiredSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
-        assert event_detected.results == ImmutableProxiedSession(session)
+        assert event_detected.results.identifiers
 
 
 def test_sh_stopped_session(
@@ -239,7 +229,7 @@ def test_sh_stopped_session(
     with pytest.raises(InvalidSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
-        assert event_detected.results == ImmutableProxiedSession(session)
+        assert event_detected.results.identifiers
 
 
 def test_session_manager_start(session_manager, cache_handler, session_context):
@@ -264,8 +254,7 @@ def test_session_manager_start(session_manager, cache_handler, session_context):
 
     session = sm.start(session_context)
 
-    assert (isinstance(session, DelegatingSession) and
-            isinstance(event_detected.results, SimpleSession))
+    assert (isinstance(session, DelegatingSession) and event_detected)
 
 
 def test_session_manager_stop(
@@ -294,14 +283,14 @@ def test_session_manager_stop(
     session = sm.start(session_context)  # a DelegatingSession
     sessionid = session.session_id
 
-    sm.stop(session.session_key)
+    sm.stop(session.session_key, 'random')
 
     with pytest.raises(UnknownSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
         out, err = capsys.readouterr()
         assert ('Coult not find session' in out and
-                isinstance(event_detected.results, ImmutableProxiedSession))
+                isinstance(event_detected.results, namedtuple))
 
 
 def test_delegatingsession_getters(
@@ -345,7 +334,7 @@ def test_delegatingsession_setters(
 
     is_valid = sm.is_valid(session.session_key)
     assert is_valid
-    session.stop()
+    session.stop(session.session_key)
     is_valid = sm.is_valid(session.session_key)
     assert not is_valid
 

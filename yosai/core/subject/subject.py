@@ -350,7 +350,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     @property
     def has_identifiers(self):
-        return (self._identifiers is not None)
+        return bool(self.identifiers)
 
     def get_primary_identifier(self, identifiers):
         """
