@@ -1389,10 +1389,15 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
             self.session_handler.on_stop(session)
 
             idents = session.get_internal_attribute('identifiers_session_key')
+
             if not idents:
                 idents = identifiers
 
-            self.session_event_handler.notify_stop(idents)
+            session_tuple = collections.namedtuple(
+                'session_tuple', ['identifiers', 'session_key'])
+            mysession = session_tuple(idents, session_key)
+
+            self.session_event_handler.notify_stop(mysession)
 
         except InvalidSessionException:
             raise

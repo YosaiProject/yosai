@@ -22,7 +22,7 @@ def test_authentication_using_accountstore_success(
 
     account = da.authenticate_account(valid_username_password_token)
     out, err = capsys.readouterr()
-    assert (event_detected.results == account.account_id and
+    assert (event_detected.results.identifiers == account.account_id and
             ("Could not obtain cached" in out and "No account" not in out))
 
 
