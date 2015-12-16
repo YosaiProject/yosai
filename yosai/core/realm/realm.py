@@ -224,41 +224,39 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
+        def get_stored_credentials(self):
+            msg = ("Could not obtain cached credentials for [{0}].  "
+                   "Will try to acquire credentials from account store."
+                   .format(identifier))
+            # log here (debug)
+            print(msg)
+            account = self.account_store.get_credentials(identifier)
+            if account is None:
+                msg = "Could not get stored credentials for {0}".format(identifier)
+                raise CredentialsNotFoundException(msg)
+            return account.credentials
+
         try:
-            def get_stored_credentials(self):
-                msg = ("Could not obtain cached credentials for [{0}].  "
-                       "Will try to acquire credentials from account store."
-                       .format(identifier))
-                # log here (debug)
-                print(msg)
-                account = self.account_store.get_credentials(identifier)
-                if account is None:
-                    msg = "Could not get stored credentials for {0}".format(identifier)
-                    raise CredentialsNotFoundException(msg)
-                return account.credentials
-
-            try:
-                msg2 = ("Attempting to get cached credentials for [{0}]"
-                        .format(identifier))
-                # log here (debug)
-                print(msg2)
-                credentials = ch.get_or_create(domain='credentials',
-                                               identifier=identifier,
-                                               creator_func=get_stored_credentials,
-                                               creator=self)
-                account = Account(account_id=identifier,
-                                  credentials=credentials)
-            except CredentialsNotFoundException:
-                # log here
-                msg3 = ("No account credentials found for identifiers [{0}].  "
-                        "Returning None.".format(identifier))
-                print(msg3)
-
+            msg2 = ("Attempting to get cached credentials for [{0}]"
+                    .format(identifier))
+            # log here (debug)
+            print(msg2)
+            credentials = ch.get_or_create(domain='credentials',
+                                           identifier=identifier,
+                                           creator_func=get_stored_credentials,
+                                           creator=self)
+            account = Account(account_id=identifier,
+                              credentials=credentials)
         except AttributeError:
-            msg = ('AccountStoreRealm misconfigured.  At a minimum, '
-                   'define an AccountStore and CacheHandler.')
-            # log here (exception)
-            raise RealmMisconfiguredException(msg)
+            # this means the cache_handler isn't configured
+            credentials = get_stored_credentials()
+            account = Account(account_id=identifier,
+                              credentials=credentials)
+        except CredentialsNotFoundException:
+            # log here
+            msg3 = ("No account credentials found for identifiers [{0}].  "
+                    "Returning None.".format(identifier))
+            print(msg3)
 
         return account
 
