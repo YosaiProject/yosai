@@ -314,41 +314,39 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         identifier = identifiers.primary_identifier  # TBD
 
+        def get_stored_authz_info(self):
+            msg = ("Could not obtain cached authz_info for [{0}].  "
+                   "Will try to acquire authz_info from account store."
+                   .format(identifier))
+            # log here (debug)
+            print(msg)
+            account = self.account_store.get_authz_info(identifier)
+            if account is None:
+                msg = "Could not get authz_info for {0}".format(identifier)
+                raise AuthzInfoNotFoundException(msg)
+            return account.authz_info
+
         try:
-            def get_stored_authz_info(self):
-                msg = ("Could not obtain cached authz_info for [{0}].  "
-                       "Will try to acquire authz_info from account store."
-                       .format(identifier))
-                # log here (debug)
-                print(msg)
-                account = self.account_store.get_authz_info(identifier)
-                if account is None:
-                    msg = "Could not get authz_info for {0}".format(identifier)
-                    raise AuthzInfoNotFoundException(msg)
-                return account.authz_info
-
-            try:
-                msg2 = ("Attempting to get cached authz_info for [{0}]"
-                        .format(identifier))
-                # log here (debug)
-                print(msg2)
-                authz_info = ch.get_or_create(domain='authz_info',
-                                              identifier=identifier,
-                                              creator_func=get_stored_authz_info,
-                                              creator=self)
-                account = Account(account_id=identifier,
-                                  authz_info=authz_info)
-            except AuthzInfoNotFoundException:
-                # log here
-                msg3 = ("No account authz_info found for identifier [{0}].  "
-                        "Returning None.".format(identifier))
-                print(msg3)
-
+            msg2 = ("Attempting to get cached authz_info for [{0}]"
+                    .format(identifier))
+            # log here (debug)
+            print(msg2)
+            authz_info = ch.get_or_create(domain='authz_info',
+                                          identifier=identifier,
+                                          creator_func=get_stored_authz_info,
+                                          creator=self)
+            account = Account(account_id=identifier,
+                              authz_info=authz_info)
         except AttributeError:
-            msg = ('AccountStoreRealm misconfigured.  At a minimum, '
-                   'define an AccountStore and CacheHandler.')
-            # log here (exception)
-            raise RealmMisconfiguredException(msg)
+            # this means the cache_handler isn't configured
+            authz_info = get_stored_authz_info()
+            account = Account(account_id=identifier,
+                              authz_info=authz_info)
+        except AuthzInfoNotFoundException:
+            # log here
+            msg3 = ("No account authz_info found for identifier [{0}].  "
+                    "Returning None.".format(identifier))
+            print(msg3)
 
         return account
 
