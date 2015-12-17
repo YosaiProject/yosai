@@ -261,6 +261,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     # yosai.core.refactors:
     def authenticate_account(self, authc_token):
+        """
+        :raises IncorrectCredentialsException:  when authentication fails
+        """
         try:
             identifier = authc_token.identifier
         except AttributeError:
@@ -286,6 +289,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return account
 
     def assert_credentials_match(self, authc_token, account):
+        """
+        :raises IncorrectCredentialsException:  when authentication fails
+        """
         cm = self.credentials_verifier
         if (not cm.credentials_match(authc_token, account)):
             # not successful - raise an exception as signal:

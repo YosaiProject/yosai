@@ -24,7 +24,6 @@ from yosai.core import (
     Event,
     InvalidTokenPasswordException,
     LogManager,
-    PasswordMatchException,
     PreparePasswordException,
     UnknownAccountException,
     UnsupportedTokenException,
@@ -332,6 +331,9 @@ class Credential(serialize_abcs.Serializable):
         :type credential: bytestring
         """
         self.credential = credential
+
+    def __eq__(self, other):
+        return self.credential == other.credential
 
     @classmethod
     def serialization_schema(cls):

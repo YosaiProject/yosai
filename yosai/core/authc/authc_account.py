@@ -17,6 +17,15 @@ specific language governing permissions and limitations
 under the License.
 """
 
+# ===========================================================================
+#
+#
+#   THIS MODULE IS FOR EXPERIMENTATION.  IT WAS CREATED DURING PORTING
+#   BUT APPEARS TO BE NON-ESSENTIAL.  TBD.
+#
+#
+# ===========================================================================
+
 from collections import defaultdict
 
 from yosai.core import (
@@ -61,10 +70,28 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
         self._merged_attrs = {}  # maybe change to OrderedDict()
         self.overwrite = overwrite
         self._realm_attrs = defaultdict(dict)
+        self._attributes = None
+        self._authz_info = None
 
     @property
-    def account_id(self):  # DG:  not happy about naming it id
+    def account_id(self):
         return self._account_id
+
+    @property
+    def attributes(self):
+        return self._attributes
+
+    @attributes.setter
+    def attributes(self, attributes):
+        self._attributes = attributes
+
+    @property
+    def authz_info(self):
+        return self._authz_info
+
+    @authz_info.setter
+    def authz_info(self, authzinfo):
+        self._authz_info = authzinfo
 
     # renamed from "attributes" to identifiers
     @property

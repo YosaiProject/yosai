@@ -21,6 +21,7 @@ from yosai.core import (
     CryptContextFactory,
     IllegalStateException,
     MissingCredentialsException,
+    PasswordMatchException,
     PasswordVerifierInvalidAccountException,
     PasswordVerifierInvalidTokenException,
     authc_abcs,

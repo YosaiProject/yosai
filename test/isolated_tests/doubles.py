@@ -93,7 +93,7 @@ class MockSession(session_abcs.ValidatingSession):
 class MockToken(authc_abcs.AuthenticationToken):
 
     @property
-    def identifiers(self):
+    def identifier(self):
         pass
 
     @property

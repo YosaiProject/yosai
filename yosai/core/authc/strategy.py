@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -21,7 +21,6 @@ import copy
 import traceback
 
 from yosai.core import (
-    AuthenticationException,
     AuthenticationStrategyMissingRealmException,
     IncorrectCredentialsException,
     InvalidAuthenticationTokenException,
@@ -29,23 +28,22 @@ from yosai.core import (
     MultiRealmAuthenticationException,
     authc_abcs,
     DefaultCompositeAccount,
-    OrderedSet,
 )
 
 
 class DefaultAuthenticationAttempt(authc_abcs.AuthenticationAttempt):
     """
-    DG:  this deviates slightly from Shiro's implementation in that it 
+    DG:  this deviates slightly from Shiro's implementation in that it
          validates the authc_token, justifiying the existence of this class
          as something more than a simple collection
     """
     def __init__(self, authc_token, realms):
         """
         :type authc_token:  AuthenticationToken
-        :type realms: a Tuple of realm objects (e.g. AccountStoreRealm) 
+        :type realms: a Tuple of realm objects (e.g. AccountStoreRealm)
         """
         self.authentication_token = authc_token
-        self.realms = realms 
+        self.realms = realms
 
     @property
     def authentication_token(self):
@@ -63,13 +61,13 @@ class DefaultAuthenticationAttempt(authc_abcs.AuthenticationAttempt):
 
     @realms.setter
     def realms(self, realms):
-        if not isinstance(realms, tuple): 
+        if not isinstance(realms, tuple):
             raise InvalidAuthcAttemptRealmsArgumentException
         self._realms = realms
 
 
 class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
-    
+
     def execute(self, authc_attempt):
         token = authc_attempt.authentication_token
         first_account_realm_name = None
@@ -80,10 +78,10 @@ class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         try:
             for realm in authc_attempt.realms:
                 if (realm.supports(token)):
-                    
+
                     """
                     If the realm raises an exception, the loop will short
-                    circuit, propagating the IncorrectCredentialsException 
+                    circuit, propagating the IncorrectCredentialsException
                     further up the stack.  As an 'all successful' strategy, if
                     there is even a single exception thrown by any of the
                     supported realms, the authentication attempt is
@@ -95,19 +93,19 @@ class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
                     """
                     # an IncorrectCredentialsException halts the loop:
                     account = realm.authenticate_account(token)
-                    
+
                     if (account):
                         if (not first_account):
                             first_account = account
                             first_account_realm_name = realm.name
-                        else:                    
+                        else:
                             if (not composite_account):
                                 composite_account = DefaultCompositeAccount()
                                 composite_account.append_realm_account(
                                     first_account_realm_name, first_account)
-                                
+
                             composite_account.append_realm_account(
-                                realm.name, account) 
+                                realm.name, account)
         except (TypeError):
             raise AuthenticationStrategyMissingRealmException
         if (composite_account):
@@ -123,23 +121,23 @@ class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         :rtype:  Account or DefaultCompositeAccount
         """
         authc_token = authc_attempt.authentication_token
-        realm_errors = {} 
+        realm_errors = {}
         first_account = None
         composite_account = None
         try:
             for realm in authc_attempt.realms:
                 if (realm.supports(authc_token)):
                     realm_name = realm.name
-                    account = None  # required 
+                    account = None  # required
 
                     try:
                         account = realm.authenticate_account(authc_token)
                     # failed authentication raises an exception:
                     except IncorrectCredentialsException as ex:
                         realm_errors[realm_name] = ex
-                    
+
                     if (account is not None):
-                        if (not first_account): 
+                        if (not first_account):
                             first_account = account
                             first_account_realm_name = realm.name
                         else:
@@ -147,7 +145,7 @@ class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
                                 composite_account = DefaultCompositeAccount()
                                 composite_account.append_realm_account(
                                     first_account_realm_name, first_account)
-                                
+
                             composite_account.append_realm_account(
                                 realm_name, account)
         except (TypeError):
@@ -156,20 +154,20 @@ class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         if (composite_account is not None):
             return composite_account
 
-        if (first_account is not None): 
+        if (first_account is not None):
             return first_account
 
         if (realm_errors):  # if no successful authentications
             raise MultiRealmAuthenticationException(realm_errors)
 
-        return None  # implies account was not found for tokent 
+        return None  # implies account was not found for tokent
 
 
 class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
 
     """
      The FirstRealmSuccessfulStrategy will iterate over the available realms
-     and invoke Realm.authenticate_account(authc_token) on each one. The moment 
+     and invoke Realm.authenticate_account(authc_token) on each one. The moment
      that a realm returns an Account without raising an Exception, that account
      is returned immediately and all subsequent realms ignored entirely
      (iteration 'short circuits').
@@ -189,7 +187,7 @@ class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         :returns:  Account
         """
         authc_token = authc_attempt.authentication_token
-        realm_errors = {} 
+        realm_errors = {}
         account = None
         try:
             for realm in authc_attempt.realms:
@@ -197,7 +195,8 @@ class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
                     try:
                         account = realm.authenticate_account(authc_token)
                     except Exception as ex:
-                        realm_errors[realm.name] = ex
+                        realmname = realm.name + str(id(realm))
+                        realm_errors[realmname] = ex
                         # current realm failed - try the next one:
                     else:
                         if (account):
@@ -220,4 +219,4 @@ class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
             else:
                 raise MultiRealmAuthenticationException(realm_errors)
 
-        return None  # implies account was not found for token  
+        return None  # implies account was not found for token
