@@ -195,8 +195,7 @@ class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
                     try:
                         account = realm.authenticate_account(authc_token)
                     except Exception as ex:
-                        realmname = realm.name + str(id(realm))
-                        realm_errors[realmname] = ex
+                        realm_errors[realm.name] = ex
                         # current realm failed - try the next one:
                     else:
                         if (account):

@@ -16,16 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
-# ===========================================================================
-#
-#
-#   THIS MODULE IS FOR EXPERIMENTATION.  IT WAS CREATED DURING PORTING
-#   BUT APPEARS TO BE NON-ESSENTIAL.  TBD.
-#
-#
-# ===========================================================================
-
+import pdb
 from collections import defaultdict
 
 from yosai.core import (
@@ -67,10 +58,9 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
     def __init__(self, overwrite=True):
         self._account_id = DefaultCompositeAccountId()  # DG renamed
         self._credentials = None
-        self._merged_attrs = {}  # maybe change to OrderedDict()
+        self._merged_attrs = {}
         self.overwrite = overwrite
         self._realm_attrs = defaultdict(dict)
-        self._attributes = None
         self._authz_info = None
 
     @property
@@ -79,11 +69,7 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
 
     @property
     def attributes(self):
-        return self._attributes
-
-    @attributes.setter
-    def attributes(self, attributes):
-        self._attributes = attributes
+        return self._merged_attrs
 
     @property
     def authz_info(self):
@@ -92,11 +78,6 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
     @authz_info.setter
     def authz_info(self, authzinfo):
         self._authz_info = authzinfo
-
-    # renamed from "attributes" to identifiers
-    @property
-    def identifiers(self):
-        return self._merged_attrs
 
     @property
     def credentials(self):
@@ -117,9 +98,10 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
         return self._realm_attrs.keys()
 
     def append_realm_account(self, realm_name, account):
+        
         self._account_id.set_realm_account_id(realm_name, account.account_id)
 
-        realm_attributes = getattr(account, 'identifiers', None)
+        realm_attributes = getattr(account, 'attributes', None)
         if (realm_attributes is None):
             realm_attributes = {}
 

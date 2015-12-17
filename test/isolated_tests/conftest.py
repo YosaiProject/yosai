@@ -13,6 +13,7 @@ from yosai.core import (
 )
 
 from .doubles import (
+    MockAccount,
     MockAccountStore,
     MockPubSub,
     MockSecurityManager,
@@ -32,21 +33,22 @@ from .session.doubles import (
 @pytest.fixture(scope='function')
 def mock_account_state():
     return {'account_id': 'identifier',
-            'creds': Credential('$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO')}
+            'creds': Credential('$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO'),
+            'attributes': {'attribute1': 'attribute1'}}
 
 
 @pytest.fixture(scope='function')
-def full_mock_account(mock_account_state, role_collection,
-                      permission_collection):
+def full_mock_account(mock_account_state):
     mas = mock_account_state
-    ma = mock.Mock()
-    ma.account_id = mas['account_id']
-    ma.credentials = mas['creds'],
-    return ma
+    return MockAccount(account_id=mas['account_id'],
+                       credentials=mas['creds'],
+                       attributes=mas['attributes'])
+
 
 @pytest.fixture(scope='function')
 def return_true(**kwargs):
     return True
+
 
 @pytest.fixture(scope='function')
 def default_accountstorerealm(monkeypatch):

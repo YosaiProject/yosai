@@ -103,13 +103,11 @@ class MockToken(authc_abcs.AuthenticationToken):
 
 class MockAccount(account_abcs.Account):
 
-    def __init__(self, account_id, credentials={}, identifiers={},
-                 roles=set(), permissions=set()):
+    def __init__(self, account_id, credentials={}, attributes={},
+                 authz_info=None):
         self._account_id = account_id
         self._credentials = credentials
-        self._identifiers = identifiers
-        self._roles = roles
-        self._permissions = permissions
+        self._attributes = attributes 
 
     @property
     def account_id(self):
@@ -117,40 +115,28 @@ class MockAccount(account_abcs.Account):
 
     @property
     def attributes(self):
-        pass
+        return self._attributes
 
     @property
     def authz_info(self):
         pass
 
     @property
-    def roles(self):
-        return self._roles
-
-    @property
-    def permissions(self):
-        return self._permissions
-
-    @property
     def credentials(self):
         return self._credentials
-
-    @property
-    def identifiers(self):
-        return self._identifiers
 
     def __eq__(self, other):
         try:
             result = (self._account_id == other._account_id and
                       self.credentials == other.credentials and
-                      self.identifiers == other.identifiers)
+                      self.attributes == other.attributes)
         except Exception:
             return False
         return result
 
     def __repr__(self):
-        return "<MockAccount(id={0}, credentials={1}, identifiers={2})>".\
-            format(self.account_id, self.credentials, self.identifiers)
+        return "<MockAccount(id={0}, credentials={1}, attributes={2})>".\
+            format(self.account_id, self.credentials, self.attributes)
 
     @classmethod
     def serialization_schema(cls):
