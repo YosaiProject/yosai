@@ -1,24 +1,23 @@
 import pytest
 
 from yosai.core import (
+    Account,
     AccountStoreRealm,
+    AuthzInfoNotFoundException,
     CacheCredentialsException,
     ClearCacheCredentialsException,
+    CredentialsNotFoundException,
     GetCachedCredentialsException,
     IndexedAuthorizationInfo,
     IncorrectCredentialsException,
+    InvalidArgumentException,
     PasswordVerifier,
     RealmMisconfiguredException,
+    SimpleIdentifierCollection,
 )
 from ..doubles import (
     MockAccount,
     MockAccountStore,
-    MockCache,
-)
-
-from .doubles import (
-    MockCredentialsCacheHandler,
-    MockCredentialsCacheResolver,
 )
 
 from unittest import mock
@@ -27,14 +26,54 @@ from unittest import mock
 # AccountStoreRealm Tests
 # -----------------------------------------------------------------------------
 
-def test_asr_do_clear_cache(patched_accountstore_realm):
+def test_asr_authzinforesolver_set(monkeypatch, default_accountstorerealm):
+    asr = default_accountstorerealm
+
+    monkeypatch.setattr(asr, 'account_store', mock.Mock())
+    asr.authz_info_resolver = 'authz_info_resolver'
+    assert (asr._authz_info_resolver == 'authz_info_resolver' and
+            asr.account_store.authz_info_resolver == 'authz_info_resolver')
+
+
+def test_asr_credentialresolver_set(monkeypatch, default_accountstorerealm):
+    asr = default_accountstorerealm
+
+    monkeypatch.setattr(asr, 'account_store', mock.Mock())
+    asr.credential_resolver = 'credential_resolver'
+    assert (asr._credential_resolver == 'credential_resolver' and
+            asr.account_store.credential_resolver == 'credential_resolver')
+
+
+def test_asr_permissionresolver_set(monkeypatch, default_accountstorerealm):
+    asr = default_accountstorerealm
+
+    monkeypatch.setattr(asr, 'account_store', mock.Mock())
+    monkeypatch.setattr(asr, 'permission_verifier', mock.Mock())
+
+    asr.permission_resolver = 'permission_resolver'
+
+    assert (asr._permission_resolver == 'permission_resolver' and
+            asr.account_store.permission_resolver == 'permission_resolver' and
+            asr.permission_verifier.permission_resolver == 'permission_resolver')
+
+
+def test_asr_roleresolver_set(monkeypatch, default_accountstorerealm):
+    asr = default_accountstorerealm
+
+    monkeypatch.setattr(asr, 'account_store', mock.Mock())
+    asr.role_resolver = 'role_resolver'
+    assert (asr._role_resolver == 'role_resolver' and
+            asr.account_store.role_resolver == 'role_resolver')
+
+
+def test_asr_do_clear_cache(default_accountstorerealm):
     """
     unit tested:  do_clear_cache
 
     test case:
     in turn calls the clear cache methods for credentials and authz info
     """
-    asr = patched_accountstore_realm
+    asr = default_accountstorerealm
     with mock.patch.object(AccountStoreRealm, 'clear_cached_credentials') as ccc:
         ccc.return_value = None
 
@@ -42,152 +81,103 @@ def test_asr_do_clear_cache(patched_accountstore_realm):
                                'clear_cached_authorization_info') as ccai:
             ccai.return_value = None
 
-            asr.do_clear_cache('identifiers')
+            asr.do_clear_cache('identifier')
 
-            ccc.assert_called_once_with('identifiers')
-            ccai.assert_called_once_with('identifiers')
+            ccc.assert_called_once_with('identifier')
+            ccai.assert_called_once_with('identifier')
 
 
-def test_asr_clear_cached_credentials(patched_accountstore_realm, monkeypatch):
+def test_asr_clear_cached_credentials(default_accountstorerealm, monkeypatch):
     """
     unit tested: clear_cached_credentials
 
     test case:
     delegates to cch.clear_cache
     """
-    asr = patched_accountstore_realm
-    cch = mock.MagicMock() # credentials_cache_handler
-    monkeypatch.setattr(asr, 'credentials_cache_handler', cch)
-    asr.clear_cached_credentials('identifiers')
-    assert cch.method_calls[0] == mock.call.clear_cached_credentials('identifiers')
+    asr = default_accountstorerealm
+    monkeypatch.setattr(asr, 'cache_handler', mock.Mock())
+    asr.clear_cached_credentials('identifier')
+    asr.cache_handler.delete.assert_called_once_with('credentials', 'identifier')
+
 
 def test_asr_clear_cached_authorization_info(
-        patched_accountstore_realm, monkeypatch):
+        default_accountstorerealm, monkeypatch):
     """
     unit tested: clear_cached_authorization_info
 
     test case:
     delegates to ach.clear_cache
     """
-    asr = patched_accountstore_realm
-    ach = mock.MagicMock() # credentials_cache_handler
-    monkeypatch.setattr(asr, 'authorization_cache_handler', ach)
-    asr.clear_cached_authorization_info('identifiers')
-    assert ach.method_calls[0] == mock.call.clear_cached_authz_info('identifiers')
+    asr = default_accountstorerealm
+    monkeypatch.setattr(asr, 'cache_handler', mock.Mock())
+    asr.clear_cached_authorization_info('identifier')
+    asr.cache_handler.delete.assert_called_once_with('authz_info', 'identifier')
 
 
-def test_asr_supports(patched_accountstore_realm,
-                      mock_token,
-                      username_password_token):
-    par = patched_accountstore_realm
-    token = username_password_token
-    mt = mock_token
-
-    assert (par.supports(token) and not par.supports(mt))
-
-def test_asr_get_credentials_misconfigured_raises(patched_accountstore_realm,
-                                                  username_password_token,
-                                                  monkeypatch):
-    """
-    unit tested:  get_credentials
-
-    test case:
-    a misconfigured AccountStoreRealm will raise an exception when
-    get_credentials is attempted
-
-    in this test, there is no accountstore attribute, and so the
-    exception will raise
-    """
-    par = patched_accountstore_realm
-    token = username_password_token
-    monkeypatch.setattr(par, 'credentials_cache_handler', None)
-    monkeypatch.setattr(par, 'account_store', None)
-
-    with pytest.raises(RealmMisconfiguredException):
-        par.authenticate_account(token)
-
-def test_asr_get_credentials_with_cached_acct_succeeds(
-        patched_accountstore_realm, monkeypatch, username_password_token):
-    """
-    unit tested:  get_credentials
-
-    test case:
-    MockCredentialsCacheHandler.get_cached_credentials returns a MockAccount
-    """
-    par = patched_accountstore_realm
-    token = username_password_token
-    result = par.get_credentials(token)
-    assert result == MockAccount(account_id='MACH13579')
+def test_asr_get_credentials_from_cache(
+        default_accountstorerealm, monkeypatch):
+    asr = default_accountstorerealm
+    mock_cache = mock.Mock()
+    mock_cache.get_or_create.return_value = 'cached_creds'
+    monkeypatch.setattr(asr, 'cache_handler', mock_cache)
+    result = asr.get_credentials('identifier')
+    assert (result.account_id == 'identifier' and
+            result.credentials == 'cached_creds')
 
 
-def test_asr_get_credentials_without_cached_acct_succeeds_and_caches(
-        monkeypatch, username_password_token, patched_accountstore_realm):
-    """
-    unit tested:  get_credentials
-
-    test case:
-    If the account isn't cached, it should be obtained from the account_store.
-    Since an CredentialsCacheHandler is set, the account is cached.
-
-    CredentialsCacheHandler.get_cached_credentials returns None
-    AccountStore.get_account returns a mock acount
-    """
-    token = username_password_token
-    pasr = patched_accountstore_realm
-    ach = pasr.credentials_cache_handler
-    monkeypatch.setattr(pasr, '_credentials_cache_handler',
-                        MockCredentialsCacheHandler(account=''))
-    with mock.patch.object(MockCredentialsCacheHandler, 'cache_credentials') as cc:
-        cc.return_value = None
-        result = pasr.get_credentials(token)
-        cc.assert_called_once_with(token, result)
-
-        # the MockAccountStore's default account_id is MAS123:
-        assert result.account_id == 'MAS123'
+def test_asr_get_credentials_with_cache_but_from_accountstore(
+        default_accountstorerealm, monkeypatch):
+    asr = default_accountstorerealm
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    result = asr.get_credentials('identifier')
+    assert result.credentials == 'stored_creds'
 
 
-def test_asr_get_credentials_cannot_locate_account(username_password_token,
-                                                   patched_accountstore_realm,
-                                                   monkeypatch, capsys):
-    """
-    unit tested:  authenticate_account
+def test_asr_get_credentials_without_cache_from_accountstore(
+        default_accountstorerealm, monkeypatch):
+    asr = default_accountstorerealm
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    result = asr.get_credentials('identifier')
+    assert result.credentials == 'stored_creds'
 
-    test case:
-    in the event that an account cannot be found (for a token's parameters)
-    from an account_store, None is returned from get_credentials
 
-    CredentialsCacheHandler.get_cached_credentials returns None
-    AccountStore.get_account returns None
-    """
-    token = username_password_token
-    pasr = patched_accountstore_realm
-    pasr.credentials_cache_handler = MockCredentialsCacheHandler(account=None)
-    pasr.account_store = MockAccountStore(account=None)
+def test_asr_get_credentials_cannot_locate(
+        default_accountstorerealm, monkeypatch):
+    asr = default_accountstorerealm
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    monkeypatch.setattr(asr.account_store, 'get_credentials', lambda x: None)
 
-    result = pasr.get_credentials(token)
-    out, err = capsys.readouterr()
-    assert result is None and 'No account found' in out
+    with pytest.raises(CredentialsNotFoundException):
+        asr.get_credentials('identifier')
+
+
+def test_asr_authenticate_account_invalidtoken(default_accountstorerealm):
+    asr = default_accountstorerealm
+
+    with pytest.raises(InvalidArgumentException):
+        asr.authenticate_account('invalid_token')
 
 
 def test_asr_authenticate_account(username_password_token,
-                                  patched_accountstore_realm,
-                                  full_mock_account, monkeypatch):
+                                  default_accountstorerealm,
+                                  full_mock_account, monkeypatch,
+                                  simple_identifier_collection):
+
     token = username_password_token
-    pasr = patched_accountstore_realm
+    pasr = default_accountstorerealm
     fma = full_mock_account
+    sic = simple_identifier_collection
 
     monkeypatch.setattr(pasr, 'get_credentials', lambda x: fma)
     with mock.patch.object(AccountStoreRealm, 'assert_credentials_match') as acm:
         acm.return_value = None
-        with mock.patch.object(AccountStoreRealm, 'clear_cached_credentials') as ccc:
-            ccc.return_value = None
-            result = pasr.authenticate_account(token)
-            acm.assert_called_once_with(token, fma)
-            ccc.assert_called_once_with(token.identifiers)
-            assert result == fma
+        result = pasr.authenticate_account(token)
+        acm.assert_called_once_with(token, fma)
+        fma.account_id = sic
+        assert result == fma
 
 
-def test_asr_acm_succeeds(username_password_token, patched_accountstore_realm,
+def test_asr_acm_succeeds(username_password_token, default_accountstorerealm,
                           full_mock_account):
     """
     unit tested:  assert_credentials_match
@@ -196,15 +186,15 @@ def test_asr_acm_succeeds(username_password_token, patched_accountstore_realm,
     when credentials match, nothing is returned nor any exceptions raise
     """
     token = username_password_token
-    pasr = patched_accountstore_realm
+    asr = default_accountstorerealm
 
     with mock.patch.object(PasswordVerifier, 'credentials_match') as pm_cm:
         pm_cm.return_value = True
-        result = pasr.assert_credentials_match(token, full_mock_account)
+        asr.assert_credentials_match(token, full_mock_account)
         pm_cm.assert_called_once_with(token, full_mock_account)
 
 
-def test_asr_acm_raises(username_password_token, patched_accountstore_realm,
+def test_asr_acm_raises(username_password_token, default_accountstorerealm,
                         full_mock_account):
     """
     unit tested:  assert_credentials_match
@@ -213,148 +203,63 @@ def test_asr_acm_raises(username_password_token, patched_accountstore_realm,
     when credentials fail to match, an exception is raised
     """
     token = username_password_token
-    pasr = patched_accountstore_realm
+    asr = default_accountstorerealm
 
     with pytest.raises(IncorrectCredentialsException):
         with mock.patch.object(PasswordVerifier, 'credentials_match') as pm_cm:
             pm_cm.return_value = False
-            pasr.assert_credentials_match(token, full_mock_account)
+            asr.assert_credentials_match(token, full_mock_account)
 
 
-def test_asr_get_authorization_info_w_ach_w_cached(
-        patched_accountstore_realm, mock_authz_cache_handler, monkeypatch,
-        capsys):
-    """
-    unit tested:  get_authorization_info
+def test_asr_get_authz_info_from_cache(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection):
 
-    test case:
-    - an authorization cache handler (ACH) is set
-    - the ACH returns a cached version of the authz_info
-    - the authz_info is returned
-    """
-    pasr = patched_accountstore_realm
-    ach = mock_authz_cache_handler
+    sic = simple_identifier_collection
+    asr = default_accountstorerealm
 
-    monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: 'authz_info')
-    monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
+    mock_cache = mock.Mock()
+    mock_cache.get_or_create.return_value = 'cached_authz_info'
+    monkeypatch.setattr(asr, 'cache_handler', mock_cache)
 
-    result = pasr.get_authorization_info('identifiers')
-    out, err = capsys.readouterr()
+    result = asr.get_authorization_info(sic)
 
-    assert (result == 'authz_info' and
-            "AuthorizationInfo found in cache" in out)
-
-def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_w_stored(
-        patched_accountstore_realm, mock_authz_cache_handler, monkeypatch,
-        capsys, mock_account_store, full_mock_account):
-    """
-    unit tested:  get_authorization_info
-
-    test case:
-    - an authorization cache handler (ACH) is set
-    - the ACH fails to return a cached version of the authz_info
-    - the authz_info is instead obtained from the account_store
-    - the authz_info is returned
-    """
-    pasr = patched_accountstore_realm
-    ach = mock_authz_cache_handler
-    mas = mock_account_store
-    fma = full_mock_account
-
-    monkeypatch.setattr(mas, 'get_authz_info', lambda x: fma)
-    monkeypatch.setattr(pasr, 'account_store', mas)
-
-    monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: None)
-    monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
-
-    result = pasr.get_authorization_info('identifiers')
-
-    out, err = capsys.readouterr()
-    assert (result == IndexedAuthorizationInfo(roles=fma.roles,
-                                               permissions=fma.permissions) and
-            "AuthorizationInfo NOT found in cache" in out)
+    assert (result.account_id == 'identifier' and
+            result.authz_info == 'cached_authz_info')
 
 
-def test_asr_get_authorization_info_w_ach_wo_cachedauthzinfo_wo_stored(
-        patched_accountstore_realm, mock_authz_cache_handler, monkeypatch,
-        capsys, mock_account_store):
-    """
-    unit tested:  get_authorization_info
+def test_asr_get_authz_info_with_cache_but_from_accountstore(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection):
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
+    monkeypatch.setattr(asr, 'cache_handler', None)
 
-    test case:
-    - an authorization cache handler (ACH) is set
-    - the ACH fails to return a cached version of the authz_info
-    - the authz_info is NOT obtained from the account_store
-    - None is returned
-    """
-    pasr = patched_accountstore_realm
-    ach = mock_authz_cache_handler
-    mas = mock_account_store
-
-    monkeypatch.setattr(mas, 'get_authz_info', lambda x: None)
-    monkeypatch.setattr(pasr, 'account_store', mas)
-
-    monkeypatch.setattr(ach, 'get_cached_authz_info', lambda x: None)
-    monkeypatch.setattr(pasr, 'authorization_cache_handler', ach)
-
-    result = pasr.get_authorization_info('identifiers')
-
-    out, err = capsys.readouterr()
-    assert (result is None and
-            "AuthorizationInfo NOT found in cache" in out and
-            "Could not obtain Account authorization info from store" in out)
+    result = asr.get_authorization_info(sic)
+    assert result.authz_info == 'stored_authzinfo'
 
 
-def test_asr_get_authorization_info_wo_ach_wo_stored(
-        patched_accountstore_realm, monkeypatch, capsys, mock_account_store):
-    """
-    unit tested:  get_authorization_info
-
-    test case:
-    - no ACH is configured
-    - no results obtained from accountstore
-    """
-
-    pasr = patched_accountstore_realm
-    mas = mock_account_store
-
-    monkeypatch.setattr(mas, 'get_authz_info', lambda x: None)
-    monkeypatch.setattr(pasr, 'account_store', mas)
-
-    result = pasr.get_authorization_info('identifiers')
-
-    out, err = capsys.readouterr()
-    assert (result is None and
-            "AuthorizationInfo NOT found in cache" not in out and
-            "Could not obtain Account authorization info from store" in out)
+def test_asr_get_authz_info_without_cache_from_accountstore(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection):
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    result = asr.get_authorization_info(sic)
+    assert result.authz_info == 'stored_authzinfo'
 
 
-def test_asr_get_authorization_info_wo_ach_w_stored(
-        patched_accountstore_realm, monkeypatch,
-        capsys, mock_account_store, full_mock_account):
-    """
-    unit tested:  get_authorization_info
+def test_asr_get_authz_info_cannot_locate(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection):
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    monkeypatch.setattr(asr.account_store, 'get_authz_info', lambda x: None)
 
-    test case:
-    - an authorization cache handler (ACH) is NOT set
-    - the authz_info is instead obtained from the account_store
-    - the authz_info is returned
-    """
-    pasr = patched_accountstore_realm
-    mas = mock_account_store
-    fma = full_mock_account
+    with pytest.raises(AuthzInfoNotFoundException):
+        asr.get_authorization_info(sic)
 
-    monkeypatch.setattr(mas, 'get_authz_info', lambda x: fma)
-    monkeypatch.setattr(pasr, 'account_store', mas)
 
-    result = pasr.get_authorization_info('identifiers')
-
-    out, err = capsys.readouterr()
-    assert (result == IndexedAuthorizationInfo(roles=fma.roles,
-                                               permissions=fma.permissions) and
-            "AuthorizationInfo NOT found in cache" not in out)
-
-def test_asr_is_permitted_yields(patched_accountstore_realm, monkeypatch):
+def test_asr_is_permitted_yields(
+        default_accountstorerealm, monkeypatch, full_mock_account,
+        simple_identifier_collection):
     """
     unit tested:  is_permitted
 
@@ -362,18 +267,40 @@ def test_asr_is_permitted_yields(patched_accountstore_realm, monkeypatch):
     - gets authorization info
     - yields from the permission_verifier, one permission at a time
     """
-    pasr = patched_accountstore_realm
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
 
     def mock_yielder(authz_info, input):
-        yield ('permission', False)
+        yield ('permission', True)
 
-    monkeypatch.setattr(pasr.permission_verifier, 'is_permitted', mock_yielder)
+    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: full_mock_account)
+    monkeypatch.setattr(asr.permission_verifier, 'is_permitted', mock_yielder)
 
-    results = list(pasr.is_permitted('identifiers', {'domain:action'}))
-    assert results == [('permission', False)]
+    results = list(asr.is_permitted(sic, ['domain:action']))
+    assert results == [('permission', True)]
 
 
-def test_asr_has_role_yields(patched_accountstore_realm, monkeypatch):
+def test_asr_is_permitted_no_account_obtained(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection):
+    """
+    unit tested:  is_permitted
+
+    test case:
+    - no account can be obtained from  get_authorization_info
+    - yields False for each permission requested
+    """
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
+
+    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: None)
+
+    results = list(asr.is_permitted(sic, ['domain1:action1', 'domain2:action1']))
+    assert results == [('domain1:action1', False), ('domain2:action1', False)]
+
+
+def test_asr_has_role_yields(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection,
+        full_mock_account):
     """
     unit tested:  has_role
 
@@ -381,16 +308,35 @@ def test_asr_has_role_yields(patched_accountstore_realm, monkeypatch):
     - gets authorization info
     - yields from the role_verifier, one role at a time
     """
-    pasr = patched_accountstore_realm
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
 
     def mock_yielder(authz_info, input):
-        yield ('role', False)
+        yield ('roleid1', False)
 
-    monkeypatch.setattr(pasr.role_verifier, 'has_role', mock_yielder)
+    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: full_mock_account)
+    monkeypatch.setattr(asr.role_verifier, 'has_role', mock_yielder)
 
-    results = list(pasr.has_role('identifiers', {'roleid1'}))
-    assert results == [('role', False)]
+    results = list(asr.has_role(sic, {'roleid1'}))
+    assert results == [('roleid1', False)]
 
+
+def test_asr_has_role_no_account_obtained(
+        default_accountstorerealm, monkeypatch, simple_identifier_collection):
+    """
+    unit tested:  has_role
+
+    test case:
+    - no account can be obtained from  get_authorization_info
+    - yields False for each role requested
+    """
+    asr = default_accountstorerealm
+    sic = simple_identifier_collection
+
+    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: None)
+
+    results = list(asr.has_role(sic, ['role1', 'role2']))
+    assert results == [('role1', False), ('role2', False)]
 
 # -----------------------------------------------------------------------------
 # DefaultCredentialsCacheHandler Tests
