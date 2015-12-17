@@ -1,10 +1,9 @@
 import datetime
 from yosai.core import (
-    AbstractNativeSessionManager,
+    DefaultNativeSessionManager,
     AbstractSessionStore,
-    AbstractValidatingSessionManager,
     CachingSessionStore,
-    DefaultSessionManager,
+    DefaultNativeSessionManager,
     event_bus,
     session_abcs,
 )
@@ -52,7 +51,7 @@ class MockSessionManager:
         pass
 
 
-class MockAbstractNativeSessionManager(AbstractNativeSessionManager):
+class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
 
     def __init__(self):
         super().__init__()
@@ -75,40 +74,6 @@ class MockAbstractNativeSessionManager(AbstractNativeSessionManager):
         pass
 
     def validate_sessions(self):
-        pass
-
-
-class MockAbstractValidatingSessionManager(AbstractValidatingSessionManager):
-
-    def __init__(self):
-        super().__init__()
-        self.listeners = []
-
-    def on_start(self, session, session_context):
-        pass
-
-    def after_stopped(self, session):
-        pass
-
-    def on_change(self, session):
-        pass
-
-    def retrieve_session(self, session_key):
-        pass
-
-    def do_create_session(self, session_context):
-        pass
-
-    def after_expired(self, session):
-        pass
-
-    def after_session_validation_enabled(self):
-        pass
-
-    def before_session_validation_disabled(self):
-        pass
-
-    def get_active_sessions(self):
         pass
 
 
@@ -145,7 +110,7 @@ class MockCachingSessionStore(CachingSessionStore):
         pass
 
 
-class MockDefaultSessionManager(DefaultSessionManager):
+class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
 
     def after_session_validation_enabled(self):
         pass

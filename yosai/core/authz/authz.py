@@ -60,14 +60,20 @@ class WildcardPermission(serialize_abcs.Serializable):
 
     def __init__(self, wildcard_string=None,
                  case_sensitive=DEFAULT_CASE_SENSITIVE):
-
+        """
+        :type wildcard_string:  String
+        :case_sensitive:  Boolean
+        """
         self.case_sensitive = case_sensitive
         self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
         if wildcard_string:
             self.setparts(wildcard_string, case_sensitive)
 
-    def setparts(self, wildcard_string,
-                 case_sensitive=DEFAULT_CASE_SENSITIVE):
+    def setparts(self, wildcard_string, case_sensitive=DEFAULT_CASE_SENSITIVE):
+        """
+        :type wildcard_string:  String
+        :case_sensitive:  Boolean
+        """
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
                    "permission strings are properly formatted.")
@@ -114,7 +120,8 @@ class WildcardPermission(serialize_abcs.Serializable):
 
     def implies(self, permission):
         """
-        :type permission:  Permission object
+        :type permission:  authz_abcs.Permission
+        :returns:  Boolean
         """
         # By default only supports comparisons with other WildcardPermissions
         if (not isinstance(permission, WildcardPermission)):
@@ -169,6 +176,9 @@ class WildcardPermission(serialize_abcs.Serializable):
 
     @classmethod
     def serialization_schema(cls):
+        """
+        :returns:  marshmallow.Schema
+        """
         class WildcardPartsSchema(Schema):
                 domain = fields.List(fields.Str, allow_none=True)
                 action = fields.List(fields.Str, allow_none=True)
@@ -203,6 +213,10 @@ class WildcardPermission(serialize_abcs.Serializable):
 class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
 
     def __init__(self, authz_info_class):
+        """
+        :param: the class injected for AuthorizationInfo conversion
+        :type authz_info_class:  type
+        """
         self.authz_info_class = authz_info_class
 
     def resolve(self, roles, permissions):
@@ -210,8 +224,8 @@ class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
 
     def __call__(self, roles, permissions):
         """
-        :type roles: set of role objects
-        :type perms: set of permission objects
+        :type roles: Set of authz_abcs.Role
+        :type permissions: Set of authz_abcs.Permission
         """
         return self.authz_info_class(roles=roles, permissions=permissions)
 
@@ -226,7 +240,7 @@ class PermissionResolver(authz_abcs.PermissionResolver):
         """
         :param permission_class: expecting either a WildcardPermission or
                                  DefaultPermission class
-        :type permission_class: Permission
+        :type permission_class: type
         """
         self.permission_class = permission_class
 
@@ -234,9 +248,9 @@ class PermissionResolver(authz_abcs.PermissionResolver):
         """
         :param permission_s: a collection of 1..N permissions expressed in
                              String or Permission form
-        :type permission_s: List
+        :type permission_s: List of authz_abcs.Permission
 
-        :returns: a set of Permission object(s)
+        :returns: a Set of authz_abcs.Permission instances
         """
         # the type of the first element in permission_s implies the type of the
         # rest of the elements -- no commingling!
@@ -249,7 +263,7 @@ class PermissionResolver(authz_abcs.PermissionResolver):
     def __call__(self, permission):
         """
         :type permission: String
-        :returns: a Permission object
+        :returns: authz_abcs.Permission instance
         """
         return self.permission_class(permission)
 
@@ -263,13 +277,14 @@ class RoleResolver(authz_abcs.RoleResolver):
     def __init__(self, role_class):
         """
         :param role_class:  a SimpleRole or other Role class
+        :type role_class:  type
         """
         self.role_class = role_class
 
     def resolve(self, role_s):
         """
         :param role_s: a collection of 1..N roles expressed in
-                       String or Role form
+                       String or authz_abcs.Role form
         :type role_s: List
 
         :returns: a set of Role object(s)
@@ -284,8 +299,8 @@ class RoleResolver(authz_abcs.RoleResolver):
 
     def __call__(self, role):
         """
-        :type permission: String
-        :returns: a Role object
+        :type role: String
+        :returns: authz_abcs.Role
         """
         return self.role_class(role)
 

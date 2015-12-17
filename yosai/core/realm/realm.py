@@ -26,7 +26,6 @@ from yosai.core import (
     IndexedPermissionVerifier,
     LogManager,
     PasswordVerifier,
-    RealmMisconfiguredException,
     SimpleIdentifierCollection,
     SimpleRoleVerifier,
     UsernamePasswordToken,
@@ -249,7 +248,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                               credentials=credentials)
         except AttributeError:
             # this means the cache_handler isn't configured
-            credentials = get_stored_credentials()
+            credentials = get_stored_credentials(self)
             account = Account(account_id=identifier,
                               credentials=credentials)
         except CredentialsNotFoundException:
@@ -339,7 +338,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                               authz_info=authz_info)
         except AttributeError:
             # this means the cache_handler isn't configured
-            authz_info = get_stored_authz_info()
+            authz_info = get_stored_authz_info(self)
             account = Account(account_id=identifier,
                               authz_info=authz_info)
         except AuthzInfoNotFoundException:
@@ -370,6 +369,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         if account is None:
             msg = 'is_permitted:  authz_info returned None for [{0}]'.\
                 format(identifiers)
+            print(msg)
             # log warning here
             for permission in permission_s:
                 yield (permission, False)

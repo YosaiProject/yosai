@@ -59,7 +59,6 @@ class DefaultPasswordService:
             raise PasswordMatchException('unrecognized attribute type')
 
 
-
 class PasswordVerifier(authc_abcs.CredentialsVerifier):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""
 

@@ -1,24 +1,21 @@
 import pytest
 
 from yosai.core import (
-    AbstractNativeSessionManager,
-    AbstractValidatingSessionManager,
+    DefaultNativeSessionManager,
     CachingSessionStore,
     DefaultSessionContext,
     DefaultSessionSettings,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
-    ImmutableProxiedSession,
     MemorySessionStore,
     ProxiedSession,
     SimpleSession,
 )
 
 from .doubles import (
-    MockAbstractNativeSessionManager,
+    MockDefaultNativeSessionManager,
     MockAbstractSessionStore,
-    MockAbstractValidatingSessionManager,
     MockCachingSessionStore,
     MockSessionManager,
 )
@@ -43,18 +40,13 @@ def patched_delegating_session():
 
 
 @pytest.fixture(scope='function')
-def immutable_proxied_session():
-    return ImmutableProxiedSession(MockSession())
-
-
-@pytest.fixture(scope='function')
 def abstract_native_session_manager():
-    return MockAbstractNativeSessionManager()
+    return MockDefaultNativeSessionManager()
 
 
 @pytest.fixture(scope='function')
 def patched_abstract_native_session_manager(monkeypatch, mock_session):
-    ansm = MockAbstractNativeSessionManager()
+    ansm = MockDefaultNativeSessionManager()
     monkeypatch.setattr(ansm, 'lookup_required_session', lambda x: mock_session) 
     return ansm
 
@@ -65,11 +57,6 @@ def executor_session_validation_scheduler(patched_abstract_native_session_manage
     interval = 360
     return ExecutorServiceSessionValidationScheduler(session_manager=pansm, 
                                                      interval=interval) 
-
-@pytest.fixture(scope='function')
-def abstract_validating_session_manager():
-    return MockAbstractValidatingSessionManager()
-
 
 @pytest.fixture(scope='function')
 def mock_abstract_session_store():

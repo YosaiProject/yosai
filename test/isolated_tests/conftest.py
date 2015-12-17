@@ -3,18 +3,17 @@ from unittest import mock
 
 from yosai.core import (
     AccountStoreRealm,
+    Credential,
     DefaultAuthenticator,
     DefaultEventBus,
     DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
     PasswordVerifier,
-    SecurityUtils
+    SimpleIdentifierCollection,
 )
 
 from .doubles import (
-    MockAccount,
     MockAccountStore,
-    MockCache,
     MockPubSub,
     MockSecurityManager,
     MockSession,
@@ -26,38 +25,51 @@ from .doubles import (
 )
 
 from .session.doubles import (
-    MockDefaultSessionManager,
+    MockDefaultNativeSessionManager,
 )
+
 
 @pytest.fixture(scope='function')
 def mock_account_state():
-    return {'creds': {'password': '$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO',
-                      'api_key_secret': ' lWxOiKqKPNwJmSldbiSkEbkNjgh2uRSNAb+AEXAMPLE'},
-            'identifiers': {'givenname': 'Napolean',
-                            'surname': 'Dynamite',
-                            'email': 'napoleandynamite@example.com',
-                            'username': 'napodyna',
-                            'api_key_id': '144JVZINOF5EBNCMG9EXAMPLE'}}
+    return {'account_id': 'identifier',
+            'creds': Credential('$bcrypt-sha256$2a,12$xVPxYhwlLOgStpiHCJNJ9u$wM.B.VVoJ1Lv0WeT4cRFY1PqYWH37WO')}
 
 
 @pytest.fixture(scope='function')
 def full_mock_account(mock_account_state, role_collection,
                       permission_collection):
     mas = mock_account_state
-    return MockAccount(account_id=8675309,
-                       credentials=mas['creds'],
-                       identifiers=mas['identifiers'],
-                       roles=role_collection,
-                       permissions=permission_collection)
-
+    ma = mock.Mock()
+    ma.account_id = mas['account_id']
+    ma.credentials = mas['creds'],
+    return ma
 
 @pytest.fixture(scope='function')
 def return_true(**kwargs):
     return True
 
 @pytest.fixture(scope='function')
-def default_accountstorerealm():
-    return AccountStoreRealm()
+def default_accountstorerealm(monkeypatch):
+    asr = AccountStoreRealm(name='AccountStoreRealm')
+
+    account_store = type('AccountStore', (object,), {})()
+    cache_handler = type('CacheHandler', (object,), {})()
+    mock_account = type('Account', (object,), {})()
+    mock_account.identifier = 'identifier'
+    mock_account.credentials = 'stored_creds'
+    mock_account.authz_info = 'stored_authzinfo'
+
+    monkeypatch.setattr(account_store, 'get_credentials',
+                        lambda x: mock_account, raising=False)
+    monkeypatch.setattr(account_store, 'get_authz_info',
+                        lambda x: mock_account, raising=False)
+    monkeypatch.setattr(cache_handler, 'get_or_create',
+                        lambda domain, identifier, creator_func, creator:
+                        creator_func(creator), raising=False)
+    monkeypatch.setattr(asr, 'account_store', account_store)
+    monkeypatch.setattr(asr, 'cache_handler', cache_handler)
+
+    return asr
 
 
 @pytest.fixture(scope='function')
@@ -85,12 +97,6 @@ def patched_event_bus(mock_pubsub, monkeypatch):
     return eb
 
 
-@pytest.fixture(scope='function')
-def mock_cache(full_mock_account):
-    return MockCache({'sessionid123': 'session_123',
-                      'user123': full_mock_account})
-
-
 @pytest.fixture(scope="function")
 def first_realm_successful_strategy():
     return FirstRealmSuccessfulStrategy()
@@ -106,7 +112,7 @@ def default_authenticator(
 
 @pytest.fixture(scope='function')
 def mock_default_session_manager():
-    return MockDefaultSessionManager()
+    return MockDefaultNativeSessionManager()
 
 
 @pytest.fixture(scope='function')
@@ -144,3 +150,9 @@ def mock_thread_context():
 @pytest.fixture(scope='function')
 def mock_subject_builder(mock_security_manager):
     return MockSubjectBuilder(security_manager=mock_security_manager)
+
+
+@pytest.fixture(scope='function')
+def simple_identifier_collection():
+    return SimpleIdentifierCollection(source_name='AccountStoreRealm',
+                                      identifier='identifier')

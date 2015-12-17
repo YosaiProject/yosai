@@ -51,7 +51,8 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                  identifier_collection=None):
         """
         :type source_name: String
-        :type identifier_collection: a SimpleIdentifierCollection
+        :type identifier: String or ?
+        :type identifier_collection:  subject_abcs.MutableIdentifierCollection
         """
         self.source_identifiers = {}
         self._primary_identifier = None

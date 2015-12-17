@@ -15,7 +15,7 @@ from marshmallow import fields, Schema, post_load
 import datetime
 
 
-class MockSession(session_abcs.ValidatingSession, object):
+class MockSession(session_abcs.ValidatingSession):
 
     def __init__(self):
         self.session = {'attr1': 1, 'attr2': 2, 'attr3': 3}
@@ -85,40 +85,9 @@ class MockSession(session_abcs.ValidatingSession, object):
         pass
 
     def __repr__(self):
-        attrs = ','.join([str(key) + ':' + str(value) for key, value in 
+        attrs = ','.join([str(key) + ':' + str(value) for key, value in
                           self.session.items()])
         return "MockSession(" + attrs + ")"
-
-
-class MockCache(cache_abcs.Cache):
-
-    def __init__(self, keyvals={}):
-        # keyvals is a dict
-        self.kvstore = {}
-        self.kvstore.update(keyvals)
-
-    @property
-    def values(self):
-        return self.kvstore.values()
-
-    def get(self, key):
-        return self.kvstore.get(key, None)
-
-    def put(self, key, value):
-        self.kvstore[key] = value
-
-    def remove(self, key):
-        return self.kvstore.pop(key)
-
-
-class MockCacheManager(cache_abcs.CacheManager):
-
-    def __init__(self, cache):
-        self.cache = cache
-
-    def get_cache(self, name):
-        # regardless of the name, return the stock cache
-        return self.cache
 
 
 class MockToken(authc_abcs.AuthenticationToken):
@@ -132,18 +101,9 @@ class MockToken(authc_abcs.AuthenticationToken):
         pass
 
 
-class MockCredentialsCacheHandler(realm_abcs.CredentialsCacheHandler):
-
-    def __init__(self, account):
-        self.account = account
-
-    def get_cached_credentials(self, account):
-        return self.account  # always returns the initialized account
-
-
 class MockAccount(account_abcs.Account):
 
-    def __init__(self, account_id, credentials={}, identifiers={}, 
+    def __init__(self, account_id, credentials={}, identifiers={},
                  roles=set(), permissions=set()):
         self._account_id = account_id
         self._credentials = credentials
@@ -156,12 +116,20 @@ class MockAccount(account_abcs.Account):
         return self._account_id
 
     @property
-    def roles(self): 
-        return self._roles 
+    def attributes(self):
+        pass
+
+    @property
+    def authz_info(self):
+        pass
+
+    @property
+    def roles(self):
+        return self._roles
 
     @property
     def permissions(self):
-        return self._permissions 
+        return self._permissions
 
     @property
     def credentials(self):
@@ -225,7 +193,7 @@ class MockAccountStore(account_abcs.AccountStore):
     def __init__(self, account=MockAccount(account_id='MAS123')):
         self.account = account
 
-    def get_account(self, request): 
+    def get_account(self, request):
         return self.account  # always returns the initialized account
 
     def get_authz_info(self, identifiers):
@@ -303,7 +271,7 @@ class MockSubject(DelegatingSubject):
 
     @property
     def authenticated(self):
-        return self._authenticated 
+        return self._authenticated
 
     @property
     def is_remembered(self):
@@ -394,4 +362,3 @@ class MockSubjectBuilder:
 
     def build_subject(self):
         return 'subjectbuildersubject'
-

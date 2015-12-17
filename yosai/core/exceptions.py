@@ -232,10 +232,6 @@ class CacheException(YosaiException):
     pass
 
 
-class CacheKeyGenerationException(CacheException):
-    pass
-
-
 # ---------------------------------------------------------------------------
 # ----  EventBus Exceptions
 # ---------------------------------------------------------------------------
@@ -282,30 +278,6 @@ class SessionEventException(EventException):
 
 
 class EventRegistrationException(EventException):
-    pass
-
-# ---------------------------------------------------------------------------
-# ---- Realm Exceptions
-# ---------------------------------------------------------------------------
-
-
-class CredentialsCacheHandlerException(YosaiException):
-    pass
-
-
-class RealmMisconfiguredException(CredentialsCacheHandlerException):
-    pass
-
-
-class GetCachedCredentialsException(CredentialsCacheHandlerException):
-    pass
-
-
-class CacheCredentialsException(CredentialsCacheHandlerException):
-    pass
-
-
-class ClearCacheCredentialsException(CredentialsCacheHandlerException):
     pass
 
 # ---------------------------------------------------------------------------
