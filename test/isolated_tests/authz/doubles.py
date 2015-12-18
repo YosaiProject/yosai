@@ -4,11 +4,7 @@ from yosai.core import (
 )
 
 
-class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
-                                 authz_abcs.PermissionResolverAware):
-
-    def __init__(self):
-        self._permission_resolver = None
+class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm):
 
     def has_role(self, identifiers, roleid_s):
         return None
@@ -21,14 +17,6 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
 
     def is_permitted_all(self, identifiers, permission_s):
         return None
-
-    @property
-    def permission_resolver(self):
-        return self._permission_resolver
-
-    @permission_resolver.setter
-    def permission_resolver(self, permission_resolver):
-        self._permission_resolver = permission_resolver 
 
     @property
     def permission_verifier(self):
@@ -57,7 +45,10 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm,
     def __eq__(self, other):
         return self is other
 
-    
+    def clear_cached_authorization_info(self, identifier):
+        pass
+   
+
 class MockPermission(authz_abcs.Permission):
    
     # using init to define whether implies is always True or False

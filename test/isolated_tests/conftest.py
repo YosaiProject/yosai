@@ -10,6 +10,7 @@ from yosai.core import (
     FirstRealmSuccessfulStrategy,
     PasswordVerifier,
     SimpleIdentifierCollection,
+    event_bus,
 )
 
 from .doubles import (
@@ -106,9 +107,10 @@ def first_realm_successful_strategy():
 
 @pytest.fixture(scope='function')
 def default_authenticator(
-        first_realm_successful_strategy, monkeypatch, patched_event_bus):
+        first_realm_successful_strategy, monkeypatch, default_accountstorerealm):
     da = DefaultAuthenticator(first_realm_successful_strategy)
-    monkeypatch.setattr(da, '_event_bus', patched_event_bus)
+    da.event_bus = event_bus
+    da.realms = (default_accountstorerealm,)
     return da
 
 

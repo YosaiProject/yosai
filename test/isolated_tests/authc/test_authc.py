@@ -1,7 +1,9 @@
 import pytest
 from unittest import mock
+import collections
 
 from yosai.core import (
+    AccountStoreRealm,
     AuthenticationException,
     AuthenticationEventException,
     DefaultEventBus,
@@ -17,6 +19,7 @@ from yosai.core import (
     requires_authentication,
     requires_user,
     requires_guest,
+    event_bus
 )
 
 # -----------------------------------------------------------------------------
@@ -40,6 +43,14 @@ def test_upt_clear_existing_passwords_fails(
 # -----------------------------------------------------------------------------
 # DefaultAuthenticator Tests
 # -----------------------------------------------------------------------------
+
+def test_da_realms_setter(default_authenticator, default_accountstorerealm):
+    faux_realm = type('FauxRealm', (object,), {})()
+    asr = default_accountstorerealm
+    da = default_authenticator
+    da.realms = (faux_realm, asr)
+    assert da._realms == (asr,)
+
 def test_da_auth_sra_unsupported_token(
         default_authenticator, mock_token, default_accountstorerealm):
     """
@@ -68,6 +79,7 @@ def test_da_authc_sra_supported_token(
     token = username_password_token
     assert da.authenticate_single_realm_account(realm, token)
 
+
 def test_da_autc_mra_succeeds(
         default_authenticator, two_accountstorerealms_succeeds,
         username_password_token):
@@ -80,6 +92,7 @@ def test_da_autc_mra_succeeds(
     token = username_password_token
     result = da.authenticate_multi_realm_account(realms, token)
     assert (result.__class__.__name__ == 'MockAccount')
+
 
 def test_da_autc_mra_fails(
         default_authenticator, two_accountstorerealms_fails,
@@ -94,6 +107,7 @@ def test_da_autc_mra_fails(
 
     with pytest.raises(MultiRealmAuthenticationException):
         da.authenticate_multi_realm_account(realms, token)
+
 
 def test_da_authc_acct_authentication_fails(
         default_authenticator, username_password_token, monkeypatch):
@@ -116,6 +130,7 @@ def test_da_authc_acct_authentication_fails(
 
     with pytest.raises(AuthenticationException):
         da.authenticate_account(token)
+
 
 def test_da_authc_acct_authentication_raises_unknown_exception(
         default_authenticator, username_password_token, monkeypatch):
@@ -158,16 +173,14 @@ def test_da_authc_acct_authentication_succeeds(
     def get_mock_account(self, x=None):
         return full_mock_account
 
-    def do_nothing(x, y):
-        pass
-
     monkeypatch.setattr(da, 'do_authenticate_account', get_mock_account)
-    monkeypatch.setattr(da, 'notify_failure', do_nothing)
-    monkeypatch.setattr(da, 'notify_success', do_nothing)
+    monkeypatch.setattr(da, 'notify_failure', lambda x: None)
+    monkeypatch.setattr(da, 'notify_success', lambda x: None)
 
     result = da.authenticate_account(token)
 
     assert isinstance(result, full_mock_account.__class__)
+
 
 def test_da_do_authc_acct_with_realm(
         default_authenticator, username_password_token,
@@ -190,6 +203,7 @@ def test_da_do_authc_acct_with_realm(
     monkeypatch.setattr(da, 'authenticate_single_realm_account', say_nothing)
     result = da.do_authenticate_account(token)
     assert result == 'nothing'
+
 
 def test_da_do_authc_acct_with_realms(
         default_authenticator, username_password_token,
@@ -226,7 +240,44 @@ def test_da_do_authc_acct_without_realm(
         da.do_authenticate_account(token)
 
 
-def test_da_notify_success(default_authenticator):
+def test_da_clear_cache(
+        default_authenticator, simple_identifier_collection, full_mock_account):
+    sic = simple_identifier_collection
+    da = default_authenticator
+    session_tuple = collections.namedtuple(
+        'session_tuple', ['identifiers', 'session_key'])
+    result = session_tuple(sic, 'sessionkey123')
+
+    myevent = Event(source='Somewhere',
+                    event_topic='EVENT_TOPIC',
+                    results=result)
+
+    with mock.patch.object(AccountStoreRealm, 'clear_cached_credentials') as ccc:
+        ccc.return_value = None
+
+        da.clear_cache(event=myevent)
+
+        ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
+
+
+def test_da_register_cache_clear_listener(default_authenticator):
+    da = default_authenticator
+
+    with mock.patch.object(event_bus, 'register') as eb_r:
+        eb_r.return_value = None
+        with mock.patch.object(event_bus, 'is_registered') as eb_ir:
+            eb_ir.return_value = None
+
+            da.register_cache_clear_listener()
+
+            calls = [mock.call(da.clear_cache, 'SESSION.EXPIRE'),
+                     mock.call(da.clear_cache, 'SESSION.STOP')]
+
+            eb_r.assert_has_calls(calls)
+            eb_ir.assert_has_calls(calls)
+
+
+def test_da_notify_success(default_authenticator, full_mock_account):
     """
     unit tested:  notify_success
 
@@ -235,20 +286,24 @@ def test_da_notify_success(default_authenticator):
     """
     da = default_authenticator
 
+    account_tuple = collections.namedtuple(
+        'account_tuple', ['identifiers'])
+    result = account_tuple('identifier')
+
     myevent = Event(source='DefaultAuthenticator',
                     event_topic='AUTHENTICATION.SUCCEEDED',
-                    authc_token='token',
-                    account='account')
+                    results=result)
 
-    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
+    with mock.patch.object(event_bus, 'publish') as eb_pub:
         eb_pub.return_value = None
 
-        da.notify_success('token', 'account')
+        da.notify_success(full_mock_account)
 
         assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
 
 
-def test_da_notify_success_raises(default_authenticator, monkeypatch):
+def test_da_notify_success_raises(
+        default_authenticator, monkeypatch, full_mock_account):
     """
     unit tested:  notify_success
 
@@ -261,7 +316,7 @@ def test_da_notify_success_raises(default_authenticator, monkeypatch):
     monkeypatch.setattr(da, '_event_bus', None)
 
     with pytest.raises(AuthenticationEventException):
-        da.notify_success('token', 'account')
+        da.notify_success(full_mock_account)
 
 
 def test_da_notify_failure(default_authenticator):

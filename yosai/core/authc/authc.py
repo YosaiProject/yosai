@@ -16,15 +16,13 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-from marshmallow import Schema, fields, post_load, post_dump
-import copy
+from marshmallow import Schema, fields, post_load
 from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
     Event,
     InvalidTokenPasswordException,
     LogManager,
-    PreparePasswordException,
     UnknownAccountException,
     UnsupportedTokenException,
     event_abcs,
@@ -32,7 +30,6 @@ from yosai.core import (
     serialize_abcs,
     FirstRealmSuccessfulStrategy,
     DefaultAuthenticationAttempt,
-    authc_settings,
     realm_abcs,
 )
 import collections
@@ -278,6 +275,11 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     # --------------------------------------------------------------------------
 
     def clear_cache(self, event=None):
+        """
+        expects event object to be in the format of a session-stop or
+        session-expire event, whose results attribute is a
+        namedtuple(identifiers, session_key)
+        """
         for realm in self.realms:
             identifiers = event.results.identifiers
             realm_identifier = identifiers.from_source(realm.name)

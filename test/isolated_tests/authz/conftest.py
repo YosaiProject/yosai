@@ -1,12 +1,10 @@
 import pytest
-import copy
-from unittest.mock import create_autospec
 
 from yosai.core import (
     DefaultPermission,
     ModularRealmAuthorizer,
-    OrderedSet,
     IndexedPermissionVerifier,
+    PermissionResolver,
     SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
@@ -31,10 +29,10 @@ def authz_realms_collection():
 
 @pytest.fixture(scope='function')
 def modular_realm_authorizer_patched(
-        monkeypatch, authz_realms_collection, patched_event_bus):
+        monkeypatch, authz_realms_collection):
     a = ModularRealmAuthorizer()
     monkeypatch.setattr(a, '_realms', authz_realms_collection)
-    monkeypatch.setattr(a, '_event_bus', patched_event_bus)
+    monkeypatch.setattr(a, '_event_bus', event_bus)
     return a
 
 @pytest.fixture(scope='function')
@@ -59,8 +57,9 @@ def test_permission_collection():
 
 @pytest.fixture(scope='function')
 def indexed_permission_verifier():
-    return IndexedPermissionVerifier()
-
+    ipv = IndexedPermissionVerifier()
+    ipv.permission_resolver = PermissionResolver(DefaultPermission)
+    return ipv
 
 @pytest.fixture(scope='function')
 def simple_role_verifier():

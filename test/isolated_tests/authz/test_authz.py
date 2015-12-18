@@ -3,28 +3,23 @@ import collections
 from unittest import mock
 
 from yosai.core import (
+    AccountStoreRealm,
     AuthorizationEventException,
     DefaultPermission,
-    DefaultPermissionResolver,
     Event,
     DefaultEventBus,
-    IllegalArgumentException,
     IllegalStateException,
     IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
     ModularRealmAuthorizer,
     PermissionIndexingException,
+    PermissionResolver,
     SimpleRole,
     UnauthorizedException,
-    WildcardPermission,
-    WildcardPermissionResolver,
     requires_permission,
     requires_role,
     SecurityUtils,
-)
-
-from .doubles import (
-    MockPermission,
+    event_bus
 )
 
 from ..doubles import (
@@ -34,7 +29,8 @@ from ..doubles import (
 # ModularRealmAuthorizer Tests
 # -----------------------------------------------------------------------------
 
-def test_mra_realms_setter(modular_realm_authorizer_patched):
+def test_mra_realms_setter(
+        modular_realm_authorizer_patched, default_accountstorerealm):
     """
     unit tested:  realms.setter
 
@@ -42,86 +38,20 @@ def test_mra_realms_setter(modular_realm_authorizer_patched):
     setting the realms attribute in turn calls two other methods
     """
     mra = modular_realm_authorizer_patched
-    with mock.patch.object(mra, 'apply_permission_resolver_to_realms') as aprtr:
-        aprtr.return_value = False
-        mra.realms = 'something'
-        assert aprtr.called
 
-def test_mra_authorizing_realms(modular_realm_authorizer_patched):
-    """
-    unit tested:  authorizing_realms
-
-    test case:
-    verify that only realms that implement IAuthorizer are returned in
-    the generator expression
-
-    3 out of 5 of the mock realms in authz_realms_collection_fff implement IAuthorizer
-    """
-    mra = modular_realm_authorizer_patched
-
-    result = list(mra.authorizing_realms)  # wrap the generator in a list
-    assert len(result) == 3
-
-
-def test_mra_pr_setter_succeeds(modular_realm_authorizer_patched):
-    """
-    unit tested:  permission_resolver.setter
-
-    test case:
-    the property setter assigns the attribute and then calls the apply.. method
-    """
-
-    mra = modular_realm_authorizer_patched
+    asr = default_accountstorerealm
+    faux_realm = type('FauxRealm', (object,), {})
+    test_realms = (asr, faux_realm)
 
     with mock.patch.object(ModularRealmAuthorizer,
-                           'apply_permission_resolver_to_realms') as apr:
-        apr.return_value = None
-        mra.permission_resolver = 'arbitrary value'
-        assert apr.called
+                           'register_cache_clear_listener') as rccl:
+        rccl.return_value = None
 
-def test_mra_aprtr_succeeds(modular_realm_authorizer_patched, monkeypatch):
-    """
-    unit tested:  apply_permission_resolver_to_realms
+        mra.realms = test_realms
 
-    test case:
-    to apply a permission resolver to realms, both the resolver and realms
-    attributes must be set in the ModularRealmAuthorizer and the realm
-    must implement the IPermissionResolverAware interface--  3 out of 5 realms
-    in realms_collection do
-    """
-    mra = modular_realm_authorizer_patched
+        rccl.assert_called_once_with()
+        assert mra.realms == (asr,)
 
-    # testing only checks that the attributes are set, not what they are set to
-    monkeypatch.setattr(mra, '_permission_resolver', 'arbitrary value')
-
-    # no permission_resolver exists in each realm until this method is called:
-    mra.apply_permission_resolver_to_realms()
-
-    configured_realms =\
-        [realm for realm in mra.realms
-         if (getattr(realm, '_permission_resolver', None) == 'arbitrary value')]
-
-    print('realms is:', mra.realms)
-    assert len(configured_realms) == 3
-
-def test_mra_aprtr_fails(modular_realm_authorizer_patched):
-    """
-    unit tested:  apply_permission_resolver_to_realms
-
-    test case:
-    to apply a permission resolver to realms, both the resolver and realms
-    attributes must be set in the ModularRealmAuthorizer and the realm
-    must implement the IPermissionResolverAware interface
-
-    """
-    mra = modular_realm_authorizer_patched
-    # not setting the resolver, so to exercise failed code path
-
-    configured_realms =\
-        [realm for realm in mra.realms
-         if (getattr(realm, '_permission_resolver', None) == 'arbitrary_value')]
-
-    assert len(configured_realms) == 0
 
 def test_mra_assert_realms_configured_success(modular_realm_authorizer_patched):
     """
@@ -131,6 +61,7 @@ def test_mra_assert_realms_configured_success(modular_realm_authorizer_patched):
     """
     mra = modular_realm_authorizer_patched
     assert mra.assert_realms_configured() is None
+
 
 def test_mra_assert_realms_configured_fail(
         modular_realm_authorizer_patched, monkeypatch):
@@ -143,6 +74,7 @@ def test_mra_assert_realms_configured_fail(
     monkeypatch.setattr(mra, '_realms', None)
     with pytest.raises(IllegalStateException):
         mra.assert_realms_configured()
+
 
 def test_mra_private_has_role_true_and_false(
         modular_realm_authorizer_patched, monkeypatch):
@@ -200,6 +132,7 @@ def test_mra_private_is_permitted_true_and_false(
     result = {(permission, ispermitted) for permission, ispermitted in
               mra._is_permitted('identifiers', {'permission1'})}
     assert result == {('permission1', False), ('permission1', True)}
+
 
 def test_mra_is_permitted_succeeds(modular_realm_authorizer_patched, monkeypatch):
     """
@@ -328,6 +261,7 @@ def test_mra_check_permission_collection_raises(
         with pytest.raises(UnauthorizedException):
             mra.check_permission('arbitrary_identifiers', ['perm1', 'perm2'], all)
             mra_arc.assert_called_once_with()
+
 
 def test_mra_check_permission_collection_succeeds(
         modular_realm_authorizer_patched, monkeypatch):
@@ -481,6 +415,7 @@ def test_mra_check_role_raises(
 
             arc.assert_called_once_with()
 
+
 def test_mra_check_role_true(
         modular_realm_authorizer_patched, monkeypatch):
     """
@@ -498,6 +433,46 @@ def test_mra_check_role_true(
 
         mra.check_role('identifiers', 'roleid_s', all)
         arc.assert_called_once_with()
+
+
+def test_mraa_clear_cache(
+        modular_realm_authorizer_patched, simple_identifier_collection,
+        full_mock_account, monkeypatch, default_accountstorerealm):
+    sic = simple_identifier_collection
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, '_realms', (default_accountstorerealm,))
+    session_tuple = collections.namedtuple(
+        'session_tuple', ['identifiers', 'session_key'])
+    result = session_tuple(sic, 'sessionkey123')
+
+    myevent = Event(source='Somewhere',
+                    event_topic='EVENT_TOPIC',
+                    results=result)
+
+    with mock.patch.object(AccountStoreRealm, 'clear_cached_authorization_info') as ccc:
+        ccc.return_value = None
+
+        mra.clear_cache(event=myevent)
+
+        ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
+
+
+def test_mra_register_cache_clear_listener(modular_realm_authorizer_patched):
+    mra = modular_realm_authorizer_patched
+
+    with mock.patch.object(event_bus, 'register') as eb_r:
+        eb_r.return_value = None
+        with mock.patch.object(event_bus, 'is_registered') as eb_ir:
+            eb_ir.return_value = None
+
+            mra.register_cache_clear_listener()
+
+            calls = [mock.call(mra.clear_cache, 'SESSION.STOP'),
+                     mock.call(mra.clear_cache, 'SESSION.EXPIRE'),
+                     mock.call(mra.clear_cache, 'AUTHENTICATION.SUCCEEDED')]
+
+            eb_r.assert_has_calls(calls)
+            eb_ir.assert_has_calls(calls)
 
 
 def test_mra_notify_results(modular_realm_authorizer_patched):
@@ -552,7 +527,7 @@ def test_mra_notify_success(modular_realm_authorizer_patched):
     myevent = Event(source='ModularRealmAuthorizer',
                     event_topic='AUTHORIZATION.GRANTED',
                     identifiers='identifiers',
-                    permission_s=permission_s)
+                    items=permission_s)
 
     with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
         eb_pub.return_value = None
@@ -591,7 +566,7 @@ def test_mra_notify_failure(modular_realm_authorizer_patched):
     myevent = Event(source='ModularRealmAuthorizer',
                     event_topic='AUTHORIZATION.DENIED',
                     identifiers='identifiers',
-                    permission_s=permission_s)
+                    items=permission_s)
 
     with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
         eb_pub.return_value = None
@@ -785,63 +760,6 @@ def test_simple_role_not_equals_other(populated_simple_role):
 # IndexedPermissionVerifier Tests
 # -----------------------------------------------------------------------------
 
-def test_ipv_resolve_permission_strings(
-        indexed_permission_verifier, monkeypatch):
-    """
-    unit tested:  resolve permission
-
-    test case:
-    - a list of string-formatted permissions is passed in as an argument
-    - strings are converted to permission objects
-    - a set of permission objects is returned
-    """
-    ipv = indexed_permission_verifier
-    ipv.permission_resolver = DefaultPermissionResolver()
-
-    permstring1 = 'domain1:action1'
-    permstring2 = 'domain2:action1,action2'
-    permstring3 = 'domain3:*:*'
-    result = ipv.resolve_permission([permstring1, permstring2, permstring3])
-    assert result == {DefaultPermission(wildcard_string=permstring1),
-                      DefaultPermission(wildcard_string=permstring2),
-                      DefaultPermission(wildcard_string=permstring3)}
-
-def test_ipv_resolve_permission_strings_raises_wo_resolver(
-        indexed_permission_verifier, monkeypatch, capsys):
-    """
-    unit tested:  resolve permission
-
-    test case:
-    when the resolver isn't set, a warning is logged and empty set returned
-    """
-    ipv = indexed_permission_verifier
-
-    result = ipv.resolve_permission(['domain1:action1'])
-    out, err = capsys.readouterr()
-    assert 'Permission Resolver is not set' in out and result == set()
-
-def test_ipv_resolve_permission_permissionobjects(
-        indexed_permission_verifier, monkeypatch):
-    """
-    unit tested:  resolve permission
-
-    test case:
-    when a collection of permission objects is passed as an argument, they
-    are returned immediately
-    """
-    ipv = indexed_permission_verifier
-    ipv.permission_resolver = DefaultPermissionResolver()
-
-    permstring1 = 'domain1:action1'
-    permstring2 = 'domain2:action1,action2'
-    permstring3 = 'domain3:*:*'
-    perms = [DefaultPermission(wildcard_string=permstring1),
-             DefaultPermission(wildcard_string=permstring2),
-             DefaultPermission(wildcard_string=permstring3)]
-
-    result = ipv.resolve_permission(perms)
-    assert result == perms
-
 def test_ipv_get_authzd_permissions(
         indexed_permission_verifier, monkeypatch, indexed_authz_info):
     """
@@ -891,14 +809,9 @@ def test_ipv_is_permitted(
     perm1 = DefaultPermission('domain1:action1')
     perm2 = DefaultPermission('domain2:action1')
 
-    with mock.patch.object(IndexedPermissionVerifier,
-                           'resolve_permission') as ipv_rp:
-        ipv_rp.return_value = [perm1, perm2]
+    result = list(ipv.is_permitted('authz_info', [perm1, perm2]))
 
-        result = list(ipv.is_permitted('authz_info', [perm1, perm2]))
-
-        ipv_rp.assert_called_once_with([perm1, perm2])
-        assert result == [(perm1, True), (perm2, True)]
+    assert result == [(perm1, True), (perm2, True)]
 
 # -----------------------------------------------------------------------------
 # SimpleRoleVerifier Tests

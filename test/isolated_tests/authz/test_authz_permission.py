@@ -289,18 +289,18 @@ def test_wcp_not_equals_bad_type():
 # -----------------------------------------------------------------------------
 # PermissionResolver Tests
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('resolver_class', 
+@pytest.mark.parametrize('resolver_class',
                          [WildcardPermission, DefaultPermission])
 def test_pr_returns(resolver_class):
     """
-    unit tested: resolve 
+    unit tested: resolve
 
     test case:
 
     """
     resolver = PermissionResolver(resolver_class)
-    wcp = resolver.resolve('domain:action:target')
-    assert isinstance(wcp, resolver_class)
+    wcp = resolver.resolve(['domain:action:target'])
+    assert isinstance(next(iter(wcp)), resolver_class)
 
 
 # -----------------------------------------------------------------------------
