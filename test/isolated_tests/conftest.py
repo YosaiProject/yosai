@@ -8,6 +8,7 @@ from yosai.core import (
     DefaultEventBus,
     DefaultSessionContext,
     FirstRealmSuccessfulStrategy,
+    ModularRealmAuthorizer,
     PasswordVerifier,
     SimpleIdentifierCollection,
     event_bus,
@@ -30,6 +31,9 @@ from .session.doubles import (
     MockDefaultNativeSessionManager,
 )
 
+from .authz.doubles import (
+    MockAuthzAccountStoreRealm,
+)
 
 @pytest.fixture(scope='function')
 def mock_account_state():
@@ -160,3 +164,22 @@ def mock_subject_builder(mock_security_manager):
 def simple_identifier_collection():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                       identifier='identifier')
+
+@pytest.fixture(scope='function')
+def authz_realms_collection():
+    """
+    three authorizing realms
+    """
+    return (MockAuthzAccountStoreRealm(),
+            MockAuthzAccountStoreRealm(),
+            MockAuthzAccountStoreRealm())
+
+
+@pytest.fixture(scope='function')
+def modular_realm_authorizer_patched(
+        monkeypatch, authz_realms_collection):
+    a = ModularRealmAuthorizer()
+    monkeypatch.setattr(a, '_realms', authz_realms_collection)
+    monkeypatch.setattr(a, '_event_bus', event_bus)
+    return a
+

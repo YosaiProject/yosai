@@ -2,7 +2,6 @@ import pytest
 
 from yosai.core import (
     DefaultPermission,
-    ModularRealmAuthorizer,
     IndexedPermissionVerifier,
     PermissionResolver,
     SimpleRole,
@@ -17,23 +16,6 @@ from .doubles import (
     MockPermission,
 )
 
-
-@pytest.fixture(scope='function')
-def authz_realms_collection():
-    """
-    three authorizing realms
-    """
-    return (MockAuthzAccountStoreRealm(),
-            MockAuthzAccountStoreRealm(),
-            MockAuthzAccountStoreRealm())
-
-@pytest.fixture(scope='function')
-def modular_realm_authorizer_patched(
-        monkeypatch, authz_realms_collection):
-    a = ModularRealmAuthorizer()
-    monkeypatch.setattr(a, '_realms', authz_realms_collection)
-    monkeypatch.setattr(a, '_event_bus', event_bus)
-    return a
 
 @pytest.fixture(scope='function')
 def populated_simple_role():

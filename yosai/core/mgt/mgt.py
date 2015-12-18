@@ -212,7 +212,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
                 msg = "Neither account nor identifier arguments passed"
                 raise IllegalArgumentException(msg)
 
-        serialized = self.convert_identifier_to_bytes(identifiers)
+        serialized = self.convert_identifiers_to_bytes(identifiers)
         self.remember_serialized_identity(subject, serialized)
 
     def get_identity_to_remember(self, subject, account):
@@ -225,7 +225,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         return account.account_id
 
-    def convert_identifier_to_bytes(self, identifiers):
+    def convert_identifiers_to_bytes(self, identifiers):
         """
         Encryption requires a binary type as input, so this method converts
         the identifier collection object to one.
@@ -258,7 +258,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
                                                                subject_context)
         except Exception as ex:
             identifiers = \
-                self.on_remembered_identifier_failure(ex, subject_context)
+                self.on_remembered_identifiers_failure(ex, subject_context)
 
         return identifiers
 
@@ -280,7 +280,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         pass
 
-    def convert_bytes_to_identifier(self, serialized, subject_context):
+    def convert_bytes_to_identifiers(self, serialized, subject_context):
         """
         If a cipher_service is available, it will be used to first decrypt the
         serialized message.  Then, the bytes are deserialized and returned.
@@ -297,7 +297,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
         return self.serialization_manager.deserialize(decrypted)
 
-    def on_remembered_identifier_failure(self, exc, subject_context):
+    def on_remembered_identifiers_failure(self, exc, subject_context):
         """
         Called when an exception is thrown while trying to retrieve identifier.
         The default implementation logs a debug message and forgets ('unremembers')
@@ -437,7 +437,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self._authenticator.realms = self.realms
 
         else:
-            msg = "authenticator parameter must have a value"
+            msg = "authenticator argument must have a value"
             raise IllegalArgumentException(msg)
 
     @property
@@ -451,7 +451,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self.apply_event_bus(self._authorizer)
             self._authorizer.realms = self.realms
         else:
-            msg = "authorizer parameter must have a value"
+            msg = "authorizer argument must have a value"
             raise IllegalArgumentException(msg)
 
     @property
@@ -470,7 +470,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self.apply_cache_handler(self.session_manager)
 
         else:
-            msg = ('Incorrect parameter.  If you want to disable caching, '
+            msg = ('Incorrect argument.  If you want to disable caching, '
                    'configure a disabled cachemanager instance')
             raise IllegalArgumentException(msg)
 
@@ -483,12 +483,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def event_bus(self, eventbus):
         if eventbus:
             self._event_bus = eventbus
-            self.authenticator.event_bus = self._event_bus
-            self.authorizer.event_bus = self._event_bus
-            self.session_manager.event_bus = self._event_bus
+            self.apply_event_bus(self._authenticator)
+            self.apply_event_bus(self._authorizer)
+            self.apply_event_bus(self._session_manager)
 
         else:
-            msg = 'eventbus parameter must have a value'
+            msg = 'eventbus argument must have a value'
             raise IllegalArgumentException(msg)
 
     @property
@@ -521,6 +521,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             except AttributeError:
                 msg = "no authorizer attribute set yet"
                 # log debug here
+        else:
+            msg = 'realms argument must have a value'
+            raise IllegalArgumentException(msg)
 
     @property
     def session_manager(self):
@@ -1000,6 +1003,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                    identifiers.primary_identifier))
             print(msg)
             # log debug here
+            # yosai excludes call to authenticator's on_logout as shiro's observer
+            # pattern has been replaced by the event bus interaction and
+            # logout results in session expire event transmission, which is tracked
+            # by the authenticator
 
         try:
             self.delete(subject)

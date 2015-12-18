@@ -1,4 +1,5 @@
 from yosai.core import (
+    Credential,
     DelegatingSubject,
     MapContext,
     account_abcs,
@@ -7,6 +8,7 @@ from yosai.core import (
     cache_abcs,
     mgt_abcs,
     realm_abcs,
+    serialize_abcs,
     session_abcs,
     subject_abcs,
 )
@@ -101,7 +103,8 @@ class MockToken(authc_abcs.AuthenticationToken):
         pass
 
 
-class MockAccount(account_abcs.Account):
+class MockAccount(account_abcs.Account,
+                  serialize_abcs.Serializable):
 
     def __init__(self, account_id, credentials={}, attributes={},
                  authz_info=None):
@@ -142,8 +145,8 @@ class MockAccount(account_abcs.Account):
     def serialization_schema(cls):
         class SerializationSchema(Schema):
             account_id = fields.Str()
-            credentials = fields.Nested(cls.AccountCredentialsSchema)
-            identifiers = fields.Nested(cls.AccountAttributesSchema)
+            credentials = fields.Nested(Credential.serialization_schema())
+            attributes = fields.Nested(cls.AccountAttributesSchema)
 
             @post_load
             def make_account(self, data):
@@ -153,14 +156,6 @@ class MockAccount(account_abcs.Account):
                 return instance
 
         return SerializationSchema
-
-    class AccountCredentialsSchema(Schema):
-        password = fields.Str()
-        api_key_secret = fields.Str()
-
-        @post_load
-        def make_account_credentials(self, data):
-            return dict(data)
 
     class AccountAttributesSchema(Schema):
         givenname = fields.Str()
@@ -222,7 +217,7 @@ class MockSubject(DelegatingSubject):
 
     def __init__(self):
         self._identifiers = type('DumbCollection', (object,), {})()
-        self._identifiers.primary_identifiers = 'attribute1'
+        self._identifiers.primary_identifier = 'attribute1'
         self.host = 'host'
         self._authenticated = None
 

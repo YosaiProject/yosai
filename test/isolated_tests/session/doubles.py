@@ -3,7 +3,6 @@ from yosai.core import (
     DefaultNativeSessionManager,
     AbstractSessionStore,
     CachingSessionStore,
-    DefaultNativeSessionManager,
     event_bus,
     session_abcs,
 )
@@ -109,14 +108,3 @@ class MockCachingSessionStore(CachingSessionStore):
     def do_update(self, session):
         pass
 
-
-class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
-
-    def after_session_validation_enabled(self):
-        pass
-
-    def before_session_validation_disabled(self):
-        pass
-
-    def on_start(self, session, session_context):
-        pass

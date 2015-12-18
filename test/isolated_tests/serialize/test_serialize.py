@@ -7,6 +7,7 @@ from .doubles import (
     MockSerializable,
 )
 from yosai.core import (
+    Credential,
     InvalidSerializationFormatException,
     SerializationException,
     serialize_abcs,
@@ -85,8 +86,7 @@ def test_serializable_serialize(full_mock_account, mock_account_state):
     serializes an object according to its marshmallow schema
     """
     serialized = full_mock_account.serialize()
-    assert (serialized['credentials'] == mock_account_state['creds'] and
-            serialized['identifiers'] == mock_account_state['identifiers'])
+    assert serialized['account_id'] == 'identifier'
 
 
 def test_serializable_deserialize():
@@ -100,41 +100,3 @@ def test_serializable_deserialize():
     newobj = MockSerializable.deserialize(dumbstate)
     print(newobj)
     assert isinstance(newobj, MockSerializable) and hasattr(newobj, 'myname')
-
-
-# ----------------------------------------------------------------------------
-# Serializable Tests
-# ----------------------------------------------------------------------------
-
-def test_confirm_serializables_tested(
-        serializable_classes, serializeds):
-    """
-    unit tested:  N/A
-
-    test case:
-    confirms that every Serializable class in Yosai is unit tested
-    """
-    eligible = set(serializable_classes.keys())
-    actual = set([x['serialized_cls'] for x in serializeds])
-    assert eligible == actual
-
-
-def test_serialization_schemas(serializable_classes, serialized):
-    """
-    unit tested:  deserialize and serialize (entire serialization process)
-
-    test case:
-    - this validates each serialization Schema
-    - serializes an object according to its Schema specifications (marshmallow)
-      and confirms that the expected serialized attributes are accounted for
-    """
-    sc = serializable_classes
-    alleged_class = serialized['serialized_cls']
-    klass = sc.get(alleged_class)
-    deserialized = klass.deserialize(serialized)
-    reserialized = deserialized.serialize()
-
-    for attribute, value in serialized.items():
-        if attribute not in ('serialized_cls', 'serialized_record_dt',
-                             'serialized_dist_version') and value is not None:
-            assert attribute in reserialized.keys()

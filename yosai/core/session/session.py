@@ -1329,7 +1329,6 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     def __init__(self):
         self.session_factory = SimpleSessionFactory()
         self._session_event_handler = SessionEventHandler()
-        self._cache_handler = None
         self.session_handler =\
             SessionHandler(session_event_handler=self.session_event_handler,
                            auto_touch=True)
@@ -1346,11 +1345,11 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     @property
     def cache_handler(self):
-        return self._cache_handler
+        return self.session_handler.cache_handler
 
     @cache_handler.setter
     def cache_handler(self, cachehandler):
-        self._cache_handler = cachehandler
+        # no need for a local instance, just pass through
         self.session_handler.cache_handler = cachehandler
 
     @property

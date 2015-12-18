@@ -6,7 +6,7 @@ from .doubles import (
     MockAbstractNativeSessionManager,
     MockAbstractValidatingSessionManager,
     MockCachingSessionStore,
-    MockDefaultSessionManager,
+    MockDefaultNativeSessionManager,
     MockSessionManager,
 )
 
@@ -1059,7 +1059,7 @@ def test_dsm_set_sessionstore(mock_default_session_manager):
     the sessionStore property sets the attribute and calls a method
     """
     mdsm = mock_default_session_manager
-    with mock.patch.object(MockDefaultSessionManager,
+    with mock.patch.object(MockDefaultNativeSessionManager,
                            'apply_cache_manager_to_session_store') as dsm_acm:
         dsm_acm.return_value = None
 
@@ -1075,7 +1075,7 @@ def test_dsm_set_cache_manager(mock_default_session_manager):
     the cache_manager property sets the attribute and calls a method
     """
     mdsm = mock_default_session_manager
-    with mock.patch.object(MockDefaultSessionManager,
+    with mock.patch.object(MockDefaultNativeSessionManager,
                            'apply_cache_manager_to_session_store') as dsm_acm:
         dsm_acm.return_value = None
 
@@ -1124,7 +1124,7 @@ def test_dsm_do_create_session(
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, 'new_session_instance', lambda x: mock_session) 
-    with mock.patch.object(MockDefaultSessionManager, 'create') as mdsm_create:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'create') as mdsm_create:
         mdsm_create.return_value = None
         result = mdsm.do_create_session('dumbsessioncontext')
         assert result == mock_session 
@@ -1172,7 +1172,7 @@ def test_dsm_on_stop_using_simplesession(
     mdsm = mock_default_session_manager
     stopped = datetime.datetime.utcnow() - datetime.timedelta(minutes=5)
     monkeypatch.setattr(simple_session, 'stop_timestamp', stopped)
-    with mock.patch.object(MockDefaultSessionManager, 'on_change') as mdsm_oc:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'on_change') as mdsm_oc:
         mdsm_oc.return_value = None
         mdsm.on_stop(simple_session)
         mdsm_oc.assert_called_once_with(simple_session)
@@ -1189,7 +1189,7 @@ def test_dsm_on_stop_notusing_complete_simplesession(
     """
     mdsm = mock_default_session_manager
     monkeypatch.delattr(simple_session, '_stop_timestamp')
-    with mock.patch.object(MockDefaultSessionManager, 'on_change') as mdsm_oc:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'on_change') as mdsm_oc:
         mdsm_oc.return_value = None
         mdsm.on_stop(simple_session)
         mdsm_oc.assert_called_once_with(simple_session)
@@ -1203,7 +1203,7 @@ def test_dsm_after_stopped(mock_default_session_manager, monkeypatch):
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, 'delete_invalid_sessions', True) 
-    with mock.patch.object(MockDefaultSessionManager, 'delete') as mdsm_delete:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'delete') as mdsm_delete:
         mdsm_delete.return_value = None
         mdsm.after_stopped('session')
         mdsm_delete.assert_called_once_with('session')
@@ -1218,7 +1218,7 @@ def test_dsm_on_expiration_using_simplesession(
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(simple_session, '_is_expired', False)
-    with mock.patch.object(MockDefaultSessionManager, 'on_change') as mdsm_oc:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'on_change') as mdsm_oc:
         mdsm_oc.return_value = None
 
         mdsm.on_expiration(simple_session)
@@ -1236,7 +1236,7 @@ def test_dsm_on_expiration_notusing_simplesession(
     and then calls on_change
     """
     mdsm = mock_default_session_manager
-    with mock.patch.object(MockDefaultSessionManager, 'on_change') as mdsm_oc:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'on_change') as mdsm_oc:
         mdsm_oc.return_value = None
 
         mdsm.on_expiration('session')
@@ -1254,7 +1254,7 @@ def test_dsm_after_expired(
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, 'delete_invalid_sessions', True)
-    with mock.patch.object(MockDefaultSessionManager, 'delete') as mdsm_del:
+    with mock.patch.object(MockDefaultNativeSessionManager, 'delete') as mdsm_del:
         mdsm_del.return_value = None
 
         mdsm.after_expired('session')
@@ -1289,7 +1289,7 @@ def test_dsm_retrieve_session_withsessionid_raising(
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, 'get_session_id', lambda x: 'sessionid123')
-    with mock.patch.object(MockDefaultSessionManager,
+    with mock.patch.object(MockDefaultNativeSessionManager,
                            'retrieve_session_from_data_source') as mdsm_rs:
         mdsm_rs.return_value = None
 
@@ -1307,7 +1307,7 @@ def test_dsm_retrieve_session_withsessionid_returning(
     """
     mdsm = mock_default_session_manager
     monkeypatch.setattr(mdsm, 'get_session_id', lambda x: 'sessionid123')
-    with mock.patch.object(MockDefaultSessionManager,
+    with mock.patch.object(MockDefaultNativeSessionManager,
                            'retrieve_session_from_data_source') as mdsm_rs:
         mdsm_rs.return_value = 'session' 
 

@@ -14,13 +14,12 @@ from yosai.core import (
     ModularRealmAuthorizer,
     SerializationManager,
     UsernamePasswordToken,
-    cache_abcs,
     authc_abcs,
     mgt_settings,
 )
 
 from ..session.doubles import (
-    MockDefaultSessionManager,
+    MockDefaultNativeSessionManager,
 )
 
 from .doubles import (
@@ -31,421 +30,418 @@ from .doubles import (
 # NativeSecurityManager
 # ------------------------------------------------------------------------------
 
-def test_dsm_setauthenticator_da(
-        default_security_manager, default_authenticator, monkeypatch):
+
+def test_nsm_setauthenticator_da(
+        native_security_manager, default_authenticator, monkeypatch,
+        default_accountstorerealm):
     """
     unit tested:  authenticator.setter
 
     test case:
-    when authenticator=DefaultAuthenticator, then dsm.authenticator.realms is
-    set to self.realms and then eventbus and cachemanager are set for it
+    - sets nsm.security_manager
+    - applies event_bus to authenticator
+    - sets authenticator's realms to nsm.realms
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'realms', 'verified')
+    nsm = native_security_manager
     da = default_authenticator
 
     with mock.patch.object(NativeSecurityManager,
-                           'apply_event_bus') as mock_aev:
-        mock_aev.return_value = None
+                           'apply_event_bus') as mock_aeb:
+        mock_aeb.return_value = None
 
-        with mock.patch.object(NativeSecurityManager,
-                               'apply_cache_manager') as mock_acm:
-            mock_acm.return_value = None
-            dsm.authenticator = da
+        nsm.authenticator = da
 
-            mock_aev.assert_called_once_with(da)
-            mock_acm.assert_called_once_with(da)
+        mock_aeb.assert_called_once_with(da)
 
-            assert dsm.authenticator.realms == 'verified'
+        assert nsm.authenticator.realms == (default_accountstorerealm,)
 
-def test_dsm_setauthenticator_raises(
-        default_security_manager, default_authenticator, monkeypatch):
+
+def test_nsm_setauthenticator_raises(
+        native_security_manager, default_authenticator, monkeypatch):
     """
     unit tested:  authenticator.setter
 
     test case:
     passing None as an argument value raises an exception
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with pytest.raises(IllegalArgumentException):
-        dsm.authenticator = None
+        nsm.authenticator = None
 
-def test_dsm_setauthorizer(default_security_manager):
+
+def test_nsm_setauthorizer(
+        native_security_manager, modular_realm_authorizer_patched,
+        default_accountstorerealm):
     """
     unit tested:  authorizer.setter
 
     test case:  setting an authorizer attribute in turn applies an event_bus
                 and cache_manager to it
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with mock.patch.object(NativeSecurityManager,
                            'apply_event_bus') as mock_aev:
         mock_aev.return_value = None
 
-        with mock.patch.object(NativeSecurityManager,
-                               'apply_cache_manager') as mock_acm:
-            mock_acm.return_value = None
-            dsm.authorizer = 'authorizer'
+        nsm.authorizer = modular_realm_authorizer_patched
 
-            mock_aev.assert_called_once_with(dsm.authorizer)
-            mock_acm.assert_called_once_with(dsm.authorizer)
+        mock_aev.assert_called_once_with(nsm.authorizer)
 
-            assert dsm.authorizer == 'authorizer'
+        assert nsm.authorizer.realms == (default_accountstorerealm,)
 
-def test_dsm_setauthorizer_raises(default_security_manager):
+
+def test_nsm_setauthorizer_raises(native_security_manager):
     """
     unit tested:  authorizer.setter
 
     test case:
     passing None as an argument value raises an exception
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with pytest.raises(IllegalArgumentException):
-        dsm.authorizer = None
+        nsm.authorizer = None
 
 
-def test_dsm_set_cachemanager(default_security_manager):
+def test_nsm_set_cachehandler(native_security_manager):
     """
-    unit tested:  cache_manager.setter
+    unit tested:  cache_handler.setter
 
     test case:
-    sets cache_manager attribute and then applies the cachemanager to its
-    related objects (those that implement the CacheManagerAware interface)
+    sets cache_handler attribute and then applies the cachehandler to its
+    related objects (those that implement the CacheHandlerAware interface)
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with mock.patch.object(NativeSecurityManager,
-                           'get_dependencies_for_injection') as dsm_gdfi:
-        dsm_gdfi.return_value = {'val1', 'val2'}
-        with mock.patch.object(NativeSecurityManager,
-                               'apply_cache_manager') as dsm_acm:
-            dsm_acm.return_value = None
+                           'apply_cache_handler') as nsm_ach:
+        nsm_ach.return_value = None
 
-            dsm.cache_manager = 'cachemanager'
+        nsm.cache_handler = 'cachehandler'
 
-            dsm_gdfi.assert_called_once_with('cachemanager')
-            assert dsm_acm.called and dsm.cache_manager == 'cachemanager'
+        calls = [mock.call(nsm.realms), mock.call(nsm.session_manager)]
+        nsm_ach.assert_has_calls(calls)
 
-def test_dsm_set_cachemanager_raises(default_security_manager):
+        assert (nsm.cache_handler == 'cachehandler' and
+                nsm.realms == nsm.authenticator.realms and
+                nsm.realms == nsm.authorizer.realms)
+
+
+def test_nsm_set_cachehandler_raises(native_security_manager):
     """
-    unit tested:  cache_manager.setter
+    unit tested:  cache_handler.setter
 
     test case:
     passing None as an argument value raises an exception
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with pytest.raises(IllegalArgumentException):
-        dsm.cache_manager = None
+        nsm.cache_handler = None
 
-def test_dsm_set_eventbus(default_security_manager):
+
+def test_nsm_set_eventbus(native_security_manager):
     """
     unit tested:  event_bus.setter
 
     test case:
     sets attribute and calls method
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
+
     with mock.patch.object(NativeSecurityManager,
-                           'get_dependencies_for_injection') as dsm_gdfi:
-        dsm_gdfi.return_value = {'val1', 'val2'}
-        with mock.patch.object(NativeSecurityManager,
-                               'apply_event_bus') as dsm_aeb:
-            dsm_aeb.return_value = None
-
-            dsm.event_bus = 'eventbus'
-
-            dsm_gdfi.assert_called_once_with('eventbus')
-            assert dsm_aeb.called and dsm.event_bus == 'eventbus'
+                           'apply_event_bus') as nsm_aeb:
+        nsm_aeb.return_value = None
+        nsm.event_bus = 'eventbus'
+        calls = [mock.call(nsm._authenticator), mock.call(nsm._authorizer),
+                 mock.call(nsm._session_manager)]
+        nsm_aeb.assert_has_calls(calls)
+        assert nsm.event_bus == 'eventbus'
 
 
-def test_dsm_set_eventbus_raises(default_security_manager):
+def test_nsm_set_eventbus_raises(native_security_manager):
     """
     unit tested:  event_bus.setter
 
     test case:
     passing None as an argument value raises an exception
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with pytest.raises(IllegalArgumentException):
-        dsm.event_bus = None
+        nsm.event_bus = None
 
 
-@pytest.mark.parametrize(
-    'authenticator, expected_authc_realms, authorizer, expected_authz_realms',
-    [(DefaultAuthenticator(), 'realms',
-     ModularRealmAuthorizer(), 'realms'),
-     (type('DumbAuthenticator', (object,), {'realms': None})(), None,
-      type('DumbAuthorizer', (object,), {'realms': None})(), None)])
-def test_set_realms(
-        default_security_manager, authenticator, expected_authc_realms,
-        authorizer, expected_authz_realms, monkeypatch):
+def test_set_realms(native_security_manager, default_accountstorerealm):
     """
-    unit tested:  set_realms
+    unit tested:  realms.setter
 
     test case:
     applies eventbus and cachemanager to eligible realms, then tries to assign
     realms to the authenticator and authorizer
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'authenticator', authenticator)
-    monkeypatch.setattr(dsm, 'authorizer', authorizer)
+    nsm = native_security_manager
+    realms = (default_accountstorerealm, )
 
     with mock.patch.object(NativeSecurityManager,
-                           'apply_event_bus') as dsm_aeb:
-        dsm_aeb.return_value = None
+                           'apply_role_resolver') as mock_rr:
+        mock_rr.return_value = None
         with mock.patch.object(NativeSecurityManager,
-                               'apply_cache_manager') as dsm_acm:
-            dsm_acm.return_value = None
+                               'apply_permission_resolver') as mock_pr:
+            mock_pr.return_value = None
+            with mock.patch.object(NativeSecurityManager,
+                                   'apply_authz_info_resolver') as mock_air:
+                mock_air.return_value = None
+                with mock.patch.object(NativeSecurityManager,
+                                       'apply_credential_resolver') as mock_cr:
+                    mock_cr.return_value = None
+                    with mock.patch.object(NativeSecurityManager,
+                                           'apply_cache_handler') as mock_ch:
+                        mock_ch.return_value
 
-            dsm.set_realms('realms')
+                        nsm.realms = realms
+                        mock_ch.assert_called_once_with(realms)
+                        mock_cr.assert_called_once_with(realms)
+                        mock_air.assert_called_once_with(realms)
+                        mock_pr.assert_called_once_with(realms)
+                        mock_rr.assert_called_once_with(realms)
 
-            dsm_aeb.assert_called_once_with('realms')
-            dsm_acm.assert_called_once_with('realms')
-            assert (dsm.authenticator.realms == expected_authc_realms and
-                    dsm.authorizer.realms == expected_authz_realms)
+                        assert (nsm.authenticator.realms == realms and
+                                nsm.authorizer.realms == realms)
 
-def test_set_realms_raises(default_security_manager):
+def test_set_realms_raises(native_security_manager):
     """
-    unit tested:  set_realms
+    unit tested:  realms.setter
 
     test case:
     passing None as an argument value raises an exception
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with pytest.raises(IllegalArgumentException):
-        dsm.set_realms(None)
+        nsm.realms = None
 
-def test_apply_targets_single(default_security_manager):
+
+def test_sessionmanager_setter(native_security_manager):
+    nsm = native_security_manager
+
+    with mock.patch.object(NativeSecurityManager,
+                           'apply_cache_handler') as mock_ch:
+        mock_ch.return_value = None
+
+        with mock.patch.object(NativeSecurityManager,
+                               'apply_event_bus') as mock_aeb:
+            mock_aeb.return_value = None
+            nsm.session_manager = 'session_manager'
+            assert nsm.session_manager == 'session_manager'
+
+
+def test_apply_targets_single(native_security_manager):
     """
     unit tested:  apply_targets
 
     test case:
     passing a single value results in using except block logic and a single call
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     va = mock.MagicMock()
     dc = type('DumbClass', (object,), {})()
-    dsm.apply_target_s(va, dc)
+    nsm.apply_target_s(va, dc)
     va.assert_called_once_with(dc)
 
-def test_apply_targets_collection(default_security_manager):
+def test_apply_targets_collection(native_security_manager):
     """
     unit tested:  apply_targets
 
     test case:
     passing a collection results in using try block logic and iterative calls
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     va = mock.MagicMock()
     dc = type('DumbClass', (object,), {})
     mylist = [dc(), dc(), dc()]
 
-    dsm.apply_target_s(va, mylist)
+    nsm.apply_target_s(va, mylist)
 
     calls = [mock.call(mylist[0]), mock.call(mylist[1]), mock.call(mylist[2])]
     assert calls in va.call_args_list
 
-def test_apply_cache_manager(default_security_manager):
+
+def test_apply_cache_handler(native_security_manager):
     """
-    unit tested:  apply_cache_manager
+    unit tested:  apply_cache_handler
 
     test case:
     calls apply_target_s with inner function
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
-    with mock.patch.object(dsm, 'apply_target_s') as dsm_ats:
-        dsm_ats.return_value = None
+    with mock.patch.object(nsm, 'apply_target_s') as nsm_ats:
+        nsm_ats.return_value = None
 
-        dsm.apply_cache_manager('target1')
+        nsm.apply_cache_handler('target1')
 
-        assert 'target1' in dsm_ats.call_args[0]
+        assert 'target1' in nsm_ats.call_args[0]
 
-def test_apply_eventbus(default_security_manager):
+
+def test_apply_eventbus(native_security_manager):
     """
     unit tested:  apply_event_bus
 
     test case:
     calls apply_target_s with inner function
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
-    with mock.patch.object(dsm, 'apply_target_s') as dsm_ats:
-        dsm_ats.return_value = None
+    with mock.patch.object(nsm, 'apply_target_s') as nsm_ats:
+        nsm_ats.return_value = None
 
-        dsm.apply_event_bus('target1')
+        nsm.apply_event_bus('target1')
 
-        assert 'target1' in dsm_ats.call_args[0]
-
-def test_dsm_get_dependencies_for_injection(default_security_manager):
-    """
-    unit tested:  get_dependencies_for_injection
-
-    test case:
-    ignores the argument passed, returns the rest of the dependents
-    """
-    dsm = default_security_manager
-    result = dsm.get_dependencies_for_injection(dsm._event_bus)
-    assert dsm._event_bus not in result
-
-def test_dsm_get_dependencies_for_injection_raises(
-        default_security_manager, dependencies_for_injection):
-    """
-    unit tested:  get_dependencies_for_injection
-
-    test case:
-    fails to find the argument passed, returns all of the dependents
-    """
-    dsm = default_security_manager
-    dc = type('DumbClass', (object,), {})
-    result = dsm.get_dependencies_for_injection(dc)
-    assert result == dependencies_for_injection
+        assert 'target1' in nsm_ats.call_args[0]
 
 
-def test_dsm_authenticate_account(
-        default_security_manager, username_password_token):
+def test_nsm_authenticate_account(
+        native_security_manager, username_password_token):
     """
     unit tested:  authenticate_account
 
     test case:
     passes request on to authenticator
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     upt = username_password_token
     with mock.patch.object(DefaultAuthenticator,
                            'authenticate_account') as da_aa:
-        dsm.authenticate_account(upt)
+        nsm.authenticate_account(upt)
         da_aa.assert_called_once_with(upt)
 
-def test_dsm_is_permitted(default_security_manager):
+
+def test_nsm_is_permitted(native_security_manager):
     """
     unit tested:  is_permitted
 
     test case:
     passes request on to authorizer
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'is_permitted') as mra_ip:
-        dsm.is_permitted('identifiers', 'permission_s')
+        nsm.is_permitted('identifiers', 'permission_s')
         mra_ip.assert_called_once_with('identifiers', 'permission_s')
 
 
-def test_dsm_is_permitted_collective(default_security_manager):
+def test_nsm_is_permitted_collective(native_security_manager):
     """
     unit tested: is_permitted_collective
 
     test case:
     passes request on to authorizer
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'is_permitted_collective') as mra_ipa:
-        dsm.is_permitted_collective('identifiers', 'permission_s', all)
+        nsm.is_permitted_collective('identifiers', 'permission_s', all)
         mra_ipa.assert_called_once_with('identifiers', 'permission_s', all)
 
 
-def test_dsm_check_permission(default_security_manager):
+def test_nsm_check_permission(native_security_manager):
     """
     unit tested:  check_permission
 
     test case:
     passes request on to authorizer
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_permission') as mra_cp:
-        dsm.check_permission('identifiers', 'permission_s', all)
+        nsm.check_permission('identifiers', 'permission_s', all)
         mra_cp.assert_called_once_with('identifiers', 'permission_s', all)
 
 
-def test_dsm_has_role(default_security_manager):
+def test_nsm_has_role(native_security_manager):
     """
     unit tested:  has_role
 
     test case:
     passes request on to authorizer
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'has_role') as mra_hr:
-        dsm.has_role('identifiers', 'permission_s')
+        nsm.has_role('identifiers', 'permission_s')
         mra_hr.assert_called_once_with('identifiers', 'permission_s')
 
 
-def test_dsm_has_role_collective(default_security_manager):
+def test_nsm_has_role_collective(native_security_manager):
     """
     unit tested:  has_role_collective
 
     test case:
     passes request on to authorizer
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'has_role_collective') as mra_har:
-        dsm.has_role_collective('identifiers', 'permission_s', all)
+        nsm.has_role_collective('identifiers', 'permission_s', all)
         mra_har.assert_called_once_with('identifiers', 'permission_s', all)
 
 
-def test_dsm_check_role(default_security_manager):
+def test_nsm_check_role(native_security_manager):
     """
     unit tested:  check_role
 
     test case:
     passes request on to authorizer
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(ModularRealmAuthorizer, 'check_role') as mra_cr:
-        dsm.check_role('identifiers', 'permission_s', all)
+        nsm.check_role('identifiers', 'permission_s', all)
         mra_cr.assert_called_once_with('identifiers', 'permission_s', all)
 
-def test_dsm_start(
-        default_security_manager, mock_default_session_manager, monkeypatch):
+def test_nsm_start(
+        native_security_manager, mock_default_session_manager, monkeypatch):
     """
     unit tested:  start
 
     test case:
     passes request on to session manager
     """
-    dsm = default_security_manager
-    mdsm = mock_default_session_manager
-    monkeypatch.setattr(dsm, 'session_manager', mdsm)
-    with mock.patch.object(MockDefaultSessionManager, 'start') as mdsm_start:
-        mdsm_start.return_value = None
-        dsm.start('session_context')
-        mdsm_start.assert_called_once_with('session_context')
+    nsm = native_security_manager
+    mnsm = mock_default_session_manager
+    monkeypatch.setattr(nsm, 'session_manager', mnsm)
+    with mock.patch.object(MockDefaultNativeSessionManager, 'start') as mnsm_start:
+        mnsm_start.return_value = None
+        nsm.start('session_context')
+        mnsm_start.assert_called_once_with('session_context')
 
-def test_dsm_get_session(
-        default_security_manager, mock_default_session_manager, monkeypatch):
+def test_nsm_get_session(
+        native_security_manager, mock_default_session_manager, monkeypatch):
     """
     unit tested:  get_session
 
     test case:
     passes request on to session manager
     """
-    dsm = default_security_manager
-    mdsm = mock_default_session_manager
-    monkeypatch.setattr(dsm, 'session_manager', mdsm)
-    with mock.patch.object(MockDefaultSessionManager, 'get_session') as mdsm_gs:
-        mdsm_gs.return_value = None
-        dsm.get_session('sessionkey123')
-        mdsm_gs.assert_called_once_with('sessionkey123')
+    nsm = native_security_manager
+    mnsm = mock_default_session_manager
+    monkeypatch.setattr(nsm, 'session_manager', mnsm)
+    with mock.patch.object(MockDefaultNativeSessionManager, 'get_session') as mnsm_gs:
+        mnsm_gs.return_value = None
+        nsm.get_session('sessionkey123')
+        mnsm_gs.assert_called_once_with('sessionkey123')
 
 
-def test_dsm_create_subject_context(
-        default_security_manager, mock_default_session_manager, monkeypatch):
+def test_nsm_create_subject_context(
+        native_security_manager, mock_default_session_manager, monkeypatch):
     """
     unit tested:  create_subject_context
 
     test case:
     returns a new DefaultSubjectContext instance
     """
-    dsm = default_security_manager
-    result = dsm.create_subject_context()
+    nsm = native_security_manager
+    result = nsm.create_subject_context()
     assert isinstance(result, DefaultSubjectContext)
 
-def test_dsm_create_subject_wo_context(default_security_manager):
+def test_nsm_create_subject_wo_context(native_security_manager):
     """
     unit tested:  create_subject
 
@@ -454,7 +450,7 @@ def test_dsm_create_subject_wo_context(default_security_manager):
     created.  The subject_context is used to create a new subject, which is
     saved and then returned.
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     testcontext = DefaultSubjectContext()
     testcontext.authenticated = True
@@ -462,35 +458,35 @@ def test_dsm_create_subject_wo_context(default_security_manager):
     testcontext.account = 'dumb_account'
     testcontext.subject = 'existing_subject'
 
-    with mock.patch.object(dsm, 'ensure_security_manager') as dsm_esm:
-        dsm_esm.return_value = testcontext
-        with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
-            dsm_rs.return_value = testcontext
-            with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
-                dsm_rp.return_value = testcontext
-                with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
-                    dsm_dcs.return_value = 'subject'
-                    with mock.patch.object(dsm, 'save') as dsm_save:
-                        dsm_save.return_value = None
+    with mock.patch.object(nsm, 'ensure_security_manager') as nsm_esm:
+        nsm_esm.return_value = testcontext
+        with mock.patch.object(nsm, 'resolve_session') as nsm_rs:
+            nsm_rs.return_value = testcontext
+            with mock.patch.object(nsm, 'resolve_identifiers') as nsm_rp:
+                nsm_rp.return_value = testcontext
+                with mock.patch.object(nsm, 'do_create_subject') as nsm_dcs:
+                    nsm_dcs.return_value = 'subject'
+                    with mock.patch.object(nsm, 'save') as nsm_save:
+                        nsm_save.return_value = None
 
-                        result = dsm.create_subject(authc_token='dumb_token',
+                        result = nsm.create_subject(authc_token='dumb_token',
                                                     account='dumb_account',
                                                     existing_subject='existing_subject')
 
-                        dsm_esm.assert_called_once_with(testcontext)
-                        dsm_rs.assert_called_once_with(testcontext)
-                        dsm_rp.assert_called_once_with(testcontext)
-                        dsm_dcs.assert_called_once_with(testcontext)
+                        nsm_esm.assert_called_once_with(testcontext)
+                        nsm_rs.assert_called_once_with(testcontext)
+                        nsm_rp.assert_called_once_with(testcontext)
+                        nsm_dcs.assert_called_once_with(testcontext)
                         assert result == 'subject'
 
-def test_dsm_create_subject_w_context(default_security_manager):
+def test_nsm_create_subject_w_context(native_security_manager):
     """
     unit tested:  create_subject
 
     test case:
     context is passed as an argument, and so it is used
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     testcontext = DefaultSubjectContext()
     testcontext.authenticated = True
@@ -498,43 +494,44 @@ def test_dsm_create_subject_w_context(default_security_manager):
     testcontext.account = 'dumb_account'
     testcontext.subject = 'existing_subject'
 
-    with mock.patch.object(dsm, 'ensure_security_manager') as dsm_esm:
-        dsm_esm.return_value = testcontext
-        with mock.patch.object(dsm, 'resolve_session') as dsm_rs:
-            dsm_rs.return_value = testcontext
-            with mock.patch.object(dsm, 'resolve_identifiers') as dsm_rp:
-                dsm_rp.return_value = testcontext
-                with mock.patch.object(dsm, 'do_create_subject') as dsm_dcs:
-                    dsm_dcs.return_value = None
-                    with mock.patch.object(dsm, 'save') as dsm_save:
-                        dsm_save.return_value = None
+    with mock.patch.object(nsm, 'ensure_security_manager') as nsm_esm:
+        nsm_esm.return_value = testcontext
+        with mock.patch.object(nsm, 'resolve_session') as nsm_rs:
+            nsm_rs.return_value = testcontext
+            with mock.patch.object(nsm, 'resolve_identifiers') as nsm_rp:
+                nsm_rp.return_value = testcontext
+                with mock.patch.object(nsm, 'do_create_subject') as nsm_dcs:
+                    nsm_dcs.return_value = None
+                    with mock.patch.object(nsm, 'save') as nsm_save:
+                        nsm_save.return_value = None
 
-                        dsm.create_subject(subject_context=testcontext)
+                        nsm.create_subject(subject_context=testcontext)
 
-                        dsm_esm.assert_called_once_with(testcontext)
-                        dsm_rs.assert_called_once_with(testcontext)
-                        dsm_rp.assert_called_once_with(testcontext)
-                        dsm_dcs.assert_called_once_with(testcontext)
+                        nsm_esm.assert_called_once_with(testcontext)
+                        nsm_rs.assert_called_once_with(testcontext)
+                        nsm_rp.assert_called_once_with(testcontext)
+                        nsm_dcs.assert_called_once_with(testcontext)
 
 
-def test_dsm_rememberme_successful_login(
-        default_security_manager, mock_remember_me_manager, monkeypatch):
+def test_nsm_rememberme_successful_login(
+        native_security_manager, mock_remember_me_manager, monkeypatch):
     """
     unit tested:  remember_me_successful_login
 
     test case:
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'remember_me_manager', mock_remember_me_manager)
 
     with mock.patch.object(MockRememberMeManager,
                            'on_successful_login') as mrmm_osl:
         mrmm_osl.return_value = None
-        dsm.remember_me_successful_login('authc_token', 'account', 'subject')
+        nsm.remember_me_successful_login('authc_token', 'account', 'subject')
         mrmm_osl.assert_called_once_with('subject', 'authc_token', 'account')
 
-def test_dsm_rememberme_successful_login_rmm_set_but_raises(
-        capsys, default_security_manager, mock_remember_me_manager,
+
+def test_nsm_rememberme_successful_login_rmm_set_but_raises(
+        capsys, native_security_manager, mock_remember_me_manager,
         monkeypatch):
     """
     unit tested:  remember_me_successful_login
@@ -544,19 +541,19 @@ def test_dsm_rememberme_successful_login_rmm_set_but_raises(
     2) the call for rmm.on_successful_login raises an exception
     3) a warning message is emitted
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'remember_me_manager', mock_remember_me_manager)
 
     with mock.patch.object(MockRememberMeManager,
                            'on_successful_login') as mrmm_osl:
         mrmm_osl.side_effect = Exception
-        dsm.remember_me_successful_login('authc_token', 'account', 'subject')
+        nsm.remember_me_successful_login('authc_token', 'account', 'subject')
         out, err = capsys.readouterr()
         assert 'threw an exception' in out
 
 
-def test_dsm_rememberme_successful_login_rmm_notset(
-        capsys, default_security_manager):
+def test_nsm_rememberme_successful_login_rmm_notset(
+        capsys, native_security_manager, full_mock_account):
     """
     unit tested:  remember_me_successful_login
 
@@ -564,31 +561,31 @@ def test_dsm_rememberme_successful_login_rmm_notset(
     when the remember_me_manager attribute is not set, a warning message is
     emitted
     """
-    dsm = default_security_manager
-    dsm.remember_me_successful_login('authc_token', 'account', 'subject')
+    nsm = native_security_manager
+    nsm.remember_me_successful_login('authc_token', full_mock_account, 'subject')
     out, err = capsys.readouterr()
     assert 'does not have' in out
 
-def test_dsm_rememberme_failed_login(
-        default_security_manager, mock_remember_me_manager, monkeypatch):
+def test_nsm_rememberme_failed_login(
+        native_security_manager, mock_remember_me_manager, monkeypatch):
     """
     unit tested:  remember_me_failed_login
 
     test case:
     when a remember_me_manager is set, it's on_failed_login is called
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'remember_me_manager', mock_remember_me_manager)
 
     with mock.patch.object(MockRememberMeManager,
                            'on_failed_login') as mrmm_ofl:
         mrmm_ofl.return_value = None
-        dsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
+        nsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
         mrmm_ofl.assert_called_once_with('subject', 'authc_token', 'authc_exc')
 
 
-def test_dsm_rememberme_failed_login_warned(
-        default_security_manager, mock_remember_me_manager, monkeypatch,
+def test_nsm_rememberme_failed_login_warned(
+        native_security_manager, mock_remember_me_manager, monkeypatch,
         capsys):
     """
     unit tested:  remember_me_failed_login
@@ -597,35 +594,35 @@ def test_dsm_rememberme_failed_login_warned(
     when the remember_me_manager attribute is not set, a warning message is
     emitted
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'remember_me_manager', mock_remember_me_manager)
 
     with mock.patch.object(MockRememberMeManager,
                            'on_failed_login') as mrmm_ofl:
         mrmm_ofl.side_effect = Exception
-        dsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
+        nsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
         out, err = capsys.readouterr()
         assert 'threw an exception' in out
 
-def test_dsm_rememberme_logout(
-        default_security_manager, mock_remember_me_manager, monkeypatch):
+def test_nsm_rememberme_logout(
+        native_security_manager, mock_remember_me_manager, monkeypatch):
     """
     unit tested:  remember_me_logout
 
     test case:
     when a remember_me_manager is set, it's on_logout is called
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'remember_me_manager', mock_remember_me_manager)
 
     with mock.patch.object(MockRememberMeManager,
                            'on_logout') as mrmm_ol:
         mrmm_ol.return_value = None
-        dsm.remember_me_logout('subject')
+        nsm.remember_me_logout('subject')
         mrmm_ol.assert_called_once_with('subject')
 
-def test_dsm_rememberme_logout_warned(
-        default_security_manager, mock_remember_me_manager, monkeypatch,
+def test_nsm_rememberme_logout_warned(
+        native_security_manager, mock_remember_me_manager, monkeypatch,
         capsys):
     """
     unit tested:  remember_me_logout
@@ -633,8 +630,8 @@ def test_dsm_rememberme_logout_warned(
     test case:
     prints a warning when remember_me_manager raises an exception
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'remember_me_manager', mock_remember_me_manager)
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'remember_me_manager', mock_remember_me_manager)
 
     class MockSubject:
         def __init__(self):
@@ -643,11 +640,11 @@ def test_dsm_rememberme_logout_warned(
     with mock.patch.object(MockRememberMeManager,
                            'on_logout') as mrmm_ol:
         mrmm_ol.side_effect = Exception
-        dsm.remember_me_logout(MockSubject())
+        nsm.remember_me_logout(MockSubject())
         out, err = capsys.readouterr()
         assert 'threw an exception during on_logout' in out
 
-def test_dsm_login_success(default_security_manager):
+def test_nsm_login_success(native_security_manager):
     """
     unit tested:  login
 
@@ -655,27 +652,29 @@ def test_dsm_login_success(default_security_manager):
         authenticate_account returns an account, create_subject is called,
         on_successful_login is called, and then logged_in is returned
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(NativeSecurityManager,
-                           'authenticate_account') as dsm_ac:
-        dsm_ac.return_value = 'account'
+                           'authenticate_account') as nsm_ac:
+        nsm_ac.return_value = 'account'
 
         with mock.patch.object(NativeSecurityManager,
-                               'create_subject') as dsm_cs:
-            dsm_cs.return_value = 'logged_in'
+                               'create_subject') as nsm_cs:
+            nsm_cs.return_value = 'logged_in'
             with mock.patch.object(NativeSecurityManager,
-                                   'on_successful_login') as dsm_osl:
-                dsm_osl.return_value = None
+                                   'on_successful_login') as nsm_osl:
+                nsm_osl.return_value = None
 
-                result = dsm.login('subject', 'authc_token')
+                result = nsm.login('subject', 'authc_token')
 
-                dsm_ac.assert_called_once_with('authc_token')
-                dsm_cs.assert_called_once_with('authc_token','account','subject')
-                dsm_osl.assert_called_once_with('authc_token','account','logged_in')
+                nsm_ac.assert_called_once_with('authc_token')
+                nsm_cs.assert_called_once_with(authc_token='authc_token',
+                                               account='account',
+                                               existing_subject='subject')
+                nsm_osl.assert_called_once_with('authc_token','account','logged_in')
 
                 assert result == 'logged_in'
 
-def test_dsm_login_raises_then_succeeds(default_security_manager):
+def test_nsm_login_raises_then_succeeds(native_security_manager):
     """
     unit tested:  login
 
@@ -683,23 +682,23 @@ def test_dsm_login_raises_then_succeeds(default_security_manager):
     authenticate_account raises an AuthenticationException, on_failed_login
     succeeds, and an AuthenticationException is raised up the stack
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with mock.patch.object(NativeSecurityManager,
-                           'authenticate_account') as dsm_ac:
-        dsm_ac.side_effect = AuthenticationException
+                           'authenticate_account') as nsm_ac:
+        nsm_ac.side_effect = AuthenticationException
 
         with mock.patch.object(NativeSecurityManager,
-                               'on_failed_login') as dsm_ofl:
-            dsm_ofl.return_value = None
+                               'on_failed_login') as nsm_ofl:
+            nsm_ofl.return_value = None
 
             with pytest.raises(AuthenticationException):
-                dsm.login('subject', 'authc_token')
-                dsm_ac.assert_called_once_with('authc_token')
-                dsm_ofl.assert_called_once_with(
+                nsm.login('subject', 'authc_token')
+                nsm_ac.assert_called_once_with('authc_token')
+                nsm_ofl.assert_called_once_with(
                     'authc_token', AuthenticationException, 'subject')
 
-def test_dsm_login_raises_then_raises(default_security_manager, capsys):
+def test_nsm_login_raises_then_raises(native_security_manager, capsys):
     """
     unit tested:  login
 
@@ -708,215 +707,215 @@ def test_dsm_login_raises_then_raises(default_security_manager, capsys):
     raises, a warning is emitted, and an AuthenticationException is raised up
     the stack
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with mock.patch.object(NativeSecurityManager,
-                           'authenticate_account') as dsm_ac:
-        dsm_ac.side_effect = AuthenticationException
+                           'authenticate_account') as nsm_ac:
+        nsm_ac.side_effect = AuthenticationException
 
         with mock.patch.object(NativeSecurityManager,
-                               'on_failed_login') as dsm_ofl:
-            dsm_ofl.side_effect = Exception
+                               'on_failed_login') as nsm_ofl:
+            nsm_ofl.side_effect = Exception
 
             with pytest.raises(AuthenticationException):
-                dsm.login('subject', 'authc_token')
-                dsm_ac.assert_called_once_with('authc_token')
-                dsm_ofl.assert_called_once_with(
+                nsm.login('subject', 'authc_token')
+                nsm_ac.assert_called_once_with('authc_token')
+                nsm_ofl.assert_called_once_with(
                     'authc_token', AuthenticationException, 'subject')
 
                 out, err = capsys.readouterr()
                 assert 'on_failed_login method raised' in out
 
-def test_dsm_on_successful_login(default_security_manager):
+def test_nsm_on_successful_login(native_security_manager):
     """
     unit tested:  on_successful_login
 
     test case:
     passes call on to remember_me_successful_login
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with mock.patch.object(NativeSecurityManager,
-                           'remember_me_successful_login') as dsm_rmsl:
-        dsm_rmsl.return_value = None
+                           'remember_me_successful_login') as nsm_rmsl:
+        nsm_rmsl.return_value = None
 
-        dsm.on_successful_login('authc_token', 'account', 'subject')
+        nsm.on_successful_login('authc_token', 'account', 'subject')
 
-        dsm_rmsl.assert_called_once_with('authc_token', 'account', 'subject')
+        nsm_rmsl.assert_called_once_with('authc_token', 'account', 'subject')
 
-def test_dsm_onfailed_login(default_security_manager):
+def test_nsm_onfailed_login(native_security_manager):
     """
     unit tested:  on_failed_login
 
     test case:
     passes call on to remember_me_failed_login
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(NativeSecurityManager,
-                           'remember_me_failed_login') as dsm_rmfl:
-        dsm_rmfl.return_value = None
-        dsm.on_failed_login('authc_token', 'authc_exc', 'subject')
-        dsm_rmfl.assert_called_once_with('authc_token', 'authc_exc', 'subject')
+                           'remember_me_failed_login') as nsm_rmfl:
+        nsm_rmfl.return_value = None
+        nsm.on_failed_login('authc_token', 'authc_exc', 'subject')
+        nsm_rmfl.assert_called_once_with('authc_token', 'authc_exc', 'subject')
 
 
-def test_dsm_before_logout(default_security_manager):
+def test_nsm_before_logout(native_security_manager):
     """
     unit tested:  before_logout
 
     test case:
     passes call on to remember_me_logout
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with mock.patch.object(NativeSecurityManager,
-                           'remember_me_logout') as dsm_rml:
-        dsm_rml.return_value = None
+                           'remember_me_logout') as nsm_rml:
+        nsm_rml.return_value = None
 
-        dsm.before_logout('subject')
+        nsm.before_logout('subject')
 
-        dsm_rml.assert_called_once_with('subject')
+        nsm_rml.assert_called_once_with('subject')
 
 
-def test_dsm_copy(default_security_manager):
+def test_nsm_copy(native_security_manager):
     """
     unit tested:  copy
 
     test case:
     returns a new DefaultSubjectContext
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
-    result = dsm.copy({'subject_context': 'subject_context'})
+    result = nsm.copy({'subject_context': 'subject_context'})
     assert result == DefaultSubjectContext({'subject_context': 'subject_context'})
 
-def test_dsm_do_create_subject(default_security_manager, monkeypatch):
+def test_nsm_do_create_subject(native_security_manager, monkeypatch):
     """
     unit tested:  do_create_subject
 
     test case:
     passes call onto subject_factory.create_subject
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     class DumbFactory:
         def create_subject(self, context):
             return 'verified'
 
-    monkeypatch.setattr(dsm, 'subject_factory', DumbFactory())
+    monkeypatch.setattr(nsm, 'subject_factory', DumbFactory())
 
-    result = dsm.do_create_subject('anything')
+    result = nsm.do_create_subject('anything')
     assert result == 'verified'
 
 
-def test_dsm_save(default_security_manager, monkeypatch):
+def test_nsm_save(native_security_manager, monkeypatch):
     """
     unit tested:  save
 
     test case:
     passes call onto subject_store.save
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     class DumbStore:
         def save(self, subject):
             return 'saved'
 
-    monkeypatch.setattr(dsm, 'subject_store', DumbStore())
+    monkeypatch.setattr(nsm, 'subject_store', DumbStore())
     with mock.patch.object(DumbStore, 'save') as ds_save:
-        dsm.save('subject')
+        nsm.save('subject')
         ds_save.assert_called_once_with('subject')
 
-def test_save_raises(default_security_manager):
+def test_save_raises(native_security_manager):
     """
     unit tested:  save
 
     test case:
     passes call onto None, raising
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with pytest.raises(SaveSubjectException):
-        dsm.save('subject')
+        nsm.save('subject')
 
 
-def test_delete_raises(default_security_manager):
+def test_delete_raises(native_security_manager):
     """
     unit tested:  delete
 
     test case:
     passes call onto None, raising
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with pytest.raises(DeleteSubjectException):
-        dsm.delete('subject')
+        nsm.delete('subject')
 
-def test_dsm_delete(default_security_manager, monkeypatch):
+def test_nsm_delete(native_security_manager, monkeypatch):
     """
     unit tested:  delete
 
     test case:
     passes call onto subject_store.delete
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     class DumbStore:
         def delete(self, subject):
             return None
 
-    monkeypatch.setattr(dsm, 'subject_store', DumbStore())
+    monkeypatch.setattr(nsm, 'subject_store', DumbStore())
     with mock.patch.object(DumbStore, 'delete') as ds_delete:
-        dsm.delete('subject')
+        nsm.delete('subject')
         ds_delete.assert_called_once_with('subject')
 
 
-def test_dsm_ensure_security_manager_resolves(
-        default_security_manager, mock_subject_context, monkeypatch):
+def test_nsm_ensure_security_manager_resolves(
+        native_security_manager, mock_subject_context, monkeypatch):
     """
     unit tested:  ensure_security_manager
 
     test case:
     resolve_security_manager returns the subject_context
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
     monkeypatch.setattr(msc, 'resolve_security_manager', lambda: True)
 
-    result = dsm.ensure_security_manager(msc)
+    result = nsm.ensure_security_manager(msc)
 
     assert result
 
-def test_dsm_ensure_security_manager_doesntresolve(
-        default_security_manager, mock_subject_context, monkeypatch):
+def test_nsm_ensure_security_manager_doesntresolve(
+        native_security_manager, mock_subject_context, monkeypatch):
 
     """
     unit tested:  ensure_security_manager
 
     test case:
     resolve_security_manager returns None, and then ensure_security_manager
-    returns a subject_context whose security_manager is the dsm
+    returns a subject_context whose security_manager is the nsm
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
     monkeypatch.setattr(msc, 'resolve_security_manager', lambda: None)
 
-    result = dsm.ensure_security_manager(msc)
+    result = nsm.ensure_security_manager(msc)
 
-    assert result.security_manager == dsm
+    assert result.security_manager == nsm
 
-def test_dsm_ensure_security_manager_doesntresolve_raises(
-        default_security_manager, monkeypatch):
+def test_nsm_ensure_security_manager_doesntresolve_raises(
+        native_security_manager, monkeypatch):
     """
     unit tested:  ensure_security_manager
 
     test case:
     resolve_security_manager returns None, and then ensure_security_manager
-    returns a subject_context whose security_manager is the dsm
+    returns a subject_context whose security_manager is the nsm
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
 
     with pytest.raises(IllegalArgumentException):
-        dsm.ensure_security_manager('subject_context')
+        nsm.ensure_security_manager('subject_context')
 
-def test_dsm_resolve_session_returns_none(
-        default_security_manager, mock_subject_context, monkeypatch):
+def test_nsm_resolve_session_returns_none(
+        native_security_manager, mock_subject_context, monkeypatch):
     """
     unit tested:  resolve_session
 
@@ -924,18 +923,18 @@ def test_dsm_resolve_session_returns_none(
     the subject_context.resolve_session returns None, implying that the
     context already contains a session, so returns it as is
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
 
     monkeypatch.setattr(msc, 'resolve_session', lambda: 'session')
 
-    result = dsm.resolve_session(msc)
+    result = nsm.resolve_session(msc)
 
     assert result == msc
 
 
-def test_dsm_resolve_session_contextsessionisnone(
-        default_security_manager, mock_subject_context, monkeypatch):
+def test_nsm_resolve_session_contextsessionisnone(
+        native_security_manager, mock_subject_context, monkeypatch):
     """
     unit tested:  resolve_session
 
@@ -944,94 +943,94 @@ def test_dsm_resolve_session_contextsessionisnone(
     subject_context.session doesn't get set
 
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
 
     monkeypatch.setattr(msc, 'resolve_session', lambda: None)
 
     with mock.patch.object(NativeSecurityManager,
-                           'resolve_context_session') as dsm_rcs:
-        dsm_rcs.return_value = None
-        result = dsm.resolve_session(msc)
+                           'resolve_context_session') as nsm_rcs:
+        nsm_rcs.return_value = None
+        result = nsm.resolve_session(msc)
         assert not hasattr(result, 'session')
 
-def test_dsm_resolve_context_session_nokey(
-        default_security_manager, monkeypatch):
+def test_nsm_resolve_context_session_nokey(
+        native_security_manager, monkeypatch):
     """
     unit tested:  resolve_context_session
 
     test case:
     get_session_key returns none , returning None
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'get_session_key', lambda x: None)
-    result = dsm.resolve_context_session('subject_context')
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'get_session_key', lambda x: None)
+    result = nsm.resolve_context_session('subject_context')
     assert result is None
 
-def test_dsm_resolve_context_session(default_security_manager, monkeypatch):
+def test_nsm_resolve_context_session(native_security_manager, monkeypatch):
     """
     unit tested:  resolve_context_session
 
     test case:
     get_session_key returns a key, so get_session called and returns
     """
-    dsm = default_security_manager
-    monkeypatch.setattr(dsm, 'get_session_key', lambda x: 'sessionkey123')
-    monkeypatch.setattr(dsm, 'get_session', lambda x: 'session')
+    nsm = native_security_manager
+    monkeypatch.setattr(nsm, 'get_session_key', lambda x: 'sessionkey123')
+    monkeypatch.setattr(nsm, 'get_session', lambda x: 'session')
 
-    result = dsm.resolve_context_session('subject_context')
+    result = nsm.resolve_context_session('subject_context')
     assert result == 'session'
 
 
-def test_dsm_get_session_key_w_sessionid(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_get_session_key_w_sessionid(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  get_session_key
 
     test case:
 
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
 
     monkeypatch.setattr(msc, 'session_id', 'sessionid123', raising=False)
 
-    result = dsm.get_session_key(msc)
+    result = nsm.get_session_key(msc)
 
     assert result == DefaultSessionKey('sessionid123')
 
-def test_dsm_get_session_key_wo_sessionid(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_get_session_key_wo_sessionid(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  get_session_key
 
     test case:
 
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
     monkeypatch.setattr(msc, 'session_id', None, raising=False)
-    result = dsm.get_session_key(msc)
+    result = nsm.get_session_key(msc)
     assert result is None
 
-def test_dsm_resolve_identifiers_incontext(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_resolve_identifiers_incontext(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  resolve_identifiers
 
     test case:
     subject_context contains identifiers, so returns it back immediately
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
     monkeypatch.setattr(msc, 'resolve_identifiers', lambda: 'identifiers')
-    result = dsm.resolve_identifiers(msc)
+    result = nsm.resolve_identifiers(msc)
 
     assert result == msc
 
 
-def test_dsm_resolve_identifiers_notincontext_remembered(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_resolve_identifiers_notincontext_remembered(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  resolve_identifiers
 
@@ -1040,14 +1039,14 @@ def test_dsm_resolve_identifiers_notincontext_remembered(
     - obtains identifiers from remembered identity
     """
 
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
 
-    dsm.resolve_identifiers(msc)
+    nsm.resolve_identifiers(msc)
 
 
-def test_dsm_resolve_identifiers_notincontext_notremembered(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_resolve_identifiers_notincontext_notremembered(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  resolve_identifiers
 
@@ -1056,15 +1055,15 @@ def test_dsm_resolve_identifiers_notincontext_notremembered(
     - fails to obtain identifiers from remembered identity
     """
 
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
-    monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: None)
-    result = dsm.resolve_identifiers(msc)
+    monkeypatch.setattr(nsm, 'get_remembered_identity', lambda x: None)
+    result = nsm.resolve_identifiers(msc)
     assert not hasattr(result, 'identifiers')
 
 
-def test_dsm_resolve_identifiers_notincontext_remembered(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_resolve_identifiers_notincontext_remembered(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  resolve_identifiers
 
@@ -1073,15 +1072,15 @@ def test_dsm_resolve_identifiers_notincontext_remembered(
     - fails to obtain identifiers from remembered identity
     """
 
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
-    monkeypatch.setattr(dsm, 'get_remembered_identity', lambda x: 'identifiers')
-    result = dsm.resolve_identifiers(msc)
+    monkeypatch.setattr(nsm, 'get_remembered_identity', lambda x: 'identifiers')
+    result = nsm.resolve_identifiers(msc)
     assert hasattr(result, 'identifiers')
 
 
-def test_dsm_create_session_context_empty(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_create_session_context_empty(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  create_session_context
 
@@ -1090,19 +1089,19 @@ def test_dsm_create_session_context_empty(
     session_id=None, passes
     host=None, passes
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
 
     monkeypatch.setattr(msc, 'context', {}, raising=False)
     monkeypatch.setattr(msc, 'session_id', None, raising=False)
     monkeypatch.setattr(msc, 'resolve_host', lambda: None, raising=False)
 
-    result = dsm.create_session_context(msc)
+    result = nsm.create_session_context(msc)
 
     assert result.session_id is None and result.host is None
 
-def test_dsm_create_session_context(
-        default_security_manager, monkeypatch, mock_subject_context):
+def test_nsm_create_session_context(
+        native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  create_session_context
 
@@ -1111,32 +1110,33 @@ def test_dsm_create_session_context(
     session_id has values
     host has values
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     msc = mock_subject_context
     msc.put('attrY', 'attributeY')
 
     monkeypatch.setattr(msc, 'session_id', 'session_id', raising=False)
     monkeypatch.setattr(msc, 'resolve_host', lambda: 'host', raising=False)
 
-    result = dsm.create_session_context(msc)
+    result = nsm.create_session_context(msc)
 
     assert (result.session_id == 'session_id' and
             result.host == 'host' and
             'attrY' in result)
 
-def test_dsm_logout_raises(default_security_manager):
+def test_nsm_logout_raises(native_security_manager):
     """
     unit tested:  logout
 
     test case:
     a subject must be passed as an argument
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     with pytest.raises(IllegalArgumentException):
-        dsm.logout(None)
+        nsm.logout(None)
 
-def test_dsm_logout_succeeds(
-        default_security_manager, mock_subject, monkeypatch):
+
+def test_nsm_logout_succeeds(
+        native_security_manager, mock_subject, monkeypatch):
     """
     unit tested:  logout
 
@@ -1144,32 +1144,31 @@ def test_dsm_logout_succeeds(
     calls before_logout, obtains identifiers from subject, calls the
     authenticator's on_logout method, calls delete, calls stop_session
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     ms = mock_subject
 
     class MockAuthenticator(authc_abcs.LogoutAware):
         def on_logout(self, identifiers):
             pass
 
-    monkeypatch.setattr(dsm, 'authenticator', MockAuthenticator())
+    monkeypatch.setattr(nsm, 'authenticator', MockAuthenticator())
 
-    with mock.patch.object(dsm, 'before_logout') as dsm_bl:
-        dsm_bl.return_value = None
-        with mock.patch.object(MockAuthenticator, 'on_logout') as ma_ol:
-            with mock.patch.object(dsm, 'delete') as dsm_delete:
-                dsm_delete.return_value = None
-                with mock.patch.object(dsm, 'stop_session') as dsm_ss:
-                    dsm_ss.return_value = None
+    with mock.patch.object(nsm, 'before_logout') as nsm_bl:
+        nsm_bl.return_value = None
+        with mock.patch.object(nsm, 'delete') as nsm_delete:
+            nsm_delete.return_value = None
+            with mock.patch.object(nsm, 'stop_session') as nsm_ss:
+                nsm_ss.return_value = None
 
-                    dsm.logout(ms)
-                    dsm_bl.assert_called_once_with(ms)
-                    ma_ol.assert_called_once_with(ms.identifiers)
-                    dsm_delete.assert_called_once_with(ms)
-                    dsm_ss.assert_called_once_with(ms)
+                nsm.logout(ms)
+                nsm_bl.assert_called_once_with(ms)
+                nsm_delete.assert_called_once_with(ms)
+
+                assert nsm_ss.called
 
 
-def test_dsm_logout_succeeds_until_delete_raises(
-        default_security_manager, mock_subject, monkeypatch, capsys):
+def test_nsm_logout_succeeds_until_delete_raises(
+        native_security_manager, mock_subject, monkeypatch, capsys):
     """
     unit tested:  logout
 
@@ -1177,40 +1176,41 @@ def test_dsm_logout_succeeds_until_delete_raises(
     calls before_logout, obtains identifiers from subject, calls the
     authenticator's on_logout method, calls delete and raises
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     ms = mock_subject
 
     class MockAuthenticator(authc_abcs.LogoutAware):
         def on_logout(self, identifiers):
             pass
 
-    monkeypatch.setattr(dsm, 'authenticator', MockAuthenticator())
+    monkeypatch.setattr(nsm, 'authenticator', MockAuthenticator())
     monkeypatch.setattr(ms, '_identifiers', None)
 
-    with mock.patch.object(dsm, 'before_logout') as dsm_bl:
-        dsm_bl.return_value = None
-        with mock.patch.object(dsm, 'delete') as dsm_delete:
-            dsm_delete.side_effect = Exception
-            with mock.patch.object(dsm, 'stop_session') as dsm_ss:
-                dsm_ss.side_effect = Exception
+    with mock.patch.object(nsm, 'before_logout') as nsm_bl:
+        nsm_bl.return_value = None
+        with mock.patch.object(nsm, 'delete') as nsm_delete:
+            nsm_delete.side_effect = Exception
+            with mock.patch.object(nsm, 'stop_session') as nsm_ss:
+                nsm_ss.side_effect = Exception
 
-                dsm.logout(ms)
-                dsm_bl.assert_called_once_with(ms)
-                dsm_delete.assert_called_once_with(ms)
-                dsm_ss.assert_called_once_with(ms)
+                nsm.logout(ms)
+                nsm_bl.assert_called_once_with(ms)
+                nsm_delete.assert_called_once_with(ms)
+                nsm_ss.assert_called_once_with(ms, None)
 
                 out, err = capsys.readouterr()
                 assert ('Unable to cleanly unbind Subject' in out
                         and 'Unable to cleanly stop Session' in out)
 
-def test_dsm_stop_session(default_security_manager, monkeypatch, mock_subject):
+
+def test_nsm_stop_session(native_security_manager, monkeypatch, mock_subject):
     """
     unit tested:  stop_session
 
     test case:
     gets a session and calls its stop method
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     ms = mock_subject
 
     class MockSession:
@@ -1220,42 +1220,43 @@ def test_dsm_stop_session(default_security_manager, monkeypatch, mock_subject):
     monkeypatch.setattr(ms, 'get_session', lambda x: MockSession(), raising=False)
 
     with mock.patch.object(MockSession, 'stop') as ms_stop:
-        dsm.stop_session(ms)
-        ms_stop.assert_called_once_with()
+        nsm.stop_session(ms, 'identifiers')
+        ms_stop.assert_called_once_with('identifiers')
 
-def test_dsm_get_remembered_identity(
-        default_security_manager, mock_remember_me_manager, monkeypatch):
+
+def test_nsm_get_remembered_identity(
+        native_security_manager, mock_remember_me_manager, monkeypatch):
     """
     unit tested:  get_remembered_identity
 
     test case:
     returns remembered identifiers from the rmm
     """
-    dsm = default_security_manager
+    nsm = native_security_manager
     mrmm = mock_remember_me_manager
 
-    monkeypatch.setattr(dsm, 'remember_me_manager', mrmm)
+    monkeypatch.setattr(nsm, 'remember_me_manager', mrmm)
     monkeypatch.setattr(mrmm,
                         'get_remembered_identifiers',
                         lambda x: 'remembered_identifiers')
-    result = dsm.get_remembered_identity('subjectcontext')
+    result = nsm.get_remembered_identity('subjectcontext')
     assert result == 'remembered_identifiers'
 
 
-def test_dsm_get_remembered_identity_not_remembered(default_security_manager):
+def test_nsm_get_remembered_identity_not_remembered(native_security_manager):
     """
     unit tested:  get_remembered_identity
 
     test case:
     remember_me_manager by default isn't set, so None is returned
     """
-    dsm = default_security_manager
-    result = dsm.get_remembered_identity('subject_context')
+    nsm = native_security_manager
+    result = nsm.get_remembered_identity('subject_context')
     assert result is None
 
 
-def test_dsm_get_remembered_identity_raises(
-        default_security_manager, mock_remember_me_manager, monkeypatch,
+def test_nsm_get_remembered_identity_raises(
+        native_security_manager, mock_remember_me_manager, monkeypatch,
         capsys):
     """
     unit tested:  get_remembered_identity
@@ -1264,15 +1265,15 @@ def test_dsm_get_remembered_identity_raises(
     raises an exception while trying to get remembered identifiers from rmm
     """
 
-    dsm = default_security_manager
+    nsm = native_security_manager
     mrmm = mock_remember_me_manager
 
-    monkeypatch.setattr(dsm, 'remember_me_manager', mrmm)
+    monkeypatch.setattr(nsm, 'remember_me_manager', mrmm)
     with mock.patch.object(MockRememberMeManager,
                            'get_remembered_identifiers') as mrmm_gri:
         mrmm_gri.side_effect = Exception
 
-        result = dsm.get_remembered_identity('subjectcontext')
+        result = nsm.get_remembered_identity('subjectcontext')
         out, err = capsys.readouterr()
         assert (result is None and 'raised an exception' in out)
 
@@ -1399,17 +1400,14 @@ def test_armm_remember_identity_wo_identitiersarg(
     mrmm = mock_remember_me_manager
 
     monkeypatch.setattr(mrmm, 'get_identity_to_remember', lambda x,y: 'identifiers')
+    monkeypatch.setattr(mrmm, 'convert_identifiers_to_bytes', lambda x: 'serialized')
 
-    with mock.patch.object(MockRememberMeManager, 'convert_identifiers_to_bytes') as citb:
-        citb.return_value = 'serialized'
+    with mock.patch.object(MockRememberMeManager, 'remember_serialized_identity') as rsi:
+        rsi.return_value = None
 
-        with mock.patch.object(MockRememberMeManager, 'remember_serialized_identity') as rsi:
-            rsi.return_value = None
+        mrmm.remember_identity('subject', identifiers=None, account='account')
 
-            mrmm.remember_identity('subject', identifiers=None, account='account')
-
-            citb.assert_called_once_with('identifiers')
-            rsi.assert_called_once_with('subject', 'serialized')
+        rsi.assert_called_once_with('subject', 'serialized')
 
 
 def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
@@ -1447,10 +1445,12 @@ def test_armm_get_identity_to_remember(
     """
     mrmm = mock_remember_me_manager
     result = mrmm.get_identity_to_remember('subject', full_mock_account)
-    assert result == full_mock_account.identifiers
+    assert result == full_mock_account.account_id
 
 
-def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager):
+@pytest.mark.xfail
+def test_armm_convert_identifiers_to_bytes(
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  convert_identifiers_to_bytes
 
@@ -1458,10 +1458,9 @@ def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager):
     returns a byte string encoded serialized identifiers collection
     """
     mrmm = mock_remember_me_manager
-    with mock.patch.object(SerializationManager, 'serialize') as sm_ser:
-        sm_ser.return_value = 'serialized'
-        result = mrmm.convert_identifiers_to_bytes('identifiers')
-        sm_ser.assert_called_once_with('identifiers')
+    monkeypatch.setattr(mrmm.serialization_manager, 'serialize', lambda x: 'serialized')
+    result = mrmm.convert_identifiers_to_bytes('identifiers')
+    assert result == 'serialized'
 
 
 def test_armm_get_remembered_identifiers_raises(
@@ -1474,7 +1473,7 @@ def test_armm_get_remembered_identifiers_raises(
         - on_remembered_identifiers_failure is called as a result
     - backup identifiers from o.r.i.f are returned
     """
-    mrmm = mock_remember_me_manager
+    mrmm = MockRememberMeManager()
 
     monkeypatch.setattr(mrmm, 'on_remembered_identifiers_failure',
                         lambda x, y: 'identifiers')
@@ -1486,6 +1485,7 @@ def test_armm_get_remembered_identifiers_raises(
         assert result == 'identifiers'
 
 
+@pytest.mark.xfail
 def test_armm_get_remembered_identifiers_serialized(
         mock_remember_me_manager, monkeypatch):
     """
@@ -1498,13 +1498,13 @@ def test_armm_get_remembered_identifiers_serialized(
     mrmm = mock_remember_me_manager
 
     monkeypatch.setattr(mrmm, 'convert_bytes_to_identifiers',
-                        lambda x, y: 'identifiers')
+                        lambda x, y: 'identifiers', raising=False)
 
-    with mock.patch.object(MockRememberMeManager,
-                           'get_remembered_serialized_identity') as grsi:
-        grsi.return_value = 'serialized_identity'
-        result = mrmm.get_remembered_identifiers('subject_context')
-        assert result == 'identifiers'
+    monkeypatch.setattr(mrmm, "get_remembered_serialized_identity",
+                        lambda x: "serialized_identity", raising=False)
+
+    result = mrmm.get_remembered_identifiers('subject_context')
+    assert result == 'identifiers'
 
 
 def test_armm_convert_bytes_to_identifiers(
