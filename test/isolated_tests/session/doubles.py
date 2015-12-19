@@ -2,7 +2,6 @@ import datetime
 from yosai.core import (
     DefaultNativeSessionManager,
     AbstractSessionStore,
-    CachingSessionStore,
     event_bus,
     session_abcs,
 )
@@ -93,18 +92,8 @@ class MockAbstractSessionStore(AbstractSessionStore):
     def update(self, session):
         pass
 
-
-class MockCachingSessionStore(CachingSessionStore):
-
-    def do_create(self, session):
+    def _do_create(self, session):
         pass
 
-    def do_delete(self, session):
+    def _do_read(self, session_id):
         pass
-
-    def do_read_session(self, session_id):
-        pass
-
-    def do_update(self, session):
-        pass
-

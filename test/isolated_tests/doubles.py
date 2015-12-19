@@ -68,6 +68,9 @@ class MockSession(session_abcs.ValidatingSession):
     def absolute_timeout(self, absolute_timeout):
         self._absolute_timeout = absolute_timeout
 
+    def get_internal_attribute(self, key):
+        pass 
+
     def get_attribute(self, key):
         return self.session.get(key)
 
@@ -343,3 +346,19 @@ class MockSubjectBuilder:
 
     def build_subject(self):
         return 'subjectbuildersubject'
+
+
+class MockCacheHandler(cache_abcs.CacheHandler):
+
+    def get(self, key, identifier):
+        pass
+
+    def get_or_create(self, key, identifier, creator_func):
+        pass
+
+    def set(self, key, identifier, value):
+        pass
+
+    def delete(self, key, identifier):
+        pass
+

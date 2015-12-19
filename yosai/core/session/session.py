@@ -33,6 +33,7 @@ from yosai.core import (
     LogManager,
     RandomSessionIDGenerator,
     SimpleIdentifierCollection,
+    SessionCacheException,
     SessionCreationException,
     SessionEventException,
     StoppableScheduledExecutor,
@@ -103,7 +104,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
         session.session_id = session_id
 
     def read(self, session_id):
-        session = self.do_read(session_id)
+        session = self._do_read(session_id)
         if session is None:
             msg = "There is no session with id [" + str(session_id) + "]"
             raise UnknownSessionException(msg)
@@ -293,19 +294,13 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         including a primary identifier is new to yosai
         """
         isk = 'identifiers_session_key'
+        identifiers = session.get_internal_attribute(isk)
         try:
-            identifiers = session.get_internal_attribute(isk)
-            if identifiers is not None:
-                try:
-                    self.cache_handler.set(domain='session',
-                                           identifier=identifiers.primary_identifier,
-                                           value=DefaultSessionKey(session_id))
-                except AttributeError:
-                    msg = "no cache parameter nor lazy-defined cache"
-                    print(msg)
-                return
+            self.cache_handler.set(domain='session',
+                                   identifier=identifiers.primary_identifier,
+                                   value=DefaultSessionKey(session_id))
         except AttributeError:
-            msg = 'CacheSessionKeyMap: Could not obtain identifiers from session'
+            msg = "Could not cache identifiers_session_key."
             print(msg)
             # log warning here
 
@@ -316,9 +311,8 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                    identifier=session_id,
                                    value=session)
         except AttributeError:
-            msg = "no cache parameter nor lazy-defined cache"
-            print(msg)
-        return
+            msg = "Cannot cache without a cache_handler."
+            raise SessionCacheException(msg)
 
     def _uncache(self, session):
 
@@ -341,10 +335,9 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                 # log warning here
 
         except AttributeError:
-            msg = "Tried to uncache a session with incomplete parameters"
-            print(msg)
-            # log here
-            return
+            msg = "Cannot uncache without a cache_handler."
+            raise SessionCacheException(msg)
+
 
     def _do_create(self, session):
         sessionid = self.generate_session_id(session)

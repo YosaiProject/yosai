@@ -324,6 +324,10 @@ class SessionException(YosaiException):
     pass
 
 
+class SessionCacheException(YosaiException):
+    pass
+
+
 class InvalidSessionException(SessionException):
     pass
 

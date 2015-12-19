@@ -89,6 +89,7 @@ from .exceptions import (
     SecurityManagerException,
     SecurityManagerNotSetException,
     SerializationException,
+    SessionCacheException,
     SessionCreationException,
     SessionDeleteException,
     SessionException,

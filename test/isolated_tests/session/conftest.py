@@ -16,13 +16,19 @@ from yosai.core import (
 from .doubles import (
     MockDefaultNativeSessionManager,
     MockAbstractSessionStore,
-    MockCachingSessionStore,
     MockSessionManager,
 )
 
 from ..doubles import (
+    MockCacheHandler,
     MockSession,
 )
+
+
+@pytest.fixture(scope='function')
+def mock_cache_handler():
+    return MockCacheHandler()
+
 
 @pytest.fixture(scope='function')
 def default_proxied_session(mock_session):
@@ -47,7 +53,7 @@ def abstract_native_session_manager():
 @pytest.fixture(scope='function')
 def patched_abstract_native_session_manager(monkeypatch, mock_session):
     ansm = MockDefaultNativeSessionManager()
-    monkeypatch.setattr(ansm, 'lookup_required_session', lambda x: mock_session) 
+    monkeypatch.setattr(ansm, 'lookup_required_session', lambda x: mock_session)
     return ansm
 
 
@@ -55,21 +61,25 @@ def patched_abstract_native_session_manager(monkeypatch, mock_session):
 def executor_session_validation_scheduler(patched_abstract_native_session_manager):
     pansm = patched_abstract_native_session_manager
     interval = 360
-    return ExecutorServiceSessionValidationScheduler(session_manager=pansm, 
-                                                     interval=interval) 
+    return ExecutorServiceSessionValidationScheduler(session_manager=pansm,
+                                                     interval=interval)
+
 
 @pytest.fixture(scope='function')
 def mock_abstract_session_store():
     return MockAbstractSessionStore()
 
+
 @pytest.fixture(scope='function')
 def memory_session_store():
     return MemorySessionStore()
 
-@pytest.fixture(scope='function')
-def mock_caching_session_store():
-    return MockCachingSessionStore()
 
 @pytest.fixture(scope='function')
 def default_session_storage_evaluator():
     return DefaultSessionStorageEvaluator()
+
+
+@pytest.fixture(scope='function')
+def caching_session_store():
+    return CachingSessionStore()
