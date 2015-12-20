@@ -80,6 +80,15 @@ class MockSession(session_abcs.ValidatingSession):
     def set_attribute(self, key, value):
         self.session[key] = value
 
+    def get_internal_attribute(self, key):
+        pas
+
+    def remove_internal_attribute(self, key):
+        pass 
+
+    def set_internal_attribute(self, key, value):
+        pass
+
     def stop(self):
         pass
 
