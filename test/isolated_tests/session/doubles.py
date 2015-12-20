@@ -48,6 +48,18 @@ class MockSessionManager:
     def remove_attribute(self, key, attr_key):
         pass
 
+    def get_internal_attribute_keys(self, key):
+        pass
+
+    def get_internal_attribute(self, key, attr_key):
+        pass
+
+    def set_internal_attribute(self, key, attr_key, value):
+        pass
+
+    def remove_internal_attribute(self, key, attr_key):
+        pass
+
 
 class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
 

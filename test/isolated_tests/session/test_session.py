@@ -606,7 +606,7 @@ def test_ds_start_timestamp_not_exists(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'get_start_timestamp') as msm:
         msm.return_value = None
         pds.start_timestamp
-        msm.assert_called_once_with(pds.key)
+        msm.assert_called_once_with(pds.session_key)
 
 def test_ds_start_timestamp_exists(
         patched_delegating_session, monkeypatch):
@@ -657,7 +657,7 @@ def test_ds_set_idle_timeout(patched_delegating_session):
         msm_sit.return_value = None
         now = datetime.datetime.utcnow()
         pds.idle_timeout = now
-        msm_sit.assert_called_once_with(pds.key, now)
+        msm_sit.assert_called_once_with(pds.session_key, now)
 
 def test_ds_get_absolute_timeout(patched_delegating_session):
     """
@@ -681,7 +681,7 @@ def test_ds_set_absolute_timeout(patched_delegating_session):
         msm_sit.return_value = None
         now = datetime.datetime.utcnow()
         pds.absolute_timeout = now
-        msm_sit.assert_called_once_with(pds.key, now)
+        msm_sit.assert_called_once_with(pds.session_key, now)
 
 def test_ds_host_not_exists(patched_delegating_session):
     """
@@ -693,7 +693,7 @@ def test_ds_host_not_exists(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'get_host') as msm_gh:
         msm_gh.return_value = None
         pds.host
-        msm_gh.assert_called_once_with(pds.key)
+        msm_gh.assert_called_once_with(pds.session_key)
 
 def test_ds_host_exists(
         patched_delegating_session, monkeypatch):
@@ -719,7 +719,8 @@ def test_ds_touch(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'touch') as msm_touch:
         msm_touch.return_value = None
         pds.touch()
-        msm_touch.assert_called_once_with(pds.key)
+        msm_touch.assert_called_once_with(pds.session_key)
+
 
 def test_ds_stop(patched_delegating_session):
     """
@@ -732,8 +733,9 @@ def test_ds_stop(patched_delegating_session):
 
     with mock.patch.object(MockSessionManager, 'stop') as msm_stop:
         msm_stop.return_value = None
-        pds.stop()
-        msm_stop.assert_called_once_with(pds.key)
+        pds.stop('identifiers')
+        msm_stop.assert_called_once_with(pds.session_key, 'identifiers')
+
 
 def test_ds_attribute_keys(patched_delegating_session):
     """
@@ -748,7 +750,8 @@ def test_ds_attribute_keys(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'get_attribute_keys') as gak:
         gak.return_value = None
         pds.attribute_keys
-        gak.assert_called_once_with(pds.key)
+        gak.assert_called_once_with(pds.session_key)
+
 
 def test_ds_get_attribute(patched_delegating_session):
     """
@@ -763,7 +766,8 @@ def test_ds_get_attribute(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'get_attribute') as ga:
         ga.return_value = None
         pds.get_attribute('attributekey')
-        ga.assert_called_once_with(pds.key, 'attributekey')
+        ga.assert_called_once_with(pds.session_key, 'attributekey')
+
 
 def test_ds_set_attribute_removes(patched_delegating_session):
     """
@@ -779,6 +783,7 @@ def test_ds_set_attribute_removes(patched_delegating_session):
         pds.set_attribute('attributekey')
         ds_ra.assert_called_once_with('attributekey')
 
+
 def test_ds_set_attribute_delegates(patched_delegating_session):
     """
     unit tested:  set_attribute
@@ -791,7 +796,8 @@ def test_ds_set_attribute_delegates(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'set_attribute') as msm_sa:
         msm_sa.return_value = None
         pds.set_attribute('attributekey', 'value')
-        msm_sa.assert_called_once_with(pds.key, 'attributekey', 'value')
+        msm_sa.assert_called_once_with(pds.session_key, 'attributekey', 'value')
+
 
 def test_ds_remove_attribute_delegates(patched_delegating_session):
     """
@@ -805,8 +811,84 @@ def test_ds_remove_attribute_delegates(patched_delegating_session):
     with mock.patch.object(MockSessionManager, 'remove_attribute') as msm_ra:
         msm_ra.return_value = None
         pds.remove_attribute('attributekey')
-        msm_ra.assert_called_once_with(pds.key, 'attributekey')
+        msm_ra.assert_called_once_with(pds.session_key, 'attributekey')
 
+
+def test_ds_internal_attribute_keys(patched_delegating_session):
+    """
+    unit tested:  internal_attribute_keys
+
+    test case:
+    delegates the request to the MockSessionManager
+    """
+
+    pds = patched_delegating_session
+
+    with mock.patch.object(MockSessionManager, 'get_internal_attribute_keys') as gak:
+        gak.return_value = None
+        pds.internal_attribute_keys
+        gak.assert_called_once_with(pds.session_key)
+
+
+def test_ds_get_internal_attribute(patched_delegating_session):
+    """
+    unit tested:  get_internal_attribute
+
+    test case:
+    delegates the request to the MockSessionManager
+    """
+
+    pds = patched_delegating_session
+
+    with mock.patch.object(MockSessionManager, 'get_internal_attribute') as ga:
+        ga.return_value = None
+        pds.get_internal_attribute('internal_attribute_key')
+        ga.assert_called_once_with(pds.session_key, 'internal_attribute_key')
+
+
+def test_ds_set_internal_attribute_removes(patched_delegating_session):
+    """
+    unit tested:  set_internal_attribute
+
+    test case:
+    value is None, and so remove_internal_attribute is called
+    """
+    pds = patched_delegating_session
+
+    with mock.patch.object(DelegatingSession, 'remove_internal_attribute') as ds_ra:
+        ds_ra.return_value = None
+        pds.set_internal_attribute('internal_attribute_key')
+        ds_ra.assert_called_once_with('internal_attribute_key')
+
+
+def test_ds_set_internal_attribute_delegates(patched_delegating_session):
+    """
+    unit tested:  set_internal_attribute
+
+    test case:
+    delegates to the MockSessionManager
+    """
+
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'set_internal_attribute') as msm_sa:
+        msm_sa.return_value = None
+        pds.set_internal_attribute('internal_attribute_key', 'value')
+        msm_sa.assert_called_once_with(pds.session_key, 'internal_attribute_key', 'value')
+
+
+def test_ds_remove_internal_attribute_delegates(patched_delegating_session):
+    """
+    unit tested:  remove_internal_attribute
+
+    test case:
+    delegates to the MockSessionManager
+    """
+
+    pds = patched_delegating_session
+    with mock.patch.object(MockSessionManager, 'remove_internal_attribute') as msm_ra:
+        msm_ra.return_value = None
+        pds.remove_internal_attribute('internal_attribute_key')
+        msm_ra.assert_called_once_with(pds.session_key, 'internal_attribute_key')
 
 # ----------------------------------------------------------------------------
 # ImmutableProxiedSession
