@@ -488,8 +488,7 @@ def test_sh_after_expired(session_handler, monkeypatch):
         sh_del.assert_called_once_with('session')
 
 
-def test_avsm_on_invalidation_esetype(
-        abstract_validating_session_manager, mock_session):
+def test_sh_on_invalidation_esetype(session_handler, mock_session):
     """
     unit tested:  on_invalidation
 
@@ -497,19 +496,16 @@ def test_avsm_on_invalidation_esetype(
         when an exception of type ExpiredSessionException is passed,
         on_expiration is called and then method returns
     """
-    avsm = abstract_validating_session_manager
+    sh = session_handler
     ise = ExpiredSessionException('testing')
     session_key = 'sessionkey123'
-    with mock.patch.object(MockAbstractValidatingSessionManager,
-                           'on_expiration') as mock_oe:
-        avsm.on_invalidation(session=mock_session,
-                             ise=ise,
-                             session_key=session_key)
+    with mock.patch.object(sh, 'on_expiration') as mock_oe:
+        sh.on_invalidation(session=mock_session, ise=ise, session_key=session_key)
         mock_oe.assert_called_with
 
 
-def test_avsm_on_invalidation_isetype(
-        abstract_validating_session_manager, mock_session):
+def test_sh_on_invalidation_isetype(
+        session_handler, mock_session, monkeypatch):
     """
     unit tested:  on_invalidation
 
@@ -518,27 +514,56 @@ def test_avsm_on_invalidation_isetype(
         an InvalidSessionException higher up the hierarchy is assumed
         and on_stop, notify_stop, and after_stopped are called
     """
-    avsm = abstract_validating_session_manager
-    ise = InvalidSessionException('testing')
+    sh = session_handler
+    ise = StoppedSessionException('testing')
     session_key = 'sessionkey123'
-    with mock.patch.object(MockAbstractValidatingSessionManager,
-                           'on_stop') as mock_onstop:
 
-        with mock.patch.object(MockAbstractValidatingSessionManager,
+    session_tuple = collections.namedtuple(
+        'session_tuple', ['identifiers', 'session_key'])
+    mysession = session_tuple('identifiers', 'sessionkey123')
+
+    monkeypatch.setattr(mock_session, 'get_internal_attribute',
+                        lambda x: 'identifiers')
+
+    with mock.patch.object(sh, 'on_stop') as mock_onstop:
+        mock_onstop.return_value = None
+
+        with mock.patch.object(sh.session_event_handler,
                                'notify_stop') as mock_ns:
+            mock_ns.return_value = None
 
-            with mock.patch.object(MockAbstractValidatingSessionManager,
-                                   'after_stopped') as mock_as:
+            with mock.patch.object(sh, 'after_stopped') as mock_as:
+                mock_as.return_value = None
 
-                avsm.on_invalidation(session=mock_session,
-                                     ise=ise,
-                                     session_key=session_key)
+                sh.on_invalidation(session=mock_session,
+                                   ise=ise,
+                                   session_key=session_key)
 
-                mock_onstop.assert_called_with
-                mock_ns.assert_called_with
-                mock_as.assert_called_with
+                mock_onstop.assert_called_once_with(mock_session)
+                mock_ns.assert_called_once_with(mysession)
+                mock_as.assert_called_once_with(mock_session)
 
 
+def test_sh_on_change(session_handler, monkeypatch, caching_session_store):
+    """
+    unit tested:  on_change
+
+    test case:
+    passthrough call to session_store.update
+    """
+    sh = session_handler
+    monkeypatch.setattr(sh, '_session_store', caching_session_store)
+    with mock.patch.object(sh._session_store, 'update') as ss_up:
+        ss_up.return_value = None
+
+        sh.on_change('session')
+
+        ss_up.assert_called_once_with('session')
+
+
+# ------------------------------------------------------------------------------
+#
+# ------------------------------------------------------------------------------
 
 def test_avsm_create_session(
         abstract_validating_session_manager, monkeypatch):
@@ -565,10 +590,6 @@ def test_dsm_do_create_session(
         mdsm_create.return_value = None
         result = mdsm.do_create_session('dumbsessioncontext')
         assert result == mock_session
-
-# ----------------------------------------------------------------------------
-# AbstractNativeSessionManager
-# ----------------------------------------------------------------------------
 
 def test_ansm_publish_event_succeeds(abstract_native_session_manager):
     """
@@ -1379,23 +1400,6 @@ def test_dsm_on_stop_notusing_complete_simplesession(
         mdsm_oc.return_value = None
         mdsm.on_stop(simple_session)
         mdsm_oc.assert_called_once_with(simple_session)
-
-def test_dsm_on_change(
-        mock_default_session_manager, monkeypatch):
-    """
-    unit tested:  on_change
-
-    test case:
-    passthrough call to session_store.update
-    """
-    mdsm = mock_default_session_manager
-    with mock.patch.object(MemorySessionStore, 'update') as msd_up:
-        msd_up.return_value = None
-
-        mdsm.on_change('session')
-
-        msd_up.assert_called_once_with('session')
-
 
 def test_dsm_get_session_id(mock_default_session_manager):
     """
