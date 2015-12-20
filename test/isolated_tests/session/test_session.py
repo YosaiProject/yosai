@@ -1,4 +1,5 @@
 import pytest
+import pytz
 from unittest import mock
 import datetime
 
@@ -219,14 +220,14 @@ def test_ss_is_valid(
     ('is_expired,absolute_timeout,idle_timeout,last_access_time,start_timestamp,timedout'),
     [(True, None, None, None, None, True),
      (False, datetime.timedelta(minutes=60), None,
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=3),
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=120), True),
+      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=3),
+      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=120), True),
      (False, None, datetime.timedelta(minutes=15),
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=20),
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=30), True),
+      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=20),
+      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=30), True),
      (False, datetime.timedelta(minutes=60), datetime.timedelta(minutes=15),
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=1),
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=5),
+      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=1),
+      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=5),
       False),
      (False, None, None,
       datetime.datetime.utcnow() - datetime.timedelta(minutes=1),
@@ -393,6 +394,7 @@ def test_ss_remove_attribute(simple_session, monkeypatch, attributes,
     ss = simple_session
     monkeypatch.setattr(ss, '_attributes', attributes)
     assert ss.remove_attribute(key) == expected
+
 
 @pytest.mark.parametrize('internal_attributes,key,expected',
                          [(None, 'attr1', None),
