@@ -163,6 +163,7 @@ from yosai.core.concurrency.concurrency import (
 
 from yosai.core.utils.utils import (
     OrderedSet,
+    memoized_property,
     unix_epoch_time,
 )
 

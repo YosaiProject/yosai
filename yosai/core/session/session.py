@@ -31,6 +31,7 @@ from yosai.core import (
     IllegalStateException,
     InvalidSessionException,
     LogManager,
+    memoized_property,
     RandomSessionIDGenerator,
     SimpleIdentifierCollection,
     SessionCacheException,
@@ -338,7 +339,6 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
             msg = "Cannot uncache without a cache_handler."
             raise SessionCacheException(msg)
 
-
     def _do_create(self, session):
         sessionid = self.generate_session_id(session)
         self.assign_session_id(session, sessionid)
@@ -485,13 +485,11 @@ class SimpleSession(session_abcs.ValidatingSession,
         """
         self._absolute_timeout = abs_timeout
 
-    @property
+    @memoized_property
     def attributes(self):
+        if not hasattr(self, '_attributes'):
+            self._attributes = {}
         return self._attributes
-
-    @attributes.setter
-    def attributes(self, attrs):
-        self._attributes = attrs
 
     @property
     def attribute_keys(self):
@@ -499,13 +497,11 @@ class SimpleSession(session_abcs.ValidatingSession,
             return None
         return set(self.attributes)  # a set of keys
 
-    @property
+    @memoized_property
     def internal_attributes(self):
+        if not hasattr(self, '_internal_attributes'):
+            self._internal_attributes = {}
         return self._internal_attributes
-
-    @internal_attributes.setter
-    def internal_attributes(self, attrs):
-        self._internal_attributes = attrs
 
     @property
     def internal_attribute_keys(self):
@@ -704,11 +700,6 @@ class SimpleSession(session_abcs.ValidatingSession,
             # log here
             raise ExpiredSessionException(msg2)
 
-    def get_internal_attributes_lazy(self):
-        if (self.internal_attributes is None):
-            self.internal_attributes = {}
-        return self.internal_attributes
-
     def get_internal_attribute(self, key):
         if (not self.internal_attributes):
             return None
@@ -719,18 +710,13 @@ class SimpleSession(session_abcs.ValidatingSession,
         if (not value):
             self.remove_internal_attribute(key)
         else:
-            self.get_internal_attributes_lazy()[key] = value
+            self.internal_attributes[key] = value
 
     def remove_internal_attribute(self, key):
         if (not self.internal_attributes):
             return None
         else:
             return self.internal_attributes.pop(key, None)
-
-    def get_attributes_lazy(self):
-        if (self.attributes is None):
-            self.attributes = {}
-        return self.attributes
 
     def get_attribute(self, key):
         if (not self.attributes):
@@ -742,7 +728,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         if (not value):
             self.remove_attribute(key)
         else:
-            self.get_attributes_lazy()[key] = value
+            self.attributes[key] = value
 
     def remove_attribute(self, key):
         if (not self.attributes):

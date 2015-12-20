@@ -167,6 +167,7 @@ def test_ss_stop_updates_timestamp(simple_session):
     ss.stop()
     assert ss.stop_timestamp
 
+
 def test_ss_stop_doesnt_update_timestamp(simple_session):
     """
     unit tested:  stop
@@ -179,6 +180,7 @@ def test_ss_stop_doesnt_update_timestamp(simple_session):
     st = ss.stop_timestamp
     ss.stop()
     assert ss.stop_timestamp == st
+
 
 def test_ss_expire(simple_session):
     """
@@ -334,20 +336,6 @@ def test_ss_validate_is_timedout(simple_session, monkeypatch):
     assert 'set to' in str(exc_info.value)
 
 
-@pytest.mark.parametrize('attributes,expected',
-                         [(None, {}), ({'attr1': 1}, {'attr1': 1})])
-def test_ss_get_attributes_lazy(simple_session, attributes, expected, monkeypatch):
-    """
-    unit tested:  get_attributes_lazy
-
-    test case:
-    assigns and returns an empty dict, else the existing dict
-    """
-    ss = simple_session
-    monkeypatch.setattr(ss, '_attributes', attributes)
-    assert ss.get_attributes_lazy() == expected
-
-
 @pytest.mark.parametrize('attributes,key,expected',
                          [(None, 'attr1', None),
                           ({'attr1': 'number1'}, 'attr1', 'number1')])
@@ -362,6 +350,7 @@ def test_ss_get_attribute(simple_session, attributes, key, expected, monkeypatch
     monkeypatch.setattr(ss, '_attributes', attributes)
     assert ss.get_attribute(key) == expected
 
+
 def test_ss_set_attribute_removes(simple_session, monkeypatch):
     """
     unit tested:  set_attribute
@@ -374,6 +363,7 @@ def test_ss_set_attribute_removes(simple_session, monkeypatch):
     monkeypatch.setattr(ss, '_attributes', attributes)
     ss.set_attribute('attr1')
     assert ss.attributes.get('attr1', 'nope') == 'nope'
+
 
 def test_ss_set_attribute_adds(simple_session, monkeypatch):
     """
@@ -403,6 +393,65 @@ def test_ss_remove_attribute(simple_session, monkeypatch, attributes,
     ss = simple_session
     monkeypatch.setattr(ss, '_attributes', attributes)
     assert ss.remove_attribute(key) == expected
+
+@pytest.mark.parametrize('internal_attributes,key,expected',
+                         [(None, 'attr1', None),
+                          ({'attr1': 'number1'}, 'attr1', 'number1')])
+def test_ss_get_internal_attribute(simple_session, internal_attributes, key,
+                                   expected, monkeypatch):
+    """
+    unit tested:  get_internal_attribute
+
+    test case:
+    returns None either when no internal_attributes or when key doesn't exist
+    """
+    ss = simple_session
+    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
+    assert ss.get_internal_attribute(key) == expected
+
+
+def test_ss_set_internal_attribute_removes(simple_session, monkeypatch):
+    """
+    unit tested:  set_internal_attribute
+
+    test case:
+    setting an internal_attribute without a value will remove the internal_attribute
+    """
+    ss = simple_session
+    internal_attributes = {'attr1': 'attr1', 'attr2': 'attr2'}
+    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
+    ss.set_internal_attribute('attr1')
+    assert ss.internal_attributes.get('attr1', 'nope') == 'nope'
+
+
+def test_ss_set_internal_attribute_adds(simple_session, monkeypatch):
+    """
+    unit tested:  set_internal_attribute
+
+    test case:
+    setting an internal_attribute adds or overrides existing internal_attribute
+    """
+    ss = simple_session
+    internal_attributes = {'attr1': 'attr1', 'attr2': 'attr2'}
+    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
+    ss.set_internal_attribute('attr1')
+    assert ss.internal_attributes.get('attr1', 'nope') == 'nope'
+
+
+@pytest.mark.parametrize('internal_attributes,key,expected',
+                         [(None, 'attr2', None),
+                          ({'attr1': 100, 'attr2': 200}, 'attr2', 200)])
+def test_ss_remove_internal_attribute(simple_session, monkeypatch,
+                                      internal_attributes, key, expected):
+    """
+    unit tested: remove_internal_attribute
+
+    test case:
+    remove an internal_attribute, if internal_attributes exists, else None
+    """
+    ss = simple_session
+    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
+    assert ss.remove_internal_attribute(key) == expected
 
 
 def test_ss_eq_clone():

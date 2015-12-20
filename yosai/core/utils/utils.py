@@ -23,6 +23,25 @@ import datetime
 import time
 
 
+class memoized_property:
+    """A read-only @property that is only evaluated once.  Copied from
+       dogpile.cache (created by Mike Bayer et al)."""
+    def __init__(self, fget, doc=None):
+        self.counter = 10
+        self.fget = fget
+        self.__doc__ = doc or fget.__doc__
+        self.__name__ = fget.__name__
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        result = self.fget(obj) 
+        setattr(obj, self.__name__, result)
+
+        self.counter += 1
+        return result
+
+
 def unix_epoch_time():
     return int(time.mktime(datetime.datetime.now().timetuple()))
 
