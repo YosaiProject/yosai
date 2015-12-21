@@ -1046,7 +1046,8 @@ class SessionEventHandler(event_abcs.EventBusAware):
             raise SessionEventException(msg)
 
 
-class SessionHandler(session_abcs.SessionHandler):
+class DefaultNativeSessionHandler(session_abcs.SessionHandler,
+                                  event_abcs.EventBusAware):
 
     def __init__(self, session_event_handler, auto_touch=False,
                  delete_invalid_sessions=True):
@@ -1084,6 +1085,16 @@ class SessionHandler(session_abcs.SessionHandler):
             print(msg)
             # log warning here
             return
+
+    @property
+    def event_bus(self):
+        # just a pass-through
+        return self.session_event_handler.event_bus
+
+    @event_bus.setter
+    def event_bus(self, eventbus):
+        # pass-through
+        self.session_event_handler.event_bus = eventbus
 
     # -------------------------------------------------------------------------
     # Session Creation Methods
@@ -1284,9 +1295,10 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     """
     Yosai's DefaultNativeSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to
-    replace a confusing inheritance-based object graph with a compositional
-    design.  This compositional design continues to evolve.  Pull Requests
-    are welcome.
+    replace a confusing inheritance-based mixin object graph with a compositional
+    design.  This compositional design continues to evolve.  Event handling can be
+    better designed as it currently is done by the manager AND session handler.
+    Pull Requests are welcome.
 
     Touching Sessions
     ------------------
@@ -1303,14 +1315,15 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     Shiro does not enable auto-touch within the DefaultNativeSessionManager. It is not
      yet clear why Shiro doesn't.  Until the reason why is revealed, Yosai
      includes a new auto_touch feature to enable/disable auto-touching.
+
     """
 
     def __init__(self):
         self.session_factory = SimpleSessionFactory()
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
-            SessionHandler(session_event_handler=self.session_event_handler,
-                           auto_touch=True)
+            DefaultNativeSessionHandler(session_event_handler=self.session_event_handler,
+                                        auto_touch=True)
         self._event_bus = None
 
     @property
@@ -1339,12 +1352,18 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     def event_bus(self, eventbus):
         self._event_bus = eventbus
         self.session_event_handler.event_bus = eventbus
+        self.session_handler.event_bus = eventbus  # it passes through
 
     # -------------------------------------------------------------------------
     # Session Lifecycle Methods
     # -------------------------------------------------------------------------
 
     def start(self, session_context):
+        """
+        unlike shiro, yosai does not apply session timeouts from within the 
+        start method of the SessionManager but rather defers timeout settings
+        responsibilities to the SimpleSession, which uses session_settings
+        """
         # is a SimpleSesson:
         session = self._create_session(session_context)
 

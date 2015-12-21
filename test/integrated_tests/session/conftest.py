@@ -5,7 +5,7 @@ from yosai.core import (
     DefaultSessionContext,
     DefaultNativeSessionManager,
     SessionEventHandler,
-    SessionHandler,
+    DefaultNativeSessionHandler,
     SimpleSessionFactory,
     CachingSessionStore,
     event_bus,
@@ -44,7 +44,7 @@ def session_event_handler():
 
 @pytest.fixture(scope='function')
 def session_handler(session_event_handler):
-    return SessionHandler(session_event_handler=session_event_handler,
+    return DefaultNativeSessionHandler(session_event_handler=session_event_handler,
                           auto_touch=True)
 
 

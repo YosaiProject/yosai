@@ -204,7 +204,7 @@ from yosai.core.session.session import (
     ProxiedSession,
     # SessionTokenGenerator,
     ScheduledSessionValidator,
-    SessionHandler,
+    DefaultNativeSessionHandler,
     SimpleSession,
     SimpleSessionFactory,
 )

@@ -21,6 +21,7 @@ class MockSession(session_abcs.ValidatingSession):
 
     def __init__(self):
         self.attributes = {'attr1': 1, 'attr2': 2, 'attr3': 3}
+        self._internal_attributes = {}
         self._idle_timeout = datetime.timedelta(minutes=15)
         self._absolute_timeout = datetime.timedelta(minutes=60)
         self._isvalid = True  # only used for testing
@@ -28,10 +29,8 @@ class MockSession(session_abcs.ValidatingSession):
         self._start_timestamp = None 
         self._stop_timestamp = None 
         self._last_access_time = None
-
-    @property
-    def attribute_keys(self):
-        return self.attributes.keys()
+        self._internal_attribute_keys = None
+        self._attribute_keys = None
 
     @property
     def host(self):
@@ -84,8 +83,13 @@ class MockSession(session_abcs.ValidatingSession):
     def absolute_timeout(self, absolute_timeout):
         self._absolute_timeout = absolute_timeout
 
-    def get_internal_attribute(self, key):
-        pass 
+    @property
+    def attribute_keys(self):
+        return self._attribute_keys  # dirty hack
+    
+    @property
+    def internal_attribute_keys(self):
+        return self._internal_attribute_keys  # dirty hack
 
     def get_attribute(self, key):
         return self.attributes.get(key)

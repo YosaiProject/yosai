@@ -11,7 +11,7 @@ from yosai.core import (
     MemorySessionStore,
     ProxiedSession,
     SessionEventHandler,
-    SessionHandler,
+    DefaultNativeSessionHandler,
     SimpleSession,
     event_bus,
 )
@@ -91,7 +91,7 @@ def session_event_handler():
 
 @pytest.fixture(scope='function')
 def session_handler(session_event_handler):
-    return SessionHandler(session_event_handler=session_event_handler)
+    return DefaultNativeSessionHandler(session_event_handler=session_event_handler)
 
 
 @pytest.fixture(scope='function')
