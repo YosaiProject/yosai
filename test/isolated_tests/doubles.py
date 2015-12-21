@@ -148,6 +148,10 @@ class MockAccount(account_abcs.Account,
     def account_id(self):
         return self._account_id
 
+    @account_id.setter
+    def account_id(self, aid):
+        self._account_id = aid
+
     @property
     def attributes(self):
         return self._attributes

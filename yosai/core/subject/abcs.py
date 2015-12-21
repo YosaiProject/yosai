@@ -21,7 +21,7 @@ under the License.
 from abc import ABCMeta, abstractmethod
 from yosai.core import (
     InvalidArgumentException,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
 )
 

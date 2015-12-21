@@ -10,7 +10,7 @@ from yosai.core import (
     DefaultSessionKey,
     DefaultSubjectContext,
     DeleteSubjectException,
-    IllegalArgumentException,
+    InvalidArgumentException,
     ModularRealmAuthorizer,
     SerializationManager,
     UsernamePasswordToken,
@@ -66,7 +66,7 @@ def test_nsm_setauthenticator_raises(
     """
     nsm = native_security_manager
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.authenticator = None
 
 
@@ -101,7 +101,7 @@ def test_nsm_setauthorizer_raises(native_security_manager):
     """
     nsm = native_security_manager
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.authorizer = None
 
 
@@ -138,7 +138,7 @@ def test_nsm_set_cachehandler_raises(native_security_manager):
     """
     nsm = native_security_manager
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.cache_handler = None
 
 
@@ -170,7 +170,7 @@ def test_nsm_set_eventbus_raises(native_security_manager):
     """
     nsm = native_security_manager
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.event_bus = None
 
 
@@ -220,7 +220,7 @@ def test_set_realms_raises(native_security_manager):
     """
     nsm = native_security_manager
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.realms = None
 
 
@@ -911,7 +911,7 @@ def test_nsm_ensure_security_manager_doesntresolve_raises(
     """
     nsm = native_security_manager
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.ensure_security_manager('subject_context')
 
 def test_nsm_resolve_session_returns_none(
@@ -1131,7 +1131,7 @@ def test_nsm_logout_raises(native_security_manager):
     a subject must be passed as an argument
     """
     nsm = native_security_manager
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         nsm.logout(None)
 
 
@@ -1383,7 +1383,7 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     mrmm = mock_remember_me_manager
     with mock.patch.object(MockRememberMeManager, 'get_identity_to_remember') as gitr:
         gitr.side_effect = AttributeError
-        pytest.raises(IllegalArgumentException,
+        pytest.raises(InvalidArgumentException,
                       "mrmm.remember_identity('subject', identifiers=None, account=None)")
 
 

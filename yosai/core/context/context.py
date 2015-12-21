@@ -19,7 +19,7 @@ under the License.
 
 from yosai.core import (
     serialize_abcs,
-    IllegalArgumentException,
+    InvalidArgumentException,
 )
 from marshmallow import Schema, fields, post_load
 
@@ -74,7 +74,7 @@ class MapContext(serialize_abcs.Serializable):
             msg = "passed invalid argument to put_all"
             print(msg)
             # log exception here
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     def put(self, attr, value):
         self.context[attr] = value

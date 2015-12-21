@@ -1,6 +1,6 @@
 import pytest
 from yosai.core import (
-    IllegalArgumentException,
+    InvalidArgumentException,
     MapContext,
 )
 
@@ -53,6 +53,6 @@ def test_put_all(default_map_context):
 def test_put_all_raises(default_map_context):
     test_context = {'attrX': 'attributeX', 'attrY': 'attributeY'}
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         default_map_context.put_all(test_context)
 

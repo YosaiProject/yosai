@@ -4,7 +4,7 @@ from yosai.core import (
     AbstractSessionStore,
     CachingSessionStore,
     DefaultSessionKey,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
     RandomSessionIDGenerator,
     SessionCacheException,
@@ -114,7 +114,7 @@ def test_asd_assign_session_id_raises(
    III) session = None, session_id = None
     """
     masd = mock_abstract_session_store
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         masd.assign_session_id(session, sessionid)
 
 
@@ -210,7 +210,7 @@ def test_msd_store_session_raises(memory_session_store, session_id, session):
     if either session_id or session are not set, an exception will raise
     """
     msd = memory_session_store
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         msd.store_session(session_id, session)
 
 
@@ -252,7 +252,7 @@ def test_msd_delete_raises_ae(memory_session_store):
     raise an AttributeError
     """
     msd = memory_session_store
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         msd.delete(session='dumbsession')
 
 

@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from yosai.core import (
     DefaultPermission,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
     ModularRealmAuthorizer,
     SimpleRole,
@@ -57,7 +57,7 @@ def test_wcp_setparts_raises_illegalargumentexception(
 
     wcp = default_wildcard_permission
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         wcp.setparts(wildcard_string=wildcardstring)
 
 def test_wcp_setparts_casesensitive(

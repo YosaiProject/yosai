@@ -1,5 +1,4 @@
 import pytest
-from collections import defaultdict
 
 from yosai.core import (
     DefaultSubjectContext,
@@ -28,8 +27,10 @@ def subject_context():
 
 
 @pytest.fixture(scope='function')
-def default_subject_context(subject_context):
+def default_subject_context(subject_context, full_mock_account, mock_session):
     context = {value: 'value_'+value for key, value in subject_context.items()}
+    context["DefaultSubjectContext.ACCOUNT"] = full_mock_account
+    context["DefaultSubjectContext.AUTHENTICATED"] = False
     return DefaultSubjectContext(context)
 
 
@@ -41,7 +42,8 @@ def simple_identifiers_collection():
 
 @pytest.fixture(scope='function')
 def sic_serialized():
-    return {'realm_identifiers': {'realm1': ['username']}}
+    return {'source_identifiers': {'realm1': 'username'},
+            '_primary_identifier': None}
 
 
 @pytest.fixture(scope='function')

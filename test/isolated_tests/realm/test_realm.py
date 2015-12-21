@@ -4,15 +4,11 @@ from yosai.core import (
     Account,
     AccountStoreRealm,
     AuthzInfoNotFoundException,
-    CacheCredentialsException,
-    ClearCacheCredentialsException,
     CredentialsNotFoundException,
-    GetCachedCredentialsException,
     IndexedAuthorizationInfo,
     IncorrectCredentialsException,
     InvalidArgumentException,
     PasswordVerifier,
-    RealmMisconfiguredException,
     SimpleIdentifierCollection,
 )
 from ..doubles import (
@@ -168,12 +164,12 @@ def test_asr_authenticate_account(username_password_token,
     fma = full_mock_account
     sic = simple_identifier_collection
 
+    monkeypatch.setattr(fma, '_account_id', sic)
     monkeypatch.setattr(pasr, 'get_credentials', lambda x: fma)
     with mock.patch.object(AccountStoreRealm, 'assert_credentials_match') as acm:
         acm.return_value = None
         result = pasr.authenticate_account(token)
         acm.assert_called_once_with(token, fma)
-        fma.account_id = sic
         assert result == fma
 
 

@@ -61,7 +61,7 @@ from .exceptions import (
     HostUnauthorizedException,
     IdentifierMismatchException,
     IdentifiersNotSetException,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
     IncorrectCredentialsException,
     IncorrectAttributeException,

@@ -27,7 +27,7 @@ from yosai.core import (
     Event,
     MapContext,
     ExpiredSessionException,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
     InvalidSessionException,
     LogManager,
@@ -101,7 +101,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
         if session is None or session_id is None:
             msg = ("session and sessionid parameters must be passed in "
                    "order to assign session_id")
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
         session.session_id = session_id
 
     def read(self, session_id):
@@ -153,7 +153,7 @@ class MemorySessionStore(AbstractSessionStore):
             self.sessions.pop(sessionid)
         except AttributeError:
             msg = 'MemorySessionStore.delete None param passed'
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
         except KeyError:
             msg = ('MemorySessionStore could not delete ', str(sessionid),
                    'because it does not exist in memory!')
@@ -165,7 +165,7 @@ class MemorySessionStore(AbstractSessionStore):
         # session (as default) otherwise
         if session_id is None or session is None:
             msg = 'MemorySessionStore.store_session invalid param passed'
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
         return self.sessions.setdefault(session_id, session)
 
@@ -1252,7 +1252,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         # Yosai adds this exception handling
         else:
             msg = "on_exception takes either 1 argument or 3 arguments"
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     def after_expired(self, session):
         if (self.delete_invalid_sessions):

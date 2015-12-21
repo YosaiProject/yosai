@@ -22,7 +22,7 @@ from yosai.core import (
     AuthorizationEventException,
     CollectionDict,
     Event,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
     LogManager,
     PermissionIndexingException,
@@ -79,7 +79,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                    "permission strings are properly formatted.")
             print(msg)
             # log here
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
         wildcard_string = wildcard_string.strip()
 
@@ -87,7 +87,7 @@ class WildcardPermission(serialize_abcs.Serializable):
             msg = ("Wildcard string cannot contain JUST dividers. Make "
                    "sure permission strings are properly formatted.")
             print(msg)
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
         if (not self.case_sensitive):
             wildcard_string = wildcard_string.lower()
@@ -102,7 +102,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                        "of sub-part dividers or nothing at all. Ensure that "
                        "permission strings are properly formatted.")
                 print(msg)
-                raise IllegalArgumentException(msg)
+                raise InvalidArgumentException(msg)
 
             myindex = part_indices.get(index)
 

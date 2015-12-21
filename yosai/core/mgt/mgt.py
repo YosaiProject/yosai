@@ -34,7 +34,7 @@ from yosai.core import(
     DefaultSubjectStore,
     DeleteSubjectException,
     Event,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IndexedAuthorizationInfo,
     InvalidSessionException,
     LogManager,
@@ -210,7 +210,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
                 identifiers = self.get_identity_to_remember(subject, account)
             except AttributeError:
                 msg = "Neither account nor identifier arguments passed"
-                raise IllegalArgumentException(msg)
+                raise InvalidArgumentException(msg)
 
         serialized = self.convert_identifiers_to_bytes(identifiers)
         self.remember_serialized_identity(subject, serialized)
@@ -438,7 +438,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         else:
             msg = "authenticator argument must have a value"
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     @property
     def authorizer(self):
@@ -452,7 +452,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self._authorizer.realms = self.realms
         else:
             msg = "authorizer argument must have a value"
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     @property
     def cache_handler(self):
@@ -472,7 +472,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         else:
             msg = ('Incorrect argument.  If you want to disable caching, '
                    'configure a disabled cachemanager instance')
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     #  property required by EventBusAware interface:
     @property
@@ -489,7 +489,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         else:
             msg = 'eventbus argument must have a value'
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     @property
     def realms(self):
@@ -523,7 +523,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 # log debug here
         else:
             msg = 'realms argument must have a value'
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
     @property
     def session_manager(self):
@@ -897,7 +897,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             msg = 'subject_context is invalid'
             print(msg)
             # log exception here
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
         return subject_context
 
     def resolve_session(self, subject_context):
@@ -993,7 +993,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         """
         if (subject is None):
             msg = "Subject argument cannot be None."
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
         self.before_logout(subject)
 

@@ -12,9 +12,9 @@ from yosai.core import (
     DelegatingSession,
     DefaultEventBus,
     Event,
-    ExecutorServiceSessionValidationScheduler,
+    # ExecutorServiceSessionValidationScheduler,
     ExpiredSessionException,
-    IllegalArgumentException,
+    InvalidArgumentException,
     MemorySessionStore,
     SessionEventException,
     DefaultNativeSessionHandler,
@@ -441,7 +441,7 @@ def test_sh_on_expiration_onenotset(session_handler, ese, session_key):
     """
     sh = session_handler
 
-    with pytest.raises(IllegalArgumentException):
+    with pytest.raises(InvalidArgumentException):
         sh.on_expiration(session='testsession',
                          expired_session_exception=ese,
                          session_key=session_key)

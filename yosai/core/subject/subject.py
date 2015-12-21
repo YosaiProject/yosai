@@ -28,13 +28,13 @@ from yosai.core import (
     DisabledSessionException,
     ExecutionException,
     IdentifiersNotSetException,
-    IllegalArgumentException,
+    InvalidArgumentException,
     IllegalStateException,
+    InvalidArgumentException,
     LogManager,
     ProxiedSession,
     SecurityManagerNotSetException,
     SessionException,
-    SimpleIdentifierCollection,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
     UnsupportedOperationException,
@@ -208,15 +208,18 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         if authc is None:
             #  presence of one indicates a successful authentication attempt:
             #  See whethere there is an Account object.  If one exists, the very
-            authc = bool(self.account.account_id)
+            try:
+                authc = self.account.account_id
+            except AttributeError:
+                pass
         if authc is None:
             #  fall back to a session check:
             session = self.resolve_session()
             if (session is not None):
-                authc = bool(session.get_internal_attribute(
-                    self.get_key('authenticated_session_key')))
+                authc = session.get_internal_attribute(
+                    self.get_key('authenticated_session_key'))
 
-        return authc
+        return bool(authc)
 
     # yosai.core.renamed AuthenticationInfo to Account:
     @property
@@ -325,6 +328,8 @@ class DelegatingSubject(subject_abcs.Subject):
         self.run_as_identifiers_session_key = 'run_as_identifiers_session_key'
 
     def decorate(self, session):
+        if not isinstance(session, session_abcs.Session):
+            raise InvalidArgumentException('incorrect session argument passed')
         return self.StoppingAwareProxiedSession(session, self)
 
     @property
@@ -339,7 +344,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 security_manager is None):
             self._security_manager = security_manager
         else:
-            raise IllegalArgumentException('must use SecurityManager')
+            raise InvalidArgumentException('must use SecurityManager')
 
     # new to yosai.core.
     # security_manager is required for certain operations
@@ -384,7 +389,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 identifiers is None):
             self._identifiers = identifiers
         else:
-            raise IllegalArgumentException('must use IdentifierCollection')
+            raise InvalidArgumentException('must use IdentifierCollection')
 
     def is_permitted(self, permission_s):
         """
@@ -566,6 +571,8 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         :type authc: bool
         """
+        if not isinstance(authc, bool):
+            raise InvalidArgumentException('authenticated must be Boolean')
         self._authenticated = authc
 
     @property
@@ -586,7 +593,7 @@ class DelegatingSubject(subject_abcs.Subject):
         if (isinstance(session, session_abcs.Session) or session is None):
             self._session = session
         else:
-            raise IllegalArgumentException('must use Session object')
+            raise InvalidArgumentException('must use Session object')
 
     def get_session(self, create=True):
         msg = ("attempting to get session; create = " + str(create) +
@@ -745,7 +752,7 @@ class DelegatingSubject(subject_abcs.Subject):
         if (not identifiers):
             msg = ("Specified Subject identifiers cannot be None or empty "
                    "for 'run as' functionality.")
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
 
         stack = self.get_run_as_identifiers_stack()
         if (not stack):
@@ -789,7 +796,7 @@ class DelegatingSubject(subject_abcs.Subject):
             self.owner.session_stopped()
 
     def __repr__(self):
-        return "DelegatingSubject()"
+        return "StoppingAwareProxiedSession()"
 
 # migrated from /mgt:
 class DefaultSubjectStore:
@@ -1048,7 +1055,7 @@ class SubjectBuilder:
         Allows custom attributes to be added to the underlying context Map used
         to construct the Subject instance.
 
-        A None key throws an IllegalArgumentException.
+        A None key throws an InvalidArgumentException.
         A None value effectively removes any previously stored attribute under
         the given key from the context map.
 
@@ -1063,11 +1070,11 @@ class SubjectBuilder:
                                be stored in the context Map
         :param attribute_value: the value to store in the context map under the
                                 specified attribute_key
-        :raises IllegalArgumentException: if the attribute_key is None
+        :raises InvalidArgumentException: if the attribute_key is None
         """
         if (not attribute_key):
             msg = "Subject context map key cannot be None"
-            raise IllegalArgumentException(msg)
+            raise InvalidArgumentException(msg)
         if (not attribute_value):
             self.subject_context.remove(attribute_key)
         else:
