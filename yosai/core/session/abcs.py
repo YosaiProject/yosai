@@ -299,6 +299,86 @@ class SessionIDGenerator(metaclass=ABCMeta):
         pass
 
 
+# new to yosai:
+class SessionHandler(metaclass=ABCMeta):
+
+    @property
+    @abstractmethod
+    def session_store(self):
+        pass
+
+    @session_store.setter
+    @abstractmethod
+    def session_store(self, sessionstore):
+        pass
+
+    @property
+    @abstractmethod
+    def cache_handler(self):
+        return self._cache_handler
+
+    @cache_handler.setter
+    @abstractmethod
+    def cache_handler(self, cachehandler):
+        pass
+
+    @abstractmethod
+    def apply_cache_handler_to_session_store(self):
+        pass
+
+    @abstractmethod
+    def create_session(self, session):
+        pass
+
+    @abstractmethod
+    def delete(self, session):
+        pass
+
+    @abstractmethod
+    def _retrieve_session(self, session_key):
+        pass
+
+    @abstractmethod
+    def do_get_session(self, session_key):
+        pass
+
+    @abstractmethod
+    def validate(self, session, session_key):
+        pass
+
+    @abstractmethod
+    def on_start(self, session, session_context):
+        """
+        placeholder for subclasses to react to a new session being created
+        """
+        pass
+
+    @abstractmethod
+    def on_stop(self, session):
+        pass
+
+    @abstractmethod
+    def after_stopped(self, session):
+        pass
+
+    @abstractmethod
+    def on_expiration(self, session, expired_session_exception=None,
+                      session_key=None):
+        pass
+
+    @abstractmethod
+    def after_expired(self, session):
+        pass
+
+    @abstractmethod
+    def on_invalidation(self, session, ise, session_key):
+        pass
+
+    @abstractmethod
+    def on_change(self, session):
+        pass
+
+
 class SessionManager(metaclass=ABCMeta):
     """
     A SessionManager manages the creation, maintenance, and clean-up of all

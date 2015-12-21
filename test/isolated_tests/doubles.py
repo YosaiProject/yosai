@@ -20,14 +20,18 @@ import datetime
 class MockSession(session_abcs.ValidatingSession):
 
     def __init__(self):
-        self.session = {'attr1': 1, 'attr2': 2, 'attr3': 3}
+        self.attributes = {'attr1': 1, 'attr2': 2, 'attr3': 3}
         self._idle_timeout = datetime.timedelta(minutes=15)
         self._absolute_timeout = datetime.timedelta(minutes=60)
         self._isvalid = True  # only used for testing
+        self._session_id = 'MockSession12345'
+        self._start_timestamp = None 
+        self._stop_timestamp = None 
+        self._last_access_time = None
 
     @property
     def attribute_keys(self):
-        return self.session.keys()
+        return self.attributes.keys()
 
     @property
     def host(self):
@@ -42,15 +46,27 @@ class MockSession(session_abcs.ValidatingSession):
 
     @property
     def session_id(self):
-        return 'MockSession12345'
+        return self._session_id
 
     @property
     def last_access_time(self):
-        return datetime.datetime(2015, 6, 17, 19, 45, 51, 818810)
+        return self._last_access_time 
+
+    @last_access_time.setter
+    def last_access_time(self, lat):
+        self._last_access_time = lat
 
     @property
     def start_timestamp(self):
-        return datetime.datetime(2015, 6, 17, 19, 43, 51, 818810)
+        return self._start_timestamp 
+    
+    @property
+    def stop_timestamp(self):
+        return self._stop_timestamp 
+
+    @stop_timestamp.setter
+    def stop_timestamp(self, st):
+        self._stop_timestamp = st
 
     @property
     def idle_timeout(self):
@@ -72,16 +88,16 @@ class MockSession(session_abcs.ValidatingSession):
         pass 
 
     def get_attribute(self, key):
-        return self.session.get(key)
+        return self.attributes.get(key)
 
     def remove_attribute(self, key):
-        return self.session.pop(key, None)
+        return self.attributes.pop(key, None)
 
     def set_attribute(self, key, value):
-        self.session[key] = value
+        self.attributes[key] = value
 
     def get_internal_attribute(self, key):
-        pas
+        pass
 
     def remove_internal_attribute(self, key):
         pass 
@@ -100,7 +116,7 @@ class MockSession(session_abcs.ValidatingSession):
 
     def __repr__(self):
         attrs = ','.join([str(key) + ':' + str(value) for key, value in
-                          self.session.items()])
+                          self.attributes.items()])
         return "MockSession(" + attrs + ")"
 
 

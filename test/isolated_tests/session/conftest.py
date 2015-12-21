@@ -1,16 +1,19 @@
 import pytest
 
 from yosai.core import (
-    DefaultNativeSessionManager,
     CachingSessionStore,
-    DefaultSessionContext,
+    DefaultNativeSessionManager,
+    DefaultSessionKey,
     DefaultSessionSettings,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
     ExecutorServiceSessionValidationScheduler,
     MemorySessionStore,
     ProxiedSession,
+    SessionEventHandler,
+    SessionHandler,
     SimpleSession,
+    event_bus,
 )
 
 from .doubles import (
@@ -21,7 +24,6 @@ from .doubles import (
 
 from ..doubles import (
     MockCacheHandler,
-    MockSession,
 )
 
 
@@ -46,15 +48,10 @@ def patched_delegating_session():
 
 
 @pytest.fixture(scope='function')
-def abstract_native_session_manager():
-    return MockDefaultNativeSessionManager()
-
-
-@pytest.fixture(scope='function')
-def patched_abstract_native_session_manager(monkeypatch, mock_session):
-    ansm = MockDefaultNativeSessionManager()
-    monkeypatch.setattr(ansm, 'lookup_required_session', lambda x: mock_session)
-    return ansm
+def default_native_session_manager():
+    nsm = DefaultNativeSessionManager()
+    nsm.event_bus = event_bus
+    return nsm
 
 
 @pytest.fixture(scope='function')
@@ -83,3 +80,20 @@ def default_session_storage_evaluator():
 @pytest.fixture(scope='function')
 def caching_session_store():
     return CachingSessionStore()
+
+
+@pytest.fixture(scope='function')
+def session_event_handler():
+    seh = SessionEventHandler()
+    seh.event_bus = event_bus
+    return seh
+
+
+@pytest.fixture(scope='function')
+def session_handler(session_event_handler):
+    return SessionHandler(session_event_handler=session_event_handler)
+
+
+@pytest.fixture(scope='function')
+def session_key():
+    return DefaultSessionKey('sessionid123')

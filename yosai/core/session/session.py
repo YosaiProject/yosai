@@ -1046,7 +1046,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
             raise SessionEventException(msg)
 
 
-class SessionHandler:
+class SessionHandler(session_abcs.SessionHandler):
 
     def __init__(self, session_event_handler, auto_touch=False,
                  delete_invalid_sessions=True):
@@ -1147,10 +1147,10 @@ class SessionHandler:
         if (session is not None):
             self.validate(session, session_key)
 
-        # won't be called unless the session is valid (due exceptions):
-        if self.auto_touch:  # new to yosai
-            session.touch()
-            self.on_change(session)
+            # won't be called unless the session is valid (due exceptions):
+            if self.auto_touch:  # new to yosai
+                session.touch()
+                self.on_change(session)
 
         return session
 
@@ -1168,8 +1168,7 @@ class SessionHandler:
                    "Please either implement this interface in your "
                    "session implementation or override the {0}"
                    ".do_validate(Session) method to validate.").\
-                format('AbstractValidatingSessionManager',
-                       'ValidatingSession')
+                format(self.__class__.__name__, 'ValidatingSession')
 
             raise IllegalStateException(msg)
 
@@ -1212,6 +1211,7 @@ class SessionHandler:
     def on_expiration(self, session, expired_session_exception=None,
                       session_key=None):
         """
+        This method overloaded for now (java port).  TBD
         Two possible scenarios supported:
             1) All three arguments passed = session + ese + session_key
             2) Only session passed as an argument
@@ -1493,7 +1493,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         return self._lookup_required_session(session_key).host
 
     def get_internal_attribute_keys(self, session_key):
-        collection = self._lookup_required_session(session_key).internal_attribute_keys
+        session = self._lookup_required_session(session_key)
+        collection = session.internal_attribute_keys
         try:
             return tuple(collection)
         except TypeError:  # collection is None

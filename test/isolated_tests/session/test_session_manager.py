@@ -562,7 +562,7 @@ def test_sh_on_change(session_handler, monkeypatch, caching_session_store):
 
 
 # ------------------------------------------------------------------------------
-#
+# DefaultNativeSessionManager
 # ------------------------------------------------------------------------------
 
 def test_avsm_create_session(
