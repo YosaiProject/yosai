@@ -1,9 +1,7 @@
-cffi==1.3.1
-cryptography==1.1.1
-idna==2.0
-marshmallow==2.3.0
-msgpack-python==0.4.6
 passlib==1.6.5
+marshmallow==2.3.0
+cryptography==1.1.1
+msgpack-python==0.4.6
 py==1.4.31
 py-bcrypt==0.4
 pyasn1==0.1.9
@@ -17,4 +15,7 @@ redis==2.10.5
 six==1.10.0
 SQLAlchemy==1.0.9
 structlog==15.1.0
+--allow-external PyPubSub
 PyPubSub==3.3.0
+pytest-capturelog
+pytest-cov
