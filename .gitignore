@@ -1,7 +1,12 @@
+.tox
+.cache
+.coverage
+.eggs
+*.egg-info/
 *.pyc
 *.pyo
 *.swp
-
-.cache
-.coverage
-
+dist/
+build/
+docs/_build/
+__pycache__/
