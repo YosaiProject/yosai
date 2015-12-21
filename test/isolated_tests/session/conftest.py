@@ -7,7 +7,7 @@ from yosai.core import (
     DefaultSessionSettings,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
-    ExecutorServiceSessionValidationScheduler,
+    # ExecutorServiceSessionValidationScheduler,
     MemorySessionStore,
     ProxiedSession,
     SessionEventHandler,

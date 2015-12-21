@@ -45,7 +45,7 @@ class LazySettings:
 
     def __init__(self, env_var):
         self._wrapped = empty
-        self.__dict__["env_var"] = env_var 
+        self.__dict__["env_var"] = env_var
 
     def __getattr__(self, name):
         if self._wrapped is empty:
@@ -81,10 +81,8 @@ class LazySettings:
         settings_file = os.environ.get(self.__dict__['env_var'])
         if not settings_file:
             msg = ("Requested {desc}, but settings are not configured. "
-                   "You must define the environment variable {env}. ".
-                   format(desc=("setting: " + name) if name else "settings",
-                          env=env_var))
-
+                   "You must define the environment variable YOSAI_CORE_SETTINGS. ".
+                   format(desc=("setting: " + name) if name else "settings"))
             raise MisconfiguredException(msg)
 
         self._wrapped = Settings(settings_file)

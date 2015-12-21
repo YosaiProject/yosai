@@ -1598,3 +1598,29 @@ class DefaultSessionContext(MapContext, session_abcs.SessionContext):
         # cannot set a session_id == None
         self.none_safe_put('session_id', sessionid)
 
+
+class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
+
+    # Global policy determining whether Subject sessions may be used to persist
+    # Subject state if the Subject's Session does not yet exist.
+
+    def __init__(self):
+        self._session_storage_enabled = True
+
+    @property
+    def session_storage_enabled(self):
+        return self._session_storage_enabled
+
+    @session_storage_enabled.setter
+    def session_storage_enabled(self, sse):
+        self._session_storage_enabled = sse
+
+    def is_session_storage_enabled(self, subject=None):
+        if (not subject):
+            return self._session_storage_enabled
+        else:
+            return ((subject is not None and
+                     subject.get_session(False) is not None) or
+                    bool(self._session_storage_enabled))
+
+
