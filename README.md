@@ -37,12 +37,9 @@ In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortre
 PROJECT STATUS
 ==============
 
-12/10/2015
+12/22/2015
 ---------------------
-
-Integration testing of the yosai.core package is well under way.  God willing,
-I will finish within the next week.  Outlier unit testing follows, so as to
-improve coverage and to consider last-minute updates.
+Yosai.core testing is complete.
 
 Yosai is being released with batteries included so that it may be used in a 
 project without requiring additional module implementation.  To achieve this goal:
@@ -70,69 +67,36 @@ other backends are not compatible from off the shelf.
 
 * port of Shiro's /web package , used to help integrate Yosai with web applications
 
+PyTest Coverage stats (ao 12/22/2015):
+|Name                                    | Stmts |Miss  | Cover |
+|:---------------------------------------|:-----:|:----:|:------:|
+| yosai/core/account/account.py          | 23  | 1  | 96%  |
+| yosai/core/authc/authc.py              | 167 | 14 | 92%  |
+| yosai/core/authc/authc_account.py      | 65  | 12 | 82%  |
+| yosai/core/authc/context.py            | 39  | 2  | 95%  |
+| yosai/core/authc/credential.py         | 56  | 5  | 91%  |
+| yosai/core/authc/decorators.py         | 26  | 0  | 100% |
+| yosai/core/authc/strategy.py           | 98  | 6  | 94%  |
+| yosai/core/authz/authz.py              | 381 | 36 | 91%  |
+| yosai/core/authz/decorators.py         | 18  | 0  | 100% |
+| yosai/core/conf/yosaisettings.py       | 53  | 1  | 98%  |
+| yosai/core/context/context.py          | 54  | 12 | 78%  |
+| yosai/core/event/event.py              | 87  | 5  | 94%  |
+| yosai/core/exceptions.py               | 165 | 1  | 99%  |
+| yosai/core/logging/s_logging.py        | 77  | 56 | 27%  |
+| yosai/core/mgt/mgt.py                  | 380 | 7  | 98%  |
+| yosai/core/mgt/mgt_settings.py         | 9   | 1  | 89%  |
+| yosai/core/realm/realm.py              | 151 | 9  | 94%  |
+| yosai/core/serialize/serialize.py      | 98  | 31 | 68%  |
+| yosai/core/session/session.py          | 743 | 55 | 93%  |
+| yosai/core/session/session_gen.py      | 10  | 0  | 100% |
+| yosai/core/session/session_settings.py | 17  | 1  | 94%  |
+| yosai/core/subject/identifier.py       | 65  | 4  | 94%  |
+| yosai/core/subject/subject.py          | 441 | 25 | 94%  |
+| yosai/core/utils/utils.py              | 66  | 38 | 42%  |
+|-------  -------------------------------|-----|----|------|
 
-Pytest unit testing coverage stats will follow shortly.  The last tally
-was from October:
 
-|Name                                  | Stmts |Miss  | Cover |
-|:--------------------------------------|:-------:|:------:|:-------:|
-| yosai/__init__.py                    | 43    | 0    | 100%  |
-| yosai/account/__init__.py            | 0     | 0    | 100%  |
-| yosai/account/abcs.py                | 26    | 8    | 69%   |
-| yosai/authc/__init__.py              | 0     | 0    | 100%  |
-| yosai/authc/abcs.py                  | 64    | 21   | 67%   |
-| yosai/authc/authc.py                 | 151   | 10   | 93%   |
-| yosai/authc/authc_account.py         | 59    | 10   | 83%   |
-| yosai/authc/context.py               | 39    | 2    | 95%   |
-| yosai/authc/credential.py            | 48    | 5    | 90%   |
-| yosai/authc/strategy.py              | 98    | 6    | 94%   |
-| yosai/authz/__init__.py              | 0     | 0    | 100%  |
-| yosai/authz/abcs.py                  | 53    | 18   | 66%   |
-| yosai/authz/authz.py                 | 335   | 65   | 81%   |
-| yosai/cache/__init__.py              | 0     | 0    | 100%  |
-| yosai/cache/abcs.py                  | 48    | 27   | 44%   |
-| yosai/cache/cache.py                 | 40    | 21   | 48%   |
-| yosai/concurrency/__init__.py        | 0     | 0    | 100%  |
-| yosai/concurrency/abcs.py            | 0     | 0    | 100%  |
-| yosai/concurrency/concurrency.py     | 18    | 4    | 78%   |
-| yosai/concurrency/tbd_concurrency.py | 10    | 10   | 0%    |
-| yosai/conf/__init__.py               | 0     | 0    | 100%  |
-| yosai/conf/yosaisettings.py          | 51    | 1    | 98%   |
-| yosai/context/__init__.py            | 0     | 0    | 100%  |
-| yosai/context/context.py             | 54    | 12   | 78%   |
-| yosai/event/__init__.py              | 0     | 0    | 100%  |
-| yosai/event/abcs.py                  | 15    | 5    | 67%   |
-| yosai/event/event.py                 | 78    | 4    | 95%   |
-| yosai/exceptions.py                  | 157   | 1    | 99%   |
-| yosai/init_yosai.py                  | 5     | 5    | 0%    |
-| yosai/logging/__init__.py            | 0     | 0    | 100%  |
-| yosai/logging/s_logging.py           | 77    | 56   | 27%   |
-| yosai/logging/test_logging.py        | 15    | 15   | 0%    |
-| yosai/mgt/__init__.py                | 0     | 0    | 100%  |
-| yosai/mgt/abcs.py                    | 20    | 8    | 60%   |
-| yosai/mgt/mgt.py                     | 351   | 8    | 98%   |
-| yosai/mgt/mgt_settings.py            | 8     | 1    | 88%   |
-| yosai/realm/__init__.py              | 0     | 0    | 100%  |
-| yosai/realm/abcs.py                  | 91    | 31   | 66%   |
-| yosai/realm/realm.py                 | 153   | 9    | 94%   |
-| yosai/security_utils.py              | 20    | 5    | 75%   |
-| yosai/serialize/__init__.py          | 0     | 0    | 100%  |
-| yosai/serialize/abcs.py              | 23    | 4    | 83%   |
-| yosai/serialize/serialize.py         | 89    | 56   | 37%   |
-| yosai/session/__init__.py            | 0     | 0    | 100%  |
-| yosai/session/abcs.py                | 146   | 54   | 63%   |
-| yosai/session/session.py             | 792   | 67   | 92%   |
-| yosai/session/session_gen.py         | 10    | 0    | 100%  |
-| yosai/session/session_settings.py    | 18    | 1    | 94%   |
-| yosai/session/session_untested.py    | 1     | 1    | 0%    |
-| yosai/subject/__init__.py            | 0     | 0    | 100%  |
-| yosai/subject/abcs.py                | 163   | 63   | 61%   |
-| yosai/subject/identifier.py          | 67    | 2    | 97%   |
-| yosai/subject/subject.py             | 423   | 29   | 93%   |
-| yosai/utils/__init__.py              | 0     | 0    | 100%  |
-| yosai/utils/utils.py                 | 53    | 37   | 30%   |
-|--------------------------------------|-------|------|-------|
-| TOTAL                                | 3912  | 682  | 83%   |
 
 
 
