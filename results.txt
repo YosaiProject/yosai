@@ -1,0 +1,98 @@
+GLOB sdist-make: /home/dowwie/yosai/yosai/setup.py
+py34 create: /home/dowwie/yosai/yosai/.tox/py34
+py34 installdeps: pytest, pytest-capturelog, pytest-cov, -rrequirements.txt
+py34 inst: /home/dowwie/yosai/yosai/.tox/dist/yosai-0.1.0.zip
+py34 installed: cffi==1.4.2,coverage==4.0.3,cryptography==1.1.1,idna==2.0,marshmallow==2.3.0,msgpack-python==0.4.6,passlib==1.6.5,py==1.4.31,py-bcrypt==0.4,pyasn1==0.1.9,pycparser==2.14,PyPubSub==3.3.0,pytest==2.8.5,pytest-capturelog==0.7,pytest-cov==2.2.0,python-dateutil==2.4.2,python-rapidjson==0.0.6,pytz==2015.4,PyYAML==3.11,redis==2.10.5,six==1.10.0,SQLAlchemy==1.0.9,structlog==15.1.0,wheel==0.24.0,yosai==0.1.0,yosai-alchemystore==0.1.0,yosai-dpcache==0.1.0
+py34 runtests: PYTHONHASHSEED='2314116684'
+py34 runtests: commands[0] | py.test
+============================= test session starts ==============================
+platform linux -- Python 3.4.2, pytest-2.8.5, py-1.4.31, pluggy-0.3.1
+rootdir: /home/dowwie/yosai/yosai, inifile: 
+plugins: capturelog-0.7, cov-2.2.0
+collected 721 items
+
+test/integrated_tests/authc/test_authentication.py .....
+test/integrated_tests/authz/test_integrated_authz.py .........
+test/integrated_tests/realm/test_accountstore.py ......
+test/integrated_tests/realm/test_multithreaded.py .
+test/integrated_tests/session/test_caching_session_management.py .F.............
+test/integrated_tests/subject/test_subject.py .................
+test/isolated_tests/authc/test_authc.py .........................
+test/isolated_tests/authc/test_authc_account.py ............
+test/isolated_tests/authc/test_authc_context.py ...........
+test/isolated_tests/authc/test_authc_credential.py ............
+test/isolated_tests/authc/test_authc_strategy.py .................
+test/isolated_tests/authz/test_authz.py ....................................................
+test/isolated_tests/authz/test_authz_permission.py ...........................................................................
+test/isolated_tests/concurrency/test_concurrency.py ..
+test/isolated_tests/conf/test_conf.py ...........
+test/isolated_tests/context/test_context.py ............
+test/isolated_tests/event/test_event.py ................
+test/isolated_tests/mgt/test_mgt.py ..............................................................................X.x......
+test/isolated_tests/realm/test_realm.py .......................
+test/isolated_tests/serialize/test_serialize.py ......
+test/isolated_tests/session/test_session.py ..................................................................................
+test/isolated_tests/session/test_session_manager.py .....................................................................
+test/isolated_tests/session/test_session_store.py ..................................
+test/isolated_tests/subject/test_identifier.py ...............
+test/isolated_tests/subject/test_subject.py .......................................................................................................x...
+
+=================================== FAILURES ===================================
+__________________________ test_update_cached_session __________________________
+
+session_store = <yosai.core.session.session.CachingSessionStore object at 0x7f8570316780>
+session = SimpleSession(session_id: None, start_timestamp: 2015-12-22 10:54:57.110745+00:00, stop_timestamp: None, last_access_time: 2015-12-22 10:54:57.110745+00:00,idle_timeout: 0:05:00, absolute_timeout: 0:30:00, is_expired: None,host: None)
+
+    def test_update_cached_session(session_store, session):
+        """
+        this test will pass if test_create_cache_session runs first
+        """
+    
+        css = session_store
+        session.set_internal_attribute('testing', 'testing123')
+        css.update(session)
+        cached_session = css.read(session.session_id)
+>       assert cached_session == session
+E       assert None == SimpleSession(session_id: None, start_timestamp: 2015-12-22 10:54:57.110745+00:00, stop_timestamp: None, last_access_time: 2015-12-22 10:54:57.110745+00:00,idle_timeout: 0:05:00, absolute_timeout: 0:30:00, is_expired: None,host: None)
+
+test/integrated_tests/session/test_caching_session_management.py:50: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Could not cache identifiers_session_key.
+ 1 failed, 717 passed, 2 xfailed, 1 xpassed, 1 pytest-warnings in 11.66 seconds 
+ERROR: InvocationError: '/home/dowwie/yosai/yosai/.tox/py34/bin/py.test'
+py35 create: /home/dowwie/yosai/yosai/.tox/py35
+py35 installdeps: pytest, pytest-capturelog, pytest-cov, -rrequirements.txt
+py35 inst: /home/dowwie/yosai/yosai/.tox/dist/yosai-0.1.0.zip
+py35 installed: cffi==1.4.2,coverage==4.0.3,cryptography==1.1.1,idna==2.0,marshmallow==2.3.0,msgpack-python==0.4.6,passlib==1.6.5,py==1.4.31,py-bcrypt==0.4,pyasn1==0.1.9,pycparser==2.14,PyPubSub==3.3.0,pytest==2.8.5,pytest-capturelog==0.7,pytest-cov==2.2.0,python-dateutil==2.4.2,python-rapidjson==0.0.6,pytz==2015.4,PyYAML==3.11,redis==2.10.5,six==1.10.0,SQLAlchemy==1.0.9,structlog==15.1.0,wheel==0.24.0,yosai==0.1.0,yosai-alchemystore==0.1.0,yosai-dpcache==0.1.0
+py35 runtests: PYTHONHASHSEED='2314116684'
+py35 runtests: commands[0] | py.test
+============================= test session starts ==============================
+platform linux -- Python 3.5.0, pytest-2.8.5, py-1.4.31, pluggy-0.3.1
+rootdir: /home/dowwie/yosai/yosai, inifile: 
+plugins: capturelog-0.7, cov-2.2.0
+collected 0 items / 1 errors
+
+==================================== ERRORS ====================================
+______________________________ ERROR collecting  _______________________________
+.tox/py35/lib/python3.5/site-packages/py/_path/common.py:332: in visit
+    for x in Visitor(fil, rec, ignore, bf, sort).gen(self):
+.tox/py35/lib/python3.5/site-packages/py/_path/common.py:378: in gen
+    for p in self.gen(subdir):
+.tox/py35/lib/python3.5/site-packages/py/_path/common.py:367: in gen
+    dirs = self.optsort([p for p in entries
+.tox/py35/lib/python3.5/site-packages/py/_path/common.py:368: in <listcomp>
+    if p.check(dir=1) and (rec is None or rec(p))])
+.tox/py35/lib/python3.5/site-packages/_pytest/main.py:643: in _recurse
+    ihook = self.gethookproxy(path)
+.tox/py35/lib/python3.5/site-packages/_pytest/main.py:546: in gethookproxy
+    my_conftestmodules = pm._getconftestmodules(fspath)
+.tox/py35/lib/python3.5/site-packages/_pytest/config.py:296: in _getconftestmodules
+    mod = self._importconftest(conftestpath)
+.tox/py35/lib/python3.5/site-packages/_pytest/config.py:321: in _importconftest
+    raise ConftestImportFailure(conftestpath, sys.exc_info())
+E   _pytest.config.ConftestImportFailure: (local('/home/dowwie/yosai/yosai/test/integrated_tests/conftest.py'), (<class 'ImportError'>, ImportError("No module named 'pysqlite2'",), <traceback object at 0x7f5c55cb0a88>))
+================== 1 pytest-warnings, 1 error in 0.18 seconds ==================
+ERROR: InvocationError: '/home/dowwie/yosai/yosai/.tox/py35/bin/py.test'
+___________________________________ summary ____________________________________
+ERROR:   py34: commands failed
+ERROR:   py35: commands failed

@@ -1,23 +1,16 @@
+redis==2.10.5
+SQLAlchemy==1.0.10
 passlib==1.6.5
 marshmallow==2.3.0
 cryptography==1.1.1
 msgpack-python==0.4.6
-py==1.4.31
 py-bcrypt==0.4
-pyasn1==0.1.9
-pycparser==2.14
-pytest==2.8.3
 python-dateutil==2.4.2
 python-rapidjson==0.0.6
 pytz==2015.4
 PyYAML==3.11
-redis==2.10.5
-six==1.10.0
-SQLAlchemy==1.0.9
 structlog==15.1.0
 --allow-external PyPubSub
 PyPubSub==3.3.0
-pytest-capturelog
-pytest-cov
-file:/home/dowwie/yosai_alchemystore
-file:/home/dowwie/dpcache
+http://github.com/YosaiProject/yosai_dpcache/archive/master.zip
+http://github.com/YosaiProject/yosai_alchemystore/archive/master.zip

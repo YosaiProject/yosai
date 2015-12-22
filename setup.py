@@ -64,7 +64,7 @@ setup(
     license='Apache License 2.0',
     packages=find_packages('.', exclude=['ez_setup', 'test*']),
     zip_safe=False,
-    tests_require=['pytest', 'pytest-cov', 'mock'],
+    # tests_require=['pytest', 'pytest-cov'],
     cmdclass={'test': PyTest,
               'clean': CleanCommand}
 )
