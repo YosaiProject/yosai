@@ -68,6 +68,7 @@ other backends are not compatible from off the shelf.
 * port of Shiro's /web package , used to help integrate Yosai with web applications
 
 PyTest Coverage stats (ao 12/22/2015):
+
 |Name                                    | Stmts |Miss  | Cover |
 |:---------------------------------------|:-----:|:----:|:------:|
 | yosai/core/account/account.py          | 23  | 1  | 96%  |
