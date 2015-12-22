@@ -19,3 +19,5 @@ structlog==15.1.0
 PyPubSub==3.3.0
 pytest-capturelog
 pytest-cov
+file:/home/dowwie/yosai_alchemystore
+file:/home/dowwie/dpcache
