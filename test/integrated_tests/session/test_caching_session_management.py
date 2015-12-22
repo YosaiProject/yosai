@@ -37,18 +37,6 @@ def test_create_cache_session(session_store, session, cache_handler):
     assert (cached_session == session and
             cached_session_token == DefaultSessionKey(sessionid))
 
-@pytest.mark.xfail
-def test_update_cached_session(session_store, session):
-    """
-    this test will pass if test_create_cache_session runs first
-    """
-
-    css = session_store
-    session.set_internal_attribute('testing', 'testing123')
-    css.update(session)
-    cached_session = css.read(session.session_id)
-    assert cached_session == session
-
 
 def test_delete_cached_session(session_store, session, cache_handler):
     """
