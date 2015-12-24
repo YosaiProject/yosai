@@ -17,7 +17,8 @@ LOGGING_CONFIG:
             print_format:
                 format : "%(asctime)s\t(levelname)s:%(name)s\t%(message)s"
             json_format:
-                (): yosai.core.JSONFormatter
+                # not sure whether this works -- TBD:
+                class: yosai.core.logging.JSONFormatter
     handlers:
             console:
                 class: logging.StreamHandler

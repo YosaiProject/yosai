@@ -30,7 +30,10 @@ This design is inspired by, or a copy of, source code written for Django.
 from pathlib import Path
 import yaml
 import os
-from yosai.core import FileNotFoundException, MisconfiguredException
+from yosai.core import (
+    FileNotFoundException,
+    MisconfiguredException,
+)
 
 ENV_VAR = "YOSAI_CORE_SETTINGS"
 empty = object()

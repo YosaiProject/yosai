@@ -210,7 +210,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
 
             msg = ("Authentication submission received for authentication "
                    "token [" + str(authc_token) + "]")
-            logger.trace(msg)
+            logger.debug(msg)
 
             try:
                 account = self.do_authenticate_account(authc_token)

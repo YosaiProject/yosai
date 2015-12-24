@@ -23,6 +23,10 @@ from yosai.core import (
     settings,
 )
 
+from .formatters import (
+    JSONFormatter,
+)
+
 """
 s_logging as in STRUCTURED Logging
 """
@@ -36,4 +40,3 @@ def load_logconfig():
         raise AttributeError('Could not find log config file.')
 
 load_logconfig()
-

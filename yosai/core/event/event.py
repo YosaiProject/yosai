@@ -194,4 +194,4 @@ class EventLogger:
 
 
 event_bus = DefaultEventBus()  # pseudo-singleton
-event_logger = EventLogger()
+# event_logger = EventLogger(event_bus)

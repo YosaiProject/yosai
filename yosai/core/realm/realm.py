@@ -25,7 +25,6 @@ from yosai.core import (
     InvalidArgumentException,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
-    LogManager,
     PasswordVerifier,
     SimpleIdentifierCollection,
     SimpleRoleVerifier,

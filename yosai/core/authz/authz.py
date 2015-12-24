@@ -24,7 +24,6 @@ from yosai.core import (
     Event,
     InvalidArgumentException,
     IllegalStateException,
-    LogManager,
     PermissionIndexingException,
     UnauthorizedException,
     authz_abcs,

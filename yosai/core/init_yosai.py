@@ -17,13 +17,12 @@ specific language governing permissions and limitations
 under the License.
 """
 
-from yosai import settings, LogManager
+from yosai import settings
 from yosai import NativeSecurityManager, SecurityUtils, event_bus
-
+import logging
 
 def initialize_yosai():
-    log_path = settings.LOGGING_CONFIG_PATH
-    logger = LogManager(log_path).get_logger()
+    logger = logging.getLogger() 
     configure_security_manager()
     logger.info('Yosai Initialized')
 

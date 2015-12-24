@@ -132,9 +132,6 @@ from yosai.core.conf.yosaisettings import (
 
 import yosai.core.logging.slogging
 
-from yosai.core.logging.formatters import (
-    JSONFormatter,
-)
 
 from yosai.core.serialize.serialize import (
     CollectionDict,
@@ -157,7 +154,6 @@ from yosai.core.event.event import (
     Event,
     DefaultEventBus,
     event_bus,
-    event_logger,
 )
 
 
