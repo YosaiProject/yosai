@@ -18,7 +18,6 @@ under the License.
 """
 
 from logging import config
-import structlog
 
 from yosai import (
     settings,
@@ -29,32 +28,11 @@ s_logging as in STRUCTURED Logging
 """
 
 
-def load_logconfig(self):
-        logconfig = settings.LOGGING_CONFIG
-        if (logconfig):
-            config.dictConfig(logconfig)
-        else:
-            raise AttributeError('Could not find log config file.')
+def load_logconfig():
+    logconfig = settings.LOGGING_CONFIG
+    if (logconfig):
+        config.dictConfig(logconfig)
+    else:
+        raise AttributeError('Could not find log config file.')
 
-
-def configure_structlog():
-    structlog.configure(
-        processors=[
-            structlog.stdlib.filter_by_level,
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
-            structlog.stdlib.PositionalArgumentsFormatter(),
-            structlog.processors.TimeStamper(fmt='iso'),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer()
-        ],
-        context_class=structlog.threadlocal.wrap_dict(dict),
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.stdlib.BoundLogger,
-        cache_logger_on_first_use=True,
-    )
-
-
-def get_logger(logger=None):
-    return structlog.get_logger(logger)
+load_logconfig()

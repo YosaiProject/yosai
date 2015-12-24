@@ -280,6 +280,20 @@ class SessionEventException(EventException):
 class EventRegistrationException(EventException):
     pass
 
+
+# ---------------------------------------------------------------------------
+# ----  Logging Exceptions
+# ---------------------------------------------------------------------------
+
+
+class LoggingException(YosaiException):
+    pass
+
+
+class LoggingSetupException(LoggingException):
+    pass
+
+
 # ---------------------------------------------------------------------------
 # ---- Security Management Exceptions
 # ---------------------------------------------------------------------------

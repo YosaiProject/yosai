@@ -73,6 +73,8 @@ from .exceptions import (
     InvalidTokenPasswordException,
     LockedAccountException,
     LogoutEventException,
+    LoggingException,
+    LoggingSetupException,
     MisconfiguredException,
     MissingCredentialsException,
     MissingHashAlgorithmException,
