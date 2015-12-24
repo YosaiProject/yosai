@@ -19,7 +19,7 @@ under the License.
 
 from logging import config
 
-from yosai import (
+from yosai.core import (
     settings,
 )
 
@@ -36,3 +36,4 @@ def load_logconfig():
         raise AttributeError('Could not find log config file.')
 
 load_logconfig()
+
