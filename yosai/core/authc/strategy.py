@@ -17,9 +17,6 @@ specific language governing permissions and limitations
 under the License.
 """
 
-import copy
-import traceback
-
 from yosai.core import (
     AuthenticationStrategyMissingRealmException,
     IncorrectCredentialsException,

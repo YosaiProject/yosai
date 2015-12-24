@@ -16,13 +16,16 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import logging
+import collections
+
 from marshmallow import Schema, fields, post_load
+
 from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
     Event,
     InvalidTokenPasswordException,
-    LogManager,
     UnknownAccountException,
     UnsupportedTokenException,
     event_abcs,
@@ -32,7 +35,8 @@ from yosai.core import (
     DefaultAuthenticationAttempt,
     realm_abcs,
 )
-import collections
+
+logger = logging.getLogger(__name__)
 
 
 class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
@@ -204,10 +208,9 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
 
     def authenticate_account(self, authc_token):
 
-            # log here
             msg = ("Authentication submission received for authentication "
                    "token [" + str(authc_token) + "]")
-            print(msg)
+            logger.trace(msg)
 
             try:
                 account = self.do_authenticate_account(authc_token)
@@ -237,21 +240,20 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
 
                 try:
                     self.notify_failure(authc_token, ae)
-                except Exception as ex:
-                    msg4 = ("Unable to send notification for failed "
-                            "authentication attempt - listener error?.  "
-                            "Please check your EventBus implementation.  "
-                            "Logging 'send' exception  and propagating "
-                            "original AuthenticationException instead...")
-                    # log warn here
-                    print(msg4)
+                except Exception:
+                    if logger.getEffectiveLevel() == logging.WARNING:
+                        msg4 = ("Unable to send notification for failed "
+                                "authentication attempt - listener error?.  "
+                                "Please check your EventBus implementation.  "
+                                "Logging 'send' exception  and propagating "
+                                "original AuthenticationException instead...")
+                        logger.warning(msg4, exc_info=True)
                 raise ae
 
-            # log here
             msg5 = ("Authentication successful for submitted authentication "
                     "token [{0}].  Returned account [{1}]".
                     format(authc_token, account))
-            print(msg5)
+            logger.debug(msg5)
 
             self.notify_success(account)
 

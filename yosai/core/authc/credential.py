@@ -17,6 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 
+import logging
+
 from yosai.core import (
     CryptContextFactory,
     IllegalStateException,
@@ -28,6 +30,7 @@ from yosai.core import (
     authc_settings,
 )
 
+logger = logging.getLogger(__name__)
 
 class DefaultPasswordService:
 
@@ -121,12 +124,12 @@ class SimpleCredentialsVerifier(authc_abcs.CredentialsVerifier):
         returns bool confirming whether the token_credentials are equal to the
         account_credentials
         """
-        # log here
-        msg = ("Performing credentials equality check for tokenCredentials "
-               "of type [{0}] and accountCredentials of type [{1}]".
-               format(token_credentials.__class__.__name__,
-                      account_credentials.__class__.__name__))
-        print(msg)
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            msg = ("Performing credentials equality check for tokenCredentials "
+                   "of type [{0}] and accountCredentials of type [{1}]".
+                   format(token_credentials.__class__.__name__,
+                          account_credentials.__class__.__name__))
+            logger.debug(msg)
 
         if (isinstance(token_credentials, str)):
             token_credentials = bytearray(token_credentials, 'utf-8')
