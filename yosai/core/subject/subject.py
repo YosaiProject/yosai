@@ -17,6 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 import collections
+import logging
+
 # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
 # from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
 #                         Thread)
@@ -26,24 +28,24 @@ from yosai.core import (
     DefaultSessionContext,
     DefaultSessionStorageEvaluator,
     DisabledSessionException,
-    ExecutionException,
+    # ExecutionException,
     IdentifiersNotSetException,
     InvalidArgumentException,
     IllegalStateException,
     InvalidArgumentException,
-    LogManager,
     ProxiedSession,
     SecurityManagerNotSetException,
     SessionException,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
-    UnsupportedOperationException,
+    # UnsupportedOperationException,
     thread_local,
     mgt_abcs,
     session_abcs,
     subject_abcs,
 )
 
+logger = logging.getLogger(__name__)
 
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
@@ -92,20 +94,22 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     def resolve_security_manager(self):
         security_manager = self.security_manager
         if (security_manager is None):
-            msg = ("No SecurityManager available in subject context map.  " +
-                   "Falling back to SecurityUtils.security_manager for" +
-                   " lookup.")
-            print(msg)
-            #  log debug here
+
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                msg = ("No SecurityManager available in subject context map.  " +
+                       "Falling back to SecurityUtils.security_manager for" +
+                       " lookup.")
+                logger.debug(msg)
 
             try:
                 security_manager = SecurityUtils.get_security_manager()
-            except UnavailableSecurityManagerException as ex:
-                msg = ("DefaultSubjectContext.resolve_security_manager cannot "
-                       "obtain security_manager! No SecurityManager available "
-                       "via SecurityUtils.  Heuristics exhausted.", ex)
-                print(msg)
-                # log debug here, including exc_info=ex
+            except UnavailableSecurityManagerException:
+
+                if logger.getEffectiveLevel() == logging.DEBUG:
+                    msg = ("DefaultSubjectContext.resolve_security_manager cannot "
+                           "obtain security_manager! No SecurityManager available "
+                           "via SecurityUtils.  Heuristics exhausted.")
+                    logger.debug(msg, exc_info=True)
 
         return security_manager
 
@@ -596,12 +600,12 @@ class DelegatingSubject(subject_abcs.Subject):
             raise InvalidArgumentException('must use Session object')
 
     def get_session(self, create=True):
-        msg = ("attempting to get session; create = " + str(create) +
-               "; \'session is None\' = " + str(self.session is None) +
-               "; \'session has id\' = " +
-               str(self.session is not None and bool(self.session.session_id)))
-        print(msg)
-        # log trace here
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            msg = ("attempting to get session; create = " + str(create) +
+                   "; \'session is None\' = " + str(self.session is None) +
+                   "; \'session has id\' = " +
+                   str(self.session is not None and bool(self.session.session_id)))
+            logger.debug(msg)
 
         if (not self.session and create):
             if (not self.session_creation_enabled):
@@ -614,8 +618,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 raise DisabledSessionException(msg)
 
             msg = ("Starting session for host ", str(self.host))
-            print(msg)
-            # log trace here
+            logger.debug(msg)
 
             session_context = self.create_session_context()
             session = self.security_manager.start(session_context)
@@ -632,12 +635,11 @@ class DelegatingSubject(subject_abcs.Subject):
     def clear_run_as_identities_internal(self):
         try:
             self.clear_run_as_identities()
-        except SessionException as ex:
+        except SessionException:
             msg = ("clearrunasidentitiesinternal: Encountered session "
                    "exception trying to clear 'runAs' identities during "
-                   "logout.  This can generally safely be ignored.", ex)
-            print(msg)
-            # log debug here, including exc_info=ex
+                   "logout.  This can generally safely be ignored.")
+            logger.debug(msg, exc_info=True)
 
     def logout(self):
         try:
@@ -913,8 +915,7 @@ class DefaultSubjectStore:
                    "been disabled: identity and authentication state are "
                    "expected to be initialized on every request or "
                    "invocation.".format(subject))
-            print(msg)
-            # log trace here
+            logger.debug(msg)
         return subject
 
     def save_to_session(self, subject):

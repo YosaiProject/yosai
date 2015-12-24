@@ -111,6 +111,8 @@ from .exceptions import (
     YosaiException,
 )
 
+import yosai.core.logging.s_logging  # automatically initializes logging
+
 from yosai.core.serialize import abcs as serialize_abcs
 from yosai.core.concurrency import abcs as concurrency_abcs
 from yosai.core.event import abcs as event_abcs
@@ -129,11 +131,6 @@ from yosai.core.conf.yosaisettings import (
     LazySettings,
     Settings,
 )
-
-from yosai.core.logging.s_logging import (
-    LogManager,
-)
-
 from yosai.core.serialize.serialize import (
     CollectionDict,
     JSONSerializer,
