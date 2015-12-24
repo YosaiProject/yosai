@@ -16,14 +16,16 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import logging
+from marshmallow import Schema, fields, post_load
 
-from collections import defaultdict
 from yosai.core import (
     InvalidArgumentException,
     serialize_abcs,
     subject_abcs,
 )
-from marshmallow import Schema, fields, post_load
+
+logger = logging.getLogger(__name__)
 
 
 class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
@@ -63,7 +65,6 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             self.add(source_name=source_name,
                      identifier=identifier)
 
-    # yosai.core.omits get_identifier_lazy because it uses a defaultdict(set)
     # yosai.core.omits asSet, asList, and toString  -- TBD
 
     @property
@@ -75,8 +76,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                 primary_identifier = next(iter(identifiers))
             except (AttributeError, TypeError):
                 msg = "Failed to arbitrarily obtain primary identifier"
-                print(msg)
-                # log warning here
+                logger.warning(msg)
                 return None
             self._primary_identifier = primary_identifier
             return primary_identifier

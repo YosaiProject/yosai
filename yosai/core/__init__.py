@@ -152,6 +152,7 @@ from yosai.core.event.event import (
     Event,
     DefaultEventBus,
     event_bus,
+    event_logger,
 )
 
 

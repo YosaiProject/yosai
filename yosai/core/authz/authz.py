@@ -77,8 +77,6 @@ class WildcardPermission(serialize_abcs.Serializable):
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
                    "permission strings are properly formatted.")
-            print(msg)
-            # log here
             raise InvalidArgumentException(msg)
 
         wildcard_string = wildcard_string.strip()
@@ -86,7 +84,6 @@ class WildcardPermission(serialize_abcs.Serializable):
         if not any(x != self.PART_DIVIDER_TOKEN for x in wildcard_string):
             msg = ("Wildcard string cannot contain JUST dividers. Make "
                    "sure permission strings are properly formatted.")
-            print(msg)
             raise InvalidArgumentException(msg)
 
         if (not self.case_sensitive):
@@ -101,7 +98,6 @@ class WildcardPermission(serialize_abcs.Serializable):
                 msg = ("Wildcard string cannot contain parts consisting JUST "
                        "of sub-part dividers or nothing at all. Ensure that "
                        "permission strings are properly formatted.")
-                print(msg)
                 raise InvalidArgumentException(msg)
 
             myindex = part_indices.get(index)
@@ -527,8 +523,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             msg = ("Configuration error:  No realms have been configured! "
                    "One or more realms must be present to execute an "
                    "authorization operation.")
-            print(msg)
-            # log here
             raise IllegalStateException(msg)
 
     # Yosai refactors isPermitted and hasRole extensively, making use of
@@ -647,8 +641,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                                                  logical_operator)
         if not permitted:
             msg = "Subject lacks permission(s) to satisfy logical operation"
-            print(msg)
-            # log here
             raise UnauthorizedException(msg)
 
     # yosai.core.consolidates has_role functionality to one method:
@@ -726,8 +718,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                                               roleid_s, logical_operator)
         if not has_role_s:
             msg = "Subject does not have role(s) assigned."
-            print(msg)
-            # log here
             raise UnauthorizedException(msg)
 
     # --------------------------------------------------------------------------

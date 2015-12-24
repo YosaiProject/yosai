@@ -25,6 +25,7 @@ without impacting my core application modules.  The core application modules
 know WHAT needs to be communicated with the bus but now HOW (EventBus
 knows HOW).
 """
+import logging
 
 from pubsub import pub
 
@@ -40,11 +41,12 @@ from yosai.core import (
     EventBusTopicException,
     EventBusMessageDataException,
     EventBusSubscriptionException,
-    LogManager,
     event_abcs,
 )
 
 import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class Event:
@@ -95,13 +97,9 @@ class DefaultEventBus(event_abcs.EventBus):
             return self._event_bus.isSubscribed(listener, topic_name)
         except TopicNameError:
             msg = "TopicNameError: Unrecognized topic naming convention"
-            # log here
-            print(msg)
             raise EventBusTopicException(msg)
         except TopicDefnError:
             msg = "TopicDefnError: Unregistered topic name"
-            # log here
-            print(msg)
             raise EventBusTopicException(msg)
 
     def publish(self, topic_name, **kwargs):
@@ -116,19 +114,13 @@ class DefaultEventBus(event_abcs.EventBus):
             self._event_bus.sendMessage(topic_name, **kwargs)
         except SenderMissingReqdMsgDataError:
             msg = "SenderMissingReqdMsgDataError: can't send message"
-            # log here
-            print(msg)
             raise EventBusMessageDataException(msg)
         except SenderUnknownMsgDataError:
             msg = ("SenderUnknownMsgDataError: One of the keyword arguments "
                    "is not part of MDS")
-            # log here
-            print(msg)
             raise EventBusMessageDataException(msg)
         except TopicDefnError:
             msg = "TopicDefnError: Sending message to an unregistered topic name"
-            # log here
-            print(msg)
             raise EventBusTopicException(msg)
         return True
 
@@ -155,13 +147,9 @@ class DefaultEventBus(event_abcs.EventBus):
             msg = ("ListenerMismatchError: Invalid Listener -- callable does "
                    "not have a signature (call protocol) compatible with the "
                    "MDS of topic: {0}".format(topic_name))
-            # log here
-            print(msg)
             raise EventBusSubscriptionException(msg)
         except TopicDefnError:
             msg = "TopicDefnError: Unregistered topic name"
-            # log here
-            print(msg)
             raise EventBusTopicException(msg)
         else:  # return only if no exception raised
             return subscribed_listener, success
@@ -172,13 +160,9 @@ class DefaultEventBus(event_abcs.EventBus):
                 listener, topic_name)
         except TopicNameError:
             msg = "TopicNameError: Unrecognized eventbus topic naming convention"
-            # log here
-            print(msg)
             raise EventBusTopicException(msg)
         except TopicDefnError:
             msg = "TopicDefnError: Unregistered topic name"
-            # log here
-            print(msg)
             raise EventBusTopicException(msg)
         else:
             return unsubscribed_listener
@@ -205,12 +189,9 @@ class EventLogger:
     def subscribe_to_all_topics(self):
         self._event_bus.register(self.log_event, pub.ALL_TOPICS)
 
-    def log_event(topicObj=pub.AUTO_TOPIC, **kwargs):
-        pass  # define later, using structlog if possible
+    def log_event(topic_obj=pub.AUTO_TOPIC, **kwargs):
+        logger.info('*>*> Event Topic "%s": %s' % (topic_obj.getName(), kwargs))
 
-
-def snoop(topicObj=pub.AUTO_TOPIC, **mesgData):
-    print('\n*>*> topic "%s": %s' % (topicObj.getName(), mesgData))
-pub.subscribe(snoop, pub.ALL_TOPICS)
 
 event_bus = DefaultEventBus()  # pseudo-singleton
+event_logger = EventLogger()

@@ -16,12 +16,13 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import collections
+import logging
 import pytz
 import datetime
-import time
 from abc import abstractmethod
-from marshmallow import Schema, fields, post_load, pre_load, pre_dump
-import collections
+
+from marshmallow import Schema, fields, post_load
 
 from yosai.core import (
     Event,
@@ -30,7 +31,6 @@ from yosai.core import (
     InvalidArgumentException,
     IllegalStateException,
     InvalidSessionException,
-    LogManager,
     memoized_property,
     RandomSessionIDGenerator,
     SimpleIdentifierCollection,
@@ -46,6 +46,8 @@ from yosai.core import (
     serialize_abcs,
     session_abcs,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractSessionStore(session_abcs.SessionStore):
@@ -157,8 +159,7 @@ class MemorySessionStore(AbstractSessionStore):
         except KeyError:
             msg = ('MemorySessionStore could not delete ', str(sessionid),
                    'because it does not exist in memory!')
-            print(msg)
-            # log here
+            logger.warning(msg)
 
     def store_session(self, session_id, session):
         # stores only if session doesn't already exist, returning the existing
@@ -280,8 +281,8 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                           identifier=sessionid)
         except AttributeError:
             msg = "no cache parameter nor lazy-defined cache"
-            print(msg)
-            # log here
+            logger.warning(msg)
+
         return None
 
     def _cache_identifiers_to_key_map(self, session, session_id):
@@ -302,8 +303,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                    value=DefaultSessionKey(session_id))
         except AttributeError:
             msg = "Could not cache identifiers_session_key."
-            print(msg)
-            # log warning here
+            logger.warning(msg)
 
     def _cache(self, session, session_id):
 
@@ -332,8 +332,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                           identifier=primary_id)
             except AttributeError:
                 msg = '_uncache: Could not obtain identifiers from session'
-                print(msg)
-                # log warning here
+                logger.warning(msg)
 
         except AttributeError:
             msg = "Cannot uncache without a cache_handler."
@@ -656,11 +655,12 @@ class SimpleSession(session_abcs.ValidatingSession,
                     return True
 
         else:
-            msg2 = ("Timeouts not set for session with id [" +
-                    str(self.session_id) + "]. Session is not considered "
-                    "expired.")
-            print(msg2)
-            # log here
+
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                msg2 = ("Timeouts not set for session with id [" +
+                        str(self.session_id) + "]. Session is not considered "
+                        "expired.")
+                logger.debug(msg2)
 
         return False
 
@@ -696,8 +696,10 @@ class SimpleSession(session_abcs.ValidatingSession,
                     " seconds (" + idle_timeout_min + " minutes) and "
                     " absolute timeout is set to " + str(absolute_timeout) +
                     " seconds (" + absolute_timeout_min + "minutes)")
-            print(msg2)
-            # log here
+
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                logger.debug(msg2)
+
             raise ExpiredSessionException(msg2)
 
     def get_internal_attribute(self, key):
@@ -800,10 +802,10 @@ class SimpleSession(session_abcs.ValidatingSession,
                         que = collections.deque(runas)
                         data[raisk] = que
                 except TypeError:
-                    msg = "Note:  run_as_identifiers_session_key attribute N/A."
-                    print(msg)
-                    # log debug here
-                    pass
+                    msg = ("Session de-serialization note: "
+                           "run_as_identifiers_session_key attribute N/A.")
+                    logger.warning(msg)
+
                 return data
 
 
@@ -1082,8 +1084,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         except AttributeError:
             msg = ("tried to set a cache manager in a SessionStore that isn\'t"
                    "defined or configured in the DefaultNativeSessionManager")
-            print(msg)
-            # log warning here
+            logger.warning(msg)
             return
 
     @property
@@ -1124,11 +1125,10 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         """
         session_id = session_key.session_id
         if (session_id is None):
-            # log here
             msg = ("Unable to resolve session ID from SessionKey [{0}]."
                    "Returning null to indicate a session could not be "
                    "found.".format(session_key))
-            print(msg)
+            logger.debug(msg)
             return None
 
         session = self.session_store.read(session_id)
@@ -1149,8 +1149,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         session_id = session_key.session_id
         msg = ("do_get_session: Attempting to retrieve session with key " +
                session_id)
-        print(msg)
-        # log here
+        logger.debug(msg)
 
         session = self._retrieve_session(session_key)
 
@@ -1209,8 +1208,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
             session.last_access_time = session.stop_timestamp
         except AttributeError:
             msg = "not working with a SimpleSession instance"
-            print(msg)
-            # log warning here
+            logger.warning(msg)
 
         self.on_change(session)
 
@@ -1232,8 +1230,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
                 self.on_change(session)
                 msg = "Session with id [{0}] has expired.".\
                     format(session.session_id)
-                print(msg)
-                # log here
+                logger.debug(msg)
 
                 identifiers = session.get_internal_attribute('identifiers_session_key')
 
@@ -1265,8 +1262,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
             return
 
         msg = "Session with id [{0}] is invalid.".format(session.session_id)
-        print(msg)
-        # log here
+        logger.debug(msg)
 
         try:
             self.on_stop(session)
@@ -1360,7 +1356,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     def start(self, session_context):
         """
-        unlike shiro, yosai does not apply session timeouts from within the 
+        unlike shiro, yosai does not apply session timeouts from within the
         start method of the SessionManager but rather defers timeout settings
         responsibilities to the SimpleSession, which uses session_settings
         """
@@ -1379,8 +1375,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         session = self._lookup_required_session(session_key)
         try:
             msg = ("Stopping session with id [{0}]").format(session.session_id)
-            print(msg)
-            # log here
+            logger.debug(msg)
 
             session.stop()
             self.session_handler.on_stop(session)
@@ -1412,13 +1407,11 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         session = self.session_factory.create_session(session_context)
 
         msg = "Creating session. "
-        print(msg)
-        # log trace here
+        logger.debug(msg)
 
         msg = ("Creating new EIS record for new session instance [{0}]".
                format(session))
-        print(msg)
-        # log debug here
+        logger.debug(msg)
 
         sessionid = self.session_handler.create_session(session)
         if not sessionid:  # new to yosai
@@ -1622,5 +1615,3 @@ class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
             return ((subject is not None and
                      subject.get_session(False) is not None) or
                     bool(self._session_storage_enabled))
-
-

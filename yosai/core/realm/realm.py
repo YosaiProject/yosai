@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import logging
 
 from yosai.core import (
     Account,
@@ -35,6 +36,8 @@ from yosai.core import (
     cache_abcs,
     realm_abcs,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
@@ -156,8 +159,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                            the SimpleIdentifierCollection (identifiers)
         """
         msg = "Clearing cache for: " + str(identifier)
-        print(msg)
-        # log info here
+        logger.debug(msg)
 
         self.clear_cached_credentials(identifier)
         self.clear_cached_authorization_info(identifier)
@@ -173,8 +175,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                            the SimpleIdentifierCollection (identifiers)
         """
         msg = "Clearing cached credentials for [{0}]".format(identifier)
-        print(msg)
-        # log info here
+        logger.debug(msg)
+
         self.cache_handler.delete('credentials', identifier)
 
     def clear_cached_authorization_info(self, identifier):
@@ -191,8 +193,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                            the SimpleIdentifierCollection (identifiers)
         """
         msg = "Clearing cached authz_info for [{0}]".format(identifier)
-        print(msg)
-        # log info here
+        logger.debug(msg)
+
         self.cache_handler.delete('authz_info', identifier)
 
     # --------------------------------------------------------------------------
@@ -227,8 +229,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = ("Could not obtain cached credentials for [{0}].  "
                    "Will try to acquire credentials from account store."
                    .format(identifier))
-            # log here (debug)
-            print(msg)
+            logger.debug(msg)
+
             account = self.account_store.get_credentials(identifier)
             if account is None:
                 msg = "Could not get stored credentials for {0}".format(identifier)
@@ -238,8 +240,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         try:
             msg2 = ("Attempting to get cached credentials for [{0}]"
                     .format(identifier))
-            # log here (debug)
-            print(msg2)
+            logger.debug(msg2)
+
             credentials = ch.get_or_create(domain='credentials',
                                            identifier=identifier,
                                            creator_func=get_stored_credentials,
@@ -255,7 +257,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # log here
             msg3 = ("No account credentials found for identifiers [{0}].  "
                     "Returning None.".format(identifier))
-            print(msg3)
+            logger.warning(msg3)
 
         return account
 
@@ -297,7 +299,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # not successful - raise an exception as signal:
             msg = ("Submitted credentials for token [" + str(authc_token) +
                    "] did not match the stored credentials.")
-            # log here
             raise IncorrectCredentialsException(msg)
 
     # --------------------------------------------------------------------------
@@ -324,7 +325,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                    "Will try to acquire authz_info from account store."
                    .format(identifier))
             # log here (debug)
-            print(msg)
+            logger.debug(msg)
+
             account = self.account_store.get_authz_info(identifier)
             if account is None:
                 msg = "Could not get authz_info for {0}".format(identifier)
@@ -335,7 +337,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg2 = ("Attempting to get cached authz_info for [{0}]"
                     .format(identifier))
             # log here (debug)
-            print(msg2)
+            logger.debug(msg2)
+
             authz_info = ch.get_or_create(domain='authz_info',
                                           identifier=identifier,
                                           creator_func=get_stored_authz_info,
@@ -351,7 +354,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # log here
             msg3 = ("No account authz_info found for identifier [{0}].  "
                     "Returning None.".format(identifier))
-            print(msg3)
+            logger.warning(msg3)
 
         return account
 
@@ -375,8 +378,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         if account is None:
             msg = 'is_permitted:  authz_info returned None for [{0}]'.\
                 format(identifiers)
-            print(msg)
-            # log warning here
+            logger.warning(msg)
+            
             for permission in permission_s:
                 yield (permission, False)
         else:
