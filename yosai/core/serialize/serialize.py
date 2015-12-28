@@ -43,7 +43,8 @@ class SerializationManager:
         self.format = format
 
         # add encoders here:
-        self.serializers = {'msgpack': MSGPackSerializer}
+        self.serializers = {'msgpack': MSGPackSerializer,
+                            'json': JSONSerializer}
 
         try:
             self.serializer = self.serializers[self.format]

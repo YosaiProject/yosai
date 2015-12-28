@@ -26,6 +26,7 @@ know WHAT needs to be communicated with the bus but now HOW (EventBus
 knows HOW).
 """
 import logging
+import pdb
 
 from pubsub import pub
 
@@ -44,36 +45,7 @@ from yosai.core import (
     event_abcs,
 )
 
-import datetime
-
 logger = logging.getLogger(__name__)
-
-
-class Event:
-    """
-    There is a standard structure for events communicated over the eventbus.
-    Yosai's Event design is a departure from Shiro's use of abstract and
-    hierarchical concrete Event classes, each of which essentially has
-    the same characteristics and behavior.
-    """
-
-    def __init__(self, source, event_topic, **eventattrs):
-        self.source = source  # the object that emitted the event
-        self.event_topic = event_topic  # ex:  AUTHENTICATION_FAILED
-        self.timestamp = datetime.datetime.utcnow()
-        self.__dict__.update(**eventattrs)  # DG:  risky?
-
-    def __eq__(self, other):
-        if self is other:
-            return True
-        return (isinstance(other, Event) and
-                ({key: val for key, val in self.__dict__.items()
-                 if key != 'timestamp'} ==
-                {key: val for key, val in other.__dict__.items()
-                 if key != 'timestamp'}))
-
-    def __repr__(self):
-        return "Event({payload})".format(payload=self.__dict__)
 
 
 class DefaultEventBus(event_abcs.EventBus):
@@ -143,6 +115,7 @@ class DefaultEventBus(event_abcs.EventBus):
         try:
             subscribed_listener, success =\
                 self._event_bus.subscribe(_callable, topic_name)
+
         except ListenerMismatchError:
             msg = ("ListenerMismatchError: Invalid Listener -- callable does "
                    "not have a signature (call protocol) compatible with the "
@@ -179,19 +152,30 @@ class DefaultEventBus(event_abcs.EventBus):
         return unsubscribed_listeners
 
 
-class EventLogger:
-    """ monitors and logs all event traffic over pypubsub """
+def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
+    """
+    ordered by the likelihood of occuring:
+    1) Authorization related
+    2) Session related
+    3) Authentication related
+    """
+    try:
+        # tests whether its a tuple (authz results)
+        serialized = [(item.serialize(), check) for (item, check)
+                      in mesgData['items']]
 
-    def __init__(self, event_bus):
-        self._event_bus = event_bus
-        self.subscribe_to_all_topics()
+        logger.info(topicObj.getName(), extra={'items': serialized})
 
-    def subscribe_to_all_topics(self):
-        self._event_bus.register(self.log_event, pub.ALL_TOPICS)
+    except Exception:
+        try:
+            # test whether its a named tuple  (session or authc)
+            idents = mesgData['items'].identifiers.serialize()
+            logger.info(topicObj.getName(), extra={'identifiers': idents})
 
-    def log_event(topic_obj=pub.AUTO_TOPIC, **kwargs):
-        logger.info('*>*> Event Topic "%s": %s' % (topic_obj.getName(), kwargs))
+        except Exception:
+            logger.info(topicObj.getName(), extra={'payload': mesgData})
 
+
+pub.subscribe(log_event, pub.ALL_TOPICS)
 
 event_bus = DefaultEventBus()  # pseudo-singleton
-# event_logger = EventLogger(event_bus)

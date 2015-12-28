@@ -10,47 +10,6 @@ AUTHC_CONFIG:
             salt_size: 16
 
 
-LOGGING_CONFIG:
-    version : 1
-    disable_existing_loggers : false
-    formatters:
-            print_format:
-                format : "%(asctime)s\t(levelname)s:%(name)s\t%(message)s"
-            json_format:
-                # not sure whether this works -- TBD:
-                class: yosai.core.logging.JSONFormatter
-    handlers:
-            console:
-                class: logging.StreamHandler
-                level: DEBUG
-                stream: ext://sys.stdout
-                formatter: print_format
-            info_file_handler:
-                class: logging.handlers.RotatingFileHandler
-                level: INFO
-                filename: info.log
-                formatter: json_format
-                maxBytes: 10485760
-                backupCount: 20
-                encoding: utf8
-            error_file_handler:
-                class: logging.handlers.RotatingFileHandler
-                level: ERROR
-                filename: errors.log
-                formatter: json_format
-                maxBytes: 10485760
-                backupCount: 20
-                encoding: utf8
-    loggers:
-            yosai_logger:
-                level: INFO
-                handlers: [console, info_file_handler]
-                propagate: no
-    root:
-        level: INFO
-        handlers: [console, info_file_handler, error_file_handler]
-
-
 MGT_CONFIG:
     DEFAULT_CIPHER_KEY: you need to update this using the fernet keygen
 

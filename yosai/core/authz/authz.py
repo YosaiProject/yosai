@@ -21,10 +21,10 @@ import itertools
 from yosai.core import (
     AuthorizationEventException,
     CollectionDict,
-    Event,
     InvalidArgumentException,
     IllegalStateException,
     PermissionIndexingException,
+    SerializationManager,
     UnauthorizedException,
     authz_abcs,
     event_abcs,
@@ -492,6 +492,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self._realms = None
         self._event_bus = None
+        self.serialization_manager = SerializationManager(format='json')
         # yosai omits resolver setting, leaving it to securitymanager instead
         # by default, yosai.core.does not support role -> permission resolution
 
@@ -580,8 +581,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # is granted.  Given that (True or False == True), assign accordingly:
             results[permission] = results[permission] or is_permitted
 
+        self.notify_results(identifiers, list(results.items()))  # before freezing
         results = frozenset(results.items())
-        self.notify_results(identifiers, results)  # for audit trail
         return results
 
     # yosai.core.refactored is_permitted_all to support ANY or ALL operations
@@ -665,8 +666,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # Given that (True or False == True), assign accordingly:
             results[roleid] = results[roleid] or has_role
 
+        self.notify_results(identifiers, list(results.items()))  # before freezing
         results = frozenset(results.items())
-        self.notify_results(identifiers, results)
         return results
 
     def has_role_collective(self, identifiers, roleid_s, logical_operator):
@@ -723,8 +724,11 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # Event Communication
     # --------------------------------------------------------------------------
 
-    def clear_cache(self, event=None):
-        identifiers = event.results.identifiers
+    def clear_cache(self, items=None):
+        """
+        :type items: namedtuple
+        """
+        identifiers = items.identifiers
         identifier = identifiers.primary_identifier
         for realm in self.realms:
             realm.clear_cached_authorization_info(identifier)
@@ -739,39 +743,30 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             self.event_bus.is_registered(self.clear_cache, 'AUTHENTICATION.SUCCEEDED')
 
     # notify_results is intended for audit trail
-    def notify_results(self, identifiers, results):
+    def notify_results(self, identifiers, items):
         """
-        :param results:  permission or role based results, created by
+        :param items:  permission or role based results, created by
                          is_permitted or has_role, respectively
         """
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='AUTHORIZATION.RESULTS',
-                          identifiers=identifiers,
-                          results=results)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('AUTHORIZATION.RESULTS', items=items)
+
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.RESULTS event"
             raise AuthorizationEventException(msg)
 
     def notify_success(self, identifiers, items):
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='AUTHORIZATION.GRANTED',
-                          identifiers=identifiers,
-                          items=items)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('AUTHORIZATION.GRANTED', items=items)
+
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.GRANTED event"
             raise AuthorizationEventException(msg)
 
     def notify_failure(self, identifiers, items):
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='AUTHORIZATION.DENIED',
-                          identifiers=identifiers,
-                          items=items)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('AUTHORIZATION.DENIED', items=items)
+
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.DENIED event"
             raise AuthorizationEventException(msg)

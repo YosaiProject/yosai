@@ -422,6 +422,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         if session_attributes_schema:
             SimpleSession.set_attributes_schema(session_attributes_schema)
+
     """
     * ===================================================================== *
     * Getters and Setters                                                   *
@@ -894,7 +895,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         except AttributeError:
             msg = 'subject_context is invalid'
             raise InvalidArgumentException(msg)
-            
+
         return subject_context
 
     def resolve_session(self, subject_context):

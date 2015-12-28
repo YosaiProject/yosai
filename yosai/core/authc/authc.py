@@ -24,7 +24,6 @@ from marshmallow import Schema, fields, post_load
 from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
-    Event,
     InvalidTokenPasswordException,
     UnknownAccountException,
     UnsupportedTokenException,
@@ -276,14 +275,14 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     # Event Communication
     # --------------------------------------------------------------------------
 
-    def clear_cache(self, event=None):
+    def clear_cache(self, items=None):
         """
         expects event object to be in the format of a session-stop or
         session-expire event, whose results attribute is a
         namedtuple(identifiers, session_key)
         """
         for realm in self.realms:
-            identifiers = event.results.identifiers
+            identifiers = items.identifiers
             realm_identifier = identifiers.from_source(realm.name)
             if realm_identifier:
                 realm.clear_cached_credentials(realm_identifier)
@@ -302,21 +301,14 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         myaccount = account_tuple(account.account_id)
 
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='AUTHENTICATION.SUCCEEDED',
-                          results=myaccount)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('AUTHENTICATION.SUCCEEDED', items=myaccount)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)
 
     def notify_failure(self, authc_token, throwable):
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='AUTHENTICATION.FAILED',
-                          authc_token=authc_token,
-                          throwable=throwable)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('AUTHENTICATION.FAILED', username=authc_token.username)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.FAILED event"
             raise AuthenticationEventException(msg)

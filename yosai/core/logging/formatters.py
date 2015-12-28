@@ -62,7 +62,8 @@ class JSONFormatter(logging.Formatter):
         extra['message'] = message
         if 'time' not in extra:
             extra['time'] = datetime.now(pytz.utc)
-        extra['traceback'] = traceback
+        if traceback is not None:
+            extra['traceback'] = traceback
         return extra
 
     def mutate_json_record(self, json_record):

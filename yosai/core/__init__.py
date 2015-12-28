@@ -130,7 +130,10 @@ from yosai.core.conf.yosaisettings import (
     Settings,
 )
 
-import yosai.core.logging.slogging
+from yosai.core.logging.slogging import (
+    load_logconfig,
+)
+load_logconfig()
 
 
 from yosai.core.serialize.serialize import (
@@ -151,7 +154,6 @@ from yosai.core.account.account import (
 
 
 from yosai.core.event.event import (
-    Event,
     DefaultEventBus,
     event_bus,
 )

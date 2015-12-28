@@ -19,24 +19,70 @@ under the License.
 
 from logging import config
 
-from yosai.core import (
-    settings,
-)
 
-from .formatters import (
+from yosai.core.logging.formatters import (
     JSONFormatter,
 )
 
-"""
-s_logging as in STRUCTURED Logging
-"""
-
 
 def load_logconfig():
-    logconfig = settings.LOGGING_CONFIG
-    if (logconfig):
-        config.dictConfig(logconfig)
-    else:
-        raise AttributeError('Could not find log config file.')
 
-load_logconfig()
+    default_logging = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'print_format': {
+                'format': "%(asctime)s\t%(levelname)s:%(name)s\t%(message)s",
+            },
+            'json_format': {
+                '()': JSONFormatter
+            }
+        },
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stdout',
+                'formatter': 'print_format'},
+
+            'debug_file_handler': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'level': 'DEBUG',
+                'filename': '/var/log/yosai/debug.log',
+                'formatter': 'json_format',
+                'maxBytes': 10485760,
+                'backupCount': 20,
+                'encoding': 'utf8'},
+
+            'info_file_handler': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'level': 'INFO',
+                'filename': '/var/log/yosai/info.log',
+                'formatter': 'json_format',
+                'maxBytes': 10485760,
+                'backupCount': 20,
+                'encoding': 'utf8'},
+
+            'error_file_handler': {
+                'class': 'logging.handlers.RotatingFileHandler',
+                'level': 'ERROR',
+                'filename': '/var/log/yosai/errors.log',
+                'formatter': 'json_format',
+                'maxBytes': 10485760,
+                'backupCount': 20,
+                'encoding': 'utf8'}
+        },
+        'loggers': {
+            'yosai_logger': {
+                'level': 'DEBUG',
+                'handlers': ['console'],
+                'propagate': False}
+        },
+        'root': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'debug_file_handler', 'info_file_handler',
+                         'error_file_handler']
+        }
+    }
+
+    config.dictConfig(default_logging)

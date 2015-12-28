@@ -25,7 +25,6 @@ from abc import abstractmethod
 from marshmallow import Schema, fields, post_load
 
 from yosai.core import (
-    Event,
     MapContext,
     ExpiredSessionException,
     InvalidArgumentException,
@@ -1013,10 +1012,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
         :type session:  SimpleSession
         """
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='SESSION.START',
-                          results=session.session_id)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('SESSION.START', session_id=session.session_id)
         except AttributeError:
             msg = "Could not publish SESSION.START event"
             raise SessionEventException(msg)
@@ -1026,10 +1022,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
         :type identifiers:  SimpleIdentifierCollection
         """
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='SESSION.STOP',
-                          results=session_tuple)
-            self.event_bus.publish('SESSION.STOP', event=event)
+            self.event_bus.publish('SESSION.STOP', items=session_tuple)
         except AttributeError:
             msg = "Could not publish SESSION.STOP event"
             raise SessionEventException(msg)
@@ -1039,10 +1032,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
         :type identifiers:  SimpleIdentifierCollection
         """
         try:
-            event = Event(source=self.__class__.__name__,
-                          event_topic='SESSION.EXPIRE',
-                          results=session_tuple)
-            self.event_bus.publish(event.event_topic, event=event)
+            self.event_bus.publish('SESSION.EXPIRE', items=session_tuple)
         except AttributeError:
             msg = "Could not publish SESSION.EXPIRE event"
             raise SessionEventException(msg)
@@ -1237,7 +1227,6 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
                 session_tuple = collections.namedtuple(
                     'session_tuple', ['identifiers', 'session_key'])
                 mysession = session_tuple(identifiers, session_key)
-
                 self.session_event_handler.notify_expiration(mysession)
             except:
                 raise

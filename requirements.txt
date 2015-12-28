@@ -4,7 +4,7 @@ passlib==1.6.5
 marshmallow==2.3.0
 cryptography==1.1.1
 msgpack-python==0.4.6
-py-bcrypt==0.4
+bcrypt==2.0.0
 python-dateutil==2.4.2
 python-rapidjson==0.0.6
 pytz==2015.4
