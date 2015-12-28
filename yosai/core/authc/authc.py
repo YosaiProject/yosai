@@ -295,20 +295,17 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
 
     def notify_success(self, account):
-
-        account_tuple = collections.namedtuple(
-            'account_tuple', ['identifiers'])
-        myaccount = account_tuple(account.account_id)
-
         try:
-            self.event_bus.publish('AUTHENTICATION.SUCCEEDED', identifiers=myaccount)
+            self.event_bus.publish('AUTHENTICATION.SUCCEEDED',
+                                   identifiers=account.account_id)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)
 
     def notify_failure(self, authc_token, throwable):
         try:
-            self.event_bus.publish('AUTHENTICATION.FAILED', username=authc_token.username)
+            self.event_bus.publish('AUTHENTICATION.FAILED',
+                                   username=authc_token.username)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.FAILED event"
             raise AuthenticationEventException(msg)

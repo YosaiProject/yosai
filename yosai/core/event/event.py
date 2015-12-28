@@ -159,14 +159,15 @@ class EventLogger:
         self.events = {'SESSION.START': self.log_session_start,
                        'SESSION.STOP': self.log_session_halt,
                        'SESSION.EXPIRE': self.log_session_halt,
-                       'AUTHENTICATION.SUCCEEDED': self.log_authc_succeed,
+                       'AUTHENTICATION.SUCCEEDED': self.log_authc_succeeded,
                        'AUTHENTICATION.FAILED': self.log_authc_failed,
                        'AUTHORIZATION.GRANTED': self.log_authz_check,
                        'AUTHORIZATION.DENIED': self.log_authz_check,
                        'AUTHORIZATION.RESULTS': self.log_authz_results}
 
     def log(self, topic, msg):
-        self.events.get(topic, self.log_default)(topic, msg)
+        topicname = topic.getName()
+        self.events.get(topicname, self.log_default)(topicname, msg)
 
     def log_authc_succeeded(self, topic, msg):
         serialized = msg['identifiers'].serialize()
@@ -190,22 +191,23 @@ class EventLogger:
                       in msg['items']]
         identifiers = msg['identifiers'].serialize()
         logop = msg['logical_operator']
-        logger.info(topic.getName(), extra={'identifiers': identifiers,
-                                            'items': serialized,
-                                            'logical_operator': logop})
+        logger.info(topic, extra={'identifiers': identifiers,
+                                  'items': serialized,
+                                  'logical_operator': logop})
 
     def log_authz_results(self, topic, msg):
         serialized = [(item.serialize(), check) for (item, check)
                       in msg['items']]
         identifiers = msg['identifiers'].serialize()
-        logger.info(topic.getName(), extra={'identifiers': identifiers,
-                                            'items': serialized})
+        logger.info(topic, extra={'identifiers': identifiers,
+                                  'items': serialized})
 
     def log_default(self, topic, msg):
         logger.info(topic, extra={'payload': msg})
 
 
 event_logger = EventLogger()
+
 
 def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
     event_logger.log(topicObj, mesgData)

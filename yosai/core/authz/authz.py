@@ -32,7 +32,6 @@ from yosai.core import (
     serialize_abcs,
 )
 
-import copy
 import collections
 from marshmallow import Schema, fields, post_load, post_dump
 
@@ -736,7 +735,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # Event Communication
     # --------------------------------------------------------------------------
 
-    def clear_cache(self, items=None):
+    def session_clears_cache(self, items=None):
         """
         :type items: namedtuple
         """
@@ -745,14 +744,22 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         for realm in self.realms:
             realm.clear_cached_authorization_info(identifier)
 
+    def authc_clears_cache(self, identifiers=None):
+        """
+        :type items: namedtuple
+        """
+        identifier = identifiers.primary_identifier
+        for realm in self.realms:
+            realm.clear_cached_authorization_info(identifier)
+
     def register_cache_clear_listener(self):
         if self.event_bus:
-            self.event_bus.register(self.clear_cache, 'SESSION.STOP')
-            self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
-            self.event_bus.register(self.clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.register(self.clear_cache, 'AUTHENTICATION.SUCCEEDED')
-            self.event_bus.is_registered(self.clear_cache, 'AUTHENTICATION.SUCCEEDED')
+            self.event_bus.register(self.session_clears_cache, 'SESSION.STOP')
+            self.event_bus.is_registered(self.session_clears_cache, 'SESSION.STOP')
+            self.event_bus.register(self.session_clears_cache, 'SESSION.EXPIRE')
+            self.event_bus.is_registered(self.session_clears_cache, 'SESSION.EXPIRE')
+            self.event_bus.register(self.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')
+            self.event_bus.is_registered(self.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')
 
     # notify_results is intended for audit trail
     def notify_results(self, identifiers, items):
