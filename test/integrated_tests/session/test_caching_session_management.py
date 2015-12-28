@@ -14,6 +14,9 @@ from yosai.core import (
 )
 
 
+session_tuple = namedtuple('session_tuple', ['identifiers', 'session_key'])
+
+
 def test_create_cache_session(session_store, session, cache_handler):
     """
     test objective:  cache new session entry and read session from cache
@@ -60,21 +63,19 @@ def test_delete_cached_session(session_store, session, cache_handler):
 # can't test notify_start without conflicting with other listeners
 
 def test_seh_notify_stop(session_event_handler, session):
-    session_tuple = namedtuple(
-                    'session_tuple', ['identifiers', 'session_key'])
-
     seh = session_event_handler
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(items):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
+
     event_bus.register(event_listener, 'SESSION.STOP')
 
     mysession = session_tuple(None, session.session_id)
 
     seh.notify_stop(mysession)
-    assert event_detected.results == mysession
+    assert event_detected.session_key == mysession.session_key
 
 
 def test_seh_notify_expiration(session_event_handler, session):
@@ -82,13 +83,14 @@ def test_seh_notify_expiration(session_event_handler, session):
     seh = session_event_handler
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(items):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'SESSION.EXPIRE')
 
-    seh.notify_expiration(session)
-    assert event_detected.results == session
+    mysession = session_tuple(None, session.session_id)
+    seh.notify_expiration(mysession)
+    assert event_detected.session_key == mysession.session_key
 
 
 def test_session_handler_create_dgs(session_handler, cache_handler, session):
@@ -154,14 +156,14 @@ def test_sh_expired_session(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(items):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
 
     event_bus.register(event_listener, 'SESSION.EXPIRE')
 
     session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
-                          'user12345678')
+                                   'user12345678')
     sessionid = sh.create_session(session)
     cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
 
@@ -174,7 +176,7 @@ def test_sh_expired_session(
     with pytest.raises(ExpiredSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
-        assert event_detected.results.identifiers
+        assert event_detected.items.identifiers
 
 
 def test_sh_stopped_session(
@@ -198,14 +200,14 @@ def test_sh_stopped_session(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(items):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
 
     event_bus.register(event_listener, 'SESSION.STOP')
 
     session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
-                          'user12345678')
+                                   'user12345678')
 
     sessionid = sh.create_session(session)
     cachedsession = ch.get(domain='session', identifier=sessionid)
@@ -217,7 +219,7 @@ def test_sh_stopped_session(
     with pytest.raises(InvalidSessionException):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
-        assert event_detected.results.identifiers
+        assert event_detected.identifiers
 
 
 def test_session_manager_start(session_manager, cache_handler, session_context):
@@ -234,9 +236,9 @@ def test_session_manager_start(session_manager, cache_handler, session_context):
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(session_id):
         nonlocal event_detected
-        event_detected = event
+        event_detected = session_id
 
     event_bus.register(event_listener, 'SESSION.START')
 
@@ -262,9 +264,9 @@ def test_session_manager_stop(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(items):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
 
     event_bus.register(event_listener, 'SESSION.STOP')
 

@@ -152,30 +152,65 @@ class DefaultEventBus(event_abcs.EventBus):
         return unsubscribed_listeners
 
 
-def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
-    """
-    ordered by the likelihood of occuring:
-    1) Authorization related
-    2) Session related
-    3) Authentication related
-    """
-    try:
-        # tests whether its a tuple (authz results)
+class EventLogger:
+
+    def __init__(self):
+
+        self.events = {'SESSION.START': self.log_session_start,
+                       'SESSION.STOP': self.log_session_halt,
+                       'SESSION.EXPIRE': self.log_session_halt,
+                       'AUTHENTICATION.SUCCEEDED': self.log_authc_succeed,
+                       'AUTHENTICATION.FAILED': self.log_authc_failed,
+                       'AUTHORIZATION.GRANTED': self.log_authz_check,
+                       'AUTHORIZATION.DENIED': self.log_authz_check,
+                       'AUTHORIZATION.RESULTS': self.log_authz_results}
+
+    def log(self, topic, msg):
+        self.events.get(topic, self.log_default)(topic, msg)
+
+    def log_authc_succeeded(self, topic, msg):
+        serialized = msg['identifiers'].serialize()
+        logger.info(topic, extra={'identifiers': serialized})
+
+    def log_authc_failed(self, topic, msg):
+        logger.info(topic, extra={'username': msg['username']})
+
+    def log_session_start(self, topic, msg):
+        logger.info(topic, extra={'sessionid': msg['session_id']})
+
+    def log_session_halt(self, topic, msg):
+        sessiontuple = msg['items']
+        idents = sessiontuple.identifiers.serialize()
+        session_id = sessiontuple.session_key.session_id
+        logger.info(topic, extra={'identifiers': idents,
+                                  'session_id': session_id})
+
+    def log_authz_check(self, topic, msg):
         serialized = [(item.serialize(), check) for (item, check)
-                      in mesgData['items']]
+                      in msg['items']]
+        identifiers = msg['identifiers'].serialize()
+        logop = msg['logical_operator']
+        logger.info(topic.getName(), extra={'identifiers': identifiers,
+                                            'items': serialized,
+                                            'logical_operator': logop})
 
-        logger.info(topicObj.getName(), extra={'items': serialized})
+    def log_authz_results(self, topic, msg):
+        serialized = [(item.serialize(), check) for (item, check)
+                      in msg['items']]
+        identifiers = msg['identifiers'].serialize()
+        logger.info(topic.getName(), extra={'identifiers': identifiers,
+                                            'items': serialized})
 
-    except Exception:
-        try:
-            # test whether its a named tuple  (session or authc)
-            idents = mesgData['items'].identifiers.serialize()
-            logger.info(topicObj.getName(), extra={'identifiers': idents})
+    def log_default(self, topic, msg):
+        logger.info(topic, extra={'payload': msg})
 
-        except Exception:
-            logger.info(topicObj.getName(), extra={'payload': mesgData})
 
+event_logger = EventLogger()
+
+def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
+    event_logger.log(topicObj, mesgData)
 
 pub.subscribe(log_event, pub.ALL_TOPICS)
+
 
 event_bus = DefaultEventBus()  # pseudo-singleton

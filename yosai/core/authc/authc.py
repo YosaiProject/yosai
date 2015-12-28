@@ -301,7 +301,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         myaccount = account_tuple(account.account_id)
 
         try:
-            self.event_bus.publish('AUTHENTICATION.SUCCEEDED', items=myaccount)
+            self.event_bus.publish('AUTHENTICATION.SUCCEEDED', identifiers=myaccount)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)

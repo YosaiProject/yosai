@@ -14,7 +14,7 @@ import pytest
                           ('thedude',
                            "get cached", "Could not obtain cached", Account)])
 def test_get_credentials(identifier, expected_in, expected_out, expected_class,
-                         capsys, account_store_realm, thedude_credentials):
+                         caplog, account_store_realm, thedude_credentials):
 
     """
     I) Obtains from account store, caches
@@ -25,7 +25,8 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
 
     result = asr.get_credentials(identifier=identifier)
 
-    out, err = capsys.readouterr()
+    out = caplog.text
+
     assert (expected_in in out and
             expected_out not in out)
 
@@ -42,7 +43,7 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
                           (SimpleIdentifierCollection(source_name='AccountStoreRealm', identifier='anonymous'),
                            "No account", "blabla", type(None))])
 def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
-                        capsys, account_store_realm, authz_info):
+                        caplog, account_store_realm, authz_info):
     """
     I) Obtains from account store, caches
     II) Obtains from cache
@@ -52,7 +53,7 @@ def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
 
     result = asr.get_authorization_info(identifiers=identifiers)
 
-    out, err = capsys.readouterr()
+    out = caplog.text
     assert (expected_in in out and
             expected_out not in out)
 

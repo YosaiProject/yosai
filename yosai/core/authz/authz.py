@@ -552,7 +552,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # the realm's is_permitted returns a generator
             yield from realm.is_permitted(identifiers, permission_s)
 
-    def is_permitted(self, identifiers, permission_s):
+    def is_permitted(self, identifiers, permission_s, log_results=True):
         """
         Yosai differs from Shiro in how it handles String-typed Permission
         parameters.  Rather than supporting *args of String-typed Permissions,
@@ -565,6 +565,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
+
+        :param log_results:  states whether to log results (True) or allow the
+                             calling method to do so instead (False)
+        :type log_results:  bool
 
         :returns: a frozenset of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted
@@ -581,7 +585,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # is granted.  Given that (True or False == True), assign accordingly:
             results[permission] = results[permission] or is_permitted
 
-        self.notify_results(identifiers, list(results.items()))  # before freezing
+        if log_results:
+            self.notify_results(identifiers, list(results.items()))  # before freezing
+
         results = frozenset(results.items())
         return results
 
@@ -604,15 +610,16 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         self.assert_realms_configured()
 
         # interim_results is a frozenset of tuples:
-        interim_results = self.is_permitted(identifiers, permission_s)
+        interim_results = self.is_permitted(identifiers, permission_s,
+                                            log_results=False)
 
         results = logical_operator(is_permitted for perm, is_permitted
                                    in interim_results)
 
         if results:
-            self.notify_success(identifiers, permission_s)
+            self.notify_success(identifiers, permission_s, logical_operator)
         else:
-            self.notify_failure(identifiers, permission_s)
+            self.notify_failure(identifiers, permission_s, logical_operator)
 
         return results
 
@@ -644,13 +651,17 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise UnauthorizedException(msg)
 
     # yosai.core.consolidates has_role functionality to one method:
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifiers, roleid_s, log_results=True):
         """
         :param identifiers: a collection of identifiers
         :type identifiers:  SimpleIdentifierCollection
 
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
+
+        :param log_results:  states whether to log results (True) or allow the
+                             calling method to do so instead (False)
+        :type log_results:  bool
 
         :returns: a frozenset of tuple(s), containing the roleid and a Boolean
                   indicating whether the user is a member of the Role
@@ -666,7 +677,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             # Given that (True or False == True), assign accordingly:
             results[roleid] = results[roleid] or has_role
 
-        self.notify_results(identifiers, list(results.items()))  # before freezing
+        if log_results:
+            self.notify_results(identifiers, list(results.items()))  # before freezing
         results = frozenset(results.items())
         return results
 
@@ -687,15 +699,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         self.assert_realms_configured()
 
         # interim_results is a frozenset of tuples:
-        interim_results = self.has_role(identifiers, roleid_s)
+        interim_results = self.has_role(identifiers, roleid_s, log_results=False)
 
         results = logical_operator(has_role for roleid, has_role
                                    in interim_results)
 
         if results:
-            self.notify_success(identifiers, roleid_s)
+            self.notify_success(identifiers, roleid_s, logical_operator)
         else:
-            self.notify_failure(identifiers, roleid_s)
+            self.notify_failure(identifiers, roleid_s, logical_operator)
 
         return results
 
@@ -749,23 +761,31 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                          is_permitted or has_role, respectively
         """
         try:
-            self.event_bus.publish('AUTHORIZATION.RESULTS', items=items)
+            self.event_bus.publish('AUTHORIZATION.RESULTS',
+                                   identifiers=identifiers,
+                                   items=items)
 
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.RESULTS event"
             raise AuthorizationEventException(msg)
 
-    def notify_success(self, identifiers, items):
+    def notify_success(self, identifiers, items, logical_operator):
         try:
-            self.event_bus.publish('AUTHORIZATION.GRANTED', items=items)
+            self.event_bus.publish('AUTHORIZATION.GRANTED',
+                                   identifiers=identifiers,
+                                   items=items,
+                                   logical_operator=logical_operator)
 
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.GRANTED event"
             raise AuthorizationEventException(msg)
 
-    def notify_failure(self, identifiers, items):
+    def notify_failure(self, identifiers, items, logical_operator):
         try:
-            self.event_bus.publish('AUTHORIZATION.DENIED', items=items)
+            self.event_bus.publish('AUTHORIZATION.DENIED',
+                                   identifiers=identifiers,
+                                   items=items,
+                                   logical_operator=logical_operator)
 
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.DENIED event"
