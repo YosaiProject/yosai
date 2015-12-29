@@ -10,7 +10,6 @@ python-rapidjson==0.0.6
 pytz==2015.4
 PyYAML==3.11
 structlog==15.1.0
---allow-external PyPubSub
-PyPubSub==3.3.0
+https://github.com/Dowwie/pypubsub/archive/master.zip
 http://github.com/YosaiProject/yosai_dpcache/archive/master.zip
 http://github.com/YosaiProject/yosai_alchemystore/archive/master.zip
