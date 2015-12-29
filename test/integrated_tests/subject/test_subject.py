@@ -71,15 +71,15 @@ def test_authenticated_subject_check_permission_succeeds(
     tp = thedude_testpermissions
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
     new_subject.login(valid_username_password_token)
 
     check = new_subject.check_permission(tp['perms'], any)
-    assert (check is None and event_detected.items == tp['perms'])
+    assert (check is None and event_detected == tp['perms'])
 
     new_subject.logout()
 
@@ -95,18 +95,19 @@ def test_check_permission_raises(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     new_subject.login(valid_username_password_token)
 
     with pytest.raises(UnauthorizedException):
         new_subject.check_permission(tp['perms'], all)
-        assert event_detected.items == tp['perms']
+        assert event_detected == tp['perms']
 
         new_subject.logout()
+
 
 def test_has_role(valid_username_password_token, thedude_testroles,
                   new_subject, authz_info, thedude_credentials):
@@ -114,18 +115,19 @@ def test_has_role(valid_username_password_token, thedude_testroles,
     tr = thedude_testroles
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
     new_subject.login(valid_username_password_token)
     result = new_subject.has_role(tr['roles'])
 
     assert (tr['expected_results'] == result and
-            event_detected.results == result)
+            frozenset(event_detected) == result)
 
     new_subject.logout()
+
 
 def test_authenticated_subject_has_role_collective(
         authz_info, new_subject, thedude_testroles,
@@ -149,14 +151,14 @@ def test_check_role_succeeds(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
     new_subject.login(valid_username_password_token)
     assert (new_subject.check_role(tr['roles'], any) is None and
-            event_detected.items == tr['roles'])
+            event_detected == tr['roles'])
 
     new_subject.logout()
 
@@ -169,17 +171,16 @@ def test_check_role_raises(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     new_subject.login(valid_username_password_token)
     with pytest.raises(UnauthorizedException):
         new_subject.check_role(tr['roles'], all)
 
-        assert event_detected.items == tr['roles']
-
+        assert event_detected == tr['roles']
 
 
 def test_run_as_raises(new_subject, walter, walter_identifier):
@@ -215,7 +216,7 @@ def test_run_as_pop(new_subject, walter_identifier, jackie_identifier,
 
 def test_logout_clears_cache(
     new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
-        valid_username_password_token, thedude_testpermissions, capsys):
+        valid_username_password_token, thedude_testpermissions, caplog):
 
     tp = thedude_testpermissions
 
@@ -224,7 +225,7 @@ def test_logout_clears_cache(
 
     new_subject.logout()
 
-    out, err = capsys.readouterr()
+    out = caplog.text
 
     assert ('Clearing cached credentials for [thedude]' in out and
             'Clearing cached authz_info for [thedude]' in out)
@@ -232,7 +233,7 @@ def test_logout_clears_cache(
 
 def test_session_stop_clears_cache(
     new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
-        valid_username_password_token, thedude_testpermissions, capsys):
+        valid_username_password_token, thedude_testpermissions, caplog):
 
     tp = thedude_testpermissions
 
@@ -242,7 +243,7 @@ def test_session_stop_clears_cache(
     session = new_subject.get_session()
     session.stop(None)
 
-    out, err = capsys.readouterr()
+    out = caplog.text
 
     assert ('Clearing cached credentials for [thedude]' in out and
             'Clearing cached authz_info for [thedude]' in out)
@@ -250,18 +251,18 @@ def test_session_stop_clears_cache(
 
 def test_login_clears_cache(
     new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
-        valid_username_password_token, capsys):
+        valid_username_password_token, caplog):
 
     new_subject.login(valid_username_password_token)  # caches credentials
 
-    out, err = capsys.readouterr()
-    print(out)
+    out = caplog.text
+
     assert 'Clearing cached authz_info for [thedude]' in out
 
 
 def test_session_idle_expiration_clears_cache(
     new_subject, thedude_credentials, thedude, authz_info, thedude_identifier,
-        valid_username_password_token, thedude_testpermissions, capsys,
+        valid_username_password_token, thedude_testpermissions, caplog,
         cache_handler):
 
     tp = thedude_testpermissions
@@ -282,7 +283,7 @@ def test_session_idle_expiration_clears_cache(
     with pytest.raises(ExpiredSessionException):
         session.last_access_time  # this triggers the expiration
 
-        out, err = capsys.readouterr()
+        out = caplot.text
         assert ('Clearing cached credentials for [thedude]' in out and
                 'Clearing cached authz_info for [thedude]' in out)
 
