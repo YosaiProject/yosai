@@ -869,14 +869,15 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
         """
         Confirms whether a subject is a member of one or more roles.
 
+        before yielding, roleid's are resolved into SimpleRole for log serializing
+
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
 
-        :yields: tuple(roleid, Boolean)
+        :yields: tuple(SimpleRole, Boolean)
         """
-        authzinfo_roleids = authz_info.roleids
         for roleid in roleid_s:
-            hasrole = ({roleid} <= authzinfo_roleids)
+            hasrole = ({roleid} <= authz_info.roleids)
             yield (roleid, hasrole)
 
 

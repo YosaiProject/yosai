@@ -8,76 +8,78 @@ from yosai.core import (
     AuthenticationException,
 )
 
+
 def test_authentication_using_accountstore_success(
-        capsys, default_authenticator, valid_username_password_token,
+        caplog, default_authenticator, valid_username_password_token,
         thedude_credentials):
 
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event=None):
+    def event_listener(identifiers=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = identifiers
     event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     account = da.authenticate_account(valid_username_password_token)
-    out, err = capsys.readouterr()
-    assert (event_detected.results.identifiers == account.account_id and
+    out = caplog.text
+    assert (event_detected == account.account_id and
             ("Could not obtain cached" in out and "No account" not in out))
 
 
 def test_authentication_using_cache_success(
-        capsys, default_authenticator, invalid_username_password_token,
+        caplog, default_authenticator, invalid_username_password_token,
         valid_username_password_token, cache_handler, thedude_credentials):
 
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event=None):
+    def event_listener(identifiers=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = identifiers
     event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     with pytest.raises(AuthenticationException):
         da.authenticate_account(invalid_username_password_token)
-    
-        account = da.authenticate_account(valid_username_password_token)
-        out, err = capsys.readouterr()
 
-        assert (event_detected.results == account.account_id and
+        account = da.authenticate_account(valid_username_password_token)
+
+        out = caplog.text
+        assert (event_detected == account.account_id and
                 ("Could not obtain cached" not in out) and
                 account.account_id == valid_username_password_token.identifier)
 
 
 def test_authentication_using_accountstore_pw_failure(
-        capsys, default_authenticator, invalid_username_password_token,
+        caplog, default_authenticator, invalid_username_password_token,
         thedude_credentials):
 
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event=None):
+    def event_listener(username=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = username
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
     with pytest.raises(AuthenticationException):
         account = da.authenticate_account(invalid_username_password_token)
-        out, err = capsys.readouterr()
 
-        assert (event_detected.results == account.account_id and
+        out = caplog.text
+        assert (event_detected == account.account_id and
                 ("Could not obtain cached" in out and "No account" not in out))
 
+
 def test_authentication_using_cache_pw_failure(
-        capsys, default_authenticator, invalid_username_password_token,
+        caplog, default_authenticator, invalid_username_password_token,
         cache_handler, thedude_credentials):
 
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event=None):
+    def event_listener(username=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = username
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
     cred = Credential(thedude_credentials)
@@ -85,9 +87,9 @@ def test_authentication_using_cache_pw_failure(
 
     with pytest.raises(AuthenticationException):
         da.authenticate_account(invalid_username_password_token)
-        out, err = capsys.readouterr()
+        out = caplog.text
 
-        assert (event_detected.authc_token == invalid_username_password_token and
+        assert (event_detected == invalid_username_password_token.username and
                 ("Could not obtain cached" not in out))
 
 
@@ -96,9 +98,9 @@ def test_authentication_using_accountstore_user_not_found(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(event=None):
+    def event_listener(username=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = username
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
     dumb_token = UsernamePasswordToken(username='dumb',
@@ -109,4 +111,4 @@ def test_authentication_using_accountstore_user_not_found(
     with pytest.raises(AuthenticationException):
         da.authenticate_account(dumb_token)
 
-    assert (event_detected.authc_token == dumb_token)
+    assert (event_detected == dumb_token.username)

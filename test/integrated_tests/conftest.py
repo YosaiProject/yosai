@@ -414,9 +414,9 @@ def thedude_testpermissions(authz_info, permission_resolver):
 def thedude_testroles(authz_info):
     roles = {'bankcustomer', 'courier', 'gangster'}
 
-    expected_results = frozenset([('bankcustomer', True),
-                                  ('courier', True),
-                                  ('gangster', False)])
+    expected_results = frozenset([(SimpleRole('bankcustomer'), True),
+                                  (SimpleRole('courier'), True),
+                                  (Simplerole('gangster'), False)])
 
     return dict(roles=roles, expected_results=expected_results)
 

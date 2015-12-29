@@ -78,17 +78,18 @@ def test_seh_notify_stop(session_event_handler, session_key, thedude_identifier)
     assert event_detected.session_key == mysession.session_key
 
 
-def test_seh_notify_expiration(session_event_handler, session):
+def test_seh_notify_expiration(session_event_handler, session_key,
+                               thedude_identifier):
 
     seh = session_event_handler
     event_detected = None
 
-    def event_listener(items):
+    def event_listener(items=None):
         nonlocal event_detected
         event_detected = items
     event_bus.register(event_listener, 'SESSION.EXPIRE')
 
-    mysession = session_tuple(None, session.session_id)
+    mysession = session_tuple(thedude_identifier, session_key)
     seh.notify_expiration(mysession)
     assert event_detected.session_key == mysession.session_key
 
@@ -109,7 +110,7 @@ def test_session_handler_create_dgs(session_handler, cache_handler, session):
     sh.cache_handler = cache_handler
 
     session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
-                          'user12345678')
+                                   'user12345678')
     sessionid = sh.create_session(session)
     cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
 
@@ -124,7 +125,7 @@ def test_session_handler_delete(session_handler, cache_handler, session, capsys)
     sh.cache_handler = cache_handler
 
     session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
-                          'user12345678')
+                                   'user12345678')
 
     sessionid = sh.create_session(session)
     sh.delete(session)
@@ -156,7 +157,7 @@ def test_sh_expired_session(
 
     event_detected = None
 
-    def event_listener(items):
+    def event_listener(items=None):
         nonlocal event_detected
         event_detected = items
 
@@ -200,7 +201,7 @@ def test_sh_stopped_session(
 
     event_detected = None
 
-    def event_listener(items):
+    def event_listener(items=None):
         nonlocal event_detected
         event_detected = items
 
@@ -236,7 +237,7 @@ def test_session_manager_start(session_manager, cache_handler, session_context):
 
     event_detected = None
 
-    def event_listener(session_id):
+    def event_listener(session_id=None):
         nonlocal event_detected
         event_detected = session_id
 
@@ -264,7 +265,7 @@ def test_session_manager_stop(
 
     event_detected = None
 
-    def event_listener(items):
+    def event_listener(items=None):
         nonlocal event_detected
         event_detected = items
 

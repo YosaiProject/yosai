@@ -253,7 +253,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             account = Account(account_id=identifier,
                               credentials=credentials)
         except CredentialsNotFoundException:
-            # log here
             msg3 = ("No account credentials found for identifiers [{0}].  "
                     "Returning None.".format(identifier))
             logger.warning(msg3)
@@ -323,7 +322,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = ("Could not obtain cached authz_info for [{0}].  "
                    "Will try to acquire authz_info from account store."
                    .format(identifier))
-            # log here (debug)
             logger.debug(msg)
 
             account = self.account_store.get_authz_info(identifier)
@@ -335,7 +333,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         try:
             msg2 = ("Attempting to get cached authz_info for [{0}]"
                     .format(identifier))
-            # log here (debug)
             logger.debug(msg2)
 
             authz_info = ch.get_or_create(domain='authz_info',
@@ -350,7 +347,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             account = Account(account_id=identifier,
                               authz_info=authz_info)
         except AuthzInfoNotFoundException:
-            # log here
             msg3 = ("No account authz_info found for identifier [{0}].  "
                     "Returning None.".format(identifier))
             logger.warning(msg3)
@@ -378,7 +374,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = 'is_permitted:  authz_info returned None for [{0}]'.\
                 format(identifiers)
             logger.warning(msg)
-            
+
             for permission in permission_s:
                 yield (permission, False)
         else:
@@ -404,7 +400,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         if account is None:
             msg = 'has_role:  authz_info returned None for [{0}]'.\
                 format(identifiers)
-            # log warning here
+            logger.warning(msg)
             for roleid in roleid_s:
                 yield (roleid, False)
         else:

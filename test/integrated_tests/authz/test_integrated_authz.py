@@ -1,10 +1,11 @@
+
+import pytest
+import pdb
 from yosai.core import (
     SimpleIdentifierCollection,
     UnauthorizedException,
     event_bus,
 )
-import pytest
-
 
 def test_is_permitted(permission_resolver, modular_realm_authorizer,
                       authz_info, thedude_identifier,
@@ -17,14 +18,14 @@ def test_is_permitted(permission_resolver, modular_realm_authorizer,
     tp = thedude_testpermissions
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
     results = mra.is_permitted(thedude_identifier, tp['perms'])
     assert (tp['expected_results'] == results and
-            event_detected.results == results)
+            frozenset(event_detected) == results)
 
 
 def test_is_permitted_collective(
@@ -46,13 +47,13 @@ def test_check_permission_succeeds(
     tp = thedude_testpermissions
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
     assert (mra.check_permission(thedude_identifier, tp['perms'], any) is None and
-            event_detected.items == tp['perms'])
+            event_detected == tp['perms'])
 
 
 def test_check_permission_raises(
@@ -64,14 +65,14 @@ def test_check_permission_raises(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     with pytest.raises(UnauthorizedException):
         mra.check_permission(thedude_identifier, tp['perms'], all)
-        assert event_detected.items == tp['perms']
+        assert event_detected == tp['perms']
 
 
 def test_has_role(modular_realm_authorizer, thedude_identifier):
@@ -86,15 +87,15 @@ def test_has_role(modular_realm_authorizer, thedude_identifier):
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
     result = mra.has_role(thedude_identifier, roles)
 
     assert (expected_results == result and
-            event_detected.results == result)
+            frozenset(event_detected) == result)
 
 
 def test_has_role_collective(modular_realm_authorizer, thedude_identifier):
@@ -114,13 +115,13 @@ def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier):
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
 
     assert (mra.check_role(thedude_identifier, roles, any) is None and
-            event_detected.items == roles)
+            frozenset(event_detected) == roles)
 
 
 def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
@@ -131,15 +132,15 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
 
     with pytest.raises(UnauthorizedException):
         mra.check_role(thedude_identifier, roles, all)
 
-        assert event_detected.items == roles
+        assert frozenset(event_detected) == roles
 
 
 def test_is_permitted_account_doesnt_exist(
@@ -166,11 +167,11 @@ def test_is_permitted_account_doesnt_exist(
 
     event_detected = None
 
-    def event_listener(event):
+    def event_listener(identifiers=None, items=None):
         nonlocal event_detected
-        event_detected = event
+        event_detected = items
     event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
 
     results = mra.is_permitted(unrecognized_identifier, perms)
     assert (expected_results == results and
-            event_detected.results == results)
+            frozenset(event_detected) == results)

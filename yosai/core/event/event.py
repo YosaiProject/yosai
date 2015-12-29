@@ -25,8 +25,8 @@ without impacting my core application modules.  The core application modules
 know WHAT needs to be communicated with the bus but now HOW (EventBus
 knows HOW).
 """
-import logging
 import pdb
+import logging
 
 from pubsub import pub
 
@@ -188,41 +188,68 @@ class EventLogger(event_abcs.EventBusAware):
 
     def log_session_stop(self, items=None):
         topic = 'SESSION.STOP'
-        idents = items.identifiers.serialize()
+        try:
+            # a session of a user who hasn't authenticated won't have idents
+            idents = items.identifiers.serialize()
+        except AttributeError:
+            idents = None
         session_id = items.session_key.session_id
         logger.info(topic, extra={'identifiers': idents,
                                   'session_id': session_id})
 
     def log_session_expire(self, items=None):
         topic = 'SESSION.EXPIRE'
-        idents = items.identifiers.serialize()
+        try:
+            # a session of a user who hasn't authenticated won't have idents
+            idents = items.identifiers.serialize()
+        except AttributeError:
+            idents = None
         session_id = items.session_key.session_id
         logger.info(topic, extra={'identifiers': idents,
                                   'session_id': session_id})
 
     def log_authz_granted(self, identifiers=None, items=None, logical_operator=None):
         topic = 'AUTHORIZATION.GRANTED'
-        serialized = [(item.serialize(), check) for (item, check) in items]
+
+        try:
+            # Permission objects are serializable
+            new_items = [item.serialize() for item in items]
+        except:
+            # presumably roleid strings
+            new_items = items
+
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
-                                  'items': serialized,
+                                  'items': new_items,
                                   'logical_operator': logical_operator})
 
     def log_authz_denied(self, identifiers=None, items=None, logical_operator=None):
         topic = 'AUTHORIZATION.DENIED'
-        serialized = [(item.serialize(), check) for (item, check) in items]
+
+        try:
+            # Permission objects are serializable
+            new_items = [item.serialize() for item in items]
+        except:
+            # presumably roleid strings
+            new_items = items
+
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
-                                  'items': serialized,
+                                  'items': new_items,
                                   'logical_operator': logical_operator})
 
     def log_authz_results(self, identifiers=None, items=None):
         topic = 'AUTHORIZATION.RESULTS'
-        serialized = [(item.serialize(), check) for (item, check)
-                      in items]
+        try:
+            # Permission objects are serializable
+            new_items = [(item.serialize(), check) for (item, check) in items]
+        except AttributeError:
+            # presumably roleid strings
+            new_items = items
+
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
-                                  'items': serialized})
+                                  'items': new_items})
 
 
 
