@@ -19,7 +19,6 @@ from yosai.core import (
     SecurityUtils,
     thread_local,
     UnauthenticatedException,
-    UnavailableSecurityManagerException,
 )
 
 from ..doubles import (
@@ -94,7 +93,7 @@ def test_dsc_resolve_security_manager_exists(default_subject_context):
 
 
 def test_dsc_resolve_security_manager_none(
-        default_subject_context, monkeypatch, capsys):
+        default_subject_context, monkeypatch, caplog):
     """
     unit tested:  resolve_security_manager
 
@@ -106,12 +105,12 @@ def test_dsc_resolve_security_manager_none(
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
     monkeypatch.setattr(thread_local, 'security_manager', 'mysecuritymanager', raising=False)
     result = dsc.resolve_security_manager()
-    out, err = capsys.readouterr()
+    out = caplog.text
     assert ("No SecurityManager available" in out and
             result == 'mysecuritymanager')
 
 def test_dsc_resolve_security_manager_none_raises(
-        default_subject_context, monkeypatch, capsys):
+        default_subject_context, monkeypatch, caplog):
     """
     unit tested:  resolve_security_manager
 
@@ -123,7 +122,7 @@ def test_dsc_resolve_security_manager_none_raises(
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
     monkeypatch.setattr(thread_local, 'security_manager', None, raising=False)
     result = dsc.resolve_security_manager()
-    out, err = capsys.readouterr()
+    out = caplog.text
     assert ("No SecurityManager available in subject context" in out and
             result is None)
 
@@ -826,7 +825,7 @@ def test_create_session_context_with_host(delegating_subject, monkeypatch):
 
 
 def test_clear_run_as_identities_internal_with_warning(
-        delegating_subject, capsys):
+        delegating_subject, caplog):
     """
     unit tested:  clear_run_as_identities_internal
 
@@ -837,7 +836,7 @@ def test_clear_run_as_identities_internal_with_warning(
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities') as mock_cri:
         mock_cri.side_effect = SessionException
         ds.clear_run_as_identities_internal()
-        out, err = capsys.readouterr()
+        out = caplog.text
         assert 'Encountered session exception' in out
 
 
@@ -1158,7 +1157,7 @@ def test_dss_save_with_sse(default_subject_store, monkeypatch):
         dss_sts.assert_called_once_with('dummysubject')
 
 
-def test_dss_save_without_sse(default_subject_store, monkeypatch, capsys):
+def test_dss_save_without_sse(default_subject_store, monkeypatch, caplog):
     """
     unit tested:  save
 
@@ -1171,7 +1170,7 @@ def test_dss_save_without_sse(default_subject_store, monkeypatch, capsys):
         dss_sts.return_value = None
         dss.save('dummysubject')
 
-        out, err = capsys.readouterr()
+        out = caplog.text
         assert (not dss_sts.called and
                 'has been disabled' in out)
 

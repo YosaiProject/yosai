@@ -25,7 +25,6 @@ without impacting my core application modules.  The core application modules
 know WHAT needs to be communicated with the bus but now HOW (EventBus
 knows HOW).
 """
-import pdb
 import logging
 
 from pubsub import pub

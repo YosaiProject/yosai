@@ -531,7 +531,7 @@ def test_nsm_rememberme_successful_login(
 
 
 def test_nsm_rememberme_successful_login_rmm_set_but_raises(
-        capsys, native_security_manager, mock_remember_me_manager,
+        caplog, native_security_manager, mock_remember_me_manager,
         monkeypatch):
     """
     unit tested:  remember_me_successful_login
@@ -548,12 +548,12 @@ def test_nsm_rememberme_successful_login_rmm_set_but_raises(
                            'on_successful_login') as mrmm_osl:
         mrmm_osl.side_effect = Exception
         nsm.remember_me_successful_login('authc_token', 'account', 'subject')
-        out, err = capsys.readouterr()
+        out = caplog.text
         assert 'threw an exception' in out
 
 
 def test_nsm_rememberme_successful_login_rmm_notset(
-        capsys, native_security_manager, full_mock_account):
+        caplog, native_security_manager, full_mock_account):
     """
     unit tested:  remember_me_successful_login
 
@@ -563,7 +563,7 @@ def test_nsm_rememberme_successful_login_rmm_notset(
     """
     nsm = native_security_manager
     nsm.remember_me_successful_login('authc_token', full_mock_account, 'subject')
-    out, err = capsys.readouterr()
+    out = caplog.text
     assert 'does not have' in out
 
 def test_nsm_rememberme_failed_login(
@@ -586,7 +586,7 @@ def test_nsm_rememberme_failed_login(
 
 def test_nsm_rememberme_failed_login_warned(
         native_security_manager, mock_remember_me_manager, monkeypatch,
-        capsys):
+        caplog):
     """
     unit tested:  remember_me_failed_login
 
@@ -601,7 +601,7 @@ def test_nsm_rememberme_failed_login_warned(
                            'on_failed_login') as mrmm_ofl:
         mrmm_ofl.side_effect = Exception
         nsm.remember_me_failed_login('authc_token', 'authc_exc', 'subject')
-        out, err = capsys.readouterr()
+        out = caplog.text
         assert 'threw an exception' in out
 
 def test_nsm_rememberme_logout(
@@ -623,7 +623,7 @@ def test_nsm_rememberme_logout(
 
 def test_nsm_rememberme_logout_warned(
         native_security_manager, mock_remember_me_manager, monkeypatch,
-        capsys):
+        caplog):
     """
     unit tested:  remember_me_logout
 
@@ -641,7 +641,7 @@ def test_nsm_rememberme_logout_warned(
                            'on_logout') as mrmm_ol:
         mrmm_ol.side_effect = Exception
         nsm.remember_me_logout(MockSubject())
-        out, err = capsys.readouterr()
+        out = caplog.text
         assert 'threw an exception during on_logout' in out
 
 def test_nsm_login_success(native_security_manager):
@@ -698,7 +698,7 @@ def test_nsm_login_raises_then_succeeds(native_security_manager):
                 nsm_ofl.assert_called_once_with(
                     'authc_token', AuthenticationException, 'subject')
 
-def test_nsm_login_raises_then_raises(native_security_manager, capsys):
+def test_nsm_login_raises_then_raises(native_security_manager, caplog):
     """
     unit tested:  login
 
@@ -723,7 +723,7 @@ def test_nsm_login_raises_then_raises(native_security_manager, capsys):
                 nsm_ofl.assert_called_once_with(
                     'authc_token', AuthenticationException, 'subject')
 
-                out, err = capsys.readouterr()
+                out = caplog.text
                 assert 'on_failed_login method raised' in out
 
 def test_nsm_on_successful_login(native_security_manager):
@@ -1168,7 +1168,7 @@ def test_nsm_logout_succeeds(
 
 
 def test_nsm_logout_succeeds_until_delete_raises(
-        native_security_manager, mock_subject, monkeypatch, capsys):
+        native_security_manager, mock_subject, monkeypatch, caplog):
     """
     unit tested:  logout
 
@@ -1198,7 +1198,7 @@ def test_nsm_logout_succeeds_until_delete_raises(
                 nsm_delete.assert_called_once_with(ms)
                 nsm_ss.assert_called_once_with(ms, None)
 
-                out, err = capsys.readouterr()
+                out = caplog.text
                 assert ('Unable to cleanly unbind Subject' in out
                         and 'Unable to cleanly stop Session' in out)
 
@@ -1257,7 +1257,7 @@ def test_nsm_get_remembered_identity_not_remembered(native_security_manager):
 
 def test_nsm_get_remembered_identity_raises(
         native_security_manager, mock_remember_me_manager, monkeypatch,
-        capsys):
+        caplog):
     """
     unit tested:  get_remembered_identity
 
@@ -1274,7 +1274,7 @@ def test_nsm_get_remembered_identity_raises(
         mrmm_gri.side_effect = Exception
 
         result = nsm.get_remembered_identity('subjectcontext')
-        out, err = capsys.readouterr()
+        out = caplog.text
         assert (result is None and 'raised an exception' in out)
 
 
@@ -1352,7 +1352,7 @@ def test_armm_on_successful_login_isrememberme(
 
 
 def test_armm_on_successful_login_isnotrememberme(
-        mock_remember_me_manager, monkeypatch, capsys):
+        mock_remember_me_manager, monkeypatch, caplog):
     """
     unit tested:  on_successful_login
 
@@ -1366,7 +1366,7 @@ def test_armm_on_successful_login_isnotrememberme(
         mrmm_fi.return_value = None
 
         mrmm.on_successful_login('subject', 'authc_token', 'account')
-        out, err = capsys.readouterr()
+        out = caplog.text
 
         mrmm_fi.assert_called_once_with('subject')
         assert "AuthenticationToken did not indicate" in out

@@ -239,7 +239,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                 try:
                     self.notify_failure(authc_token, ae)
                 except Exception:
-                    if logger.getEffectiveLevel() == logging.WARNING:
+                    if logger.getEffectiveLevel() <= logging.WARNING:
                         msg4 = ("Unable to send notification for failed "
                                 "authentication attempt - listener error?.  "
                                 "Please check your EventBus implementation.  "

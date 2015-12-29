@@ -10,12 +10,9 @@ from ..doubles import (
 from yosai.core import (
     CachingSessionStore,
     DelegatingSession,
-    DefaultEventBus,
-    Event,
     # ExecutorServiceSessionValidationScheduler,
     ExpiredSessionException,
     InvalidArgumentException,
-    MemorySessionStore,
     SessionEventException,
     DefaultNativeSessionHandler,
     SessionCreationException,
@@ -37,14 +34,13 @@ def test_seh_notify_start_publishes(session_event_handler, mock_session):
 
     """
     seh = session_event_handler
-    mockevent = Event(source='SessionEventHandler',
-                      event_topic='SESSION.START',
-                      results=mock_session.session_id)
+    event_topic = 'SESSION.START'
 
     with mock.patch.object(seh.event_bus, 'publish') as event_publish:
         event_publish.return_value = None
         seh.notify_start(mock_session)
-        event_publish.assert_called_with(mockevent.event_topic, event=mockevent)
+        event_publish.assert_called_with(event_topic,
+                                         session_id=mock_session.session_id)
 
 
 def test_seh_notify_start_raises(session_event_handler, mock_session, monkeypatch):
@@ -60,14 +56,12 @@ def test_seh_notify_stop_publishes(session_event_handler, mock_session):
     unit tested:  notify_stop
     """
     seh = session_event_handler
-    mockevent = Event(source='SessionEventHandler',
-                      event_topic='SESSION.STOP',
-                      results='sessiontuple')
+    event_topic = 'SESSION.STOP'
 
     with mock.patch.object(seh.event_bus, 'publish') as event_publish:
         event_publish.return_value = None
         seh.notify_stop('sessiontuple')
-        event_publish.assert_called_with(mockevent.event_topic, event=mockevent)
+        event_publish.assert_called_with(event_topic, items='sessiontuple')
 
 
 def test_seh_notify_stop_raises(session_event_handler, mock_session, monkeypatch):
@@ -83,14 +77,12 @@ def test_seh_notify_expiration_publishes(session_event_handler, mock_session):
     unit tested:  notify_expiration
     """
     seh = session_event_handler
-    mockevent = Event(source='SessionEventHandler',
-                      event_topic='SESSION.EXPIRE',
-                      results='sessiontuple')
+    event_topic = 'SESSION.EXPIRE'
 
     with mock.patch.object(seh.event_bus, 'publish') as event_publish:
         event_publish.return_value = None
         seh.notify_expiration('sessiontuple')
-        event_publish.assert_called_with(mockevent.event_topic, event=mockevent)
+        event_publish.assert_called_with(event_topic, items='sessiontuple')
 
 
 def test_seh_notify_expiration_raises(session_event_handler, mock_session, monkeypatch):
@@ -105,7 +97,7 @@ def test_seh_notify_expiration_raises(session_event_handler, mock_session, monke
 # DefaultNativeSessionHandler
 # ----------------------------------------------------------------------------
 
-def test_sh_set_sessionstore(session_handler):
+def test_sh_set_sessionstore(session_handler, mock_cache_handler, monkeypatch):
     """
     unit tested:  session_store.setter
 
@@ -113,6 +105,7 @@ def test_sh_set_sessionstore(session_handler):
     the session_store property sets the attribute and calls a method
     """
     sh = session_handler
+    monkeypatch.setattr(session_handler, 'cache_handler', mock_cache_handler)
     with mock.patch.object(DefaultNativeSessionHandler,
                            'apply_cache_handler_to_session_store') as achss:
         achss.return_value = None

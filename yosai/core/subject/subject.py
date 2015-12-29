@@ -95,7 +95,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         security_manager = self.security_manager
         if (security_manager is None):
 
-            if logger.getEffectiveLevel() == logging.DEBUG:
+            if logger.getEffectiveLevel() <= logging.DEBUG:
                 msg = ("No SecurityManager available in subject context map.  " +
                        "Falling back to SecurityUtils.security_manager for" +
                        " lookup.")
@@ -105,7 +105,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 security_manager = SecurityUtils.get_security_manager()
             except UnavailableSecurityManagerException:
 
-                if logger.getEffectiveLevel() == logging.DEBUG:
+                if logger.getEffectiveLevel() <= logging.DEBUG:
                     msg = ("DefaultSubjectContext.resolve_security_manager cannot "
                            "obtain security_manager! No SecurityManager available "
                            "via SecurityUtils.  Heuristics exhausted.")
@@ -600,7 +600,7 @@ class DelegatingSubject(subject_abcs.Subject):
             raise InvalidArgumentException('must use Session object')
 
     def get_session(self, create=True):
-        if logger.getEffectiveLevel() == logging.DEBUG:
+        if logger.getEffectiveLevel() <= logging.DEBUG:
             msg = ("attempting to get session; create = " + str(create) +
                    "; \'session is None\' = " + str(self.session is None) +
                    "; \'session has id\' = " +

@@ -2,7 +2,6 @@ import pytest
 from unittest import mock
 
 from yosai.core import (
-    Event,
     DefaultEventBus,
 )
 
@@ -49,9 +48,3 @@ def send_missing_reqd_msgdata_error():
     mock_error.side_effect =\
         SenderMissingReqdMsgDataError('topic_name', ['arg_names'], ['missing'])
     return mock_error
-
-@pytest.fixture(scope='function')
-def default_event():
-    return Event(event_type='default_event_type',
-                 event_topic='default_event_topic',
-                 source='source_object_here')

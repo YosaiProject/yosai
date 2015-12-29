@@ -183,7 +183,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         if (self.is_remember_me(authc_token)):
             self.remember_identity(subject, authc_token, account)
         else:
-            if logger.getEffectiveLevel() == logging.DEBUG:
+            if logger.getEffectiveLevel() <= logging.DEBUG:
                 msg = ("AuthenticationToken did not indicate that RememberMe is "
                        "requested.  RememberMe functionality will not be executed "
                        "for corresponding account.")
@@ -320,7 +320,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
                                 used to construct a Subject instance
         :raises:  the original Exception passed is propagated in all cases
         """
-        if logger.getEffectiveLevel() == logging.DEBUG:
+        if logger.getEffectiveLevel() <= logging.DEBUG:
             msg = ("There was a failure while trying to retrieve remembered "
                    "identifier.  This could be due to a configuration problem or "
                    "corrupted identifier.  This could also be due to a recently "
@@ -784,8 +784,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             try:
                 rmm.on_successful_login(subject, authc_token, account)
             except Exception:
-
-                if logger.getEffectiveLevel() == logging.WARNING:
+                if logger.getEffectiveLevel() <= logging.WARNING:
                     msg = ("Delegate RememberMeManager instance of type [" +
                            rmm.__class__.__name__ + "] threw an exception "
                            + "during on_successful_login.  RememberMe services "
@@ -795,7 +794,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         else:
 
-            if logger.getEffectiveLevel() == logging.WARNING:
+            if logger.getEffectiveLevel() <= logging.WARNING:
                 msg = ("This " + rmm.__class__.__name__ +
                        " instance does not have a [RememberMeManager] instance " +
                        "configured.  RememberMe services will not be performed " +
@@ -809,7 +808,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 rmm.on_failed_login(subject, authc_token, authc_exc)
 
             except Exception:
-                if logger.getEffectiveLevel() == logging.WARNING:
+                if logger.getEffectiveLevel() <= logging.WARNING:
                     msg = ("Delegate RememberMeManager instance of type "
                            "[" + rmm.__class__.__name__ + "] threw an exception "
                            "during on_failed_login for AuthenticationToken [" +
@@ -822,7 +821,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             try:
                 rmm.on_logout(subject)
             except Exception as ex:
-                if logger.getEffectiveLevel() == logging.WARNING:
+                if logger.getEffectiveLevel() <= logging.WARNING:
                     msg = ("Delegate RememberMeManager instance of type [" +
                            rmm.__class__.__name__ + "] threw an exception during "
                            "on_logout for subject with identifiers [{identifiers}]".
@@ -994,7 +993,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         identifiers = copy.copy(subject.identifiers)   # copy is new to yosai
         if (identifiers):
 
-            if logger.getEffectiveLevel() == logging.DEBUG:
+            if logger.getEffectiveLevel() <= logging.DEBUG:
                 msg = ("Logging out subject with primary identifier {0}".format(
                        identifiers.primary_identifier))
                 logger.debug(msg)
@@ -1007,7 +1006,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         try:
             self.delete(subject)
         except Exception:
-            if logger.getEffectiveLevel() == logging.DEBUG:
+            if logger.getEffectiveLevel() <= logging.DEBUG:
                 msg = "Unable to cleanly unbind Subject.  Ignoring (logging out)."
                 logger.debug(msg, exc_info=True)
 
@@ -1016,7 +1015,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 # passing identifiers is new to yosai:
                 self.stop_session(subject, identifiers)
             except Exception:
-                if logger.getEffectiveLevel() == logging.DEBUG:
+                if logger.getEffectiveLevel() <= logging.DEBUG:
                     msg2 = ("Unable to cleanly stop Session for Subject. "
                             "Ignoring (logging out).")
                     logger.debug(msg2, exc_info=True)
@@ -1032,7 +1031,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             try:
                 return rmm.get_remembered_identifiers(subject_context)
             except Exception as ex:
-                if logger.getEffectiveLevel() == logging.WARNING:
+                if logger.getEffectiveLevel() <= logging.WARNING:
                     msg = ("Delegate RememberMeManager instance of type [" +
                            rmm.__class__.__name__ + "] raised an exception during "
                            "get_remembered_identifiers().")

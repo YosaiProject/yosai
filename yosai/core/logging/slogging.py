@@ -76,7 +76,8 @@ def load_logconfig():
             'yosai_logger': {
                 'level': 'DEBUG',
                 'handlers': ['console'],
-                'propagate': False}
+                'propagate': False
+            }
         },
         'root': {
             'level': 'DEBUG',

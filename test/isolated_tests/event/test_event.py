@@ -2,28 +2,11 @@ import pytest
 import datetime
 
 from yosai.core import (
-    Event,
     DefaultEventBus,
     EventBusMessageDataException,
     EventBusTopicException,
     EventBusSubscriptionException,
 )
-
-# -----------------------------------------------------------------------------
-# Event Tests
-# -----------------------------------------------------------------------------
-
-def test_event_timestamp_verify(default_event):
-    """ timestamp integrity is vital, so confirm that it is working """
-    timestamp = datetime.datetime.utcnow() 
-    assert (timestamp - default_event.timestamp) <= datetime.timedelta(minutes=1) 
-
-def test_event_attr_set():
-    test_event = Event(event_topic='topic1',
-                       event_type='type1',
-                       source='source',
-                       attr1=type('Attr1', (object,), {}))
-    assert hasattr(test_event, 'attr1')
 
 # -----------------------------------------------------------------------------
 # EventBus Tests
