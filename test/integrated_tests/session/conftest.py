@@ -25,12 +25,6 @@ def session_factory():
 
 
 @pytest.fixture(scope='function')
-def session(session_factory):
-    ssf = session_factory
-    return ssf.create_session()
-
-
-@pytest.fixture(scope='function')
 def session_key(session):
     return DefaultSessionKey(session.session_id)
 
@@ -43,10 +37,11 @@ def session_event_handler():
 
 
 @pytest.fixture(scope='function')
-def session_handler(session_event_handler):
-    return DefaultNativeSessionHandler(session_event_handler=session_event_handler,
-                          auto_touch=True)
-
+def session_handler(session_event_handler, session_store):
+    handler = DefaultNativeSessionHandler(session_event_handler=session_event_handler,
+                                          auto_touch=True)
+    handler.session_store = session_store
+    return handler
 
 @pytest.fixture(scope='function')
 def session_manager():
@@ -58,3 +53,11 @@ def session_context():
     sc = DefaultSessionContext()
     sc.host = '127.0.0.1'
     return sc
+
+
+@pytest.fixture(scope='function')
+def session(session_factory, session_handler):
+    session = session_factory.create_session()
+    session_handler.create_session(session)  # obtains a session_id
+    return session
+

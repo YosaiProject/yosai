@@ -152,67 +152,86 @@ class DefaultEventBus(event_abcs.EventBus):
         return unsubscribed_listeners
 
 
-class EventLogger:
+class EventLogger(event_abcs.EventBusAware):
+    def __init__(self, event_bus):
+        self.event_bus = event_bus
 
-    def __init__(self):
+        self.event_bus.register(self.log_session_start, 'SESSION.START')
+        self.event_bus.register(self.log_session_stop, 'SESSION.STOP')
+        self.event_bus.register(self.log_session_expire, 'SESSION.EXPIRE')
+        self.event_bus.register(self.log_authc_succeeded, 'AUTHENTICATION.SUCCEEDED')
+        self.event_bus.register(self.log_authc_failed, 'AUTHENTICATION.FAILED')
+        self.event_bus.register(self.log_authz_granted, 'AUTHORIZATION.GRANTED')
+        self.event_bus.register(self.log_authz_denied, 'AUTHORIZATION.DENIED')
+        self.event_bus.register(self.log_authz_results, 'AUTHORIZATION.RESULTS')
 
-        self.events = {'SESSION.START': self.log_session_start,
-                       'SESSION.STOP': self.log_session_halt,
-                       'SESSION.EXPIRE': self.log_session_halt,
-                       'AUTHENTICATION.SUCCEEDED': self.log_authc_succeeded,
-                       'AUTHENTICATION.FAILED': self.log_authc_failed,
-                       'AUTHORIZATION.GRANTED': self.log_authz_check,
-                       'AUTHORIZATION.DENIED': self.log_authz_check,
-                       'AUTHORIZATION.RESULTS': self.log_authz_results}
+    @property
+    def event_bus(self):
+        return self._event_bus
 
-    def log(self, topic, msg):
-        topicname = topic.getName()
-        self.events.get(topicname, self.log_default)(topicname, msg)
+    @event_bus.setter
+    def event_bus(self, eventbus):
+        self._event_bus = eventbus
 
-    def log_authc_succeeded(self, topic, msg):
-        serialized = msg['identifiers'].serialize()
+    def log_authc_succeeded(self, identifiers=None):
+        topic = 'AUTHENTICATION.SUCCEEDED'
+        serialized = identifiers.serialize()
         logger.info(topic, extra={'identifiers': serialized})
 
-    def log_authc_failed(self, topic, msg):
-        logger.info(topic, extra={'username': msg['username']})
+    def log_authc_failed(self, username=None):
+        topic = 'AUTHENTICATION.FAILED'
+        logger.info(topic, extra={'username': username})
 
-    def log_session_start(self, topic, msg):
-        logger.info(topic, extra={'sessionid': msg['session_id']})
+    def log_session_start(self, session_id=None):
+        topic = 'SESSION.START'
+        logger.info(topic, extra={'sessionid': session_id})
 
-    def log_session_halt(self, topic, msg):
-        sessiontuple = msg['items']
-        idents = sessiontuple.identifiers.serialize()
-        session_id = sessiontuple.session_key.session_id
+    def log_session_stop(self, items=None):
+        topic = 'SESSION.STOP'
+        idents = items.identifiers.serialize()
+        session_id = items.session_key.session_id
         logger.info(topic, extra={'identifiers': idents,
                                   'session_id': session_id})
 
-    def log_authz_check(self, topic, msg):
-        serialized = [(item.serialize(), check) for (item, check)
-                      in msg['items']]
-        identifiers = msg['identifiers'].serialize()
-        logop = msg['logical_operator']
+    def log_session_expire(self, items=None):
+        topic = 'SESSION.EXPIRE'
+        idents = items.identifiers.serialize()
+        session_id = items.session_key.session_id
+        logger.info(topic, extra={'identifiers': idents,
+                                  'session_id': session_id})
+
+    def log_authz_granted(self, identifiers=None, items=None, logical_operator=None):
+        topic = 'AUTHORIZATION.GRANTED'
+        serialized = [(item.serialize(), check) for (item, check) in items]
+        identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': serialized,
-                                  'logical_operator': logop})
+                                  'logical_operator': logical_operator})
 
-    def log_authz_results(self, topic, msg):
+    def log_authz_denied(self, identifiers=None, items=None, logical_operator=None):
+        topic = 'AUTHORIZATION.DENIED'
+        serialized = [(item.serialize(), check) for (item, check) in items]
+        identifiers = identifiers.serialize()
+        logger.info(topic, extra={'identifiers': identifiers,
+                                  'items': serialized,
+                                  'logical_operator': logical_operator})
+
+    def log_authz_results(self, identifiers=None, items=None):
+        topic = 'AUTHORIZATION.RESULTS'
         serialized = [(item.serialize(), check) for (item, check)
-                      in msg['items']]
-        identifiers = msg['identifiers'].serialize()
+                      in items]
+        identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': serialized})
 
-    def log_default(self, topic, msg):
-        logger.info(topic, extra={'payload': msg})
 
 
-event_logger = EventLogger()
+#def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
+#    event_logger.log(topicObj, mesgData)
 
-
-def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
-    event_logger.log(topicObj, mesgData)
-
-pub.subscribe(log_event, pub.ALL_TOPICS)
+# pub.subscribe(log_event, pub.ALL_TOPICS)
 
 
 event_bus = DefaultEventBus()  # pseudo-singleton
+
+event_logger = EventLogger(event_bus)

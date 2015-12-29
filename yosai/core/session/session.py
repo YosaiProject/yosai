@@ -1056,7 +1056,8 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
     @session_store.setter
     def session_store(self, sessionstore):
         self._session_store = sessionstore
-        self.apply_cache_handler_to_session_store()
+        if self.cache_handler:
+            self.apply_cache_handler_to_session_store()
 
     @property
     def cache_handler(self):

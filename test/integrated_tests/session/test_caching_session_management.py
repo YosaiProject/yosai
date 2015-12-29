@@ -1,3 +1,4 @@
+import pdb
 import pytest
 import datetime
 import pytz
@@ -62,18 +63,17 @@ def test_delete_cached_session(session_store, session, cache_handler):
 
 # can't test notify_start without conflicting with other listeners
 
-def test_seh_notify_stop(session_event_handler, session):
+def test_seh_notify_stop(session_event_handler, session_key, thedude_identifier):
     seh = session_event_handler
     event_detected = None
 
-    def event_listener(items):
+    def event_listener(items=None):
         nonlocal event_detected
         event_detected = items
 
     event_bus.register(event_listener, 'SESSION.STOP')
 
-    mysession = session_tuple(None, session.session_id)
-
+    mysession = session_tuple(thedude_identifier, session_key)
     seh.notify_stop(mysession)
     assert event_detected.session_key == mysession.session_key
 
