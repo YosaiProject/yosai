@@ -221,7 +221,7 @@ class EventLogger(event_abcs.EventBusAware):
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': new_items,
-                                  'logical_operator': logical_operator})
+                                  'logical_operator': logical_operator.__name__})
 
     def log_authz_denied(self, identifiers=None, items=None, logical_operator=None):
         topic = 'AUTHORIZATION.DENIED'
@@ -236,7 +236,7 @@ class EventLogger(event_abcs.EventBusAware):
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': new_items,
-                                  'logical_operator': logical_operator})
+                                  'logical_operator': logical_operator.__name__})
 
     def log_authz_results(self, identifiers=None, items=None):
         topic = 'AUTHORIZATION.RESULTS'

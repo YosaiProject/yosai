@@ -1,3 +1,4 @@
+import pdb
 import pytest
 import collections
 from unittest import mock
@@ -6,7 +7,6 @@ from yosai.core import (
     AccountStoreRealm,
     AuthorizationEventException,
     DefaultPermission,
-    Event,
     DefaultEventBus,
     IllegalStateException,
     IndexedAuthorizationInfo,
@@ -165,16 +165,11 @@ def test_mra_is_permitted_succeeds(modular_realm_authorizer_patched, monkeypatch
         with mock.patch.object(mra, 'notify_results') as mra_nr:
             mra_nr.return_value = None
 
-            results = mra.is_permitted('identifiers', {'permission1', 'permission2'})
+            results = mra.is_permitted('identifiers', ['permission1', 'permission2'], False)
 
             mra_arc.assert_called_once_with()
 
-            mra_nr.assert_called_once_with(
-                'identifiers',
-                frozenset([('permission1', True), ('permission2', True)]))
-
-            assert results == frozenset([('permission1', True),
-                                         ('permission2', True)])
+            assert set(results) == set([('permission1', True), ('permission2', True)])
 
 
 def test_mra_is_permitted_fails(modular_realm_authorizer_patched, monkeypatch):
@@ -201,10 +196,10 @@ def test_mra_is_permitted_fails(modular_realm_authorizer_patched, monkeypatch):
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
 
-        results = mra.is_permitted('identifiers', {'permission1', 'permission2'})
+        results = mra.is_permitted('identifiers', {'permission1', 'permission2'}, False)
 
         mra_arc.assert_called_once_with()
-        assert results == frozenset([('permission1', False), ('permission2', False)])
+        assert set(results) == set([('permission1', False), ('permission2', False)])
 
 
 @pytest.mark.parametrize('mock_results, logical_operator, expected',
@@ -224,7 +219,7 @@ def test_mra_is_permitted_collective(
     a collection of permissions receives a single Boolean
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, 'is_permitted', lambda x,y: mock_results)
+    monkeypatch.setattr(mra, 'is_permitted', lambda x,y,log_results: mock_results)
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
         with mock.patch.object(mra, 'notify_success') as mra_ns:
@@ -239,10 +234,12 @@ def test_mra_is_permitted_collective(
                 assert results == expected
                 if expected is True:
                     mra_ns.assert_called_once_with({'identifiers'},
-                                                   ['perm1', 'perm2'])
+                                                   ['perm1', 'perm2'],
+                                                   logical_operator)
                 else:
                     mra_nf.assert_called_once_with({'identifiers'},
-                                                   ['perm1', 'perm2'])
+                                                   ['perm1', 'perm2'],
+                                                   logical_operator)
 
 
 def test_mra_check_permission_collection_raises(
@@ -316,11 +313,8 @@ def test_mra_has_role_succeeds(modular_realm_authorizer_patched, monkeypatch):
             results = mra.has_role('identifiers', {'roleid1', 'roleid2'})
 
             mra_arc.assert_called_once_with()
-            mra_nr.assert_called_once_with(
-                'identifiers',
-                frozenset([('roleid1', True), ('roleid2', True)]))
 
-            assert results == frozenset([('roleid1', True), ('roleid2', True)])
+            assert set(results) == set([('roleid1', True), ('roleid2', True)])
 
 
 def test_mra_has_role_fails(modular_realm_authorizer_patched, monkeypatch):
@@ -347,10 +341,13 @@ def test_mra_has_role_fails(modular_realm_authorizer_patched, monkeypatch):
     with mock.patch.object(mra, 'assert_realms_configured') as mra_arc:
         mra_arc.return_value = None
 
-        results = mra.has_role('identifiers', {'roleid1', 'roleid2'})
+        with mock.patch.object(mra, 'notify_results') as mock_nr:
+            mock_nr.return_value = None
 
-        mra_arc.assert_called_once_with()
-        assert results == frozenset([('roleid1', False), ('roleid2', False)])
+            results = mra.has_role('identifiers', {'roleid1', 'roleid2'})
+
+            mra_arc.assert_called_once_with()
+            assert set(results) == set([('roleid1', False), ('roleid2', False)])
 
 
 @pytest.mark.parametrize('param1, param2, logical_operator, expected',
@@ -389,10 +386,12 @@ def test_mra_has_role_collective(
 
                 if expected is True:
                     mra_ns.assert_called_once_with('arbitrary_identifiers',
-                                                   {'roleid1', 'roleid2'})
+                                                   {'roleid1', 'roleid2'},
+                                                   logical_operator)
                 else:
                     mra_nf.assert_called_once_with('arbitrary_identifiers',
-                                                   {'roleid1', 'roleid2'})
+                                                   {'roleid1', 'roleid2'},
+                                                   logical_operator)
 
                 assert result == expected and arc.called
 
@@ -435,24 +434,36 @@ def test_mra_check_role_true(
         arc.assert_called_once_with()
 
 
-def test_mraa_clear_cache(
+def test_mraa_session_clears_cache(
         modular_realm_authorizer_patched, simple_identifier_collection,
         full_mock_account, monkeypatch, default_accountstorerealm):
     sic = simple_identifier_collection
     mra = modular_realm_authorizer_patched
     monkeypatch.setattr(mra, '_realms', (default_accountstorerealm,))
+
     session_tuple = collections.namedtuple(
         'session_tuple', ['identifiers', 'session_key'])
-    result = session_tuple(sic, 'sessionkey123')
-
-    myevent = Event(source='Somewhere',
-                    event_topic='EVENT_TOPIC',
-                    results=result)
+    st = session_tuple(sic, 'sessionkey123')
 
     with mock.patch.object(AccountStoreRealm, 'clear_cached_authorization_info') as ccc:
         ccc.return_value = None
 
-        mra.clear_cache(event=myevent)
+        mra.session_clears_cache(items=st)
+
+        ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
+
+
+def test_mraa_authc_clears_cache(
+        modular_realm_authorizer_patched, simple_identifier_collection,
+        full_mock_account, monkeypatch, default_accountstorerealm):
+    sic = simple_identifier_collection
+    mra = modular_realm_authorizer_patched
+    monkeypatch.setattr(mra, '_realms', (default_accountstorerealm,))
+
+    with mock.patch.object(AccountStoreRealm, 'clear_cached_authorization_info') as ccc:
+        ccc.return_value = None
+
+        mra.authc_clears_cache(identifiers=sic)
 
         ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
 
@@ -467,9 +478,9 @@ def test_mra_register_cache_clear_listener(modular_realm_authorizer_patched):
 
             mra.register_cache_clear_listener()
 
-            calls = [mock.call(mra.clear_cache, 'SESSION.STOP'),
-                     mock.call(mra.clear_cache, 'SESSION.EXPIRE'),
-                     mock.call(mra.clear_cache, 'AUTHENTICATION.SUCCEEDED')]
+            calls = [mock.call(mra.session_clears_cache, 'SESSION.STOP'),
+                     mock.call(mra.session_clears_cache, 'SESSION.EXPIRE'),
+                     mock.call(mra.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')]
 
             eb_r.assert_has_calls(calls)
             eb_ir.assert_has_calls(calls)
@@ -483,19 +494,17 @@ def test_mra_notify_results(modular_realm_authorizer_patched):
     creates an Event and publishes it to the event_bus
     """
     mra = modular_realm_authorizer_patched
-    result = frozenset([('permission1', True)])
+    items = [('permission1', True)]
 
-    myevent = Event(source='ModularRealmAuthorizer',
-                    event_topic='AUTHORIZATION.RESULTS',
-                    identifiers='identifiers',
-                    results=result)
+    topic = 'AUTHORIZATION.RESULTS'
 
     with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
         eb_pub.return_value = None
 
-        mra.notify_results('identifiers', result)
+        mra.notify_results('identifiers', items)
 
-        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+        assert eb_pub.call_args == mock.call(topic, identifiers='identifiers',
+                                             items=items)
 
 
 def test_mra_notify_results_raises(
@@ -524,17 +533,17 @@ def test_mra_notify_success(modular_realm_authorizer_patched):
     mra = modular_realm_authorizer_patched
     permission_s = ['domain1:action1']
 
-    myevent = Event(source='ModularRealmAuthorizer',
-                    event_topic='AUTHORIZATION.GRANTED',
-                    identifiers='identifiers',
-                    items=permission_s)
+    topic = 'AUTHORIZATION.GRANTED'
 
     with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
         eb_pub.return_value = None
 
-        mra.notify_success('identifiers', permission_s)
+        mra.notify_success('identifiers', permission_s, any)
 
-        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+        assert eb_pub.call_args == mock.call(topic,
+                                             identifiers='identifiers',
+                                             items=permission_s,
+                                             logical_operator=any)
 
 
 def test_mra_notify_success_raises(
@@ -550,7 +559,7 @@ def test_mra_notify_success_raises(
     monkeypatch.setattr(mra, '_event_bus', None)
 
     with pytest.raises(AuthorizationEventException):
-        mra.notify_success('identifiers', 'result')
+        mra.notify_success('identifiers', 'result', any)
 
 
 def test_mra_notify_failure(modular_realm_authorizer_patched):
@@ -563,17 +572,17 @@ def test_mra_notify_failure(modular_realm_authorizer_patched):
     mra = modular_realm_authorizer_patched
     permission_s = ['domain1:action1']
 
-    myevent = Event(source='ModularRealmAuthorizer',
-                    event_topic='AUTHORIZATION.DENIED',
-                    identifiers='identifiers',
-                    items=permission_s)
+    topic = 'AUTHORIZATION.DENIED'
 
     with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
         eb_pub.return_value = None
 
-        mra.notify_failure('identifiers', permission_s)
+        mra.notify_failure('identifiers', permission_s, any)
 
-        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+        assert eb_pub.call_args == mock.call(topic,
+                                             identifiers='identifiers',
+                                             items=permission_s,
+                                             logical_operator=any)
 
 
 def test_mra_notify_failure_raises(
@@ -589,7 +598,7 @@ def test_mra_notify_failure_raises(
     monkeypatch.setattr(mra, '_event_bus', None)
 
     with pytest.raises(AuthorizationEventException):
-        mra.notify_failure('identifiers', 'result')
+        mra.notify_failure('identifiers', 'result', any)
 
 
 # -----------------------------------------------------------------------------
