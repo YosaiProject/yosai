@@ -1,6 +1,6 @@
 
 import pytest
-import pdb
+
 from yosai.core import (
     SimpleIdentifierCollection,
     UnauthorizedException,
