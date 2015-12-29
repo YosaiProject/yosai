@@ -7,7 +7,6 @@ from yosai.core import (
     AuthenticationException,
     AuthenticationEventException,
     DefaultEventBus,
-    Event,
     InvalidTokenPasswordException,
     MultiRealmAuthenticationException,
     UnsupportedTokenException,
@@ -244,18 +243,15 @@ def test_da_clear_cache(
         default_authenticator, simple_identifier_collection, full_mock_account):
     sic = simple_identifier_collection
     da = default_authenticator
+
     session_tuple = collections.namedtuple(
         'session_tuple', ['identifiers', 'session_key'])
-    result = session_tuple(sic, 'sessionkey123')
-
-    myevent = Event(source='Somewhere',
-                    event_topic='EVENT_TOPIC',
-                    results=result)
+    st = session_tuple(sic, 'sessionkey123')
 
     with mock.patch.object(AccountStoreRealm, 'clear_cached_credentials') as ccc:
         ccc.return_value = None
 
-        da.clear_cache(event=myevent)
+        da.clear_cache(items=st)
 
         ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
 
@@ -285,21 +281,15 @@ def test_da_notify_success(default_authenticator, full_mock_account):
     creates an Event and publishes it to the event_bus
     """
     da = default_authenticator
-
-    account_tuple = collections.namedtuple(
-        'account_tuple', ['identifiers'])
-    result = account_tuple('identifier')
-
-    myevent = Event(source='DefaultAuthenticator',
-                    event_topic='AUTHENTICATION.SUCCEEDED',
-                    results=result)
+    fma = full_mock_account
 
     with mock.patch.object(event_bus, 'publish') as eb_pub:
         eb_pub.return_value = None
 
-        da.notify_success(full_mock_account)
+        da.notify_success(fma)
 
-        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+        assert eb_pub.call_args == mock.call('AUTHENTICATION.SUCCEEDED',
+                                             identifiers=fma.account_id)
 
 
 def test_da_notify_success_raises(
@@ -319,7 +309,8 @@ def test_da_notify_success_raises(
         da.notify_success(full_mock_account)
 
 
-def test_da_notify_failure(default_authenticator):
+def test_da_notify_failure(
+        default_authenticator, username_password_token, monkeypatch):
     """
     unit tested:  notify_failure
 
@@ -327,18 +318,15 @@ def test_da_notify_failure(default_authenticator):
     creates an Event and publishes it to the event_bus
     """
     da = default_authenticator
-
-    myevent = Event(source='DefaultAuthenticator',
-                    event_topic='AUTHENTICATION.FAILED',
-                    authc_token='token',
-                    throwable='throwable')
+    authc_token = username_password_token
 
     with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
         eb_pub.return_value = None
 
-        da.notify_failure('token', 'throwable')
+        da.notify_failure(authc_token, 'throwable')
 
-        assert eb_pub.call_args == mock.call(myevent.event_topic, event=myevent)
+        assert eb_pub.call_args == mock.call('AUTHENTICATION.FAILED',
+                                             username=authc_token.username)
 
 
 def test_da_notify_falure_raises(default_authenticator, monkeypatch):
