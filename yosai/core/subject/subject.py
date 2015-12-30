@@ -69,6 +69,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         """
         :param context: context's schema of reserved attributes must be named
                         according to the property names below
+        :type context: dict
         """
 
         # to set reserved attributes correctly (using the property setters),
@@ -81,6 +82,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     # new to yosai.core.is this helper method:
     def get_key(self, key):
+        """
+        :type key: string
+        """
         return "{0}.{1}".format(self.__class__.__name__, key)
 
     @property
@@ -89,6 +93,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @security_manager.setter
     def security_manager(self, securitymanager):
+        """
+        :type securitymanager:  mgt_abcs.SecurityManager
+        """
         self.none_safe_put(self.get_key('SECURITY_MANAGER'), securitymanager)
 
     def resolve_security_manager(self):
@@ -119,6 +126,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @session_id.setter
     def session_id(self, session_id):
+        """
+        :type session_id:  string
+        """
         self.none_safe_put(self.get_key('SESSION_ID'), session_id)
 
     @property
@@ -127,7 +137,10 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @subject.setter
     def subject(self, subject):
-            self.none_safe_put(self.get_key('SUBJECT'), subject)
+        """
+        :type subject:  subject_abcs.Subject
+        """
+        self.none_safe_put(self.get_key('SUBJECT'), subject)
 
     @property
     def identifiers(self):
@@ -136,7 +149,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     @identifiers.setter
     def identifiers(self, identifiers):
         """
-        :type identifier_s: SimpleIdentifierCollection
+        :type identifier_s: subject_abcs.IdentifierCollection
         """
         self.none_safe_put(self.get_key('IDENTIFIERS'), identifiers)
 
@@ -172,6 +185,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @session.setter
     def session(self, session):
+        """
+        :type session:  session_abcs.Session
+        """
         self.none_safe_put(self.get_key('SESSION'), session)
 
     def resolve_session(self):
@@ -191,6 +207,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @session_creation_enabled.setter
     def session_creation_enabled(self, enabled):
+        """
+        :type enabled:  bool
+        """
         self.none_safe_put(
             self.get_key('SESSION_CREATION_ENABLED'), enabled)
 
@@ -204,6 +223,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @authenticated.setter
     def authenticated(self, authc):
+        """
+        :type authc:  bool
+        """
         self.put(self.get_key('AUTHENTICATED'), authc)
 
     def resolve_authenticated(self):
@@ -232,6 +254,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @account.setter
     def account(self, account):
+        """
+        :type account:  account_abcs.Account
+        """
         self.none_safe_put(self.get_key('ACCOUNT'), account)
 
     @property
@@ -240,6 +265,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @authentication_token.setter
     def authentication_token(self, token):
+        """
+        :type token:  authc_abcs.AuthenticationToken
+        """
         self.none_safe_put(self.get_key('AUTHENTICATION_TOKEN'), token)
 
     @property
@@ -248,6 +276,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
     @host.setter
     def host(self, host):
+        """
+        :type host: string
+        """
         self.put(self.get_key('HOST'), host)
 
     def resolve_host(self):
@@ -274,7 +305,7 @@ class DelegatingSubject(subject_abcs.Subject):
     """
     A DelegatingSubject delegates method calls to an underlying SecurityManager
     instance for security checks.  It is essentially a SecurityManager proxy,
-    as DelegatingSession is to DefaultNativeSessionManager.
+    just as DelegatingSession is to DefaultNativeSessionManager.
 
     This implementation does not maintain state such as roles and permissions
     (only Subject identifier, such as usernames or user primary keys) for
@@ -332,6 +363,9 @@ class DelegatingSubject(subject_abcs.Subject):
         self.run_as_identifiers_session_key = 'run_as_identifiers_session_key'
 
     def decorate(self, session):
+        """
+        :type session:  session_abcs.Session
+        """
         if not isinstance(session, session_abcs.Session):
             raise InvalidArgumentException('incorrect session argument passed')
         return self.StoppingAwareProxiedSession(session, self)
@@ -344,6 +378,9 @@ class DelegatingSubject(subject_abcs.Subject):
 
     @security_manager.setter
     def security_manager(self, security_manager):
+        """
+        :type security_manager:  mgt_abcs.SecurityManager
+        """
         if (isinstance(security_manager, mgt_abcs.SecurityManager) or
                 security_manager is None):
             self._security_manager = security_manager
@@ -363,7 +400,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def get_primary_identifier(self, identifiers):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
         """
         try:
             return identifiers.primary_identifier
@@ -387,7 +424,7 @@ class DelegatingSubject(subject_abcs.Subject):
     @identifiers.setter
     def identifiers(self, identifiers):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
         """
         if (isinstance(identifiers, subject_abcs.IdentifierCollection) or
                 identifiers is None):
@@ -398,11 +435,11 @@ class DelegatingSubject(subject_abcs.Subject):
     def is_permitted(self, permission_s):
         """
         :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of Permission object(s) or String(s)
+        :type permission_s: List of authz_abcs.Permission object(s) or String(s)
 
-        :returns: a List of tuple(s), containing the Permission and a Boolean
-                  indicating whether the permission is         """
-
+        :returns: a List of tuple(s), containing the authz_abcs.Permission and a
+                  Boolean indicating whether the permission is granted
+        """
         if self.has_identifiers:
             self.check_security_manager()
             return (self.security_manager.is_permitted(
@@ -414,11 +451,11 @@ class DelegatingSubject(subject_abcs.Subject):
     # refactored is_permitted_all:
     def is_permitted_collective(self, permission_s, logical_operator):
         """
-        :param permission_s:  a List of Permission objects
+        :param permission_s:  a List of authz_abcs.Permission objects
 
-        :param logical_operator:  indicates whether all or at least one
-                                  permission check is true (any)
-        :type: and OR all (from python standard library)
+        :param logical_operator:  indicates whether *all* or at least one
+                                  permission check is true, *any*
+        :type: and OR all (functions from python stdlib)
 
         :returns: a Boolean
         """
@@ -452,11 +489,11 @@ class DelegatingSubject(subject_abcs.Subject):
     def check_permission(self, permission_s, logical_operator):
         """
         :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of Permission objects or Strings
+        :type permission_s: List of authz_abcs.Permission objects or Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: and OR all (from python stdlib)
 
         :raises UnauthorizedException: if any permission is unauthorized
         """
@@ -471,8 +508,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def has_role(self, roleid_s):
         """
-        :param roleid_s: 1..N role identifier (string)
-        :type roleid_s:  a String or List of Strings
+        :param roleid_s: 1..N role identifiers (strings)
+        :type roleid_s:  Set of Strings
 
         :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
@@ -488,7 +525,7 @@ class DelegatingSubject(subject_abcs.Subject):
     def has_role_collective(self, roleid_s, logical_operator):
         """
         :param roleid_s: 1..N role identifier
-        :type roleid_s:  a String or List of Strings
+        :type roleid_s:  a Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
@@ -508,11 +545,11 @@ class DelegatingSubject(subject_abcs.Subject):
     def check_role(self, role_ids, logical_operator):
         """
         :param role_ids:  1 or more RoleIds
-        :type role_ids: an individual or List of Strings
+        :type role_ids: a Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: and OR all (from python stdlib)
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
@@ -526,6 +563,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def login(self, authc_token):
         """
+        :type authc_token: authc_abcs.AuthenticationToken
+
         authc_token's password is cleartext that is stored as a bytearray.
         The authc_token password is cleared in memory, within the authc_token,
         when authentication is successful.
@@ -592,7 +631,7 @@ class DelegatingSubject(subject_abcs.Subject):
     @session.setter
     def session(self, session):
         """
-        :type session:  Session object
+        :type session:  session_abcs.Session
         """
         if (isinstance(session, session_abcs.Session) or session is None):
             self._session = session
@@ -600,6 +639,9 @@ class DelegatingSubject(subject_abcs.Subject):
             raise InvalidArgumentException('must use Session object')
 
     def get_session(self, create=True):
+        """
+        :type create:  bool
+        """
         if logger.getEffectiveLevel() <= logging.DEBUG:
             msg = ("attempting to get session; create = " + str(create) +
                    "; \'session is None\' = " + str(self.session is None) +
@@ -696,7 +738,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def run_as(self, identifiers):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
         """
         if (not self.has_identifiers):
             msg = ("This subject does not yet have an identity.  Assuming the "
@@ -749,7 +791,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def push_identity(self, identifiers):
         """
-        :type identifiers: IdentifierCollection
+        :type identifiers: subject_abcs.IdentifierCollection
         """
         if (not identifiers):
             msg = ("Specified Subject identifiers cannot be None or empty "
@@ -787,11 +829,16 @@ class DelegatingSubject(subject_abcs.Subject):
     class StoppingAwareProxiedSession(ProxiedSession):
 
         def __init__(self, target_session, owning_subject):
+            """
+            :type target_session:  session_abcs.Session
+            :type owning_subject:  subject_abcs.Subject
+            """
             super().__init__(target_session)
             self.owner = owning_subject
 
         def stop(self, identifiers):
             """
+            :type identifiers:  subject_abcs.IdentifierCollection
             :raises InvalidSessionException:
             """
             super().stop(identifiers)
@@ -799,6 +846,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def __repr__(self):
         return "StoppingAwareProxiedSession()"
+
 
 # migrated from /mgt:
 class DefaultSubjectStore:
@@ -879,6 +927,8 @@ class DefaultSubjectStore:
 
     def is_session_storage_enabled(self, subject):
         """
+        :type subject:  subject_abcs.Subject
+
         Determines whether the subject's session will be used to persist
         subject state.  This default implementation merely delegates to the
         internal DefaultSessionStorageEvaluator.
@@ -892,6 +942,9 @@ class DefaultSubjectStore:
 
     @session_storage_evaluator.setter
     def session_storage_evaluator(self, sse):
+        """
+        :type sse:  session_abcs.SessionStorageEvaluator
+        """
         self._session_storage_evaluator = sse
 
     def save(self, subject):
@@ -905,6 +958,8 @@ class DefaultSubjectStore:
 
         :param subject: the Subject instance for which its state will be
                         created or updated
+        :type subject:  subject_abcs.Subject
+
         :returns: the same Subject passed in (a new Subject instance is
                   not created).
         """
@@ -928,6 +983,7 @@ class DefaultSubjectStore:
 
         :param subject: the subject for which state will be persisted to a
                         session
+        :type subject:  subject_abcs.Subject
         """
         # performs merge logic, only updating the Subject's session if it
         # does not match the current state:
@@ -944,6 +1000,7 @@ class DefaultSubjectStore:
 
         :param subject: the Subject whose identifying attributes will
                         potentially merge with those in the Subject's session
+        :type subject:  subject_abcs.Subject
         """
         current_identifiers = None
         if subject.is_run_as:
@@ -976,6 +1033,9 @@ class DefaultSubjectStore:
                 # otherwise they're the same - no need to update the session
 
     def merge_authentication_state(self, subject):
+        """
+        :type subject:  subject_abcs.Subject
+        """
         session = subject.get_session(False)
 
         if (not session):
@@ -998,6 +1058,9 @@ class DefaultSubjectStore:
                 # no need to update the session
 
     def remove_from_session(self, subject):
+        """
+        :type subject:  subject_abcs.Subject
+        """
         session = subject.get_session(False)
         if (session):
             session.remove_internal_attribute(self.dsc_ask)
@@ -1051,7 +1114,6 @@ class SubjectBuilder:
             self.subject_context = subject_context
 
     def context_attribute(self, attribute_key, attribute_value=None):
-
         """
         Allows custom attributes to be added to the underlying context Map used
         to construct the Subject instance.
@@ -1092,6 +1154,9 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         pass
 
     def create_subject(self, subject_context):
+        """
+        :type subject_context:  subject_abcs.SubjectContext
+        """
         security_manager = subject_context.resolve_security_manager()
         session = subject_context.resolve_session()
         session_creation_enabled = subject_context.session_creation_enabled
@@ -1157,5 +1222,7 @@ class SecurityUtils:
         """
         Sets a singleton SecurityManager, specifically for transparent use in the
         get_subject() implementation
+
+        :type security_manager:  mgt_abcs.SecurityManager
         """
         cls.security_manager = security_manager

@@ -16,8 +16,10 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import copy
+import collections
 import logging
-from marshmallow import Schema, fields, post_load
+from marshmallow import Schema, fields, post_load, pre_dump, pre_load
 
 from yosai.core import (
     InvalidArgumentException,
@@ -56,7 +58,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         :type identifier: String or ?
         :type identifier_collection:  subject_abcs.MutableIdentifierCollection
         """
-        self.source_identifiers = {}
+        self.source_identifiers = collections.OrderedDict()
         self._primary_identifier = None
 
         if identifier_collection:
@@ -65,24 +67,20 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             self.add(source_name=source_name,
                      identifier=identifier)
 
-    # yosai.core.omits asSet, asList, and toString  -- TBD
-
     @property
     def primary_identifier(self):
         if (not self._primary_identifier):
             try:
-                # DG:  shiro arbitrarily selects for missing primary identifier
+                # obtains the first identifier added via authentication:
                 identifiers = self.source_identifiers.values()
                 primary_identifier = next(iter(identifiers))
             except (AttributeError, TypeError):
-                msg = "Failed to arbitrarily obtain primary identifier"
+                msg = "Failed to obtain primary identifier"
                 logger.warning(msg)
                 return None
             self._primary_identifier = primary_identifier
             return primary_identifier
         return self._primary_identifier
-
-    # there is no primary_identifier setter because it should not be manually set
 
     def add(self, source_name, identifier):
         """
@@ -140,8 +138,6 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         return False
 
     def __repr__(self):
-        keyvals = ','.join(str(key) + '=' + str(value) for (key, value) in
-                           self.source_identifiers.items())
         return "SimpleIdentifierCollection({0}, primary_identifier={1})".format(
                 self.source_identifiers, self.primary_identifier)
 
@@ -158,13 +154,24 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         consisting of the actual realms(sources) used.
         """
         class SerializationSchema(Schema):
-            source_identifiers = fields.Dict(allow_none=True)
+            source_identifiers = fields.List(fields.List(fields.String()), allow_none=True)
             _primary_identifier = fields.String(allow_none=True)
+
+            @pre_dump
+            def convert_source_identifiers(self, sic):
+                mysic = copy.copy(sic)
+                new_si = list([key, value] for key, value in
+                              mysic.source_identifiers.items())
+                mysic.source_identifiers = new_si
+                mysic._primary_identifier = sic._primary_identifier
+                return mysic
 
             @post_load
             def make_authz_info(self, data):
                 mycls = SimpleIdentifierCollection
                 instance = mycls.__new__(mycls)
+                new_si = data['source_identifiers']
+                data['source_identifiers'] = collections.OrderedDict(new_si)
                 instance.__dict__.update(data)
                 return instance
 

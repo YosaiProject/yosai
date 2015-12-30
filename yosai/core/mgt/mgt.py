@@ -674,7 +674,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :type identifiers: SimpleIdentifierCollection
 
         :param roleid_s: 1..N role identifier
-        :type roleid_s:  a String or List of Strings
+        :type roleid_s:  Set of Strings
 
         :returns: a tuple containing the roleid and a boolean indicating
                   whether the role is assigned (this is different than Shiro)
@@ -690,7 +690,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :type: and OR all (from python standard library)
 
         :param roleid_s: 1..N role identifier
-        :type roleid_s:  a String or List of Strings
+        :type roleid_s:  a Set of Strings
 
         :returns: a Boolean
         """
@@ -702,7 +702,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :type identifiers: SimpleIdentifierCollection
 
         :param roleid_s: 1..N role identifier
-        :type roleid_s:  a String or List of Strings
+        :type roleid_s:  a Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)

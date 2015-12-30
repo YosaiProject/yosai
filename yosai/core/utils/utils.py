@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -18,7 +18,6 @@ under the License.
 """
 
 import collections
-import inspect
 import datetime
 import time
 
@@ -35,7 +34,7 @@ class memoized_property:
     def __get__(self, obj, cls):
         if obj is None:
             return self
-        result = self.fget(obj) 
+        result = self.fget(obj)
         setattr(obj, self.__name__, result)
 
         self.counter += 1
@@ -47,11 +46,11 @@ def unix_epoch_time():
 
 
 class OrderedSet(collections.MutableSet):
-    # The Following recipe was posted by Raymond Hettinger 
+    # The Following recipe was posted by Raymond Hettinger
     # at:  http://code.activestate.com/recipes/576694/
 
     def __init__(self, iterable=None):
-        self.end = end = [] 
+        self.end = end = []
         end += [None, end, end]         # sentinel node for doubly linked list
         self.map = {}                   # key --> [key, prev, next]
         if iterable is not None:
@@ -70,7 +69,7 @@ class OrderedSet(collections.MutableSet):
             curr[2] = end[1] = self.map[key] = [key, curr, end]
 
     def discard(self, key):
-        if key in self.map:        
+        if key in self.map:
             key, prev, next = self.map.pop(key)
             prev[2] = next
             next[1] = prev

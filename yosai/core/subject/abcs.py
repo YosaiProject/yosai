@@ -17,20 +17,64 @@ specific language governing permissions and limitations
 under the License.
 """
 
-
 from abc import ABCMeta, abstractmethod
-from yosai.core import (
-    InvalidArgumentException,
-    InvalidArgumentException,
-    IllegalStateException,
-)
 
 
 class IdentifierCollection(metaclass=ABCMeta):
+    """
+    A collection of all identifiers associated with a corresponding Subject.
+    An *identifier* in this context is an identifying attribute, such as a
+    username or user id or social security number or anything else considered
+    an 'identifying' attribute for a Subject.
+
+    An IdentifierCollection organizes its internal identifiers based on the
+    Realm where they came from when the Subject was first created.  To obtain
+    the identifiers(s) for a specific source (realm), see the from_source method.
+    You can also see which realms contributed to this collection via the
+    source_names property.
+    """
 
     @property
     @abstractmethod
     def primary_identifier(self):
+        """
+        Returns the primary identifier used application-wide to uniquely identify
+        the owning account/Subject.
+
+        The value is usually always a uniquely identifying attribute specific to
+        the data source that retrieved the account data.  Some examples:
+
+         - a UUID
+         - a long integer value such as a surrogate primary key in a relational database
+         - an LDAP UUID or static DN
+         - a String username unique across all user accounts
+
+        Multi-Realm Applications
+        -------------------------
+         In a single-Realm application, typically there is only ever one unique
+         principal to retain and that is the value returned from this method.
+         However, in a multi-Realm application, where the IdentifierCollection
+         might retain identifiers across more than one realm, the value returned
+         from this method should be the single identifier that uniquely identifies
+         the subject for the entire application.
+
+         That value is of course application specific, but most applications will
+         typically choose one of the primary identifiers from one of the Realms.
+         Yosai's default implementations of this interface make this assumption
+         by usually simply returning the next iterated upon identifier
+         obtained from the first consulted/configured Realm during the
+         authentication attempt.  This means in a multi-Realm application, Realm
+         configuraiton order matters if you want to retain this default heuristic.
+
+         If this heuristic is not sufficient, most Shiro end-users will need to
+         implement a custom AuthenticationStrategy.  An AuthenticationStrategy
+         has exact control over the IdentifierCollection returned at the end of
+         an authentication attempt via the AuthenticationStrategy
+         implementation.
+
+         :returns: the primary identifier used to uniquely identify the owning
+                   account/Subject
+        """
         pass
 
     @abstractmethod
