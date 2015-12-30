@@ -47,3 +47,6 @@ class Account(account_abcs.Account):
     @authz_info.setter
     def authz_info(self, authz_info):
         self._authz_info = authz_info
+
+    def __repr__(self):
+        return "Account(account_id={0})".format(self._account_id)

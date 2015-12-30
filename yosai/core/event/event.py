@@ -214,8 +214,8 @@ class EventLogger(event_abcs.EventBusAware):
             # Permission objects are serializable
             new_items = [item.serialize() for item in items]
         except:
-            # presumably roleid strings
-            new_items = items
+            # presumably a set of roleid strings
+            new_items = list(items)
 
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,
@@ -229,8 +229,8 @@ class EventLogger(event_abcs.EventBusAware):
             # Permission objects are serializable
             new_items = [item.serialize() for item in items]
         except:
-            # presumably roleid strings
-            new_items = items
+            # presumably a set of roleid strings
+            new_items = list(items)
 
         identifiers = identifiers.serialize()
         logger.info(topic, extra={'identifiers': identifiers,

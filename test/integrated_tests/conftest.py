@@ -88,6 +88,18 @@ def thedude_identifier():
                                       identifier='thedude')
 
 @pytest.fixture(scope='session')
+def jackie_identifier():
+    return SimpleIdentifierCollection(source_name='AccountStoreRealm',
+                                      identifier='jackie')
+
+
+@pytest.fixture(scope='session')
+def walter_identifier():
+    return SimpleIdentifierCollection(source_name='AccountStoreRealm',
+                                      identifier='walter')
+
+
+@pytest.fixture(scope='session')
 def thedude(cache_handler, request, thedude_identifier, session):
     thedude = UserModel(first_name='Jeffrey',
                         last_name='Lebowski',
@@ -100,12 +112,6 @@ def thedude(cache_handler, request, thedude_identifier, session):
 
 
 @pytest.fixture(scope='session')
-def jackie_identifier():
-    return SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                      identifier='jackie')
-
-
-@pytest.fixture(scope='session')
 def jackie(cache_handler, request, jackie_identifier, session):
     jackie = UserModel(first_name='Jackie',
                        last_name='Treehorn',
@@ -113,14 +119,7 @@ def jackie(cache_handler, request, jackie_identifier, session):
     session = session()
     session.add(jackie)
     session.commit()
-
     return jackie
-
-
-@pytest.fixture(scope='session')
-def walter_identifier():
-    return SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                      identifier='walter')
 
 
 @pytest.fixture(scope='session')
@@ -131,7 +130,6 @@ def walter(cache_handler, request, walter_identifier, session):
     session = session()
     session.add(walter)
     session.commit()
-
     return walter
 
 
@@ -149,6 +147,16 @@ def walter_username_password_token():
                                  password='vietnam',
                                  remember_me=False,
                                  host='127.0.0.1')
+
+
+@pytest.fixture(scope='session')
+def clear_cached_credentials(cache_handler, request, thedude):
+    def remove_credentials():
+        nonlocal cache_handler
+        cache_handler.delete(domain="credentials",
+                             identifier=thedude.identifier)
+
+    request.addfinalizer(remove_credentials)
 
 
 @pytest.fixture(scope='session')
@@ -185,16 +193,6 @@ def invalid_username_password_token():
                                  password='never_use__password__',
                                  remember_me=False,
                                  host='127.0.0.1')
-
-
-@pytest.fixture(scope='session')
-def clear_cached_credentials(cache_handler, request, thedude):
-    def remove_credentials():
-        nonlocal cache_handler
-        cache_handler.delete(domain="credentials",
-                             identifier=thedude.identifier)
-
-    request.addfinalizer(remove_credentials)
 
 
 @pytest.fixture(scope='session')
