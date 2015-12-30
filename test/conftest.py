@@ -11,12 +11,12 @@ from yosai.core import (
     UsernamePasswordToken,
 )
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def authz_info_resolver():
     return AuthzInfoResolver(IndexedAuthorizationInfo)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def credential_resolver():
     return CredentialResolver(Credential)
 
@@ -37,7 +37,7 @@ def permission_collection():
             DefaultPermission(wildcard_string='*:action5')}
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def permission_resolver():
     return PermissionResolver(DefaultPermission)
 
@@ -49,7 +49,7 @@ def role_collection():
             SimpleRole('role3')}
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def role_resolver():
     return RoleResolver(SimpleRole)
 

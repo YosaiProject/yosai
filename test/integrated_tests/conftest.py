@@ -1,9 +1,11 @@
+import pdb
 from marshmallow import Schema, fields
 
 from yosai.core import (
     AccountStoreRealm,
     NativeSecurityManager,
     event_bus,
+    load_logconfig,
     UsernamePasswordToken,
     SecurityUtils,
     SimpleIdentifierCollection,
@@ -11,16 +13,14 @@ from yosai.core import (
 
 from yosai_alchemystore import (
     Base,
-    engine,
+    init_engine,
+    init_session,
 )
+
 
 from yosai_alchemystore.models.models import (
     UserModel,
     CredentialModel,
-)
-
-from yosai_alchemystore import (
-    Session,
 )
 
 
@@ -40,9 +40,11 @@ from passlib.context import CryptContext
 import datetime
 import pytest
 
+load_logconfig()
 
-@pytest.fixture(scope='module')
-def test_db(request):
+@pytest.fixture(scope='session')
+def session(request):
+    engine = init_engine()
     Base.metadata.create_all(engine)
 
     def drop_all():
@@ -50,18 +52,20 @@ def test_db(request):
 
     request.addfinalizer(drop_all)
 
+    return init_session(engine=engine)
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope='session')
 def cache_handler():
     return DPCacheHandler()
 
 
-@pytest.fixture(scope='module')
-def alchemy_store():
-    return AlchemyAccountStore()
+@pytest.fixture(scope='session')
+def alchemy_store(session):
+    return AlchemyAccountStore(session=session)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def account_store_realm(cache_handler, alchemy_store, permission_resolver,
                         role_resolver, authz_info_resolver, credential_resolver):
 
@@ -78,67 +82,60 @@ def account_store_realm(cache_handler, alchemy_store, permission_resolver,
     return asr
 
 
-#def init_test_db():
-# creates an in-memory sqlite instance
-#    engine = create_engine('sqlite://')
-
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def thedude_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                       identifier='thedude')
 
-@pytest.fixture(scope='module')
-def thedude(test_db, cache_handler, request, thedude_identifier):
+@pytest.fixture(scope='session')
+def thedude(cache_handler, request, thedude_identifier, session):
     thedude = UserModel(first_name='Jeffrey',
                         last_name='Lebowski',
                         identifier='thedude')
-
-    session = Session()
+    session = session()
     session.add(thedude)
     session.commit()
 
     return thedude
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def jackie_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                       identifier='jackie')
 
 
-@pytest.fixture(scope='module')
-def jackie(test_db, cache_handler, request, jackie_identifier):
+@pytest.fixture(scope='session')
+def jackie(cache_handler, request, jackie_identifier, session):
     jackie = UserModel(first_name='Jackie',
                        last_name='Treehorn',
                        identifier='jackie')
-
-    session = Session()
+    session = session()
     session.add(jackie)
     session.commit()
 
     return jackie
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def walter_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                       identifier='walter')
 
 
-@pytest.fixture(scope='module')
-def walter(test_db, cache_handler, request, walter_identifier):
+@pytest.fixture(scope='session')
+def walter(cache_handler, request, walter_identifier, session):
     walter = UserModel(first_name='Walter',
                        last_name='Sobchak',
                        identifier='walter')
-
-    session = Session()
+    session = session()
     session.add(walter)
     session.commit()
 
     return walter
 
 
-@pytest.fixture(scope='function')  # because successful login clears password
+@pytest.fixture(scope='session')  # because successful login clears password
 def jackie_username_password_token():
     return UsernamePasswordToken(username='jackie',
                                  password='business',
@@ -146,7 +143,7 @@ def jackie_username_password_token():
                                  host='127.0.0.1')
 
 
-@pytest.fixture(scope='function')  # because successful login clears password
+@pytest.fixture(scope='session')  # because successful login clears password
 def walter_username_password_token():
     return UsernamePasswordToken(username='walter',
                                  password='vietnam',
@@ -154,7 +151,7 @@ def walter_username_password_token():
                                  host='127.0.0.1')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def clear_jackie_cached_credentials(cache_handler, request, jackie):
     def remove_jackie_credentials():
         nonlocal cache_handler
@@ -164,7 +161,7 @@ def clear_jackie_cached_credentials(cache_handler, request, jackie):
     request.addfinalizer(remove_jackie_credentials)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def clear_walter_cached_credentials(cache_handler, request, walter):
     def remove_walter_credentials():
         nonlocal cache_handler
@@ -174,7 +171,7 @@ def clear_walter_cached_credentials(cache_handler, request, walter):
     request.addfinalizer(remove_walter_credentials)
 
 
-@pytest.fixture(scope='function')  # because successful login clears password
+@pytest.fixture(scope='session')  # because successful login clears password
 def valid_username_password_token():
     return UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
@@ -182,7 +179,7 @@ def valid_username_password_token():
                                  host='127.0.0.1')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def invalid_username_password_token():
     return UsernamePasswordToken(username='thedude',
                                  password='never_use__password__',
@@ -190,7 +187,7 @@ def invalid_username_password_token():
                                  host='127.0.0.1')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def clear_cached_credentials(cache_handler, request, thedude):
     def remove_credentials():
         nonlocal cache_handler
@@ -200,8 +197,8 @@ def clear_cached_credentials(cache_handler, request, thedude):
     request.addfinalizer(remove_credentials)
 
 
-@pytest.fixture(scope='module')
-def thedude_credentials(request, thedude, clear_cached_credentials):
+@pytest.fixture(scope='session')
+def thedude_credentials(request, thedude, clear_cached_credentials, session):
     password = "letsgobowling"
     cc = CryptContext(["bcrypt_sha256"])
     credentials = cc.encrypt(password)
@@ -209,16 +206,15 @@ def thedude_credentials(request, thedude, clear_cached_credentials):
     credential = CredentialModel(user_id=thedude.pk_id,
                                  credential=credentials,
                                  expiration_dt=thirty_from_now)
-
-    session = Session()
+    session = session()
     session.add(credential)
     session.commit()
 
     return credentials
 
 
-@pytest.fixture(scope='module')
-def jackie_credentials(request, jackie, clear_jackie_cached_credentials):
+@pytest.fixture(scope='session')
+def jackie_credentials(request, jackie, clear_jackie_cached_credentials, session):
     password = "business"
     cc = CryptContext(["bcrypt_sha256"])
     credentials = cc.encrypt(password)
@@ -226,16 +222,15 @@ def jackie_credentials(request, jackie, clear_jackie_cached_credentials):
     credential = CredentialModel(user_id=jackie.pk_id,
                                  credential=credentials,
                                  expiration_dt=thirty_from_now)
-
-    session = Session()
+    session = session()
     session.add(credential)
     session.commit()
 
     return credentials
 
 
-@pytest.fixture(scope='module')
-def walter_credentials(request, walter, clear_walter_cached_credentials):
+@pytest.fixture(scope='session')
+def walter_credentials(request, walter, clear_walter_cached_credentials, session):
     password = "vietnam"
     cc = CryptContext(["bcrypt_sha256"])
     credentials = cc.encrypt(password)
@@ -243,15 +238,14 @@ def walter_credentials(request, walter, clear_walter_cached_credentials):
     credential = CredentialModel(user_id=walter.pk_id,
                                  credential=credentials,
                                  expiration_dt=thirty_from_now)
-
-    session = Session()
+    session = session()
     session.add(credential)
     session.commit()
 
     return credentials
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def native_security_manager(account_store_realm, cache_handler):
 
     class AttributesSchema(Schema):
@@ -264,17 +258,17 @@ def native_security_manager(account_store_realm, cache_handler):
     return nsm
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def configured_securityutils(native_security_manager):
     SecurityUtils.security_manager = native_security_manager
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def new_subject(configured_securityutils):
     return SecurityUtils.get_subject()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def clear_cached_authz_info(cache_handler, request):
     def remove_authz_info():
         nonlocal cache_handler
@@ -284,7 +278,7 @@ def clear_cached_authz_info(cache_handler, request):
     request.addfinalizer(remove_authz_info)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def clear_jackie_cached_authz_info(cache_handler, request):
     def remove_jackie_authz_info():
         nonlocal cache_handler
@@ -294,7 +288,7 @@ def clear_jackie_cached_authz_info(cache_handler, request):
     request.addfinalizer(remove_jackie_authz_info)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def clear_walter_cached_authz_info(cache_handler, request):
     def remove_walter_authz_info():
         nonlocal cache_handler
@@ -304,10 +298,10 @@ def clear_walter_cached_authz_info(cache_handler, request):
     request.addfinalizer(remove_walter_authz_info)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def authz_info(request, cache_handler, thedude, jackie, walter,
                clear_cached_authz_info, clear_jackie_cached_authz_info,
-               clear_walter_cached_authz_info):
+               clear_walter_cached_authz_info, session):
 
     domains = [DomainModel(name='money'),
                DomainModel(name='leatherduffelbag')]
@@ -332,7 +326,7 @@ def authz_info(request, cache_handler, thedude, jackie, walter,
              RoleModel(title='bankcustomer'),
              RoleModel(title='bowler')]
 
-    session = Session()
+    session = session()
     session.add_all(roles + domains + actions + resources)
 
     domains = dict((domain.name, domain) for domain in session.query(DomainModel).all())
@@ -395,7 +389,7 @@ def authz_info(request, cache_handler, thedude, jackie, walter,
     session.commit()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def thedude_testpermissions(authz_info, permission_resolver):
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
     perm2 = permission_resolver('money:withdrawal')
@@ -410,7 +404,7 @@ def thedude_testpermissions(authz_info, permission_resolver):
     return dict(perms=perms, expected_results=expected_results)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def thedude_testroles(authz_info):
     roles = {'bankcustomer', 'courier', 'gangster'}
 
@@ -421,7 +415,7 @@ def thedude_testroles(authz_info):
     return dict(roles=roles, expected_results=expected_results)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def jackie_testpermissions(authz_info, permission_resolver):
 
     perm1 = permission_resolver('money:access:ransom')
@@ -436,7 +430,7 @@ def jackie_testpermissions(authz_info, permission_resolver):
     return dict(perms=perms, expected_results=expected_results)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def walter_testpermissions(authz_info, permission_resolver):
 
     perm1 = permission_resolver('leatherduffelbag:transport:theringer')
