@@ -181,11 +181,12 @@ def test_check_role_raises(
         new_subject.check_role(tr['roles'], all)
 
         assert event_detected == tr['roles']
+        new_subject.logout()
 
 
 def test_run_as_raises(new_subject, walter, walter_identifier):
-    new_subject.logout()
     # a login is required , so this should raise:
+    new_subject.logout()
     with pytest.raises(IllegalStateException):
         new_subject.run_as(walter_identifier)
 
@@ -258,6 +259,7 @@ def test_login_clears_cache(
     out = caplog.text
 
     assert 'Clearing cached authz_info for [thedude]' in out
+    new_subject.logout()
 
 
 def test_session_idle_expiration_clears_cache(
@@ -286,6 +288,8 @@ def test_session_idle_expiration_clears_cache(
         out = caplot.text
         assert ('Clearing cached credentials for [thedude]' in out and
                 'Clearing cached authz_info for [thedude]' in out)
+    
+        new_subject.logout()
 
 
 def test_absolute_expired_session(
@@ -305,3 +309,4 @@ def test_absolute_expired_session(
 
     with pytest.raises(UnknownSessionException):
         new_subject.is_permitted(tp['perms'])
+        new_subject.logout()
