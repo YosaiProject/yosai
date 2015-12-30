@@ -81,11 +81,13 @@ class LazySettings:
         defined configuration process is called during the settings
         configuration process.
         """
-        settings_file = os.environ.get(self.__dict__['env_var'])
+        envvar = self.__dict__['env_var']
+        settings_file = os.environ.get(envvar)
         if not settings_file:
             msg = ("Requested {desc}, but settings are not configured. "
-                   "You must define the environment variable YOSAI_CORE_SETTINGS. ".
-                   format(desc=("setting: " + name) if name else "settings"))
+                   "You must define the environment variable: {envvar}".
+                   format(desc=("setting: " + name) if name else "settings",
+                          envvar=envvar))
             raise MisconfiguredException(msg)
 
         self._wrapped = Settings(settings_file)

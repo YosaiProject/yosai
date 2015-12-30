@@ -133,7 +133,6 @@ from yosai.core.conf.yosaisettings import (
 from yosai.core.logging.slogging import (
     load_logconfig,
 )
-load_logconfig()
 
 
 from yosai.core.serialize.serialize import (
