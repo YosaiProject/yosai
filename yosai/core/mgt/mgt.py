@@ -673,11 +673,11 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         """
         :type identifiers: SimpleIdentifierCollection
 
-        :param roleid_s: 1..N role identifier
+        :param roleid_s: 1..N role identifiers (strings)
         :type roleid_s:  Set of Strings
 
-        :returns: a tuple containing the roleid and a boolean indicating
-                  whether the role is assigned (this is different than Shiro)
+        :returns: a frozenset of tuple(s), containing the roleid and a Boolean
+                  indicating whether the user is a member of the Role
         """
         return self.authorizer.has_role(identifiers, roleid_s)
 

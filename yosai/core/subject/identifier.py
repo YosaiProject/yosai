@@ -56,7 +56,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         """
         :type source_name: String
         :type identifier: String or ?
-        :type identifier_collection:  subject_abcs.MutableIdentifierCollection
+        :type identifier_collection:  subject_abcs.IdentifierCollection
         """
         self.source_identifiers = collections.OrderedDict()
         self._primary_identifier = None
@@ -91,8 +91,6 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
 
     def add_collection(self, identifier_collection):
         """
-        an overloaded method that will add a collection ELSE a single identifer
-
         :type identifier_collection: a SimpleIdentifierCollection
         """
         try:
@@ -128,7 +126,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         return (not self.source_identifiers.keys())
 
     def clear(self):
-        self.source_identifiers = {}
+        self.source_identifiers = collections.OrderedDict()
 
     def __eq__(self, other):
         if self is other:
