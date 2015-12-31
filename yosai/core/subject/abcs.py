@@ -529,7 +529,8 @@ class Subject(metaclass=ABCMeta):
 
         :param logical_operator:  any or all
         :type logical_operator:  function  (stdlib)
-        :returns:  bool
+
+        :rtype:  bool
         """
         pass
 
@@ -594,7 +595,7 @@ class Subject(metaclass=ABCMeta):
         :param logical_operator:  any or all
         :type logical_operator:  function  (stdlib)
 
-        :returns:  bool
+        :rtype:  bool
         """
         pass
 
@@ -637,7 +638,7 @@ class Subject(metaclass=ABCMeta):
         Upon returning quietly, this Subject instance can be considered
         authenticated and its identifiers attribute will be non-None and
         its authenticated property will be True.
-        
+
         :param authc_token: the token encapsulating the subject's identifiers
                             and credentials to be passed to the Authentication
                             subsystem for verification
@@ -650,19 +651,125 @@ class Subject(metaclass=ABCMeta):
     @property
     @abstractmethod
     def authenticated(self):
+        """
+        Returns True if this Subject/user proved its identity *during its current
+        session* by providing valid credentials matching those known to the system,
+        False otherwise.
+
+        Note that even if this Subject's identity has been remembered via
+        'remember me' services, this method will still return False unless the
+        user has actually logged in with proper credentials *during its
+        current session*.
+        """
         pass
 
     @property
     @abstractmethod
     def is_remembered(self):
+        """
+        Returns True} if this Subject has an identity (it is not anonymous) and
+        the identity (aka identifiers}) is remembered from a successful
+        authentication during a previous session.
+
+        Although the underlying implementation determines exactly how this
+        method functions, most implementations have this method act as the
+        logical equivalent to this code:
+
+            - subject.identifiers is not None and subject.authenticated
+
+        Note as indicated by the above code example, if a Subject is remembered,
+        it is *NOT* considered authenticated.  A check against authenticated
+        is a more strict check than that reflected by this method.  For example,
+        a check to see whether a subject can access financial information should
+        almost always depend on subject.authenticated rather, than this method,
+        to *guarantee* a verified identity.
+
+        Once the subject is authenticated, it is no longer considered only
+        remembered because its identity would have been verified during the
+        current session.
+
+        Remembered vs Authenticated
+        -----------------------------
+        Authentication is the process of *proving* a subject is who it claims to
+        be.  When a user is only remembered, the remembered identity gives the
+        system an idea who that user probably is, but in reality, the system
+        has no way of absolutely *guaranteeing* whether the remembered Subject
+        represents the user currently using the application.
+
+        So, although many parts of the application can still perform user-specific
+        logic based on the remembered identifiers, such as customized views,
+        the application should never perform highly-sensitive operations until
+        the user has legitimately verified its identity by executing a successful
+         authentication attempt.
+
+        We see this paradigm all over the web, and we will use
+        <a href="http://www.amazon.com">Amazon.com</a> as an example:
+
+        When you visit Amazon.com and perform a login and ask it to 'remember me',
+         Amazon will set a cookie with your identity.  If you don't log out and
+        your session expires, but you come back the next day, Amazon still knows
+        who you *probably* are and so you see all of your book and movie
+        recommendations and similar user-specific features since these are based
+        on your (remembered) user id (identifiers).
+
+        However, if you try to do something sensitive, such as access your
+        account's billing data, Amazon forces you to perform an actual log-in,
+        requiring your username and password.
+
+        Amazon does this because although it assumes your identity from
+        'remember me', it recognized that you were not actually authenticated.
+        The only way to really guarantee you are who you say you are, and
+        therefore allow you access to sensitive account data, is to require you
+        to perform an actual successful authentication.  You can check this
+        guarantee via the subject.authenticated method and not via this method.
+
+        :returns: True if this Subject's identity (aka identifiers) is
+                  remembered from a successful authentication during a previous
+                  session, False otherwise
+
+        :rtype:  bool
+        """
         pass
 
     @abstractmethod
     def get_session(self, create=None):
+        """
+        Returns the application Session associated with this Subject based on
+        the following criteria:
+            - If there is already an existing Session associated with this
+              Subject, it is returned and the create argument is ignored.
+            - If no Session exists and create is True, a new Session is created,
+              associated with this Subject and then returned.
+            - If no Session exists and create is False, None is returned.
+
+        :returns: the application Session associated with this Subject
+        """
         pass
 
     @abstractmethod
     def logout(self):
+        """
+        Logs out this Subject and invalidates and/or removes any associated
+        entities, such as a Session and authorization data.  After this method
+        is called, the Subject is considered 'anonymous' and may continue to be
+        used for another log-in, if desired.
+
+        Web Environment Warning
+        -------------------------
+        Calling this method in web environments will usually remove any
+        associated session cookie as part of session invalidation.  Because
+        cookies are part of the HTTP header, and headers can only be set before
+        the response body (html, image, etc) is sent, this method in web
+        environments must be called before *any* content is rendered.
+
+        The typical approach most applications use in this scenario is to redirect
+        the user to a different location (e.g. home page) immediately after
+        calling this method.  This is an effect of the HTTP protocol itself and
+        not a reflection of Yosai's implementation.
+
+        Non-HTTP environments may of course use a logged-out subject for login
+        again if desired.
+        """
         pass
 
     # TBD:  commenting out until concurrency is decided:
@@ -677,18 +784,71 @@ class Subject(metaclass=ABCMeta):
 
     @abstractmethod
     def run_as(self, identifiers):
+        """
+        Allows this subject to 'run as' or 'assume' another identity indefinitely.
+        This method can only be called when the Subject instance already has an
+        identity (i.e. it is remembered from a previous log-in or it has
+        authenticated in its current session).
+
+        Some notes about run_as:
+
+        - You can determine whether a Subject is 'running as' another identity
+          by checking the run_as property.
+        - If running as another identity, you can determine what the previous
+          identity, the identity just prior to running-as, is by calling the
+          get_previous_identifiers method.
+        - When you want a Subject to stop running as another identity, you can
+          return to its previous identity (the identity just prior to running-as)
+          by calling the release_run_as method.
+
+        :param identifiers: the identity to 'run as', aka the identity to
+                            *assume* indefinitely
+        :type identifiers:  subject_abcs.IdentifierCollection
+
+        :raises IllegalStateException: if this Subject does not yet have an
+                                       identity of its own (hasn't authenticated)
+        """
         pass
 
     @abstractmethod
     def is_run_as(self):
+        """
+        Returns True if this Subject is 'running as' another identity other than
+        its original one or False otherwise (normal Subject state).  See the
+        run_as method for more information.
+
+        :returns: True if this Subject is 'running as' another identity other
+                  than its original one or False otherwise (normal Subject state)
+        :rtype: bool
+        """
         pass
 
     @abstractmethod
     def get_previous_identifiers(self):
+        """
+        Returns the previous 'pre run as' identity of this Subject before
+        assuming the current run_as identity, or None if this Subject is not
+        operating under an assumed identity (normal state). See the run_as
+        method for more information.
+
+        :returns: the previous 'pre run as' identity of this Subject before
+                  assuming the current run_as identity, or None if this Subject
+                  is not operating under an assumed identity (normal state)
+        """
         pass
 
     @abstractmethod
     def release_run_as(self):
+        """
+        This method releases the current 'run as' (assumed) identity and reverts
+        to the previous 'pre run as' identity that existed before run_as was called.
+
+        This method returns 'run as' (assumed) identity being released or None
+        if this Subject is not operating under an assumed identity.
+
+        :returns: the 'run as' (assumed) identity being released or None if this
+                  Subject is not operating under an assumed identity
+        """
         pass
 
     def __eq__(self, other):

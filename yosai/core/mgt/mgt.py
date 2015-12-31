@@ -382,7 +382,6 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
 
 # also known as ApplicationSecurityManager in Shiro 2.0 alpha:
-
 class NativeSecurityManager(mgt_abcs.SecurityManager,
                             event_abcs.EventBusAware,
                             cache_abcs.CacheHandlerAware):
@@ -738,6 +737,35 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                        account=None,
                        existing_subject=None,
                        subject_context=None):
+        """
+        Creates a Subject instance for the user represented by the given method
+        arguments.
+
+        This implementation functions as follows:
+
+        - Ensures that the SubjectContext exists and is as populated as it can be,
+          using heuristics to acquire data that may not have already been available
+          to it (such as a referenced session or remembered identifiers).
+        - Calls subject_context.do_create_subject to perform the Subject
+          instance creation
+        - Calls subject.save to ensure the constructed Subject's state is
+          accessible for future requests/invocations if necessary
+        - Returns the constructed Subject instance
+
+        :type authc_token:  subject_abcs.AuthenticationToken
+
+        :param account:  the Account of a newly authenticated user
+        :type account:  account_abcs.Account
+
+        :param existing_subject: the existing Subject instance that initiated the
+                                 authentication attempt
+        :type subject:  subject_abcs.Subject
+
+        :type subject_context:  subject_abcs.SubjectContext
+
+        :returns:  the Subject instance that represents the context and session
+                   data for the newly authenticated subject
+        """
 
         if subject_context is None:
             context = self.create_subject_context()
@@ -829,7 +857,21 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                     logger.warning(msg, exc_info=True)
 
     def login(self, subject, authc_token):
+        """
+        First authenticates the AuthenticationToken argument, and if successful,
+        constructs a Subject instance representing the authenticated account's
+        identity.
 
+        Once constructed, the Subject instance is then bound to the application
+        for subsequent access before being returned to the caller.
+
+        :param authc_token: the authenticationToken to process for the login attempt
+        :type authc_token:  authc_abcs.authenticationToken
+
+        :returns: a Subject representing the authenticated user
+        :raises AuthenticationException:  if there is a problem authenticating
+                                          the specified authc_token
+        """
         try:
             account = self.authenticate_account(authc_token)
         except AuthenticationException as authc_ex:
@@ -861,9 +903,26 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         return DefaultSubjectContext(subject_context)
 
     def do_create_subject(self, subject_context):
+        """
+        This method creates a Subject instance by delegating to the internal
+        subject_factory.  By the time this method is invoked, all possible
+        SubjectContext data (session, identifiers, et. al.) has been made
+        accessible using all known heuristics and will be accessible to the
+        subject_factory} via the subject_context.resolve* methods.
+
+        :param subject_context: the populated context (data map) to be used by
+                                the subject_factory when creating a Subject
+                                instance
+        :returns: a Subject instance reflecting the data in the specified
+                  SubjectContext data map
+        """
         return self.subject_factory.create_subject(subject_context)
 
     def save(self, subject):
+        """
+        Saves the subject's state to a persistent location for future reference.
+        This implementation merely delegates saving to the internal subject_store.
+        """
         try:
             self.subject_store.save(subject)
         except AttributeError:
@@ -871,6 +930,14 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             raise SaveSubjectException(msg)
 
     def delete(self, subject):
+        """
+        This method removes (or 'unbinds') the Subject's state from the
+        application, typically called during logout.
+
+        This implementation merely delegates deleting to the internal subject_store.
+
+        :param subject: the subject for which state will be removed
+        """
         try:
             self.subject_store.delete(subject)
         except AttributeError:
@@ -878,6 +945,16 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             raise DeleteSubjectException(msg)
 
     def ensure_security_manager(self, subject_context):
+        """
+        Determines whether there is a SecurityManager instance in the context,
+        and if not, adds 'self' to the context.  This ensures that the SubjectFactory
+        instance will have access to a SecurityManager during Subject construction.
+
+        :param subject_context: the subject context data that may contain a
+                                SecurityManager instance
+        :returns: the SubjectContext intended for a SubjectFactory's Subject
+                  creation
+        """
         try:
             if (subject_context.resolve_security_manager() is not None):
                 msg = ("Subject Context already contains a security_manager "
@@ -898,6 +975,21 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         return subject_context
 
     def resolve_session(self, subject_context):
+        """
+        This method attempts to resolve any associated session based on the
+        context and returns a context that represents this resolved Session to
+        ensure it may be referenced, if needed, by the invoked SubjectFactory
+        that performs actual Subject construction.
+
+        If there is a Session already in the context (because that is what the
+        caller wants to use for Subject construction) or if no session is
+        resolved, this method effectively does nothing, returning an
+        unmodified context as it was received by the method.
+
+        :param subject_context: the subject context data that may resolve a
+                                Session instance
+        :returns: the context intended for a SubjectFactory's subject creation
+        """
         if (subject_context.resolve_session() is not None):
             msg = ("Context already contains a session.  Returning.")
             logger.debug(msg)

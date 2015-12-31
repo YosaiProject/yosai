@@ -511,8 +511,8 @@ class DelegatingSubject(subject_abcs.Subject):
         :param roleid_s: 1..N role identifiers (strings)
         :type roleid_s:  Set of Strings
 
-        :returns: a tuple containing the roleid and a boolean indicating
-                  whether the role is assigned (this is different than Shiro)
+        :returns: a frozenset of tuple(s), containing the roleid and a Boolean
+                  indicating whether the user is a member of the Role
         """
 
         if self.has_identifiers:
@@ -1072,6 +1072,21 @@ class DefaultSubjectStore:
 
 class SubjectBuilder:
     """
+    Creates Subject instances in a simplified way without requiring knowledge of
+    Yosai's construction techniques.
+
+    NOTE:
+    This is provided for framework development support only and should typically
+    never be used by application developers.  Subject instances should generally
+    be acquired by using SecurityUtils.get_subject()
+
+    The simplest usage of this builder is to construct an anonymous, session-less
+    Subject instance. The returned Subject instance is *not* automatically bound
+    to the application (thread) for further use.  That is, SecurityUtils.get_subject()
+    will not automatically return the same instance as what is returned by the
+    builder.  It is up to the framework developer to bind the built
+    Subject for continued use if so desired.
+    
     Shiro uses the Builder design pattern for this class, including it as an
     inner class of the Subject interface.  Unlike Shiro, Yosai separates the
     SubjectBuilder from the Subject abc -- it is independent of the other.

@@ -111,12 +111,13 @@ class RememberMeManager(metaclass=ABCMeta):
         pass
 
 
-class SecurityManager(authc_abcs.Authenticator, authz_abcs.Authorizer,
+class SecurityManager(authc_abcs.Authenticator,
+                      authz_abcs.Authorizer,
                       session_abcs.SessionManager):
 
     """
-    A SecurityManager executes ALL security operations for
-    ALL Subjects (aka users) across a single application.
+    A SecurityManager executes ALL security operations for ALL Subjects (aka users)
+    across a single application.
 
     The interface itself primarily exists as a convenience - it extends the
     Authenticator, Authorizer, and SessionManager abc-interfaces, thereby
