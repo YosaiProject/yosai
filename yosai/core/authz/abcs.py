@@ -60,24 +60,21 @@ class Authorizer(metaclass=ABCMeta):
     the caller to use a String representation of a Permission if one is so
     desired.  Most implementations of this interface will simply convert these
     String values to Permission instances and then just call the corresponding
-    type-safe method.  (Yosai's default implementations do String-to-Permission
-    conversion for these methods using PermissionResolver(s)
+    method.  (Yosai's default implementations do String-to-Permission conversion
+    for these methods using PermissionResolver(s)
     """
 
     @abstractmethod
     def is_permitted(self, identifiers, permission_s):
         """
-        Returns True if the corresponding subject/user is permitted to perform
-        an action or access a resource summarized by the specified permission.
-
-        More specifically, this method determines whether any Permission(s)
-        associated with the subject imply the specified permission.
+        Determines whether any Permission(s) associated with the subject
+        implies the requested Permission(s) provided.
 
         :param identifiers: the application-specific subject/user identifiers(s)
-        :type identifiers: SimpleIdentifierCollection
+        :type identifiers: subject_abcs.IdentifierCollection
 
-        :param permission_s: the permission(s) being checked
-        :type permission_s: List of Permission object(s) or String(s)
+        :param permission_s: a collection of 1..N permissions, all of the same type
+        :type permission_s: List of authz_abcs.Permission object(s) or String(s)
 
         :returns: a List of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted, True if the
@@ -87,30 +84,128 @@ class Authorizer(metaclass=ABCMeta):
 
     @abstractmethod
     def is_permitted_collective(self, identifiers, permission_s, logical_operator):
+        """
+        This method determines whether the requested Permission(s) are
+        collectively granted authorization.  The Permission(s) associated with
+        the subject are evaluated to determine whether authorization is implied
+        for each Permission requested.  Results are collectively evaluated using
+        the logical operation provided: either ANY or ALL.
+
+        If operator=ANY: returns True if any requested permission is implied permission
+        If operator=ALL: returns True if all requested permissions are implied permission
+        Else returns False
+
+        :param identifiers: the application-specific subject/user identifiers(s)
+        :type identifiers: subject_abcs.IdentifierCollection
+
+        :param permission_s: a collection of 1..N permissions, all of the same type
+        :type permission_s: List of authz_abcs.Permission object(s) or String(s)
+
+        :param logical_operator:  any or all
+        :type logical_operator:  function  (stdlib)
+
+        :rtype:  bool
+        """
         pass
 
     @abstractmethod
     def check_permission(self, identifiers, permission_s, logical_operator):
+        """
+        This method determines whether the requested Permission(s) are
+        collectively granted authorization.  The Permission(s) associated with
+        the subject are evaluated to determine whether authorization is implied
+        for each Permission requested.  Results are collectively evaluated using
+        the logical operation provided: either ANY or ALL.
+
+        This method is similar to is_permitted_collective except that it raises
+        an AuthorizationException if collectively False else does not return any
+        value.
+
+        :param identifiers: the application-specific subject/user identifiers(s)
+        :type identifiers: subject_abcs.IdentifierCollection
+
+        :param permission_s: a collection of 1..N permissions, all of the same type
+        :type permission_s: List of authz_abcs.Permission object(s) or String(s)
+
+        :param logical_operator:  any or all
+        :type logical_operator:  function  (stdlib)
+
+        :raises  AuthorizationException:  if the user does not have sufficient
+                                          permission
+        """
         pass
 
     @abstractmethod
     def has_role(self, identifiers, roleid_s):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        Determines whether a Subject is a member of the Role(s) requested
+
+        :param identifiers: the application-specific subject/user identifiers(s)
+        :type identifiers: subject_abcs.IdentifierCollection
+
+        :param roleid_s: 1..N role identifiers (strings)
+        :type roleid_s:  Set of Strings
+
+        :returns: a frozenset of tuple(s), each containing the Role identifier
+                  requested and a Boolean indicating whether the subject is
+                  a member of that Role
+                  - the tuple format is: (roleid, Boolean)
         """
         pass
 
     @abstractmethod
     def has_role_collective(self, identifiers, roleid_s, logical_operator):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        This method determines whether the Subject's role membership
+        collectively grants authorization for the roles requested.  The
+        Role(s) associated with the subject are evaluated to determine
+        whether the roles requested are sufficiently addressed by those that
+        the Subject is a member of. Results are collectively evaluated using
+        the logical operation provided: either ANY or ALL.
+
+        If operator=ANY, returns True if any requested role membership is
+                         satisfied
+        If operator=ALL: returns True if all of the requested permissions are
+                         implied permission
+        Else returns False
+
+        :param identifiers: the application-specific subject/user identifiers(s)
+        :type identifiers: subject_abcs.IdentifierCollection
+
+        :param roleid_s: 1..N role identifiers (strings)
+        :type roleid_s:  Set of Strings
+
+        :param logical_operator:  any or all
+        :type logical_operator:  function  (stdlib)
+
+        :rtype:  bool
         """
         pass
 
     @abstractmethod
     def check_role(self, identifiers, role_s, logical_operator):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        This method determines whether the Subject's role membership
+        collectively grants authorization for the roles requested.  The
+        Role(s) associated with the subject are evaluated to determine
+        whether the roles requested are sufficiently addressed by those that
+        the Subject is a member of. Results are collectively evaluated using
+        the logical operation provided: either ANY or ALL.
+
+        This method is similar to has_role_collective except that it raises
+        an AuthorizationException if collectively False else does not return any
+
+        :param identifiers: the application-specific subject/user identifiers(s)
+        :type identifiers: subject_abcs.IdentifierCollection
+
+        :param roleid_s: 1..N role identifiers (strings)
+        :type roleid_s:  Set of Strings
+
+        :param logical_operator:  any or all
+        :type logical_operator:  function  (stdlib)
+
+        :raises  AuthorizationException:  if the user does not have sufficient
+                                          role membership
         """
         pass
 
@@ -118,7 +213,6 @@ class Authorizer(metaclass=ABCMeta):
 class Permission(metaclass=ABCMeta):
 
     """
-    From Shiro documentation, replacing 'Yosai', respectively:
     A Permission represents the ability to perform an action or access a
     resource.  A Permission is the most granular, or atomic, unit in a system's
     security policy and is the cornerstone upon which fine-grained security
@@ -195,7 +289,6 @@ class Permission(metaclass=ABCMeta):
 
 # new to yosai.core.
 class AuthzInfoResolverAware(metaclass=ABCMeta):
-
     @property
     @abstractmethod
     def authz_info_resolver(self):
@@ -255,59 +348,63 @@ class RoleResolver(metaclass=ABCMeta):
         pass
 
 
-class RolePermissionResolver(metaclass=ABCMeta):
-    """
-    The RolePermissionResolver resolves roles into permissions.
+#class RolePermissionResolver(metaclass=ABCMeta):
+#    """
+#
+#    The RolePermissionResolver resolves roles into permissions.
+#
+#    A RolePermissionResolver resolves a Role, represented as a String value,
+#    into a Collection of Permission instances.  A mapping of Role->Permission
+#    associations is required to facilitate the role->permission resolution.
+#    These Role->Permission associations are obtained from a data store, such a
+#    local database, and may be cached.
+#
+#    The notion of converting role names to permissions is very application
+#    specific.  Therefore, Yosai does NOT include a default implementation of it.
+#
+#    Evaluating Role Membership:
+#        Let Role R1 consists of elements Permission p1, Permission p2, and Permission p3:
+#         r1 = {p1, p2, p3}
+#
+#        Suppose that a user's permissions were obtained from an AccountStore.  If
+#        and only if the collections of permissions obtained from the Store were
+#        to include p1, p2, and p3 then a user would satisfy the criteria for
+#        Role membership of R1.  Only one missing Permission is sufficient to
+#        fail the test for membership (if, for instance the user was assigned
+#        p1 and p2 but not p3).
+#
+#    """
+#    @abstractmethod
+#    def resolve_permissions_in_role(self, role_string):
+#        pass
 
-    A RolePermissionResolver resolves a Role, represented as a String value,
-    into a Collection of Permission instances.  A mapping of Role->Permission
-    associations is required to facilitate the role->permission resolution.
-    These Role->Permission associations are obtained from a data store, such a
-    local database, and may be cached.
 
-    The notion of converting role names to permissions is very application
-    specific.  Therefore, Yosai does NOT include a default implementation of it.
-
-    Evaluating Role Membership:
-        Let Role R1 consists of elements Permission p1, Permission p2, and Permission p3:
-         r1 = {p1, p2, p3}
-
-        Suppose that a user's permissions were obtained from an AccountStore.  If
-        and only if the collections of permissions obtained from the Store were
-        to include p1, p2, and p3 then a user would satisfy the criteria for
-        Role membership of R1.  Only one missing Permission is sufficient to
-        fail the test for membership (if, for instance the user was assigned
-        p1 and p2 but not p3).
-
-    """
-    @abstractmethod
-    def resolve_permissions_in_role(self, role_string):
-        pass
-
-
-class RolePermissionResolverAware(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def role_permission_resolver(self):
-        pass
-
-    @role_permission_resolver.setter
-    @abstractmethod
-    def role_permission_resolver(self, role_permission_resolver):
-        pass
+#class RolePermissionResolverAware(metaclass=ABCMeta):
+#
+#    @property
+#    @abstractmethod
+#    def role_permission_resolver(self):
+#        pass
+#
+#    @role_permission_resolver.setter
+#    @abstractmethod
+#    def role_permission_resolver(self, role_permission_resolver):
+#        pass
 
 
 class PermissionVerifier(metaclass=ABCMeta):
+    """
+    A PermissionVerifier performs the actual permission verification process.
+    """
 
     @abstractmethod
     def get_authzd_permissions(self, authz_info, permission):
         """
-        :param permission: a Permission that has already been resolved (if needed)
-        :type permission: a Permission object
-
         Queries a collection of permissions in authz_info for
         related permissions (those that potentially imply privilege).
+
+        :param permission: a Permission that has already been resolved (if needed)
+        :type permission: a Permission object
 
         :returns: frozenset
         """
@@ -316,7 +413,7 @@ class PermissionVerifier(metaclass=ABCMeta):
     @abstractmethod
     def is_permitted(self, identifiers, permission_s):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of one or more Permission objects
         :type permission_s: set
@@ -327,6 +424,9 @@ class PermissionVerifier(metaclass=ABCMeta):
 
 
 class RoleVerifier(metaclass=ABCMeta):
+    """
+    A RoleVerifier performs the actual role membership verification process.
+    """
 
     @abstractmethod
     def has_role(self, authz_info, roleid_s):

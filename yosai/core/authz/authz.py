@@ -44,13 +44,95 @@ class AllPermission:
 
 class WildcardPermission(serialize_abcs.Serializable):
     """
-    The standardized permission wildcard syntax is:  DOMAIN:ACTION:TARGET
+    A ``WildcardPermission`` is a very flexible permission construct supporting
+    multiple levels of permission matching. However, despite its flexibility,
+    most people will probably follow some standard conventions as explained below.
 
-    reference:  https://shiro.apache.org/permissions.html
+    Simple Usage
+    ----------------
+    In the simplest form, ``WildcardPermission`` can be used as a simple permission
+    string. You could grant a user an 'editBlogPost' permission and then check
+    that the user has the editBlogPost permission by calling:::
 
-    Note:  Yosai changed self.parts to a dict
+        subject.is_permitted(['editBlogPost'])
+
+    This is (mostly) equivalent to:::
+
+        subject.is_permitted([WildcardPermission('editBlogPost')])
+
+    ..but more on that later
+
+    The simple permission string may work for simple applications, but it
+    requires that you have permissions such as 'viewBlogPost', 'deleteBlogPost',
+    'createBlogPost', etc. You can also grant a user '*' permissions
+    using the wildcard character (giving this class its name), meaning that
+    the user has *every* permission. However, with the wildcard '*' approach
+    there's no way to state that a user has 'all blogpost permissions'
+
+    For this reason, WildcardPermission supports multiple *levels* of permissioning.
+
+    Multiple Levels
+    -----------------
+    ``WildcardPermission`` supports the concept of multiple *levels*.  For example,
+    you could restructure the previous simple example by granting a user the
+    permission: ``'blogpost:edit'``.
+
+    The colon in this example is a special character used by the
+    ``WildcardPermission`` that delimits the next token in the permission.
+
+    In this example, the first token is the *domain* that is being operated on
+    and the second token is the *action* that is performed. Each level can contain
+    multiple values.  Given support for multiple values, you could simply grant
+    a user the permission 'blogpost:view,edit,create', granting the user
+    access to perform ``view``, ``edit``, and ``create`` actions in the ``blogpost``
+    *domain*. Then you could check whether the user has the ``'blogpost:create'``
+    permission by calling:::
+
+        subject.is_permitted(['blogpost:create'])
+
+    (which would return true)
+
+    In addition to granting multiple permissions using a single string, you can
+    grant all permission for a particular level:
+
+        * If you want to grant a user permission to perform all actions in the
+        ``blogpost`` domain, you could simply grant the user ``'blogpost:*'``.
+        With this permission granted, any permission check for ``'blogpost:XXX'```
+        will return ``True``.
+
+        * It is also possible to use the wildcard token at the domain
+        level (or both levels), granting a user the ``'view'`` action across all
+        domains: ``'*:view'``.
+
+
+    Instance-level Access Control
+    -----------------------------
+    Another common usage of the ``WildcardPermission`` is to model instance-level
+    Access Control Lists (ACLs). In this scenario, you use three tokens:
+        * the first token is the *domain*
+        * the second token is the *action*
+        * the third token is the *instance* that is acted upon
+
+    For example, suppose you grant a user ``'blogpost:edit:12,13,18'``.
+    In this example, assume that the third token contains system identifiers of
+    blogposts. That would allow the user to edit blogpost with id ``12``, ``13``, and ``18``.
+    Representing permissions in this manner is an extremely powerful way to
+    express permissions as you can state permissions like:
+        *``'blogpost:*:13'``, granting a user permission to perform all actions for blogpost ``13``,
+        *``'blogpost:view,create,edit:*'``, granting a user permission to ``view``, ``create``, or ``edit`` *any* blogpost
+        *``'blogpost:*:*'``, granting a user permission to perform *any* action on *any* blogpost
+
+    To perform checks against these instance-level permissions, the application
+    should include the instance ID in the permission check like so:::
+
+        subject.is_permitted(['blogpost:edit:13'])
+
+    There is no limit to the number of tokens that can be used in a permission.
+    How a permission is modeled for your application is left to your imagination and ambition.
+    However, common usages shown above can help you get started and provide
+    consistency across the Yosai community.  Again, a typical permission wildcard
+    syntax is:  ``'domain:action:target'``.
     """
-
     WILDCARD_TOKEN = '*'
     PART_DIVIDER_TOKEN = ':'
     SUBPART_DIVIDER_TOKEN = ','

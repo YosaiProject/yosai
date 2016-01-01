@@ -1074,7 +1074,16 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def logout(self, subject):
         """
-        :type subject:  Subject
+        Logs out the specified Subject from the system.
+
+        Note that most application developers should not call this method unless
+        they have a good reason for doing so.  The preferred way to logout a
+        Subject is to call Subject.logout(), not by calling SecurityManager.logout
+        directly. However, framework developers might find calling this method
+        directly useful in certain cases.
+
+        :param subject the subject to log out:
+        :type subject:  subject_abcs.Subject
         """
         if (subject is None):
             msg = "Subject argument cannot be None."
@@ -1118,6 +1127,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             session.stop(identifiers)
 
     def get_remembered_identity(self, subject_context):
+        """
+        Using the specified subject context map intended to build a Subject
+        instance, returns any previously remembered identifiers for the subject
+        for automatic identity association (aka 'Remember Me').
+
+        The context map is usually populated by a SubjectBuilder implementation.
+        """
         rmm = self.remember_me_manager
         if rmm is not None:
             try:
