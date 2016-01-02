@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
     """
-    Abstract implementation of the RememberMeManager interface that handles
+    Abstract implementation of the ``RememberMeManager`` interface that handles
     serialization and encryption of the remembered user identity.
 
     The remembered identity storage location and details are left to
@@ -82,7 +82,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
     enough effort, reconstruct the key and decode encrypted data at will.
 
     Of course, this key is only really used to encrypt the remembered
-    IdentifierCollection, which is typically a user id or username.  So if you
+    ``IdentifierCollection``, which is typically a user id or username.  So if you
     do not consider that sensitive information, and you think the default key
     still makes things 'sufficiently difficult', then you can ignore this
     issue.
@@ -166,7 +166,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         Reacts to the successful login attempt by first always
         forgetting any previously stored identity.  Then if the authc_token
-        is a RememberMe type of token, the associated identity
+        is a ``RememberMe`` type of token, the associated identity
         will be remembered for later retrieval during a new user session.
 
         :param subject: the subject whose identifying attributes are being
@@ -269,8 +269,8 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         Based on the given subject context data, retrieves the previously
         persisted serialized identity, or None if there is no available data.
-        The context map is usually populated by a SubjectBuilder
-        implementation.  See the SubjectFactory class constants for Yosai's
+        The context map is usually populated by a ``SubjectBuilder``
+        implementation.  See the ``SubjectFactory`` class constants for Yosai's
         known map keys.
 
         :param subject_context: the contextual data, usually provided by a
@@ -738,12 +738,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                        existing_subject=None,
                        subject_context=None):
         """
-        Creates a Subject instance for the user represented by the given method
+        Creates a ``Subject`` instance for the user represented by the given method
         arguments.
 
         This implementation functions as follows:
 
-        - Ensures that the SubjectContext exists and is as populated as it can be,
+        - Ensures that the ``SubjectContext`` exists and is as populated as it can be,
           using heuristics to acquire data that may not have already been available
           to it (such as a referenced session or remembered identifiers).
         - Calls subject_context.do_create_subject to perform the Subject
@@ -904,9 +904,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def do_create_subject(self, subject_context):
         """
-        This method creates a Subject instance by delegating to the internal
+        This method creates a ``Subject`` instance by delegating to the internal
         subject_factory.  By the time this method is invoked, all possible
-        SubjectContext data (session, identifiers, et. al.) has been made
+        ``SubjectContext`` data (session, identifiers, et. al.) has been made
         accessible using all known heuristics and will be accessible to the
         subject_factory} via the subject_context.resolve* methods.
 
@@ -946,9 +946,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def ensure_security_manager(self, subject_context):
         """
-        Determines whether there is a SecurityManager instance in the context,
-        and if not, adds 'self' to the context.  This ensures that the SubjectFactory
-        instance will have access to a SecurityManager during Subject construction.
+        Determines whether there is a ``SecurityManager`` instance in the context,
+        and if not, adds 'self' to the context.  This ensures that the ``SubjectFactory``
+        instance will have access to a ``SecurityManager`` during Subject construction.
 
         :param subject_context: the subject context data that may contain a
                                 SecurityManager instance
@@ -978,10 +978,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         """
         This method attempts to resolve any associated session based on the
         context and returns a context that represents this resolved Session to
-        ensure it may be referenced, if needed, by the invoked SubjectFactory
-        that performs actual Subject construction.
+        ensure it may be referenced, if needed, by the invoked ``SubjectFactory``
+        that performs actual ``Subject`` construction.
 
-        If there is a Session already in the context (because that is what the
+        If there is a ``Session`` already in the context (because that is what the
         caller wants to use for Subject construction) or if no session is
         resolved, this method effectively does nothing, returning an
         unmodified context as it was received by the method.
@@ -1078,7 +1078,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         Note that most application developers should not call this method unless
         they have a good reason for doing so.  The preferred way to logout a
-        Subject is to call Subject.logout(), not by calling SecurityManager.logout
+        Subject is to call ``Subject.logout()``, not by calling ``SecurityManager.logout``
         directly. However, framework developers might find calling this method
         directly useful in certain cases.
 
@@ -1128,11 +1128,11 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def get_remembered_identity(self, subject_context):
         """
-        Using the specified subject context map intended to build a Subject
+        Using the specified subject context map intended to build a ``Subject``
         instance, returns any previously remembered identifiers for the subject
         for automatic identity association (aka 'Remember Me').
 
-        The context map is usually populated by a SubjectBuilder implementation.
+        The context map is usually populated by a ``SubjectBuilder`` implementation.
         """
         rmm = self.remember_me_manager
         if rmm is not None:

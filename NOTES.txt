@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -18,4 +18,9 @@ under the License.
 """
 
 To install PyPubSub:
-    pip install pypubsub --allow-external pypubsub  
+    pip install pypubsub --allow-external pypubsub
+
+
+the funky naming convention where a parameter ends with '_s' denotes
+one-or-more; in English, this is expressed as '(s)', eg: duck(s)
+indicates one or more ducks

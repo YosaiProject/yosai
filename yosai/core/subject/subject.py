@@ -303,9 +303,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
 class DelegatingSubject(subject_abcs.Subject):
     """
-    A DelegatingSubject delegates method calls to an underlying SecurityManager
-    instance for security checks.  It is essentially a SecurityManager proxy,
-    just as DelegatingSession is to DefaultNativeSessionManager.
+    A ``DelegatingSubject`` delegates method calls to an underlying ``SecurityManager``
+    instance for security checks.  It is essentially a ``SecurityManager`` proxy,
+    just as ``DelegatingSession`` is to ``DefaultNativeSessionManager``.
 
     This implementation does not maintain state such as roles and permissions
     (only Subject identifier, such as usernames or user primary keys) for
@@ -319,7 +319,7 @@ class DelegatingSubject(subject_abcs.Subject):
     (to eliminate EIS round trips and therefore improve database performance),
     it is considered much more elegant to let the underlying SecurityManager
     implementation or its delegate components manage caching, not this class.
-    A SecurityManager is considered a business-tier component, where caching
+    A ``SecurityManager`` is considered a business-tier component, where caching
     strategies are better managed.
 
     Applications from large and clustered to simple and local all benefit from
@@ -852,46 +852,45 @@ class DelegatingSubject(subject_abcs.Subject):
 class DefaultSubjectStore:
 
     """
-    This is formerly known as /mgt/DefaultSubjectDAO.
+    This is known as /mgt/DefaultSubjectDAO in Shiro.
 
-    This is the default SubjectStore implementation for storing Subject state.
-    The default behavior is to save Subject state into the Subject's Session.
-    Note that the storing of the Subject state into the Session is considered
+    This is the default ``SubjectStore`` implementation for storing ``Subject`` state.
+    The default behavior is to save ``Subject`` state into the Subject's ``Session``.
+    Note that the storing of the ``Subject`` state into the ``Session`` is considered
     a default behavior of Yosai but this behavior can be disabled -- see below.
 
-    Once a Subject's state is stored in a Session, a Subject instance can be
+    Once a Subject's state is stored in a Session, a ``Subject`` instance can be
     re-created at a later time by first acquiring the Subject's session.  A
     Subject's session is typically acquired through interaction with a
-    SessionManager, referencing a Session by session_id or
+    SessionManager, referencing a ``Session`` by session_id or
     session_key, and then instantiating/building a Subject instance using
     Session attributes.
 
     Controlling How Sessions are Used
     ---------------------------------
-    Whether a Subject's Session is used to persist the Subject's state is
+    Whether a Subject's ``Session`` is used to persist the Subject's state is
     controlled on a per-Subject basis.  This is accomplish by configuring
-    a SessionStorageEvaluator.
+    a ``SessionStorageEvaluator``.
 
-    The default "Evaluator" is a DefaultSessionStorageEvaluator.  This evaluator
-    supports enabling or disabling session usage for Subject persistence at a
+    The default "Evaluator" is a ``DefaultSessionStorageEvaluator``.  This evaluator
+    supports enabling or disabling session usage for ``Subject`` persistence at a
     global level for all subjects (and defaults to allowing sessions to be
     used).
 
     Disabling Session Persistence Entirely
     --------------------------------------
-    Because the default SessionStorageEvaluator instance is a
-    DefaultSessionStorageEvaluator, you can disable Session usage for Subject
-    state entirely by configuring that instance directly, e.g.:
+    Because the default ``SessionStorageEvaluator`` instance is a
+    ``DefaultSessionStorageEvaluator``, you can disable Session usage for Subject
+    state entirely by configuring that instance directly, e.g.:::
 
         session_store.session_storage_evaluator.session_storage_enabled = False
 
-    or, for example, when initializing the SecurityManager:
+    or, for example, when initializing the SecurityManager:::
 
         SecurityManager.subject_store.session_storage_evaluator.session_storage_enabled = False
 
-    However, *Note:*
-    ONLY do this if your application is 100% stateless and you *DO NOT* need
-    subjects to be remembered across remote invocations, or in a web
+    However, Note: ONLY do this if your application is 100% stateless and you
+    *DO NOT* need subjects to be remembered across remote invocations, or in a web
     environment across HTTP requests.
 
     Supporting Both Stateful and Stateless Subject paradigms
@@ -908,11 +907,11 @@ class DefaultSubjectStore:
           authentication state to be stored across requests in a session.
 
     To support the hybrid *per-Subject* approach, you will need to create your
-    own implementation of the SessionStorageEvaluator interface and configure
+    own implementation of the ``SessionStorageEvaluator`` interface and configure
     it by setting your session_storage_evaluator property-attribute
 
     Unless overridden, the default evaluator is a
-    DefaultSessionStorageEvaluator, which enables session usage for Subject
+    ``DefaultSessionStorageEvaluator``, which enables session usage for ``Subject``
     state by default.
     """
 
@@ -929,9 +928,9 @@ class DefaultSubjectStore:
         """
         :type subject:  subject_abcs.Subject
 
-        Determines whether the subject's session will be used to persist
+        Determines whether the subject's ``Session`` will be used to persist
         subject state.  This default implementation merely delegates to the
-        internal DefaultSessionStorageEvaluator.
+        internal ``DefaultSessionStorageEvaluator``.
         """
         return self.session_storage_evaluator.\
             is_session_storage_enabled(subject)
@@ -949,12 +948,12 @@ class DefaultSubjectStore:
 
     def save(self, subject):
         """
-        Saves the subject's state to the subject's session only
+        Saves the subject's state to the subject's ``Session`` only
         if session storage is enabled for the subject.  If session storage is
         not enabled for the specific Subject, this method does nothing.
 
         In either case, the argument Subject is returned directly (a new
-        Subject instance is not created).
+        ``Subject`` instance is not created).
 
         :param subject: the Subject instance for which its state will be
                         created or updated
@@ -978,7 +977,7 @@ class DefaultSubjectStore:
         """
         Saves the subject's state (it's identifying attributes (identifier) and
         authentication state) to its session.  The session can be retrieved at
-        a later time (typically from a SessionManager) and used to re-create
+        a later time (typically from a ``SessionManager``) and used to re-create
         the Subject instance.
 
         :param subject: the subject for which state will be persisted to a
@@ -1078,15 +1077,15 @@ class SubjectBuilder:
     NOTE:
     This is provided for framework development support only and should typically
     never be used by application developers.  Subject instances should generally
-    be acquired by using SecurityUtils.get_subject()
+    be acquired by using ``SecurityUtils.get_subject()``
 
     The simplest usage of this builder is to construct an anonymous, session-less
-    Subject instance. The returned Subject instance is *not* automatically bound
-    to the application (thread) for further use.  That is, SecurityUtils.get_subject()
+    ``Subject`` instance. The returned Subject instance is *not* automatically bound
+    to the application (thread) for further use.  That is, ``SecurityUtils.get_subject()``
     will not automatically return the same instance as what is returned by the
     builder.  It is up to the framework developer to bind the built
     Subject for continued use if so desired.
-    
+
     Shiro uses the Builder design pattern for this class, including it as an
     inner class of the Subject interface.  Unlike Shiro, Yosai separates the
     SubjectBuilder from the Subject abc -- it is independent of the other.
@@ -1133,15 +1132,15 @@ class SubjectBuilder:
         Allows custom attributes to be added to the underlying context Map used
         to construct the Subject instance.
 
-        A None key throws an InvalidArgumentException.
+        A None key throws an ``InvalidArgumentException``.
         A None value effectively removes any previously stored attribute under
         the given key from the context map.
 
         NOTE: This method is only useful when configuring Yosai with a custom
-        SubjectFactory implementation.  This method allows end-users to append
-        additional data to the context map which the SubjectFactory
-        implementation can use when building custom Subject instances. As such,
-        this method is only useful when a custom SubjectFactory implementation
+        ``SubjectFactory`` implementation.  This method allows end-users to append
+        additional data to the context map which the ``SubjectFactory``
+        implementation can use when building custom ``Subject`` instances. As such,
+        this method is only useful when a custom ``SubjectFactory`` implementation
         has been configured.
 
         :param attribute_key:  the key under which the corresponding value will

@@ -43,7 +43,7 @@ class AuthorizationInfo(metaclass=ABCMeta):
 class Authorizer(metaclass=ABCMeta):
 
     """
-    An Authorizer performs authorization (access control) operations
+    An ``Authorizer`` performs authorization (access control) operations
     for any given Subject (aka 'application user').
 
     Each method requires a subject identifiers to perform the action for the
@@ -55,7 +55,7 @@ class Authorizer(metaclass=ABCMeta):
     is application-specific and provided by the application's configured
     Realms.
 
-    Note that the Permission methods in this interface accept either String
+    Note that the ``Permission`` methods in this interface accept either String
     arguments or Permission instances. This provides convenience in allowing
     the caller to use a String representation of a Permission if one is so
     desired.  Most implementations of this interface will simply convert these
@@ -138,7 +138,7 @@ class Authorizer(metaclass=ABCMeta):
     @abstractmethod
     def has_role(self, identifiers, roleid_s):
         """
-        Determines whether a Subject is a member of the Role(s) requested
+        Determines whether a ``Subject`` is a member of the Role(s) requested
 
         :param identifiers: the application-specific subject/user identifiers(s)
         :type identifiers: subject_abcs.IdentifierCollection
@@ -213,26 +213,24 @@ class Authorizer(metaclass=ABCMeta):
 class Permission(metaclass=ABCMeta):
 
     """
-    A Permission represents the ability to perform an action or access a
-    resource.  A Permission is the most granular, or atomic, unit in a system's
+    A ``Permission`` represents the ability to perform an action or access a
+    resource.  A ``Permission`` is the most granular, or atomic, unit in a system's
     security policy and is the cornerstone upon which fine-grained security
     models are built.
 
-    It is important to understand a Permission instance only represents
+    It is important to understand a ``Permission`` instance only represents
     functionality or access - it does not grant it. Granting access to an
     application functionality or a particular resource is done by the
     application's security configuration, typically by assigning Permissions to
     users, roles and/or groups.
 
-    Most typical systems are what the Shiro team calls role-based in nature,
-    where a role represents common behavior for certain user types. For
-    example, a system might have an Aministrator role, a User or Guest roles,
-    etc.
-
-    But if you have a dynamic security model, where roles can be created and
-    deleted at runtime, you can't hard-code role names in your code. In this
-    environment, roles themselves aren't aren't very useful. What matters is
-    what permissions are assigned to these roles.
+    Most typical systems are role-based in nature, where a role represents
+    common behavior for certain user types. For example, a system might have an
+    Aministrator role, a User or Guest roles, etc. However, if you have a dynamic
+    security model, where roles can be created and deleted at runtime, you
+    can't hard-code role names in your code. In this environment, roles
+    themselves aren't aren't very useful. What matters is what permissions are
+    assigned to these roles.
 
     Under this paradigm, permissions are immutable and reflect an application's
     raw functionality (opening files, accessing a web URL, creating users, etc).

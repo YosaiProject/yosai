@@ -387,9 +387,9 @@ class RoleResolver(authz_abcs.RoleResolver):
 class DefaultPermission(WildcardPermission):
     """
     This class is known in Shiro as DomainPermission.  It has been renamed
-    and refactored a bit for Yosai.
+    and refactored a bit for Yosai.  It is a 'plain vanilla' permission.
 
-    Differences include:
+    Differences between yosai and shiro implementations include:
     - Unlike Shiro's DomainPermission, DefaultPermission obtains its domain
       attribute by argument (rather than by using class name (and subclassing)).
     - Set order is removed (no OrderedSet) until it is determined that using
@@ -554,16 +554,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults
     one or more configured Realms during an authorization operation.
-
-    the funky naming convention where a parameter ends with '_s' denotes
-    one-or-more; in English, this is expressed as '(s)', eg: duck(s)
-    indicates one or more ducks
-
-
-    note:  Yosai implements a different policy than Shiro does during
-           authorization requests in that Yosai accepts the first Boolean value
-           provided rather than continue attempting to obtain permission from
-           other realms. The first Boolean is the final word on permission.
 
     :type realms:  Tuple
     """

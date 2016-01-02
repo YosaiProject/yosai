@@ -24,65 +24,17 @@ from yosai.core import (
 from abc import ABCMeta, abstractmethod
 
 
-# replaced AuthenticationEvents with an event schema:  a) type b) topic
-
-class AuthenticationListener(metaclass=ABCMeta):
-    """
-     An AuthenticationListener listens for notifications while Subjects
-     authenticate with the system.
-    """
-
-    @abstractmethod
-    def on_success(self, authc_token, account):
-        """
-        Callback triggered when an authentication attempt for a Subject
-        succeeds
-
-        :param authc_token: the authentication token submitted during the
-                            Subject (user)'s authentication attempt
-        :param account:  the authentication-related account data acquired
-                         after authentication for the corresponding Subject
-        """
-        pass
-
-    @abstractmethod
-    def on_failure(self, authc_token, authc_exception):
-        """
-        Callback triggered when an authentication attempt for a Subject fails
-
-        :param authc_token: the authentication token submitted during the
-                            Subject (user)'s authentication attempt
-        :param authc_exception: the AuthenticationException that occurred as
-                                a result of the attempt
-        """
-        pass
-
-    @abstractmethod
-    def on_logout(self, identifiers):
-        """
-        Callback triggered when a {@code Subject} logs-out of the system.
-
-        This method will only be triggered when a Subject explicitly logs-out
-        of the session.  It will not be triggered if their Session times out.
-
-        :param identifiers: the identifying identifiers of the Subject logging
-                           out.
-        :type identifiers:  SimpleIdentifierCollection
-        """
-        pass
-
-
 class AuthenticationToken(metaclass=ABCMeta):
     """
-    An AuthenticationToken is a consolidation of an account's identifiers and
+    An ``AuthenticationToken`` is a consolidation of an account's identifiers and
     supporting credentials submitted by a user during an authentication
     attempt.
 
-    The token is submitted to an Authenticator via the
-    authenticate_account(token) method.  The Authenticator then executes the
-    authentication/log-in process.
+    The token is submitted to an ``Authenticator`` via the
+    ``authenticate_account(authc_token)`` method.  The ``Authenticator`` then
+    executes the authentication/log-in process.
 
-    Common implementations of an AuthenticationToken would have
+    Common implementations of an ``AuthenticationToken`` would have
     username/password pairs, X.509 Certificate, PGP key, or anything else you
     can think of.  The token can be anything needed by an Authenticator to
     authenticate properly.
@@ -90,24 +42,18 @@ class AuthenticationToken(metaclass=ABCMeta):
     Because applications represent user data and credentials in different ways,
     implementations of this interface are application-specific.  You are free
     to acquire a user's identifiers and credentials however you wish (e.g. web
-    form, Swing form, fingerprint identification, etc) and then submit them to
+    form, a form, fingerprint identification, etc) and then submit them to
     the Yosai framework in the form of an implementation of this interface.
 
-    >If your application's authentication process is  username/password based
-    (like most), instead of implementing this interface yourself, take a look
-    at the UsernamePasswordToken class, as it is probably sufficient for your
+    If your application's authentication process is username/password based
+    (like most), rather than implementing this interface yourself take a look
+    at the ``UsernamePasswordToken`` class, as it is probably sufficient for your
     needs.
 
-    RememberMe services are enabled for a token if they implement a
-    sub-interface of this one, called RememberMeAuthenticationToken.  Implement
-    that interface if you need RememberMe services (the UsernamePasswordToken
+    ``RememberMe`` services are enabled for a token if they implement a
+    sub-interface of this one, called ``RememberMeAuthenticationToken``.  Implement
+    that interface if you need ``RememberMe`` services (the UsernamePasswordToken
     already implements this interface).
-
-    If you are familiar with JAAS, an AuthenticationToken replaces the concept
-    of a Callback, and  defines meaningful behavior (Callback is just a marker
-    interface, and of little use).  We also think the name AuthenticationToken
-    more accurately reflects its true purpose in a login framework, whereas
-    Callback is less obvious.
     """
 
     @property
@@ -131,13 +77,41 @@ class AuthenticationToken(metaclass=ABCMeta):
 
 class Authenticator(metaclass=ABCMeta):
     """
-    Authenticates an account based on the submitted AuthenticationToken.
+    An Authenticator is responsible for authenticating accounts.
+
+    Although not a requirement, there is usually a single 'master' Authenticator
+    configured for an application.  Enabling Pluggable Authentication Module (PAM)
+    behavior (Two Phase Commit, etc.) is usually achieved by the master
+    ``Authenticator`` coordinating and interacting with an application-configured
+    set of ``Realm``s.
+
+    Note that most Yosai users will not interact with an ``Authenticator``
+    instance directly. Yosai's default architecture is based on an overall
+    ``SecurityManager`` which typically wraps an ``Authenticator`` instance.
     """
 
     @abstractmethod
     def authenticate_account(self, authc_token):
         """
-        Authenticates an account based on the submitted AuthenticationToken
+        Authenticates an account based on the submitted ``AuthenticationToken``.
+
+        If the authentication is successful, the ``Account`` instance representing
+        data relevant to Yosai is returned.  The returned account is used by
+        higher-level components to construct a ``Subject`` representing a more
+        complete security-specific 'view' of an account that also allows access to
+        a ``Session``.
+
+        :param authc_token: any representation of an account's identifiers and
+                            credentials submitted during an authentication attempt
+
+        :returns the authenticated account
+        :raises AuthenticationException: if there is any problem during the authentication process
+
+          - See the specific exceptions listed below to as examples of what could happen
+            in order to accurately handle these problems and to notify the user in an
+            appropriate manner why the authentication attempt failed.  Realize an
+            implementation of this interface may or may not throw those listed or may
+            throw other AuthenticationExceptions, but the list shows the most common ones.
         """
         pass
 
