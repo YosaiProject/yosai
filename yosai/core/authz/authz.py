@@ -36,12 +36,6 @@ import collections
 from marshmallow import Schema, fields, post_load, post_dump
 
 
-class AllPermission:
-
-    def implies(self, permission):
-        return True
-
-
 class WildcardPermission(serialize_abcs.Serializable):
     """
     A ``WildcardPermission`` is a very flexible permission construct supporting
@@ -151,8 +145,8 @@ class WildcardPermission(serialize_abcs.Serializable):
 
     def setparts(self, wildcard_string, case_sensitive=DEFAULT_CASE_SENSITIVE):
         """
-        :type wildcard_string:  String
-        :case_sensitive:  Boolean
+        :type wildcard_string:  str
+        :case_sensitive:  bool
         """
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
@@ -197,7 +191,7 @@ class WildcardPermission(serialize_abcs.Serializable):
     def implies(self, permission):
         """
         :type permission:  authz_abcs.Permission
-        :returns:  Boolean
+        :rtype:  bool
         """
         # By default only supports comparisons with other WildcardPermissions
         if (not isinstance(permission, WildcardPermission)):
@@ -290,7 +284,7 @@ class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
 
     def __init__(self, authz_info_class):
         """
-        :param: the class injected for AuthorizationInfo conversion
+        :param authz_info_class: the class injected for AuthorizationInfo conversion
         :type authz_info_class:  type
         """
         self.authz_info_class = authz_info_class
@@ -582,7 +576,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     @realms.setter
     def realms(self, realms):
         """
-        :type realms: Tuple
+        :type realms: tuple
         """
         # this eliminates the need for an authorizing_realms attribute:
         self._realms = tuple(realm for realm in realms
@@ -603,7 +597,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # new to Yosai:
     def _has_role(self, identifiers, roleid_s):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
         :type roleid_s: Set of String(s)
         """
         for realm in self.realms:
@@ -613,7 +607,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # new to Yosai:
     def _is_permitted(self, identifiers, permission_s):
         """
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -632,7 +626,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         be refactored later.
 
         :param identifiers: a collection of identifiers
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -667,7 +661,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                                 permission_s, logical_operator):
         """
         :param identifiers: a collection of Identifier objects
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
@@ -702,7 +696,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         that a Subject is unauthorized to receive the requested permission
 
         :param identifiers: a collection of identifiers
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission objects or Strings
@@ -725,7 +719,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def has_role(self, identifiers, roleid_s, log_results=True):
         """
         :param identifiers: a collection of identifiers
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
@@ -756,7 +750,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def has_role_collective(self, identifiers, roleid_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
@@ -785,7 +779,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def check_role(self, identifiers, roleid_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param roleid_s: 1..N role identifiers
         :type roleid_s:  a String or Set of Strings
@@ -836,8 +830,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     # notify_results is intended for audit trail
     def notify_results(self, identifiers, items):
         """
-        :param items:  permission or role based results, created by
-                         is_permitted or has_role, respectively
+        :type identifiers:  subject_abcs.IdentifierCollection
+
+        :param items:  either  a collection of 1..N Role identifiers or
+                       a collection of 1..N permissions
         """
         try:
             self.event_bus.publish('AUTHORIZATION.RESULTS',
@@ -849,6 +845,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise AuthorizationEventException(msg)
 
     def notify_success(self, identifiers, items, logical_operator):
+        """
+        :type identifiers:  subject_abcs.IdentifierCollection
+
+        :param items:  either  a collection of 1..N Role identifiers or
+                       a collection of 1..N permissions
+
+        :param logical_operator:  any or all
+        :type logical_operator:  function  (stdlib)
+        """
         try:
             self.event_bus.publish('AUTHORIZATION.GRANTED',
                                    identifiers=identifiers,
@@ -860,6 +865,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
             raise AuthorizationEventException(msg)
 
     def notify_failure(self, identifiers, items, logical_operator):
+        """
+        :param items:  either  a collection of 1..N Role identifiers or
+                       a collection of 1..N permissions
+
+        :type identifiers:  subject_abcs.IdentifierCollection
+
+        :param logical_operator:  any or all
+        :type logical_operator:  function  (stdlib)
+        """
         try:
             self.event_bus.publish('AUTHORIZATION.DENIED',
                                    identifiers=identifiers,
@@ -916,6 +930,8 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
 
     def is_permitted(self, authz_info, permission_s):
         """
+        :type authz_info:  authz_abacs.AuthorizationInfo
+
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of Permission object(s) or String(s)
 
@@ -942,6 +958,8 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
         Confirms whether a subject is a member of one or more roles.
 
         before yielding, roleid's are resolved into SimpleRole for log serializing
+
+        :type authz_info:  authz_abacs.AuthorizationInfo
 
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)
@@ -1028,6 +1046,9 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
         self.assert_permissions_indexed(permission_s)
 
     def get_permission(self, domain):
+        """
+        :type domain:  str
+        """
         return self._permissions.get(domain, set())
 
     def assert_permissions_indexed(self, permission_s):
@@ -1133,3 +1154,9 @@ class SimpleRole(serialize_abcs.Serializable):
                 return instance
 
         return SerializationSchema
+
+
+class AllPermission:
+
+    def implies(self, permission):
+        return True

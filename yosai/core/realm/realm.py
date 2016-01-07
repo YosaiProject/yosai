@@ -57,6 +57,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     """
 
     def __init__(self, name):
+        """
+        :type name:  str
+        """
         self.name = name
         self._account_store = None
         self._cache_handler = None
@@ -78,7 +81,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._account_store
 
     @account_store.setter
-    def account_store(self, accountstore: account_abcs.AccountStore):
+    def account_store(self, accountstore):
+        """
+        :type accountstore: account_abcs.AccountStore
+        """
         self._account_store = accountstore
 
     @property
@@ -86,7 +92,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._credentials_verifier
 
     @credentials_verifier.setter
-    def credentials_verifier(self, credentialsmatcher: authc_abcs.CredentialsVerifier):
+    def credentials_verifier(self, credentialsmatcher):
+        """
+        :type credentialsmatcher: authc_abcs.CredentialsVerifier
+        """
         self._credentials_verifier = credentialsmatcher
 
     @property
@@ -94,7 +103,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._cache_handler
 
     @cache_handler.setter
-    def cache_handler(self, cachehandler: cache_abcs.CacheHandler):
+    def cache_handler(self, cachehandler):
+        """
+        :type cachehandler: cache_abcs.CacheHandler
+        """
         self._cache_handler = cachehandler
 
     @property
@@ -102,7 +114,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return self._authz_info_resolver
 
     @authz_info_resolver.setter
-    def authz_info_resolver(self, authz_info_resolver: authz_abcs.AuthzInfoResolver):
+    def authz_info_resolver(self, authz_info_resolver):
+        """
+        :type authz_info_resolver:  authz_abcs.AuthzInfoResolver
+        """
         self._authz_info_resolver = authz_info_resolver
         self.account_store.authz_info_resolver = authz_info_resolver
 
@@ -112,6 +127,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     @credential_resolver.setter
     def credential_resolver(self, credentialresolver):
+        """
+        :type credentialsresolver:  authz_abcs.CredentialsResolver
+        """
         self._credential_resolver = credentialresolver
         self.account_store.credential_resolver = credentialresolver
 
@@ -121,6 +139,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     @permission_resolver.setter
     def permission_resolver(self, permissionresolver):
+        """
+        :type permissionresolver:  authz_abcs.PermissionResolver
+        """
         # passes through realm and onto the verifier that actually uses it
         self._permission_resolver = permissionresolver
         self.permission_verifier.permission_resolver = permissionresolver
@@ -132,6 +153,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     @role_resolver.setter
     def role_resolver(self, roleresolver):
+        """
+        :type roleresolver:  authz_abcs.RoleResolver
+        """
         # passes through realm and onto the verifier that actually uses it
         self._role_resolver = roleresolver
         self.account_store.role_resolver = roleresolver
@@ -142,6 +166,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     @permission_verifier.setter
     def permission_verifier(self, verifier):
+        """
+        :type verifier:  authz_abcs.PermissionVerifier
+        """
         self._permission_verifier = verifier
 
     @property
@@ -150,6 +177,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     @role_verifier.setter
     def role_verifier(self, verifier):
+        """
+        :type verifier:  authz_abcs.RoleVerifier
+        """
         self._role_verifier = verifier
 
     def do_clear_cache(self, identifier):
@@ -202,6 +232,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     # removed the basic accessor/mutator methods (not pythonic)
     def supports(self, authc_token):
+        """
+        :type authc_token:  authc_abcs.AuthenticationToken
+        """
         # override the following return to False if you do not wish to support
         # authentication from this realm
         return isinstance(authc_token, UsernamePasswordToken)
@@ -218,7 +251,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         available from cache and used to match credentials, boosting
         performance.
 
-        :type identifiers:  SimpleIdentifierCollection
         :returns: an Account object
         """
         account = None
@@ -262,6 +294,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # yosai.core.refactors:
     def authenticate_account(self, authc_token):
         """
+        :type authc_token: authc_abcs.AuthenticationToken
+
         :raises IncorrectCredentialsException:  when authentication fails
         """
         try:
@@ -290,6 +324,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     def assert_credentials_match(self, authc_token, account):
         """
+        :type authc_token: authc_abcs.AuthenticationToken
+        :type account:  account_abcs.Account
+
         :raises IncorrectCredentialsException:  when authentication fails
         """
         cm = self.credentials_verifier
@@ -309,7 +346,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         obtained from an account store so to facilitate subsequent authorization
         checks. In order to cache, a realm must have a CacheHandler.
 
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :returns: Account
         """
@@ -358,7 +395,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         If the authorization info cannot be obtained from the accountstore,
         permission check tuple yields False.
 
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
@@ -388,7 +425,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         If the authorization info cannot be obtained from the accountstore,
         role check tuple yields False.
 
-        :type identifiers:  SimpleIdentifierCollection
+        :type identifiers:  subject_abcs.IdentifierCollection
 
         :param roleid_s: a collection of 1..N Role identifiers
         :type roleid_s: Set of String(s)

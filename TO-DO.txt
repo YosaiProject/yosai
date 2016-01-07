@@ -79,12 +79,6 @@ an expired session clears authorization and session cache
 a refreshed authorization cache is one that replaces an invalidated authorization cache
 and has a TTL that is in synch with the user's session
 
-make the ModularRealmAuthorizer a session listener, invalidating authz cache
-when a session expires
-    - create a method "invalidate_authz_info_cache"
-        - tell every authorizing realm to delete the authz_info cache entry
-          for the session-expired subject id (less elegant, improve later)
-
 =---------------------------------------------------------------------------=
 
 Packaging
@@ -94,14 +88,10 @@ Packaging
 
 -----------------------------------------------------------------------------
 
-Add event listening to ModularRealmAuthorizer
- - AuthenticationListener
- - SessionInvalidationListener
- - AuthzInfoInvalidationListener
-
-perhaps DelegatingSession can be ported to a weakref solution..
-
 PEP8 standardized imports:
     First group:  import stdlib modules
     Second group:  third party libs
     Third group: modules from yosai
+
+implement deserialization validation
+
