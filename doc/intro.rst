@@ -10,47 +10,56 @@ how it is used.  Yosai helps you to control who can use an application and how i
 
 Authentication
 --------------
-    - The process of verifying identity: proving that a subject IS who "IT" claims
-    to be
-    - Identity is verified through some kind of credentials mechanism.
+Authentication is the process of verifying identity, proving that a subject IS
+who "IT" claims to be. Identity is verified through some kind of credentials
+mechanism.
 
 Authorization
 -------------
-Authorization is the process of constraining a user's interactions in a system.
-
+Authorization is the process of constraining a user's access to sensitive data
+and interactions in a system in accordance with an access control policy.
 
 Session Management
 ------------------
-Session management of state for a user's interactions across requests
-
-    - Managing state enables more elaborate forms of dynamic authorization to enforce
-    what is known as "Least Privilege"
+Session Management controls a user's state in a system, across requests.
 
 
-Securing any Python Application
-===============================
-Yosai is designed to provide functionality from these domains in such
-a way that it can be used with ANY kind of application: desktop apps, web apps,
- internet-enabled devices, etc.
-
-
-An Intuitive API without Compromising Power
+An Intuitive API
 ===========================================
-Developers can very quickly use Yosai without burdening themselves with
-the internals:
+Developers can use Yosai without burdening themselves with knowledge about
+Yosai's internals.  Following is a basic preview of the API where each example
+complements those prior to it.
+
+First, a brief introduction to our main actor: the **Subject**.
+
+Introducing:  the Subject
+-------------------------
+Every security related operation is performed in the context of a **Subject**.
+The term "Subject" is generally synonymous with "User" except that aside from
+human beings also includes non-human, system entities.  In other words, a **Subject** is
+a *person* or a *thing*.
+
 
 Initializing Yosai
 ------------------
+Initialize Yosai in the namespace that requires security.  With Yosai
+initialized, you can authenticate, authorize, and manage sessions.
+
 .. code-block:: python
 
-    from yosai.core import init_yosai, SecurityUtils
+    from yosai.core import SecurityUtils
 
-    init_yosai(cache_handler=DPCacheHandler(),
-               account_stores=[AlchemyAccountStore()],
-               session_schema=MySessionSchema])
+    realm = AccountStoreRealm()
+
+    SecurityUtils.init_yosai(cache_handler=DPCacheHandler(),
+                             realms=(realm,),
+                             session_schema=MySessionSchema)
 
 Authentication
 --------------
+In this example, we "log in" a Subject, performing password-based authentication
+that raises an AuthenticationException if authentication were to fail:
+
 .. code-block:: python
 
     authc_token = AuthenticationToken(username='thedude',
@@ -58,21 +67,30 @@ Authentication
     subject = SecurityUtils.get_subject()
     subject.login(authc_token)
 
+
 Session Management
 ------------------
+Yosai offers session management for anonymous guests or authenticated users.
+In the Authentication example above, the Subject is automatically allocated a
+new session in Yosai following successful authentication.  We manage
+the attributes of a session through a CRUD-like series of methods:
 
 .. code-block:: python
 
     subject = SecurityUtils.get_subject()
+
     session = subject.get_session()
     session.set_attribute('full_name', 'Jeffrey Lebowski')
-    session.set_attribute('username', 'thedude')
+
 
 Authorization
 -------------
-Enable authorization in your code by decorating methods with an authorization check.
-A recommended approach is to check that your user has sufficient privileges to
-perform an action on a resource:
+Authorization is enable in your application either by decorating methods with an
+authorization check, such as in the example below, or by expicitly calling
+one of Subject's access control methods.
+
+The following example confirms whether a user has sufficient privileges to
+approve a loan application.  Infomation about the syntax will come later.
 
 .. code-block:: python
 
@@ -82,10 +100,38 @@ perform an action on a resource:
         self.notify_loan_approval(loan_application)
 
 
+Securing any Python Application
+===============================
+Yosai is designed to provide security related functionality in such a way that
+it can be used with ANY kind of application: desktop apps, web apps,
+ internet-enabled devices, etc.  The depth of features available to Yosai is
+ simply limited by the extensions written for it.  The breadth of applications and
+  frameworks using Yosai is limited by the integrations that are written for it:
+
+Extensions
+----------
+Yosai consists of a core library.  To provide a complete security solution for
+applications, the core library uses *extensions* -- components that extend
+operations enabled by the core.  Examples of extensions include:
+    - credentials repositories such as relational databases or LDAP directories
+    - access control policies residing in data sources such as relational databases
+    - authentication methodologies such as social-media based authentication or
+      multi-factor authentication
+    - caching mechanisms
+
+Integrations
+------------
+Yosai is designed to enable security in such a way that it can be used with ANY
+kind of application: desktop apps, web apps, internet-enabled devices, etc. Yosai
+is adapted to an application through what is known as an *integration*. Developers
+are encouraged to submit to the Yosai Project integrations for license-compatible
+projects.
+
+
 A Framework that is Ready for Customization
 ===========================================
 Yosai is "built to contract", featuring concrete implementations of
-Abstract Base Classes that collectively define Yosai's architecture.
+abstract base classes that collectively define Yosai's architecture.
 Developers who find Yosai's default concrete implementations unsuitable for
 their needs may implement their own components according to ABC specifications
-and swap components with ease.
+and swap components.
