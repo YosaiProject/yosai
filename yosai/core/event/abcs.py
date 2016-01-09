@@ -48,7 +48,7 @@ class EventBus(metaclass=ABCMeta):
     that will be called when an specific type of event is communicated across
     the event bus.  Register the callback with the event_bus:::
 
-       eventBus.register(topic, callback)
+       event_bus.register(topic, callback)
 
     """
 

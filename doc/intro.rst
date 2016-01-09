@@ -3,9 +3,8 @@
 Application Security
 ===============================
 
-When you write a software application, you may want to control who can use it and
-how it is used.  Yosai helps you to control who can use an application and how it is used,
- managing state between requests.  In other words, Yosai offers authentication,
+Yosai helps you to control who can use an application and how it is used,
+managing state between requests.  In other words, Yosai offers authentication,
  authorization, and session management, respectively:
 
 Authentication
@@ -27,18 +26,20 @@ Session Management controls a user's state in a system, across requests.
 An Intuitive API
 ===========================================
 Developers can use Yosai without burdening themselves with knowledge about
-Yosai's internals.  Following is a basic preview of the API where each example
-complements those prior to it.
+Yosai's internals.  Following is a basic preview of Yosai's API. Each example
+complements those it follows.
 
+
+Introducing: Subject
+-------------------------
 First, a brief introduction to our main actor: the **Subject**.
 
-Introducing:  the Subject
--------------------------
 Every security related operation is performed in the context of a **Subject**.
 The term "Subject" is generally synonymous with "User" except that aside from
 human beings also includes non-human, system entities.  In other words, a **Subject** is
 a *person* or a *thing*.
 
+Onward..
 
 Initializing Yosai
 ------------------
@@ -55,6 +56,13 @@ initialized, you can authenticate, authorize, and manage sessions.
                              realms=(realm,),
                              session_schema=MySessionSchema)
 
+.. note::
+    - CacheHandler is a Yosai extension
+    - The underlying AccountStore that is referenced by the AccountStoreRealm
+      object is also a Yosai extension
+    - MySessionSchema is a ``marshmallow`` Schema class
+
+
 Authentication
 --------------
 In this example, we "log in" a Subject, performing password-based authentication
@@ -62,10 +70,17 @@ that raises an AuthenticationException if authentication were to fail:
 
 .. code-block:: python
 
-    authc_token = AuthenticationToken(username='thedude',
+    from yosai.core import SecurityUtils, AuthenticationToken
+
+    authc_token = UsernamePasswordToken(username='thedude',
                                       credentials='letsgobowling')
     subject = SecurityUtils.get_subject()
     subject.login(authc_token)
+
+.. note::
+    UsernamePasswordToken is a consolidation of a user account's identifying
+    attributes (username) and credentials (password) submitted by a user
+    during an authentication attempt
 
 
 Session Management
@@ -77,6 +92,8 @@ the attributes of a session through a CRUD-like series of methods:
 
 .. code-block:: python
 
+    from yosai.core import SecurityUtils
+
     subject = SecurityUtils.get_subject()
 
     session = subject.get_session()
@@ -85,33 +102,45 @@ the attributes of a session through a CRUD-like series of methods:
 
 Authorization
 -------------
-Authorization is enable in your application either by decorating methods with an
+Authorization is conducted in your application either by decorating methods with an
 authorization check, such as in the example below, or by expicitly calling
 one of Subject's access control methods.
 
-The following example confirms whether a user has sufficient privileges to
-approve a loan application.  Infomation about the syntax will come later.
+The following example confirms whether the user logged in above has sufficient
+privileges to approve a bowling tournament application.  Infomation about the
+syntax will come later.
 
 .. code-block:: python
 
-    @check_permission(['loan:approve'])
-    def approve_loan_application(self, loan_application):
-        loan_application.status = 'APPROVED'
-        self.notify_loan_approval(loan_application)
+    from yosai.core import check_permission
+
+    @check_permission(['tournament:approve'])
+    def approve_tournament_application(self, tournament_application):
+        tournament_application.status = 'APPROVED'
+        self.notify_approval(tournament_application)
+
+
+Architectural Overview: yosai.core
+==================================
+Yosai is "built to contract", featuring concrete implementations of
+abstract base classes that collectively define Yosai's architecture.
+Developers who find Yosai's default concrete implementations unsuitable for
+their needs may implement their own components according to ABC specifications
+and swap components.
+
+The following diagram illustrates yosai.core architectural components
+and their relationships.  End-users of Yosai -- those who aren't conducting their
+own customizations of the framework -- interact primarily with the API provided
+by the Subject component at the top.
 
 
 Securing any Python Application
 ===============================
-Yosai is designed to provide security related functionality in such a way that
-it can be used with ANY kind of application: desktop apps, web apps,
- internet-enabled devices, etc.  The depth of features available to Yosai is
- simply limited by the extensions written for it.  The breadth of applications and
-  frameworks using Yosai is limited by the integrations that are written for it:
 
 Extensions
 ----------
-Yosai consists of a core library.  To provide a complete security solution for
-applications, the core library uses *extensions* -- components that extend
+As illustrated, Yosai consists of a core library.  To provide a complete security
+solution for applications, the core library uses *extensions* -- components that extend
 operations enabled by the core.  Examples of extensions include:
     - credentials repositories such as relational databases or LDAP directories
     - access control policies residing in data sources such as relational databases
@@ -121,17 +150,10 @@ operations enabled by the core.  Examples of extensions include:
 
 Integrations
 ------------
-Yosai is designed to enable security in such a way that it can be used with ANY
-kind of application: desktop apps, web apps, internet-enabled devices, etc. Yosai
-is adapted to an application through what is known as an *integration*. Developers
-are encouraged to submit to the Yosai Project integrations for license-compatible
-projects.
+Yosai is designed to provide security related functionality in such a way that
+it can be used with ANY kind of application, including desktop apps, web apps,
+internet-enabled devices, etc.
 
-
-A Framework that is Ready for Customization
-===========================================
-Yosai is "built to contract", featuring concrete implementations of
-abstract base classes that collectively define Yosai's architecture.
-Developers who find Yosai's default concrete implementations unsuitable for
-their needs may implement their own components according to ABC specifications
-and swap components.
+Yosai is adapted to an application through what is known as an *integration*
+library. Developers are encouraged to submit to The Yosai Project integrations
+for license-compatible projects.
