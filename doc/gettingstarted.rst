@@ -5,7 +5,7 @@ At a minimum, you must specify:
     - The AccountStore(s) instances from which to obtain authentication and
       authorization information
     - The ``marshmallow`` serialization Schema you will use to (de)serialize
-      Session state
+      Session state (user-defined session attributes)
 
 Invoking ``init_yosai`` as follows will initialize Yosai within the namespace that
 it is called:
@@ -51,4 +51,3 @@ Authorization
     def approve_loan_application(self, loan_application):
         loan_application.status = 'APPROVED'
         self.notify_loan_approval(loan_application)
-

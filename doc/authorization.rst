@@ -1,65 +1,56 @@
-Authorization
-=============
 Authorization, also known as Access Control, is concerned with the rules and
-mechanisms governing the ways that users access resources in an application ,
-or informally speaking, is concerned with “who can do what”.
+mechanisms governing how users access resources in an application. Informally
+speaking, authorization is concerned with “who can do what”.
 
-A standard terminology has developed over the last 30 years that is used to
-describe access control specifications such as those that follow:
-    A user is granted permission to perform an action on a type of resource,
-    perhaps a specific resource instance, potentially bounded by a particular
-    context.
+The key concepts to understand about Authorization in Yosai involve this relationship:
 
-User
-----
-'User' refers to a person who interfaces with the software application.
+Permissions are *associated with* roles. Users are *assigned to* roles.
+[image of user, role, and permission]
+
+
+A **Permission** specifies an action performed in the system on a resource.
+
+A **role** is a group of permissions. Organizations are known to group permissions
+by task or various job functions. Roles can be granted new permissions as new
+applications and systems are incorporated, and permissions can be revoked from
+roles as needed.
+
+
+A **user** refers to a person who interfaces with the software application.
 A user is provided a user account that allows an application to uniquely
 identify it.  User accounts are often identified by a Username/UserID
-attribute or email address.
-
-Subject
--------
-As mentioned in the introduction, every security related operation is performed
-in the context of a **Subject**.  The term "Subject" is generally synonymous with
-"User" except that aside from human beings also includes non-human, system entities.
-  In other words, a **Subject** is a *person* or a *thing*.
-
-Permission
-----------
-Permissions are authorizations to perform some action in the system.  A user
-is granted its permissions through an Authorization Policy.  A data model
-representing the authorization policy is analyzed (queried) to obtain a user's
-permissions.  Yosai does not manage an authorization policy but rather an enforcer
-of the policy.  Yosai obtains a user's Permissions from an outside source and then
-analyzes them to determine whether a user is authorized.
-
-Permissions have a flexible design in Yosai, providing lattitude to
-developers to decide how a Permission is modeled.  Be that as it may, a default
-Permission syntax and implementation of it is provided in yosai.core.
-
-A user is assigned permission: a permission states what behavior can be performed
- in an application but not who can perform them.
-
-A 'Permission' is expressed in Yosai as a *combination* of
-resource type, the operation(s) that is acted upon that resource type, and
-instance(s) of that resource type. Further, a permission may be bound to a
-particular context, also known as 'scoping', granting permission to perform an
-operation only under certain circumstances.
+attribute or email address.  Users are assigned roles based on the user's
+responsibilities and qualifications. Users can be easily reassigned from one role
+to another.
 
 
-Suppose, for instance, that a hospital's prescription compliance system states
-that a nurse may be able to fill a patient's prescription, for a specific type of
- medication approved by a physician, if the nurse has been assigned responsibility
- for that patient and if the prescription fill request is submitted to a pharmacy
- during the nurse's shift.
+Permissions
+===========
+A permission states what behavior can be performed in an application but not who
+can perform them. Permissions are modeled in Yosai using a flexible design that
+allows a developer to choose an appropriate level of detail that suits the
+authorization policy governing a software application.
 
- There are multiple ways to model permissions such as this.  In this example,
- such permissions may be modeled as:
+A Permission can be represented in Yosai as a ``formatted string`` or as a ``Permission``
+ object.  First, let's consider the formatted string.
 
-   context key = (nurse_shift_id, patient_id_123)
-   domain = prescription
-   operation = fill
-   object = prescription_id_abc123
+The Permission string is composed of delimited sections that *may* consist of
+delimited sub-sections.  The default *section delimiter* is the colon, ':', and
+the sub-section delimiter is a comma ','. Here are a few examples of what
+a Permission string looks like.  We'll base these examples on Reddit moderator
+permissioning[1]:
+
+
+
+
+ResourceType:Operation:ResourceInstance
+
+A 'Permission' is expressed in Yosai as a *combination* of resource type, the
+operation(s) that is acted upon that resource type, and instance(s) of that
+resource type. Further, a permission may be bound to a particular context,
+also known as 'scoping', granting permission to perform an operation only under
+certain circumstances.
+
 
 
 Domain (or 'Resource Type')
@@ -74,3 +65,20 @@ business objects, files, or even peripherals such as printers.
 Operation (or 'Action')
 -----------------------
 An operation is an action invoked by a subject.
+
+
+
+You Implement Your Authorization Policy, Yosai enforces it
+----------------------------------------------------------
+Access control begins with an authorization policy.  A user is granted permissions
+through an authorization policy.  The policy states how a user is granted
+permission to perform an action on a type of resource, perhaps a specific resource
+instance, and potentially bounded by a particular context. A data model supporting
+the authorization policy is queried to obtain authorization information --
+permissions and/or roles. The authorization policy, its data model, and the
+administrative system that manages the policy is decided by an organization and
+is outside the scope of Yosai's value proposition: Yosai enforces an authorization
+policy but does not provide one. Yosai obtains a user's permissions (or roles)
+from an outside source and then interprets them to determine whether a user is authorized.
+
+[1] Reddit Moderator Permissioning: https://www.reddit.com/r/modnews/related/18wmu5/new_feature_moderator_permissions/

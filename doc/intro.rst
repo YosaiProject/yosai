@@ -1,7 +1,5 @@
+Yosai:  Security for Any Python Application
 
-
-Application Security
-===============================
 
 Yosai helps you to control who can use an application and how it is used,
 managing state between requests.  In other words, Yosai offers authentication,
@@ -23,10 +21,19 @@ Session Management
 Session Management controls a user's state in a system, across requests.
 
 
+Based on Apache Shiro
+=====================
+Yosai is based on Apache Shiro, written in Java.  The Yosai Project began as a
+port of Apache Shiro, v2 alpha, but assumed many of its own unique designs as
+important sections of the v2 alpha were unfinished at the time of development.
+Forking Apache Shiro was necessary in order to complete Yosai and foster a more
+*pythonic* design.
+
+
 An Intuitive API
 ===========================================
 Developers can use Yosai without burdening themselves with knowledge about
-Yosai's internals.  Following is a basic preview of Yosai's API. Each example
+its internals.  Following is a basic preview of Yosai's API. Each example
 complements those it follows.
 
 
@@ -134,8 +141,10 @@ own customizations of the framework -- interact primarily with the API provided
 by the Subject component at the top.
 
 
-Securing any Python Application
-===============================
+Securing any Python Application, using Extensions and Integrations
+==================================================================
+The mission of The Yosai Project is to secure any kind of Python application.
+To fulfill this mission, extensions and integrations are required.
 
 Extensions
 ----------
@@ -155,5 +164,11 @@ it can be used with ANY kind of application, including desktop apps, web apps,
 internet-enabled devices, etc.
 
 Yosai is adapted to an application through what is known as an *integration*
-library. Developers are encouraged to submit to The Yosai Project integrations
-for license-compatible projects.
+library.
+
+Since a large number of applications are web-based applications, a helper
+library, yosai.web, is included.  The yosai.web library should be used to help
+adapt yosai to the web application of your choice, yet specific customizations
+are left as an exercise for yosai integration development.  Developers are
+encouraged to submit to The Yosai Project integrations for license-compatible
+projects.
