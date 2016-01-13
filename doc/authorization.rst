@@ -12,17 +12,24 @@ the authorization API in its entirety.
 
 Role-Based Access Control
 -------------------------
-There are many access control models in use today [1].  Yosai enforces access 
-control by evaluating roles and permissions assigned to a user.  These roles 
-and permissions are derived from a Role-Based Access Control (RBAC) model.
+There are many access control models in use today [1].  By default, Yosai 
+enforces access control by evaluating roles and permissions assigned to a user.  
+These roles and permissions are derived from a Role-Based Access Control (RBAC) model.
+Note that although a default support for RBAC is provided, your Realm 
+implementation ultimately decides how your permissions and roles are grouped
+together and whether to return a “yes” or a “no” answer to Yosai.  This feature
+allows you to architect your application in the manner you chose.  Regardless 
+of what you choose, Yosai will support it.
 
 For more information about RBAC: http://csrc.nist.gov/groups/SNS/rbac/ 
 
 yosai.core obtains roles and permissions from a repository, such as a 
-relational database.  Designing and implementing the RBAC data model and the
+relational database.  Designing and implementing the RBAC data model and its 
 authorization policy it represents are concerns beyond the scope
-of yosai.core.  However, a basic, flat RBAC model was implemented for yosai 
-as an extension so to facilitate other extension projects [2].
+of yosai.core. As mentioned earlier, Yosai can support any data model for 
+access control and doesn’t force one on you.  However, a basic, flat RBAC 
+model was implemented for Yosai, as an extension, so to facilitate other extension 
+projects [2].
 
 
 How is Authorization conducted in Yosai?
