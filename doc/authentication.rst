@@ -52,14 +52,14 @@ Altogether:
 .. code-block:: python
     from yosai.core import SecurityUtils, UsernamePasswordToken
 
-    subject = SecurityUtils.get_subject()
+    current_user = SecurityUtils.get_subject()
 
     authc_token = UsernamePasswordToken(username='thedude', 
                                         credentials='letsgobowling')
     authc_token.remember_me = True
 
     try:
-        subject.login(authc_token)
+        current_user.login(authc_token)
     except UnknownAccountException:
         # insert here
     except IncorrectCredentialsException:
@@ -71,7 +71,7 @@ Altogether:
     except AuthenticationException:
         # insert here
 
-As you can see, authentication entails a single method call: ``subject.login(authc_token)``. 
+As you can see, authentication entails a single method call: ``current_user.login(authc_token)``. 
 The Subject API requires a single method call to authenticate, regardless of 
 the underlying authentication strategy chosen.
 
@@ -99,8 +99,8 @@ documentation [1], the *bcrypt_sha256* algorithm works as follows:
       as the new password to be hashed.
 
 
-Native Support for 'Remember Me' Services (excerpt from Shiro docs)
-===================================================================
+Native Support for 'Remember Me' Services
+=========================================
 As shown in the example above, Yosai supports "Remember Me" in addition to 
 the normal login process.  Yosai makes a very precise distinction between a 
 remembered Subject and an actual authenticated Subject:
@@ -178,6 +178,27 @@ functionality is built in to Yosai so that you may leverage it for your own
 application. Now, whether you use subject.is_remembered or subject.authenticated to
 customize your views and workflows is up to you, but Yosai will maintain this
 fundamental state in case you need it.
+
+
+Logging Out
+-----------
+When you "log out" a user, you are releasing the identifying state of the user
+by the application.  A Subject is logged out when the Subject is done interacting
+with the application by calling:  ``current_user.logout()``, relinquishing all
+identifying information and invalidating the user's session.  If you are logging
+out in a web app and use the yosai.web library, the RememberMe cookie will also 
+be deleted.
+
+After a Subject logs-out, the Subject instance is considered anonymous again 
+and, except for web applications, can be re-used for login again if desired.
+
+.. note::
+    Because remembered identity in web applications is often persisted with cookies, 
+    and cookies can only be deleted before a Response body is committed, it 
+    is highly recommended to redirect the end-user to a new view or page 
+    immediately after calling current_user.logout(). Doing so guarantees that 
+    any security-related cookies are deleted as expected. This is a limitation 
+    of how HTTP cookies function and not a limitation of Yosai.
 
 
 [1] Passlib - bcrypt_sha256 documentation https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm
