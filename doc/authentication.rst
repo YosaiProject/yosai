@@ -26,26 +26,64 @@ projects.  Instead, the Yosai community is encouraged to share extensions to ena
 
 However, although no multi-factor solution is provided, a single-factor, password-based 
 authentication is provided in yosai.core because it remains the most widely used form 
-of authentication.  
+of authentication.  An example follows. 
 
 
-Password-based Authentication
------------------------------
+Powerful Authentication using a Simple API
+------------------------------------------
+Most of your interactions with Yosai are based on the currently executing user, 
+called a **Subject**.  You can easily obtain a handle on your subject instance 
+from anywhere in your code.
+
 When a developer wishes to authenticate a user using password-based methods,
 the first step requires instantiation of an ``AuthenticationToken`` object 
 recognizable by Yosai.  The UsernamePasswordToken implementation suffices for
 this purpose.  UsernamePasswordToken is a consolidation of a user account's 
-identifying attributes (username) and credentials (password):
+identifying attributes (username) and credentials (password).
+
+In this example, we "log in" a Subject, performing password-based authentication 
+that raises an AuthenticationException if authentication were to fail.  Yosai 
+features a rich exception hierarchy that offers detailed explanations as to why 
+a login failed. This exception hierarchy helps developers diagnose bugs or 
+customer service issues related to authentication.
+
+Altogether:
 
 .. code-block:: python
-    authc_token = UsernamePasswordToken(username='thedude',
+    from yosai.core import SecurityUtils, UsernamePasswordToken
+
+    subject = SecurityUtils.get_subject()
+
+    authc_token = UsernamePasswordToken(username='thedude', 
                                         credentials='letsgobowling')
+    authc_token.remember_me = True
 
-Using the Subject API, you c
+    try:
+        subject.login(authc_token)
+    except UnknownAccountException:
+        # insert here
+    except IncorrectCredentialsException:
+        # insert here
+    except LockedAccountException:
+        # insert here
+    except ExcessiveAttemptsException:
+        # insert here
+    except AuthenticationException:
+        # insert here
 
+As you can see, authentication entails a single method call: ``subject.login(authc_token)``. 
+The Subject API requires a single method call to authenticate, regardless of 
+the underlying authentication strategy chosen.
 
+Notice that remember_me is activated in the authentication token.  Yosai 
+features native 'remember me' support.  'Remember Me' is a popular 
+feature where users are remembered when they return to an application.  
+Being able to remember your users offers them a more convenient user experience.  
 
-Yosai uses the Passlib library for cryptographic hashing.
+Cryptographic Hashing
+---------------------
+For password-based authentication, Yosai uses the Passlib library for 
+cryptographic hashing and password verification.
 
 The default hashing scheme chosen for Yosai is *bcrypt_sha256*. As per Passlib
 documentation [1], the *bcrypt_sha256* algorithm works as follows:
@@ -60,21 +98,86 @@ documentation [1], the *bcrypt_sha256* algorithm works as follows:
     - Finally, the base64 string is passed on to the underlying bcrypt algorithm
       as the new password to be hashed.
 
-Example
--------
-In this example, we "log in" a Subject, performing password-based authentication
-that raises an AuthenticationException if authentication were to fail:
 
-.. code-block:: python
+Native Support for 'Remember Me' Services (excerpt from Shiro docs)
+===================================================================
+As shown in the example above, Yosai supports "Remember Me" in addition to 
+the normal login process.  Yosai makes a very precise distinction between a 
+remembered Subject and an actual authenticated Subject:
 
-    from yosai.core import SecurityUtils, AuthenticationToken
+Remembered
+----------
+A remembered Subject is not anonymous and has a known 
+identity (i.e. subject.identifiers is non-empty). However, this identity is 
+remembered from a previous authentication during a previous session. 
+A subject is considered remembered if subject.is_remembered returns True. 
 
-    authc_token = UsernamePasswordToken(username='thedude',
-                                        credentials='letsgobowling')
+Authenticated
+-------------
+An authenticated Subject is one that has been successfully 
+authenticated (i.e. the login method was called without any exception raised) 
+during the Subject's current session. A subject is considered authenticated 
+if subject.authenticated returns True.
+    
+Mutually Exclusive
+------------------
+Remembered and authenticated states are mutually exclusive --  a True value 
+for one indicates a False value for the other and vice versa.
 
-    subject = SecurityUtils.get_subject()
-    subject.login(authc_token)
+Why the distinction?
+----------------------------------------------
+The word 'authentication' has a very strong connotation of proof. That is, 
+there is an expected guarantee that the Subject has proven they are who they 
+say they are.
 
+When a user is only remembered from a previous interaction with the application, 
+the state of proof no longer exists: the remembered identity gives the system 
+an idea who that user probably is, but in reality, has no way of absolutely 
+guaranteeing that the remembered Subject represents the expected user. Once the 
+subject is authenticated, the user is no longer considered only remembered 
+because its identity would have been verified during the current session.
+
+So although many parts of the application can still perform user-specific logic 
+based on the remembered identifiers, such as customized views, it should 
+typically never perform highly-sensitive operations until the user has 
+legitimately verified its identity by executing a successful authentication 
+attempt.
+
+For example, a check whether a Subject can access financial information should 
+almost always depend on subject.authenticated, not subject.is_remembered, to 
+guarantee an expected and verified identity.
+
+An illustrating example
+-----------------------
+
+The following is a fairly common scenario that helps illustrate why the the 
+distinction between remembered and authenticated is important.
+
+Let's say you're using Amazon.com. You've logged-in successfully and have added 
+a few books to your shopping cart. But you have to run off to a meeting, but 
+forget to log out. By the time the meeting is over, it's time to go home and 
+you leave the office.
+
+The next day when you come in to work, you realize you didn't complete your 
+purchase, so you go back to amazon.com. This time, Amazon 'remembers' who you
+are, greets you by name, and still gives you some personalized book
+recommendations. To Amazon, subject.is_remembered would return True.
+
+But, what happens if you try to access your account to update your credit card
+information to make your book purchase? While Amazon 'remembers' you
+(is_remembered is True), it cannot guarantee that you are in fact you (for
+example, maybe a co-worker is using your computer).
+
+So before you can perform a sensitive action like updating credit card
+information, Amazon will force you to login so that they can guarantee your
+identity. After you login, your identity has been verified and to Amazon,
+subject.authenticated would now be True.
+
+This scenario happens so frequently for many types of applications, so the
+functionality is built in to Yosai so that you may leverage it for your own
+application. Now, whether you use subject.is_remembered or subject.authenticated to
+customize your views and workflows is up to you, but Yosai will maintain this
+fundamental state in case you need it.
 
 
 [1] Passlib - bcrypt_sha256 documentation https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm
