@@ -1,6 +1,73 @@
 Developers use Sessions to store information about a user's interactions with 
-an application over a specified period of time, for the duration of multiple 
-requests.  
+an application across multiple requests, over a specified period of time.  Tracking
+user state with sessions enables more feature-rich user experiences.  Further, 
+Sessions play a major role in access control.  
+
+[image of linkage among session management, authentication, and authorization ]
+
+Access is limited by user identity: a guest cannot perform the operations that an 
+authenticated user can, and each authenticated user can perform different 
+operations.  
+
+The identity of an authenticated user is recorded in the session. 
+
+Since access control is limited by identity, and identity is obtained
+from a session, access control is considered *bound* to a session.
+
+Sessions are a "threat vector":  a path that an "actor" may exploit to attack
+a "target" (your application).  Session hijacking is a reality that we must
+face as developers and try to manage it as best as we can.  We manage sessions
+using a series of countermeasures so as to actively manage their inherent risks.
+
+
+Properties of a Session and Risk Countermeasures
+================================================
+
+The Session Token
+-----------------
+A Session Token is like a smart chip, or magnetic strip, on a credit card in
+that it contains identification-- a session identifier (SessionID).  However,
+unlike the elements of a credit card, the Session Token has a much shorter 
+lifespan.
+
+The SessionID is a sensitive and critical piece of information.  It uniquely
+identifies a Session.  It is the Session's key in a SessionStore (cache) and 
+it is the key that is sent with subsequent requests by a client (the user). 
+
+Once an authenticated session is established, the SessionID is the client's
+key to Yosai.  Therefore, it is very important that the session identifier be 
+unique and very difficult to reproduce.  Yosai's default method to generate a 
+SessionID is as follows::: 
+    sha256(sha512(urandom(20)).digest()).hexdigest()
+
+
+Temporal Risks and Countermeasures 
+----------------------------------
+The risk of compromising a Session increases as time passes.  To address
+time-driven risks, Yosai defines temporal properties in a Session -- idle time 
+and maximum allowable "shelf-life" (absolute time) -- that enable "timing out".  
+These properties can be configured from the Yosai settings YAML file should you 
+find their default settings unacceptable.  The default settings are somewhat 
+aggressive so as to minimize the risks that defaults may present and to encourage 
+developers to take ownership of session time-out decisions.
+
+Idle time
+~~~~~~~~~
+This property represents the total permissible time that a user may be inactive
+in a system, or idle.  Yosai's default idle time setting is **5 minutes**.
+
+Absolute time to live
+~~~~~~~~~~~~~~~~~~~~~
+A Session has a maximum allowable time period that it may exist.  Manufactured
+goods consider this a "shelf-life", the time period from manufacturing that 
+an item can be safely consumed before it is to be discarded.  In computer systems, 
+this is also known in computer systems as a TTL -- time to live.
+
+Yosai's default time-to-live is **30 minutes**.
+
+At time-out, a Session is considered *expired*.  When a Session is *expired*, it
+can no longer be used in Yosai, and therefore can no longer is at risk of being
+hijacked.
 
 
 Session Initialization
@@ -20,14 +87,6 @@ You can then manage state as necessary using the session, but more about that la
 .. code-block:: python
     session = guest.get_session()  # returns an anonymous session (guest)
 
-
-The Relationship between Authentication, Authorization and Session Management
------------------------------------------------------------------------------
-The identity of an authenticated user is recorded in the session. Access is 
-limited by user identity: a guest cannot perform the operations that an 
-authenticated user can, and each authenticated user can perform different 
-operations.  Since access control is limited to identity, and identity is obtained
-from a session, access control is considered bounded to a session.
 
 After a user authenticates itself, Yosai creates a new session for the user.
 This is done for a few reasons.  The user's access to the system changes as
@@ -57,24 +116,6 @@ subject is authenticated as a user:
 what it offers independently and in conjunction with authorization
 
 - Yosai usage
-
-The Session Token
------------------
-A Session Token is like a smart chip, or magnetic strip, on a credit card in
-that it contains identification-- a session identifier (SessionID).  However,
-unlike the elements of a credit card, the Session Token has a much shorter 
-lifespan.
-
-The SessionID is a sensitive and critical piece of information.  It uniquely
-identifies a Session.  It is the Session's key in a SessionStore (cache) and 
-it is the key that is sent with subsequent requests by a client (the user).  
-
-Once an authenticated session is established, the SessionID is the client's
-key in Yosai.  Therefore, it is very important that the session identifier be 
-unique and very difficult to reproduce.  Yosai's default method to generate a 
-SessionID is as follows:: 
-    sha256(sha512(urandom(20)).digest()).hexdigest()
-
 
 
 Session Storage
