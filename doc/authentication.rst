@@ -202,3 +202,13 @@ and, except for web applications, can be re-used for login again if desired.
 
 
 [1] Passlib - bcrypt_sha256 documentation https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm
+
+
+Authentication Events
+---------------------
+
+
+References
+----------
+OWASP Authentication Cheat Sheet:  https://www.owasp.org/index.php/Authentication_Cheat_Sheet
+

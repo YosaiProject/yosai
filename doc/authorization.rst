@@ -1,8 +1,8 @@
 What is Authorization?
 ======================
 Authorization, also known as Access Control, is concerned with the rules and
-mechanisms governing how someone or something accesses resources (in this context, 
-within a software application). Informally speaking, authorization is concerned with 
+mechanisms governing how someone or something accesses resources (in this context,
+within a software application). Informally speaking, authorization is concerned with
 “who can do what”.
 
 The objective of this documentation is to introduce the core concepts
@@ -12,23 +12,22 @@ the authorization API in its entirety.
 
 Role-Based Access Control
 -------------------------
-There are many access control models in use today [1].  By default, Yosai 
-enforces access control by evaluating roles and permissions assigned to a user.  
+There are many access control models in use today [1].  By default, Yosai
+enforces access control by evaluating roles and permissions assigned to a user.
 These roles and permissions are derived from a Role-Based Access Control (RBAC) model.
-Note that although a default support for RBAC is provided, your Realm 
+Note that although a default support for RBAC is provided, your Realm
 implementation ultimately decides how your permissions and roles are grouped
 together and whether to return a “yes” or a “no” answer to Yosai.  This feature
-allows you to architect your application in the manner you chose.  Regardless 
-of what you choose, Yosai will support it.
+allows you to architect your application in the manner you chose.
 
-For more information about RBAC: http://csrc.nist.gov/groups/SNS/rbac/ 
+For more information about RBAC: http://csrc.nist.gov/groups/SNS/rbac/
 
-yosai.core obtains roles and permissions from a repository, such as a 
-relational database.  Designing and implementing the RBAC data model and its 
+yosai.core obtains roles and permissions from a repository, such as a
+relational database.  Designing and implementing the RBAC data model and its
 authorization policy it represents are concerns beyond the scope
-of yosai.core. As mentioned earlier, Yosai can support any data model for 
-access control and doesn’t force one on you.  However, a basic, flat RBAC 
-model was implemented for Yosai, as an extension, so to facilitate other extension 
+of yosai.core. As mentioned earlier, Yosai can support any data model for
+access control and doesn’t force one on you.  However, a basic, flat RBAC
+model was implemented for Yosai, as an extension, so to facilitate other extension
 projects [2].
 
 
@@ -83,7 +82,7 @@ the operation that requires authorization.
 
 Levels and Styles Illustrated
 -----------------------------
-Following is an example of what role-level authorization looks like when using 
+Following is an example of what role-level authorization looks like when using
 either style of access control.  In this example, we only allow a user to
 delete a comment from a message board (subreddit) if the user is a moderator or
 admin.  In other words, the user is a member of *either* the moderator or admin
@@ -130,7 +129,7 @@ can perform them. Permissions are modeled in Yosai using a flexible design that
 allows a developer to choose an appropriate level of detail that suits the
 authorization policy governing a software application.
 
-A Permission can be represented in Yosai as a ``formatted string`` or as a 
+A Permission can be represented in Yosai as a ``formatted string`` or as a
 ``Permission`` object.  First, let's consider the formatted string.
 
 I) Permission String
@@ -190,8 +189,8 @@ our examples:
 
     One way to model this is by using two permissions, each defining an operation
     on a type of resource:
-        'submission:remove'
-        'comment:remove'
+        ``'submission:remove'``
+        ``'comment:remove'``
 
 
     A moderator will either be assigned to a single role that includes both of these
@@ -204,8 +203,8 @@ our examples:
     environment.  With this given, it is more likely that permission is *scoped*
     such that item removal is limited to a particular subreddit:
 
-        'subreddit_id123:submission:remove'
-        'subreddit_id123:comment:remove'
+        ``'subreddit_id123:submission:remove'``
+        ``'subreddit_id123:comment:remove'``
 
     With these permissions, a user is *authorized* to remove items within
     the subreddit that the user is assigned a moderator role.
@@ -214,8 +213,8 @@ our examples:
 
         Let's add this new activity to the prior permission:
 
-            'subreddit_id123:submission:remove, mark_nsfw'
-            'subreddit_id123:comment:remove, mark_nsfw'
+            ``'subreddit_id123:submission:remove, mark_nsfw'``
+            ``'subreddit_id123:comment:remove, mark_nsfw'``
 
     Thus far, we've defined two permissions that allow the removal of and
     labeling of nsfw of submission and comment resource types.
@@ -227,8 +226,8 @@ our examples:
     authorization that is required to remove a post:
 
         To remove a post, a user must have BOTH permissions:
-            'subreddit_id123:submission:remove, mark_nsfw'
-            'subreddit_id123:comment:remove, mark_nsfw'
+            ``'subreddit_id123:submission:remove, mark_nsfw'``
+            ``'subreddit_id123:comment:remove, mark_nsfw'``
 
 
 You Implement Your Authorization Policy, Yosai enforces it
@@ -244,7 +243,16 @@ is outside the scope of Yosai's value proposition: Yosai enforces an authorizati
 policy but does not provide one. Yosai obtains a user's permissions (or roles)
 from an outside source and then interprets them to determine whether a user is authorized.
 
+
+Authorization Events
+--------------------
+
+
+References
+----------
+
 [1] Access Control Models:  https://en.wikipedia.org/wiki/Access_control
-[2] YosaiAlchemyStore: https://github.com/YosaiProject/yosai_alchemystore 
+[2] YosaiAlchemyStore: https://github.com/YosaiProject/yosai_alchemystore
 [3] Reddit Moderator Overview:  https://www.reddit.com/wiki/moderation
 [4] Reddit Moderator Permissioning: https://www.reddit.com/r/modnews/related/18wmu5/new_feature_moderator_permissions/
+[5] OWASP Access Control Cheat Sheet: https://www.owasp.org/index.php/Access_Control_Cheat_Sheet

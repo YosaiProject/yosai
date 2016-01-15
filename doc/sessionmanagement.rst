@@ -3,10 +3,12 @@ an application across multiple requests, over a specified period of time.  Track
 user state with sessions enables more feature-rich user experiences.  Further, 
 Sessions play a major role in access control.  
 
-[image of linkage among session management, authentication, and authorization ]
+
+Authentication, Authorization, and Session Management are Related
+-----------------------------------------------------------------
 
 Access is limited by user identity: a guest cannot perform the operations that an 
-authenticated user can, and each authenticated user can perform different 
+authenticated user can, and each authenticated user may perform different 
 operations.  
 
 The identity of an authenticated user is recorded in the session. 
@@ -14,10 +16,14 @@ The identity of an authenticated user is recorded in the session.
 Since access control is limited by identity, and identity is obtained
 from a session, access control is considered *bound* to a session.
 
+
+Session Management
+------------------
 Sessions are a "threat vector":  a path that an "actor" may exploit to attack
-a "target" (your application).  Session hijacking is a reality that we must
-face as developers and try to manage it as best as we can.  We manage sessions
-using a series of countermeasures so as to actively manage their inherent risks.
+a "target" (your application).  Sessions are exploited by a process
+known as hijacking.  Session Management helps to manage many of the inherent risks of 
+Sessions through a series of countermeasures.  More information about these
+countermeasures follows in the documentation.
 
 
 Properties of a Session and Risk Countermeasures
@@ -45,29 +51,50 @@ Temporal Risks and Countermeasures
 ----------------------------------
 The risk of compromising a Session increases as time passes.  To address
 time-driven risks, Yosai defines temporal properties in a Session -- idle time 
-and maximum allowable "shelf-life" (absolute time) -- that enable "timing out".  
-These properties can be configured from the Yosai settings YAML file should you 
-find their default settings unacceptable.  The default settings are somewhat 
-aggressive so as to minimize the risks that defaults may present and to encourage 
-developers to take ownership of session time-out decisions.
+and maximum allowable time to live (TTL) -- that enable "timing out".  
+
+These properties are configured in the Yosai settings YAML file. Should 
+you find their default settings unacceptable, you can easily change them.  The 
+default settings are somewhat aggressive so as to minimize the risks that defaults 
+may present and to encourage developers to take ownership of session time-out 
+decisions.
 
 Idle time
 ~~~~~~~~~
 This property represents the total permissible time that a user may be inactive
-in a system, or idle.  Yosai's default idle time setting is **5 minutes**.
+in a system, or idle.  Yosai's default idle time setting for a Session 
+is **5 minutes**.
 
-Absolute time to live
-~~~~~~~~~~~~~~~~~~~~~
-A Session has a maximum allowable time period that it may exist.  Manufactured
-goods consider this a "shelf-life", the time period from manufacturing that 
-an item can be safely consumed before it is to be discarded.  In computer systems, 
-this is also known in computer systems as a TTL -- time to live.
+Time to live
+~~~~~~~~~~~~
+A Session has a maximum allowable time period that it may exist.  Many computer 
+systems refer to this as a TTL -- time to live.  Yosai's default 
+time-to-live for a Session is **30 minutes**.
 
-Yosai's default time-to-live is **30 minutes**.
 
-At time-out, a Session is considered *expired*.  When a Session is *expired*, it
-can no longer be used in Yosai, and therefore can no longer is at risk of being
+Expiration Events
+~~~~~~~~~~~~~~~~~
+When a Session "times out", it is considered *expired*.  When a Session is *expired*, 
+it can no longer be used in Yosai, and therefore is no longer at risk of being
 hijacked.
+
+An idle timeout is detected by Yosai as it processes a request.
+
+
+Stopping Sessions
+-----------------
+Another mechanism for rendering events useless in Yosai is to stop them.
+When a subject logs out of a system, the subject's Session is stopped.  Like
+an expired Session, a stopped Session can no longer be used and is consequently 
+no longer at risk of being hijacked.
+
+
+Session-driven Events
+---------------------
+At Session expiration, Yosai ties up loose ends, so to speak, through its
+event-driven architecture.
+
+[image here]
 
 
 Session Initialization
@@ -120,14 +147,23 @@ what it offers independently and in conjunction with authorization
 
 Session Storage
 ---------------
+Whenever a Session is created or updated, its data is persisted to a 
+storage location so that it may be accessible by the application at a later time. 
+Similarly, when a Session is invalid and longer being used, it is 
+deleted from storage so that the Session data store space is not exhausted (if 
+you're not taking advantage of TTL expiration in your data store). 
 
-Session Validation
-------------------
+The SessionManager implementations delegate these Create/Read/Update/Delete (CRUD) 
+operations to an internal component, the SessionStore, which reflects the 
+Data Access Object (DAO) design pattern.
 
-Session Events
---------------
-Stop
-Expire
+The power of the SessionStore is that you can implement this interface to 
+communicate with any data store you wish. This means your session data can 
+reside in memory, on the file system, in a relational database or NoSQL data store, 
+or any other location you want. You have control over persistence behavior.
+
+Yosai features an in-memory MemorySessionStore and CachingSessionStore.  The 
+CachingSessionStore is the default, and recommended, SessionStore for Yosai.
 
 
 Session Serialization

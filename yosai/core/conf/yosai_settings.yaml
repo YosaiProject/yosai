@@ -19,5 +19,5 @@ SESSION_CONFIG:
         absolute_timeout: 1800
         idle_timeout: 300
     session_validation:
-        scheduler_enabled: true
+        scheduler_enabled: false 
         time_interval: 3600
