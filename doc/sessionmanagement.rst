@@ -61,22 +61,9 @@ decisions.
 
 Idle time
 ~~~~~~~~~
-This property represents the total permissible time that a user may be inactive
+This property represents the total permissible time for a user to be inactive
 in a system, or idle.  Yosai's default idle time setting for a Session 
 is **5 minutes**.
-
-.. warning:: 
-    Idle Timeout Edge Case
-    ----------------------
-    Monitoring for idle timeout increases the complexity of Session Management.
-    Session validation taxes the performance of an application and so it does not 
-    run before every authorization check.  Instead, it is designed to maximize utility
-    for the most popular use case-- one where the subject instance has a short
-    life span in memory.
-
-    Therefore, it is recommended that release a Subject instance for garbage
-    collection between requests. 
-
 
 Time to live
 ~~~~~~~~~~~~
@@ -106,6 +93,8 @@ Session Validation
 ------------------
 Session validation is the process of determining whether a Session has stopped
 or expired.  When a session has stopped or expired, it is considered *invalid*.
+Sessions are only validated when they are accessed (i.e. subject.get_session()) 
+because validation taxes performance.
 
 As discussed, there are two types of expiration:  idle and absolute-ttl.  
 
@@ -119,6 +108,19 @@ either timeout threshold, a session is considered expired
 
 By default, Sessions are "lazy validated" in that they are validated at the time 
 that [they are accessed?]. 
+
+.. warning:: 
+    Idle Timeout Edge Case
+    ----------------------
+    Monitoring for idle timeout increases the complexity of Session Management.
+    As discussed, Session validation taxes the performance of an application and 
+    therefore does not run before every authorization check.  Instead, validation 
+    is designed to maximize utility for the most popular use case-- one where the 
+    subject instance has a short life span in memory and sessions validate when 
+    they are accessed.
+
+    Therefore, it is recommended that you release a Subject instance for garbage
+    collection between requests. 
 
 
 The Session Synchronization Design Challenge
