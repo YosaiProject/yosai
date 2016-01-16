@@ -89,6 +89,37 @@ an expired Session, a stopped Session can no longer be used and is consequently
 no longer at risk of being hijacked.
 
 
+Session Validation
+------------------
+Session validation is the process of determining whether a Session has stopped
+or expired.  When a session is stopped, xyz.
+
+As discussed, there are two types of expiration:  idle and absolute-ttl.  
+
+Keeping track of idle expiration presents challenges.  
+
+There are two timeout thresholds: an idle timeout and absolute timeout (ttl)
+the last_access_timestamp synchronized with session usage presents a 
+
+if the duration between the last_access_timestamp and the current time exceeds
+either timeout threshold, a session is considered expired
+
+By default, Sessions are "lazy validated" in that they are validated at the time 
+that [they are accessed?]. 
+
+
+The Session Synchronization Design Challenge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Keeping the last_access_timestamp synchronized with session usage presents a 
+performance design challenge that you are encouraged to help improve.  Ideas
+are welcome! 
+
+
+"auto-touch" configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
 Session-driven Events
 ---------------------
 At Session expiration, Yosai ties up loose ends, so to speak, through its
