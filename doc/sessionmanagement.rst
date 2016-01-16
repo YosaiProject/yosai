@@ -65,6 +65,19 @@ This property represents the total permissible time that a user may be inactive
 in a system, or idle.  Yosai's default idle time setting for a Session 
 is **5 minutes**.
 
+.. warning:: 
+    Idle Timeout Edge Case
+    ----------------------
+    Monitoring for idle timeout increases the complexity of Session Management.
+    Session validation taxes the performance of an application and so it does not 
+    run before every authorization check.  Instead, it is designed to maximize utility
+    for the most popular use case-- one where the subject instance has a short
+    life span in memory.
+
+    Therefore, it is recommended that release a Subject instance for garbage
+    collection between requests. 
+
+
 Time to live
 ~~~~~~~~~~~~
 A Session has a maximum allowable time period that it may exist.  Many computer 
@@ -92,7 +105,7 @@ no longer at risk of being hijacked.
 Session Validation
 ------------------
 Session validation is the process of determining whether a Session has stopped
-or expired.  When a session is stopped, xyz.
+or expired.  When a session has stopped or expired, it is considered *invalid*.
 
 As discussed, there are two types of expiration:  idle and absolute-ttl.  
 
@@ -117,11 +130,30 @@ are welcome!
 
 "auto-touch" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+Picture idle timeout as an hourglass that is turned over and reset every time
+a session is accessed from a SessionStore.  The way that this is accomplished 
+is by updating the Session's ``last_access_time`` attribute every time that 
+the Session is accessed (obtained from storage and evaluated).
+
+When a Session is obtained from the SessionStore, it is immediately validated.
+Should the validation not raise any exceptions, it will be "touched".  Touching
+a Session is the process of resetting the hourglass, so to speak, by updating
+the ``last_access_time`` attribute of the Session.
 
 
-
-Session-driven Events
+Session Invalidation
 ---------------------
+By default, whenever Yosai detects an invalid session, it attempts to delete it
+from the underlying session data store via the SessionStore.delete(session)
+method.  However, should you decide not to automatically delete invalid
+sessions, you can easily opt-out of this process.  For example, if your
+application uses a SessionStore that backs a queryable data store, perhaps your
+dev team wants old or invalid sessions to be available for a certain period of
+time. Storing invalid sessions would allow you to run queries against the data
+store to see, for example, how many sessions a user has created over the last
+week, or the average duration of a user's sessions, or similar reporting-type
+queries.  
+
 At Session expiration, Yosai ties up loose ends, so to speak, through its
 event-driven architecture.
 
