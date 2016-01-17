@@ -1,20 +1,22 @@
-Developers use Sessions to store information about a user's interactions with 
-an application across multiple requests, over a specified period of time.  Tracking
-user state with sessions enables more feature-rich user experiences.  Further, 
-Sessions play a major role in access control.  
+Tracking user state with Sessions enables more feature-rich user experiences.  
+Use Sessions to store information about a user's interactions with your 
+application across multiple requests, over a specified period of time.  
+Further, Sessions play a major role in access control.  
 
 
 Authentication, Authorization, and Session Management are Related
 -----------------------------------------------------------------
-
 Access is limited by user identity: a guest cannot perform the operations that an 
 authenticated user can, and each authenticated user may perform different 
 operations.  
 
-The identity of an authenticated user is recorded in the session. 
+The identity of an authenticated user is recorded in the Session. 
 
 Since access control is limited by identity, and identity is obtained
-from a session, access control is considered *bound* to a session.
+from a Session, access control is considered *bound* to a Session.
+
+Since access control is *bound* to a Session, when a Session is invalidated so 
+too does the authorization information cached for the Session.
 
 
 Session Management
@@ -74,33 +76,31 @@ time-to-live for a Session is **30 minutes**.
 
 Expiration Events
 ~~~~~~~~~~~~~~~~~
-When a Session "times out", it is considered *expired*.  When a Session is *expired*, 
+When a Session "times out", it is considered **expired**.  When a Session is **expired**, 
 it can no longer be used in Yosai, and therefore is no longer at risk of being
 hijacked.
 
-An idle timeout is detected by Yosai as it processes a request.
-
-
 Stopping Sessions
 -----------------
-Another mechanism for rendering events useless in Yosai is to stop them.
+Another mechanism for rendering events useless in Yosai is to **stop** them.
 When a subject logs out of a system, the subject's Session is stopped.  Like
-an expired Session, a stopped Session can no longer be used and is consequently 
+an expired Session, a **stopped** Session can no longer be used and is consequently 
 no longer at risk of being hijacked.
 
 
 Session Validation
 ------------------
 Session validation is the process of determining whether a Session has stopped
-or expired.  When a session has stopped or expired, it is considered *invalid*.
-Sessions are only validated when they are accessed (i.e. subject.get_session()) 
-because validation taxes performance.
+or expired.  When a session has stopped or expired, it is considered **invalid**.
 
-As discussed, there are two types of expiration:  idle and absolute-ttl.  
+As discussed, there are two types of Session expiration:  idle and absolute-ttl.  
 
-Keeping track of idle expiration presents challenges.  
+A Session expires when crossing either timeout threshold is detected as 
+validation is run for a Session.  
 
-There are two timeout thresholds: an idle timeout and absolute timeout (ttl)
+Keeping track of idle expiration presents performance challenges.  Therefore, 
+Sessions are validated *only* when they are accessed (i.e. subject.get_session()).
+Consequently, there are two timeout thresholds: an idle timeout and absolute timeout (ttl)
 the last_access_timestamp synchronized with session usage presents a 
 
 if the duration between the last_access_timestamp and the current time exceeds
@@ -139,8 +139,8 @@ the Session is accessed (obtained from storage and evaluated).
 
 When a Session is obtained from the SessionStore, it is immediately validated.
 Should the validation not raise any exceptions, it will be "touched".  Touching
-a Session is the process of resetting the hourglass, so to speak, by updating
-the ``last_access_time`` attribute of the Session.
+a Session is the process of flipping and resetting the hourglass, so to speak, 
+by updating the ``last_access_time`` attribute of the Session.
 
 
 Session Invalidation
