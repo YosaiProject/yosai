@@ -1,5 +1,5 @@
 Session Tutorial
-----------------
+================
 In this tutorial, you will learn how to use the Session API to perform server-side
 session management.  We'll use a shopping cart example to illustrate how to manage 
 state using a server-side Session object.  You will learn how to:
@@ -13,16 +13,16 @@ Serialize before Caching
 ------------------------
 This example uses Session caching.  Objects are serialized before they are cached.  
 
-Only ``Serializable`` objects can be serialized in Yosai.  A Serializable class
-implements the serialize_abcs.Serializable abstract base class, which requires
-that a ``marshmallow.Schema`` class be defined for it, within its ``serialization_schema``
-classmethod.  
-
 Yosai uses the ``marshmallow`` library in conjunction with an encoding library, 
 such as MSGPack or JSON, to (de)serialize Serializable objects from(to) cache.
 ``marshmallow`` requires you to specify the Schema of the object and how to
 properly (de)serialize it.  A Session is a Serializable object, therefore it 
 requires its own ``marshmallow.Schema`` definition.
+
+Only ``Serializable`` objects can be serialized in Yosai.  A Serializable class
+implements the serialize_abcs.Serializable abstract base class, which requires
+that a ``marshmallow.Schema`` class be defined for it within its ``serialization_schema``
+classmethod.  
 
 
 Example:  Shopping Cart Session Management
@@ -41,6 +41,7 @@ As per Wikipedia:::
     postage and packing) charges and the associated taxes, as applicable.
 
 
+Let's define our ``marshmallow.Schema`` classes:
 .. code-block:: python
 
     class ShoppingCartItemSchema(Schema):

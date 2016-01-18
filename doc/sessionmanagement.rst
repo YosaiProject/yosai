@@ -6,11 +6,10 @@ play a major role in access control.
 Session Management involves creating, reading, updating, and deleting of Sessions
 and Session attributes, and validating Sessions.
 
-Yosai's ``SessionManager`` uses a 
-``CachingSessionStore`` to cache sessions.  If you are not caching sessions, 
-you you are either using in-memory session storage (the ``MemorySessionStore``)
-or using your own custom SessionStore, which is beyond the scope of consideration
-here. 
+Yosai's ``SessionManager`` uses a ``CachingSessionStore`` to cache sessions.  
+If you are not caching sessions, you you are either using in-memory session storage i
+(the ``MemorySessionStore``) or using your own custom SessionStore, which is
+beyond the scope of consideration in this documentation. 
 
 
 Authentication, Authorization, and Session Management are Related
@@ -24,17 +23,14 @@ The identity of an authenticated user is recorded in the Session.
 Since access control is limited by identity, and identity is obtained
 from a Session, access control is considered *bound* to a Session.
 
-Session Validation 
-------------------
+
+Properties of a Session , Session Risk, and Risk Countermeasures
+================================================================
 Sessions are a "threat vector":  a path that an "actor" may exploit to attack
 a "target" (your application).  Sessions are exploited by a process
 known as hijacking.  Session Management helps to manage many of the inherent risks of 
 Sessions through a series of countermeasures.  More information about these
 countermeasures follows in the documentation.
-
-
-Properties of a Session and Risk Countermeasures
-================================================
 
 The Session Token
 -----------------
@@ -58,9 +54,13 @@ Temporal Risks and Countermeasures
 ----------------------------------
 The risk of compromising a Session increases as time passes.  To address
 time-driven risks, Yosai defines temporal properties in a Session -- idle time 
-and maximum allowable time to live (TTL) -- that enable "timing out".  
+and maximum allowable time to live (TTL) -- that enable "timing out" of Sessions.
 
-These properties are configured in the Yosai settings YAML file. Should 
+When a Session "times out", it is considered **expired**.  When a Session is **expired**, 
+it can no longer be used in Yosai, and therefore is no longer at risk of being
+hijacked.
+
+The timeout thresholds are configured in the Yosai settings YAML file. Should 
 you find their default settings unacceptable, you can easily change them.  The 
 default settings are somewhat aggressive so as to minimize the risks that defaults 
 may present and to encourage developers to take ownership of session time-out 
@@ -69,44 +69,50 @@ decisions.
 Idle time
 ~~~~~~~~~
 This property represents the total permissible time for a user to be inactive
-in a system, or idle.  Yosai's default idle time setting for a Session 
-is **5 minutes**.
+in a system, or idle.  Picture idle timeout as an hourglass that is turned over 
+and reset periodically. The way that idle time is reset is by updating the 
+Session's ``last_access_time`` attribute.  As to when the ``last_access_time`` 
+is updated depends on what "auto_touch" has been configured to or whether you've
+chosen an alternative time to touch than the default (per-access).
+
+A ``DefaultNativeSessionManager`` has an attribute, "auto_touch", that when set 
+to True will allow the updating of a Session's ``last_access_time`` attribute
+to the current time, whenever a session is accessed, following Session validation.
+As mentioned, when a Session should be touched depends on the type of application 
+you are developing and thus auto_touch is a configurable feature.  When a Session 
+is obtained from the SessionStore, it is immediately validated.  Should the
+validation not raise any exceptions, and if auto_touch is True, the Session
+will be "touched".  Touching a Session is the process of flipping and resetting
+the hourglass, so to speak, by updating the ``last_access_time`` attribute of
+the Session.
+
+Yosai's default idle time setting for a Session is **5 minutes**.
 
 Time to live
 ~~~~~~~~~~~~
-A Session has a maximum allowable time period that it may exist.  Many computer 
-systems refer to this as a TTL -- time to live.  Yosai's default 
+A Session has a maximum allowable time period that it may exist.  It is the final 
+countdown until a Session is expired. It cannot be reset, unlike idle timeout.
+Many computer systems refer to this as a TTL -- time to live.  Yosai's default 
 time-to-live for a Session is **30 minutes**.
-
-
-Expiration Events
-~~~~~~~~~~~~~~~~~
-When a Session "times out", it is considered **expired**.  When a Session is **expired**, 
-it can no longer be used in Yosai, and therefore is no longer at risk of being
-hijacked.
 
 Stopping Sessions
 -----------------
-Another mechanism for rendering events useless in Yosai is to **stop** them.
-When a subject logs out of a system, the subject's Session is stopped.  Like
-an expired Session, a **stopped** Session can no longer be used and is consequently 
-no longer at risk of being hijacked.
+Aside from expirations, another mechanism for rendering Sessions useless in 
+is **stopping** them.  When a subject logs out of a system, the subject's Session 
+is stopped.  Like an expired Session, a **stopped** Session can no longer be used 
+and is consequently no longer at risk of being hijacked.
 
 
 Session Validation
 ------------------
-Session validation is the process of determining whether a Session has stopped
+Session Validation is the process of determining whether a Session has stopped
 or expired.  When a session has stopped or expired, it is considered **invalid**.
 
-As discussed, there are two types of Session expiration:  idle and absolute-ttl.  
-Consequently, there are two timeout thresholds, one for an idle timeout and 
-another for absolute timeout (ttl).  A Session expires when the time duration 
-betweeexceeds crossing either timeout threshold is detected as 
-validation is run for a Session.  
+A Session expires when the time duration between the current time and the 
+last recorded time that a Session was accessed exceeds either timeout threshold.
 
 Keeping track of idle expiration presents performance challenges.  Therefore, 
 Sessions are validated *only* when they are accessed (i.e. subject.get_session()).
-
 
 the last_access_timestamp synchronized with session usage presents a 
 
@@ -142,18 +148,6 @@ Keeping the last_access_timestamp synchronized with session usage presents a
 performance design challenge that you are encouraged to help improve.  Ideas
 are welcome! 
 
-
-"auto-touch" configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-Picture idle timeout as an hourglass that is turned over and reset every time
-a session is accessed from a SessionStore.  The way that this is accomplished 
-is by updating the Session's ``last_access_time`` attribute every time that 
-the Session is accessed (obtained from storage and evaluated).
-
-When a Session is obtained from the SessionStore, it is immediately validated.
-Should the validation not raise any exceptions, it will be "touched".  Touching
-a Session is the process of flipping and resetting the hourglass, so to speak, 
-by updating the ``last_access_time`` attribute of the Session.
 
 
 Session Invalidation
