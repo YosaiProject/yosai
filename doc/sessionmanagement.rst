@@ -1,7 +1,16 @@
-Tracking user state with Sessions enables more feature-rich user experiences.  
-Use Sessions to store information about a user's interactions with your 
-application across multiple requests, over a specified period of time.  
-Further, Sessions play a major role in access control.  
+Use Sessions to track the state of a user's interactions with your application 
+across multiple requests, over a specified period of time.  Tracking user state 
+with Sessions enables more feature-rich user experiences.  Further, Sessions 
+play a major role in access control.  
+
+Session Management involves creating, reading, updating, and deleting of Sessions
+and Session attributes, and validating Sessions.
+
+Yosai's ``SessionManager`` uses a 
+``CachingSessionStore`` to cache sessions.  If you are not caching sessions, 
+you you are either using in-memory session storage (the ``MemorySessionStore``)
+or using your own custom SessionStore, which is beyond the scope of consideration
+here. 
 
 
 Authentication, Authorization, and Session Management are Related
@@ -15,11 +24,7 @@ The identity of an authenticated user is recorded in the Session.
 Since access control is limited by identity, and identity is obtained
 from a Session, access control is considered *bound* to a Session.
 
-Since access control is *bound* to a Session, when a Session is invalidated so 
-too does the authorization information cached for the Session.
-
-
-Session Management
+Session Validation 
 ------------------
 Sessions are a "threat vector":  a path that an "actor" may exploit to attack
 a "target" (your application).  Sessions are exploited by a process
@@ -94,13 +99,15 @@ Session validation is the process of determining whether a Session has stopped
 or expired.  When a session has stopped or expired, it is considered **invalid**.
 
 As discussed, there are two types of Session expiration:  idle and absolute-ttl.  
-
-A Session expires when crossing either timeout threshold is detected as 
+Consequently, there are two timeout thresholds, one for an idle timeout and 
+another for absolute timeout (ttl).  A Session expires when the time duration 
+betweeexceeds crossing either timeout threshold is detected as 
 validation is run for a Session.  
 
 Keeping track of idle expiration presents performance challenges.  Therefore, 
 Sessions are validated *only* when they are accessed (i.e. subject.get_session()).
-Consequently, there are two timeout thresholds: an idle timeout and absolute timeout (ttl)
+
+
 the last_access_timestamp synchronized with session usage presents a 
 
 if the duration between the last_access_timestamp and the current time exceeds
@@ -108,6 +115,12 @@ either timeout threshold, a session is considered expired
 
 By default, Sessions are "lazy validated" in that they are validated at the time 
 that [they are accessed?]. 
+
+
+As discussed in an earlier section above, access control is *bound* to a Session.
+Since access control is *bound* to a Session, when a Session is invalidated so 
+too does the authorization information cached for the Session.  Invalid authorization
+information is cleared from cache through event handling.
 
 .. warning:: 
     Idle Timeout Edge Case
@@ -205,11 +218,6 @@ subject is authenticated as a user:
     **any** privilege level change within the associated user session.
 
 
-what it offers independently and in conjunction with authorization
-
-- Yosai usage
-
-
 Session Storage
 ---------------
 Whenever a Session is created or updated, its data is persisted to a 
@@ -230,9 +238,6 @@ or any other location you want. You have control over persistence behavior.
 Yosai features an in-memory MemorySessionStore and CachingSessionStore.  The 
 CachingSessionStore is the default, and recommended, SessionStore for Yosai.
 
-
-Session Serialization
----------------------
 
 
 Session Dataflow

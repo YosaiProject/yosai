@@ -1,53 +1,32 @@
-Session Usage and Tutorial
---------------------------
-In this example, you will cache Sessions (Yosai will consequently use 
-``yosai.core.session.session.CachingSessionStore``).  
-If you are not using the CachingSessionStore, you are either using 
-``yosai.core.session.session.MemorySessionStore`` or your own custom 
-SessionStore, which is outside the scope of consideration for this documentation.  
-Serialization isn't a concern if you are using in-memory session management 
-as it doesn't require serialization. 
+Session Tutorial
+----------------
+In this tutorial, you will learn how to use the Session API to perform server-side
+session management.  We'll use a shopping cart example to illustrate how to manage 
+state using a server-side Session object.  You will learn how to:
+    1) define a ``marshmallow`` Schema required to cache a shopping cart as 
+       a Session attribute
+    2) manage a shopping cart using the Session API, including:
+        - get_attribute
+        - set_attribute
 
-Objects are serialized before they are cached.  Yosai uses the ``marshmallow`` 
-library in conjunction with an encoding library, such as MSGPack or JSON, to 
-(de)serialize Serializable objects from(to) cache.  Only ``Serializable`` objects 
-can be serialized.  A Serializable class implements the serialize_abcs.Serializable 
-abstract base class, which requires that a ``marshmallow.Schema`` class be defined 
-for implementations of it.  A Session **is** a Serializable object, therefore 
-it requires its own ``marshmallow.Schema`` definition.
+Serialize before Caching
+------------------------
+This example uses Session caching.  Objects are serialized before they are cached.  
 
+Only ``Serializable`` objects can be serialized in Yosai.  A Serializable class
+implements the serialize_abcs.Serializable abstract base class, which requires
+that a ``marshmallow.Schema`` class be defined for it, within its ``serialization_schema``
+classmethod.  
+
+Yosai uses the ``marshmallow`` library in conjunction with an encoding library, 
+such as MSGPack or JSON, to (de)serialize Serializable objects from(to) cache.
 ``marshmallow`` requires you to specify the Schema of the object and how to
-properly (de)serialize it. 
+properly (de)serialize it.  A Session is a Serializable object, therefore it 
+requires its own ``marshmallow.Schema`` definition.
 
-
-.. code-block:: python
-    class ShoppingCartItemSchema(Schema):
-        upc = fields.String()
-        quantity = fields.Int()
-
-    class ShoppingCartSchema(Schema):
-        items = fields.Nested(ShoppingCartItemSchema, many=True)
-  
-    # this class is declared in case there are attributes other than a 
-    # shopping cart that need to be serialized:
-    class SessionAttributesSchema(Schema):
-        shopping_cart = fields.Nested(ShoppingCartSchema)
-
-
-the ``SessionAttributesSchema`` class is passed as an argument during Yosai
-initialization:
-
-.. code-block:: python
-
-    SecurityUtils.init_yosai(... # omitted for this example
-                             ... # omitted for this example
-                             session_schema=SessionAttributesSchema)
 
 Example:  Shopping Cart Session Management
 ------------------------------------------
-We'll use a web shopping cart application to illustrate how to manage state 
-using a server-side Session object.
-
 This is *not* a primer on how to write your own e-commerce shopping cart 
 application.  This example is intended to illustrate the Session API. 
 **It is not intended for production use.**
@@ -61,16 +40,42 @@ As per Wikipedia:::
     calculates a total for the order, including shipping and handling (i.e.,
     postage and packing) charges and the associated taxes, as applicable.
 
-shopping_cart attribute within Session
---------------------------------------
-A shopping_cart is a dict that uses a UPC product code as its key and quantity 
-as its value.  
 
+.. code-block:: python
+
+    class ShoppingCartItemSchema(Schema):
+        upc = fields.String()
+        quantity = fields.Int()
+
+    # A shopping_cart is a dict that uses a UPC product code as its key and quantity 
+    # as its value:
+    class ShoppingCartSchema(Schema):
+        items = fields.Nested(ShoppingCartItemSchema, many=True)
+  
+    # this class is declared in case there are attributes other than a 
+    # shopping cart that need to be serialized:
+    class SessionAttributesSchema(Schema):
+        shopping_cart = fields.Nested(ShoppingCartSchema)
+
+
+Now that you've defined ``SessionAttributesSchema``, you are ready to initialize
+Yosai with shopping-cart enabled session management capabilities.  Simply pass
+the schema class as an argument at Yosai initialization.  The rest of the
+arguments passed to init_yosai are omitted for clarity:
+
+.. code-block:: python
+
+    SecurityUtils.init_yosai(... # omitted for this example
+                             ... # omitted for this example
+                             session_schema=SessionAttributesSchema)
 
 Shopping Cart
 ~~~~~~~~~~~~~
 ShoppingCart is a facade to the Session API for managing the shopping_cart 
 attribute within a Session.  
+
+A shopping_cart is a dict that uses a UPC product code as its key and quantity 
+as its value  
 
 A ShoppingCart allows you to add, update, and removes items and adjust the 
 quantity of each item.  
@@ -156,3 +161,5 @@ Operation 3:  Modify the quantity of an item in the shopping cart
     my_cart.update_item('0043000200216', 2)
    
     my_cart.list_items()
+
+
