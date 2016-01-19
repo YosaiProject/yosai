@@ -173,7 +173,7 @@ Session Usage
 
 Session Initialization
 ~~~~~~~~~~~~~~~~~~~~~~
-A Session can be used to manage state for a Subject regardless of whether the 
+A Session can be used to manage state for a Subject regardless of whether the
 Subject has authenticated itself or remains anonymous.  Yosai initializes a
 server-side Session the moment that a Subject is instantiated:
 
@@ -236,8 +236,52 @@ CachingSessionStore is the default, and recommended, SessionStore for Yosai.
 
 
 
-Session Dataflow
-----------------
+Session Events
+--------------
+An Event is emitted to the singleton EventBus, in Yosai, when a Session is
+*started*, *stopped*, or *expired*.  If you would like to learn more about Event
+processing, please refer to the documentation about Event Processing [here].
+
+Events are communicated using a publish-subscribe paradigm.  In the case of Sessions,
+a ``SessionEventHandler`` publishes an event to a channel (an internal Event Bus).
+The EventBus relays an event to consumers who have subscribed to the event's topic.
+It relays the event by calling the callback method registered for a consumer, using
+the event payload as its argument(s).
+
+The following table lists the Session-related events and who the subscriber(s) are:
+
+| Event Topic              | Subscriber(s) |
+|--------------------------|---------------|
+| SESSION.START            | EL            |
+| SESSION.STOP             | MRA, EL       |
+| SESSION.EXPIRE           | MRA, EL       |
+
+MRA = ``yosai.core.authz.authz.ModularRealmAuthorizer``
+SEH = ``yosai.core.session.session.SessionEventHandler``
+
+
+Example:  SESSION.EXPIRE Event Processing
+-----------------------------------------
+At Yosai initialization, ``yosai.core.authz.authz.ModularRealmAuthorizer``
+subscribes to a few event topics, one of which is 'SESSION.EXPIRE'.
+When it subscribes to the 'SESSION.EXPIRE' topic, it registers a
+callback method, ``session_clears_cache``.  This callback method is called
+by the EventBus whenever a 'SESSION.EXPIRE' event is emitted to the bus.
+
+A `SESSION.EXPIRE` event is emitted by a ``yosai.core.session.session.SessionEventHandler``
+when Session Validation has recognized a Session as expired.
+
+As of yosai.core v0.1.0, the ``ModularRealmAuthorizer`` and ``EventLogger``
+are the two subscribers of the `SESSION.EXPIRE` topic (see table above).  The
+callback method registered for each subscriber is called in an arbitrary,
+sequential fasion (PyPubSub design) when a SessionEventHandler emits a
+SESSION.EXPIRE event to the Eventbus.
+
+Here is an example of an expired-session event processing through Yosai,
+omitting the event logging:
+
+[ insert sequence diagram here]
+
 
 
 References

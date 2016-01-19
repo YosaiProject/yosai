@@ -3,8 +3,10 @@ II) Installation and Settings
 III) Getting Started
 
 IV) Authentication
+
 V.i) Authorization
 V.ii) Authorization Tutorial
+
 VI.i) Session Management
     About Sessions and Session Management
     Relationship among Authentication, Authorization, and Session Management
@@ -18,6 +20,8 @@ VI.i) Session Management
     Session Usage
         Session Initialization
     Session Storage
+    Session Events
+
 VI.ii) Session Tutorial
     Tutorial Objectives
     Serialization Strategy
@@ -33,9 +37,11 @@ VII) Administrative Utility
     - RunAs
 
 VIII) Framework
+
 IX)) Architecture Overview
 
 X) Serialization
+
 XI.i) Event-driven Processing
 XI.ii) Event Logging
 
