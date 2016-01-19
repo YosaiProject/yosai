@@ -34,7 +34,7 @@ VI.ii) Session Tutorial
         Operation 4:  Remove the shopping cart attribute
 
 VII) Administrative Utility
-    - RunAs
+    RunAs
 
 VIII) Framework
 
@@ -46,6 +46,6 @@ XI.i) Event-driven Processing
 XI.ii) Event Logging
 
 XII) Extensions and Integrations
-  - batteries included
+    Batteries included
 
 XIII) Credits

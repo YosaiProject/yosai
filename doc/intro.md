@@ -1,28 +1,23 @@
-Yosai:  Security for Any Python Application
-
+![](img/yosai.svg)
 
 Yosai helps you to control who can use an application and how it is used,
 managing state between requests.  In other words, Yosai offers authentication,
  authorization, and session management, respectively:
 
-Authentication
---------------
+# Authentication
 Authentication is the process of verifying identity, proving that a subject IS
 who "IT" claims to be. Identity is verified through some kind of credentials
 mechanism.
 
-Authorization
--------------
+# Authorization
 Authorization is the process of constraining a user's access to sensitive data
 and interactions in a system in accordance with an access control policy.
 
-Session Management
-------------------
+# Session Management
 Session Management controls a user's state in a system, across requests.
 
 
-Based on Apache Shiro
-=====================
+# Based on Apache Shiro
 Yosai is based on Apache Shiro, written in Java.  The Yosai Project began as a
 port of Apache Shiro, v2 alpha, but assumed many of its own unique designs as
 important sections of the v2 alpha were unfinished at the time of development.
@@ -30,15 +25,13 @@ Forking Apache Shiro was necessary in order to complete Yosai and foster a more
 *pythonic* design.
 
 
-An Intuitive API
-===========================================
+# An Intuitive API
 Developers can use Yosai without burdening themselves with knowledge about
 its internals.  Following is a basic preview of Yosai's API. Each example
 complements those it follows.
 
 
-Introducing: Subject
--------------------------
+# Introducing: Subject
 First, a brief introduction to our main actor: the **Subject**.
 
 Every security related operation is performed in the context of a **Subject**.
@@ -48,8 +41,7 @@ a *person* or a *thing*.
 
 Onward..
 
-Initializing Yosai
-------------------
+# Initializing Yosai
 Initialize Yosai in the namespace that requires security.  With Yosai
 initialized, you can authenticate, authorize, and manage sessions.
 
