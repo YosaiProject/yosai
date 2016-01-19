@@ -201,12 +201,19 @@ and, except for web applications, can be re-used for login again if desired.
 
 
 ## Authentication Events
-An Event is emitted to the singleton EventBus, in Yosai, when the results of
-authentication are obtained, indicating whether authentication succeeded or failed (without compromising credentials).  If you would like to learn more about Event processing, please refer to the documentation about Event Processing [here].
+An Event is emitted to the singleton EventBus when the results of
+authentication are obtained, indicating whether authentication succeeded or
+failed (without compromising credentials).  If you would like to learn more
+about Event processing, please refer to the documentation about Event
+Processing [here].
 
-Events are communicated using a publish-subscribe paradigm.  In the case of Authentication, the `DefaultAuthenticator` publishes an event to a channel (an internal Event Bus). The EventBus relays an event to consumers who have subscribed to the event's topic. It relays the event by calling the callback method registered for a consumer, using the event payload as its argument(s).
+Events are communicated using a publish-subscribe paradigm.  In the case of
+Authentication, the `DefaultAuthenticator` publishes an event to a channel (an
+internal Event Bus). The EventBus relays an event to consumers who have
+subscribed to the event's topic. It relays the event by calling the callback
+method registered for a consumer, using the event payload as its argument(s).
 
-The following table lists the Authentication-related events and who the subscriber(s) are:
+The following table lists the Authentication-related events and subscriber(s):
 
 | Event Topic              | Subscriber(s)
 |--------------------------|--------------

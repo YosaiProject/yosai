@@ -1,5 +1,5 @@
-What is Authorization?
-======================
+# Authorization
+
 Authorization, also known as Access Control, is concerned with the rules and
 mechanisms governing how someone or something accesses resources (in this context,
 within a software application). Informally speaking, authorization is concerned with
@@ -10,8 +10,8 @@ of Authorization in Yosai.  Please consult the API Reference if you wish to see
 the authorization API in its entirety.
 
 
-Role-Based Access Control
--------------------------
+## Role-Based Access Control
+
 There are many access control models in use today [1].  By default, Yosai
 enforces access control by evaluating roles and permissions assigned to a user.
 These roles and permissions are derived from a Role-Based Access Control (RBAC) model.
@@ -31,8 +31,7 @@ model was implemented for Yosai, as an extension, so to facilitate other extensi
 projects [2].
 
 
-How is Authorization conducted in Yosai?
-========================================
+## How is Authorization conducted in Yosai?
 
 The key concepts to understand about authorization in Yosai involve these relationships:
 
@@ -59,8 +58,8 @@ and role memberships) and then determines whether the user meets
 the access required to perform an operation in an application.
 
 
-Access Control Levels and Styles
---------------------------------------------
+## Access Control Levels and Styles
+
 Two "levels" of access control are available:  **role-level** and **permission-level**.
 
 Yosai supports "explicit" role-level access control.  With explicit role-level
@@ -80,8 +79,8 @@ if authorization fails.
 the operation that requires authorization.
 
 
-Levels and Styles Illustrated
------------------------------
+## Levels and Styles Illustrated
+
 Following is an example of what role-level authorization looks like when using
 either style of access control.  In this example, we only allow a user to
 delete a comment from a message board (subreddit) if the user is a moderator or
@@ -91,27 +90,26 @@ remove_comment method so that the creator of the post may also delete the
 comment, but this detail is left out for simplicity's sake and only to
 highlight role-level access control:
 
-Declarative Style
-~~~~~~~~~~~~~~~~~
-.. code-block:: python
+### Declarative Style
+```Python
 
-    @requires_role(roleid_s=['moderator', 'admin'], logical_operator=any)
-    def remove_comment(self, submission):
-       self.database_handler.delete(submission)
+@requires_role(roleid_s=['moderator', 'admin'], logical_operator=any)
+def remove_comment(self, submission):
+   self.database_handler.delete(submission)
+```
 
-Imperative Style
-~~~~~~~~~~~~~~~~
-.. code-block:: python
+### Imperative Style
+```Python
+def remove_comment(self, submission):
+    subject = SecurityUtils.get_subject()
 
-    def remove_comment(self, submission):
-        subject = SecurityUtils.get_subject()
+    try:
+        subject.check_role(['moderator', 'creator'], logical_operator=any)
+    except UnauthorizedException:
+        print('Cannot remove comment:  Access Denied.'')
 
-        try:
-            subject.check_role(['moderator', 'creator'], logical_operator=any)
-        except UnauthorizedException:
-            print('Cannot remove comment:  Access Denied.'')
-
-        self.database_handler.delete(submission)
+    self.database_handler.delete(submission)
+```
 
 .. note::
     Role-level access control is inferior to permission-level access control, but
@@ -122,8 +120,8 @@ Does the user's assigned permissions imply permission of the permissions require
 to proceed.
 
 
-Permissions
------------
+# Permissions
+
 A permission states what behavior can be performed in an application but not who
 can perform them. Permissions are modeled in Yosai using a flexible design that
 allows a developer to choose an appropriate level of detail that suits the
@@ -132,8 +130,8 @@ authorization policy governing a software application.
 A Permission can be represented in Yosai as a ``formatted string`` or as a
 ``Permission`` object.  First, let's consider the formatted string.
 
-I) Permission String
---------------------
+## I) Permission String
+
 The following string presents a permission formatted using a syntax recognized
 by Yosai.  Please do not pay attention to the actual labels used but rather the format:
 
@@ -149,8 +147,7 @@ formatted as follows:
     ``'domain:action:instance'``
 
 
-II) Permission object
----------------------
+## II) Permission object
 
 A ``DefaultPermission`` is expressed in Yosai as a *combination* of resource type (domain),
 the action(s) that is acted upon that resource type, and instance(s) of that resource type.
@@ -164,14 +161,12 @@ perform an operation only under certain circumstances:
 
 
 
-Authorization Case Study
-------------------------
+## Authorization Case Study
 
-Role Engineering
-----------------
+## Role Engineering
 
-Permission Modeling
--------------------
+## Permission Modeling
+
 Following are a few examples of what a Permission string looks like.  We'll base these
 examples on Reddit moderator permissioning [3], with liberties taken to their
 modeling so as to make it relevant for these examples.  If you are unfamiliar
@@ -230,8 +225,8 @@ our examples:
             ``'subreddit_id123:comment:remove, mark_nsfw'``
 
 
-You Implement Your Authorization Policy, Yosai enforces it
-----------------------------------------------------------
+## You Implement Your Authorization Policy, Yosai enforces it
+
 Access control begins with an authorization policy.  A user is granted permissions
 through an authorization policy.  The policy states how a user is granted
 permission to perform an action on a type of resource, perhaps a specific resource
@@ -244,13 +239,35 @@ policy but does not provide one. Yosai obtains a user's permissions (or roles)
 from an outside source and then interprets them to determine whether a user is authorized.
 
 
-Authorization Events
---------------------
+## Authorization Events
+
+An Event is emitted to the singleton EventBus when the results of
+authorization are obtained.  The results are comprehensive:  every permission 
+or role that is checked is included along with a Boolean indicating whether
+authorization was granted for it.  A summary "granted" or "denied" event is 
+also communicated when a Boolean check-authorization is submitted to Yosai.  
+If you would like to learn more about Event processing, please refer to the 
+documentation about EventProcessing [here].
+
+Events are communicated using a publish-subscribe paradigm.  In the case of
+Authorization, the `ModularRealmAuthorizer` publishes an event to a channel (an
+internal Event Bus). The EventBus relays an event to consumers who have
+subscribed to the event's topic. It relays the event by calling the callback
+method registered for a consumer, using the event payload as its argument(s).
+
+The following table lists the Authorization-related events and subscriber(s):
+
+| Event Topic              | Subscriber(s)
+|--------------------------|----------------
+| AUTHORIZATION.GRANTED    | EL            |
+| AUTHORIZATION.DENIED     | EL            |
+| AUTHORIZATION.RESULTS    | EL            |
+
+EL = ``yosai.core.event.event.EventLogger``
 
 
 References
 ----------
-
 [1] Access Control Models:  https://en.wikipedia.org/wiki/Access_control
 [2] YosaiAlchemyStore: https://github.com/YosaiProject/yosai_alchemystore
 [3] Reddit Moderator Overview:  https://www.reddit.com/wiki/moderation
