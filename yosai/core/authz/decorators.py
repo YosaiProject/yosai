@@ -17,6 +17,9 @@ def requires_permission(permission_s, logical_operator=all):
                               is true (and, any)
     :type: and OR all (from python standard library)
 
+    :raises  AuthorizationException:  if the user does not have sufficient
+                                      permission
+
     Elaborate Example:
         requires_permission(
             permission_s=['domain1:action1,action2', 'domain2:action1'],
@@ -51,6 +54,9 @@ def requires_role(roleid_s, logical_operator=all):
     :param logical_operator:  indicates whether all or at least one permission
                               is true (and, any)
     :type: and OR all (from python standard library)
+
+    :raises  AuthorizationException:  if the user does not have sufficient
+                                      role membership
 
     Elaborate Example:
         requires_role(roleid_s=['sysadmin', 'developer'], logical_operator=any)
