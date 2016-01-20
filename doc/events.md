@@ -1,5 +1,4 @@
-Event-Driven Architecture
-=========================
+# Event-Driven Architecture
 Yosai features an event-driven architecture where events emitted during
 authentication, authorization, and session management trigger subsequent
 processing.
@@ -18,8 +17,7 @@ producers.  This promotes flexibility through loose coupling and high cohesion
 between components, leading to a more pluggable architecture.
 
 
-Sending Events
------------------
+## Sending Events
 If a component wishes to publish events to other components:::
 
     event_bus.publish(topic, *kwargs)
@@ -28,8 +26,7 @@ The event bus dispatches the event 'message' to components that wish to receive
 events of that type (known as subscribers).
 
 
-Receiving Events
-------------------
+## Receiving Events
 A component can receive events of interest by doing the following.
 
 For each event topic you wish to consume, create a callback method
@@ -39,8 +36,7 @@ the event bus.  Register the callback with the event_bus:::
    event_bus.register(topic, callback)
 
 
-Event Schedule
---------------
+## Event Schedule
 The following table lists the Events that are used in Yosai, who the
 publisher of an event is, and who the subscriber(s) are:
 
@@ -61,8 +57,7 @@ MRA = ``yosai.core.authz.authz.ModularRealmAuthorizer``
 SEH = ``yosai.core.session.session.SessionEventHandler``
 
 
-Event Logging
-=============
+## Event Logging
 Communicating events in a structured format facilitates processing of log
 entries by systems independent of Yosai.  Therefore, events are
 logged in a structured format by reducing event payloads to their serializable

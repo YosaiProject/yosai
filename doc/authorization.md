@@ -91,6 +91,7 @@ comment, but this detail is left out for simplicity's sake and only to
 highlight role-level access control:
 
 ### Declarative Style
+
 ```Python
 
 @requires_role(roleid_s=['moderator', 'admin'], logical_operator=any)
@@ -99,6 +100,7 @@ def remove_comment(self, submission):
 ```
 
 ### Imperative Style
+
 ```Python
 def remove_comment(self, submission):
     subject = SecurityUtils.get_subject()
@@ -116,8 +118,7 @@ def remove_comment(self, submission):
     since it has its niche use, is available in Yosai.  It is highly recommended that
     you choose permission-level access control policies for your application.
 
-Does the user's assigned permissions imply permission of the permissions required
-to proceed.
+Does the user's assigned permissions imply permission of the permissions required to proceed.
 
 
 # Permissions
@@ -242,11 +243,11 @@ from an outside source and then interprets them to determine whether a user is a
 ## Authorization Events
 
 An Event is emitted to the singleton EventBus when the results of
-authorization are obtained.  The results are comprehensive:  every permission 
+authorization are obtained.  The results are comprehensive:  every permission
 or role that is checked is included along with a Boolean indicating whether
-authorization was granted for it.  A summary "granted" or "denied" event is 
+authorization was granted for it.  A summary "granted" or "denied" event is
 also communicated when a Boolean check-authorization is submitted to Yosai.  
-If you would like to learn more about Event processing, please refer to the 
+If you would like to learn more about Event processing, please refer to the
 documentation about EventProcessing [here].
 
 Events are communicated using a publish-subscribe paradigm.  In the case of
@@ -266,8 +267,7 @@ The following table lists the Authorization-related events and subscriber(s):
 EL = ``yosai.core.event.event.EventLogger``
 
 
-References
-----------
+## References
 [1] Access Control Models:  https://en.wikipedia.org/wiki/Access_control
 [2] YosaiAlchemyStore: https://github.com/YosaiProject/yosai_alchemystore
 [3] Reddit Moderator Overview:  https://www.reddit.com/wiki/moderation

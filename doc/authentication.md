@@ -82,15 +82,15 @@ cryptographic hashing and password verification.
 The default hashing scheme chosen for Yosai is *bcrypt_sha256*. As per Passlib
 documentation [1], the *bcrypt_sha256* algorithm works as follows:
 
-    - First, the password is encoded to UTF-8 if not already encoded.
-    - Then, the UTF-8 encoded password is run through SHA2-256, generating a 32-byte digest
-    - The 32-byte digest is encoded using base64, resulting in a 44-byte result
-      (including the trailing padding '='):
-          For the example "password", the output from this stage would be:
-            "XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg=".
+- First, the password is encoded to UTF-8 if not already encoded.
+- Then, the UTF-8 encoded password is run through SHA2-256, generating a 32-byte digest
+- The 32-byte digest is encoded using base64, resulting in a 44-byte result
+  (including the trailing padding '='):
+      For the example "password", the output from this stage would be:
+        "XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg=".
 
-    - Finally, the base64 string is passed on to the underlying bcrypt algorithm
-      as the new password to be hashed.
+- Finally, the base64 string is passed on to the underlying bcrypt algorithm
+  as the new password to be hashed.
 
 
 ## Native Support for 'Remember Me' Services
@@ -195,7 +195,6 @@ and, except for web applications, can be re-used for login again if desired.
     immediately after calling current_user.logout(). Doing so guarantees that
     any security-related cookies are deleted as expected. This is a limitation
     of how HTTP cookies function and not a limitation of Yosai.
-
 
 [Passlib - bcrypt_sha256 documentation]( https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm)
 

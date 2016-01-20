@@ -1,24 +1,31 @@
 # Session Tutorial
+
 In this tutorial, you will learn how to use the Session API to perform server-side session management.  We'll use a shopping cart example to illustrate how to manage state using a Session object.  You will learn how to:     1) define a `marshmallow` Schema required to cache a shopping cart as        a Session attribute     2) manage a shopping cart using the Session API, including:
 - get_attribute
 - set_attribute
 - remove_attribute
 
+
 ## Serialization Strategy
+
 This example uses Session caching.  Objects are serialized before they are cached.
 
 Yosai uses the `marshmallow` library in conjunction with an encoding library, such as MSGPack or JSON, to (de)serialize Serializable objects from(to) cache. `marshmallow` requires you to specify the Schema of the object and how to properly (de)serialize it.  A Session is a Serializable object, therefore it requires its own `marshmallow.Schema` definition.
 
 Only `Serializable` objects can be serialized in Yosai.  A Serializable class implements the serialize_abcs.Serializable abstract base class, which requires that a `marshmallow.Schema` class be defined for it within its `serialization_schema` classmethod.
 
+
 ## Example:  Shopping Cart Session Management
+
 This is _not_ a primer on how to write your own e-commerce shopping cart application.  This example is intended to illustrate the Session API. **It is not intended for production use.**
 
 As per Wikipedia:
 
 > A shopping cart is a piece of e-commerce software on a web server that allows visitors to an Internet site to select items for eventual purchase... The software allows online shopping customers to _accumulate a list of items for purchase_, described metaphorically as "placing items in the shopping cart" or "add to cart." Upon checkout, the software typically calculates a total for the order, including shipping and handling (i.e., postage and packing) charges and the associated taxes, as applicable.
 
+
 ### Serializing a Shopping Cart in a Session
+
 Let's define our `marshmallow.Schema` classes:
 
 ```Python
@@ -46,7 +53,9 @@ Now that you've defined `SessionAttributesSchema`, you are ready to initialize Y
                              session_schema=SessionAttributesSchema)
 ```
 
+
 ### Shopping Cart
+
 ShoppingCart is a facade to the Session API for managing the shopping_cart attribute within a Session.
 
 A shopping_cart is a dict that uses a UPC product code as its key and quantity as its value
@@ -85,6 +94,7 @@ class ShoppingCart(Serializable):
 .. note::<br>This class is designed based on the assumption that a new ShoppingCart     instance is obtained per request.  A Session is accessed at **init**.     A Session is validated only when it is accessed.  If ShoppingCart were to be     used in a web application, it would be instantiated _per request_ and     consequently the Session would be validated per-request.
 
 Now, you will see how your interaction with the ShoppingCart API impacts a user's Session.  We'll add four items to the shopping cart, remove one, and modify the quantity of another.  Finally, we'll remove the shopping_cart attribute entirely from the Session.
+
 
 #### Operation 1:  Add four items to the shopping cart
 

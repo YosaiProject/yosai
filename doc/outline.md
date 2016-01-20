@@ -7,6 +7,7 @@ IV) Authentication
 V.i) Authorization
 V.ii) Authorization Tutorial
 
+VI) Sessions and Session Management
 VI.i) Session Management
     About Sessions and Session Management
     Relationship among Authentication, Authorization, and Session Management

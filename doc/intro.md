@@ -4,20 +4,27 @@ Yosai helps you to control who can use an application and how it is used,
 managing state between requests.  In other words, Yosai offers authentication,
  authorization, and session management, respectively:
 
+
 # Authentication
+
 Authentication is the process of verifying identity, proving that a subject IS
 who "IT" claims to be. Identity is verified through some kind of credentials
 mechanism.
 
+
 # Authorization
+
 Authorization is the process of constraining a user's access to sensitive data
 and interactions in a system in accordance with an access control policy.
 
+
 # Session Management
+
 Session Management controls a user's state in a system, across requests.
 
 
 # Based on Apache Shiro
+
 Yosai is based on Apache Shiro, written in Java.  The Yosai Project began as a
 port of Apache Shiro, v2 alpha, but assumed many of its own unique designs as
 important sections of the v2 alpha were unfinished at the time of development.
@@ -26,12 +33,14 @@ Forking Apache Shiro was necessary in order to complete Yosai and foster a more
 
 
 # An Intuitive API
+
 Developers can use Yosai without burdening themselves with knowledge about
 its internals.  Following is a basic preview of Yosai's API. Each example
 complements those it follows.
 
 
 # Introducing: Subject
+
 First, a brief introduction to our main actor: the **Subject**.
 
 Every security related operation is performed in the context of a **Subject**.
@@ -41,12 +50,13 @@ a *person* or a *thing*.
 
 Onward..
 
+
 # Initializing Yosai
+
 Initialize Yosai in the namespace that requires security.  With Yosai
 initialized, you can authenticate, authorize, and manage sessions.
 
-.. code-block:: python
-
+```Python
     from yosai.core import SecurityUtils
 
     realm = AccountStoreRealm()
@@ -54,6 +64,7 @@ initialized, you can authenticate, authorize, and manage sessions.
     SecurityUtils.init_yosai(cache_handler=DPCacheHandler(),
                              realms=(realm,),
                              session_schema=MySessionSchema)
+```
 
 .. note::
     - CacheHandler is a Yosai extension
@@ -62,19 +73,19 @@ initialized, you can authenticate, authorize, and manage sessions.
     - MySessionSchema is a ``marshmallow`` Schema class
 
 
-Authentication
---------------
+# Authentication
+
 In this example, we "log in" a Subject, performing password-based authentication
 that raises an AuthenticationException if authentication were to fail:
 
-.. code-block:: python
-
+```Python
     from yosai.core import SecurityUtils, AuthenticationToken
 
     authc_token = UsernamePasswordToken(username='thedude',
                                       credentials='letsgobowling')
     subject = SecurityUtils.get_subject()
     subject.login(authc_token)
+```
 
 .. note::
     UsernamePasswordToken is a consolidation of a user account's identifying
@@ -82,14 +93,14 @@ that raises an AuthenticationException if authentication were to fail:
     during an authentication attempt
 
 
-Session Management
-------------------
+# Session Management
+
 Yosai offers session management for anonymous guests or authenticated users.
 In the Authentication example above, the Subject is automatically allocated a
 new session in Yosai following successful authentication.  We manage
 the attributes of a session through a CRUD-like series of methods:
 
-.. code-block:: python
+```Python
 
     from yosai.core import SecurityUtils
 
@@ -97,19 +108,19 @@ the attributes of a session through a CRUD-like series of methods:
 
     session = subject.get_session()
     session.set_attribute('full_name', 'Jeffrey Lebowski')
+```
 
 
-Authorization
--------------
-Authorization is conducted in your application either by decorating methods with an
-authorization check, such as in the example below, or by expicitly calling
+# Authorization
+
+Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by expicitly calling
 one of Subject's access control methods.
 
 The following example confirms whether the user logged in above has sufficient
 privileges to approve a bowling tournament application.  Infomation about the
 syntax will come later.
 
-.. code-block:: python
+```Python
 
     from yosai.core import check_permission
 
@@ -117,10 +128,11 @@ syntax will come later.
     def approve_tournament_application(self, tournament_application):
         tournament_application.status = 'APPROVED'
         self.notify_approval(tournament_application)
+```
 
 
-Architectural Overview: yosai.core
-==================================
+# Architectural Overview: yosai.core
+
 Yosai is "built to contract", featuring concrete implementations of
 abstract base classes that collectively define Yosai's architecture.
 Developers who find Yosai's default concrete implementations unsuitable for
@@ -133,24 +145,24 @@ own customizations of the framework -- interact primarily with the API provided
 by the Subject component at the top.
 
 
-Securing any Python Application, using Extensions and Integrations
-==================================================================
+# Securing any Python Application, using Extensions and Integrations
+
 The mission of The Yosai Project is to secure any kind of Python application.
 To fulfill this mission, extensions and integrations are required.
 
-Extensions
-----------
-As illustrated, Yosai consists of a core library.  To provide a complete security
-solution for applications, the core library uses *extensions* -- components that extend
-operations enabled by the core.  Examples of extensions include:
-    - credentials repositories such as relational databases or LDAP directories
-    - access control policies residing in data sources such as relational databases
-    - authentication methodologies such as social-media based authentication or
-      multi-factor authentication
-    - caching mechanisms
 
-Integrations
-------------
+## Extensions
+
+As illustrated, Yosai consists of a core library.  To provide a complete security solution for applications, the core library uses *extensions* -- components that extend operations enabled by the core.  Examples of extensions include:
+- credentials repositories such as relational databases or LDAP directories
+- access control policies residing in data sources such as relational databases
+- authentication methodologies such as social-media based authentication or
+  multi-factor authentication
+- caching mechanisms
+
+
+## Integrations
+
 Yosai is designed to provide security related functionality in such a way that
 it can be used with ANY kind of application, including desktop apps, web apps,
 internet-enabled devices, etc.
