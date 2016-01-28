@@ -19,6 +19,8 @@ Although it is customizable, Yosai features a set of default implementations to 
 
 # Fundamentals
 
+## Introducing: Subject
+
 The three core services provided by Yosai are:
 
 1. Authentication
@@ -26,11 +28,6 @@ The three core services provided by Yosai are:
 3. Session Management
 
 These services share a common API that you will use to interact with them:  the Subject API.
-
-
-## Introducing: Subject
-
-A brief introduction to our main actor: the **Subject**
 
 Every security related operation is performed in the context of a **Subject**.
 The term "Subject" is generally synonymous with "User" except that aside from
@@ -51,7 +48,7 @@ that raises an AuthenticationException if authentication were to fail:
     subject.login(authc_token)
 ```
 
-.. note::
+!!! note ""
     UsernamePasswordToken is a consolidation of a user account's identifying
     attributes (username) and credentials (password) submitted by a user
     during an authentication attempt
@@ -63,8 +60,7 @@ Authorization is conducted in your application either by decorating methods with
 one of Subject's access control methods.
 
 The following example confirms whether the user logged in above has sufficient
-privileges to approve a bowling tournament application.  Infomation about the
-syntax will come later.
+privileges to approve a bowling tournament application.  We illustrate what is known as the *declarative style* authorization.  Information about authorization styles can be found in the authorization documentation.
 
 ```Python
 
@@ -85,7 +81,6 @@ new session in Yosai following successful authentication.  We manage
 the attributes of a session through a CRUD-like series of methods:
 
 ```Python
-
     from yosai.core import SecurityUtils
 
     subject = SecurityUtils.get_subject()
@@ -95,11 +90,16 @@ the attributes of a session through a CRUD-like series of methods:
 ```
 
 
-
 ## Initializing Yosai
 
-Initialize Yosai in the namespace that requires security.  With Yosai
-initialized, you can authenticate, authorize, and manage sessions.
+With Yosai initialized, you can authenticate, authorize, and manage sessions.
+
+To initialize Yosai, you must specify, at a minimum:
+- What CacheHandler to use, if you are caching
+- The AccountStore instance(s) from which to obtain authentication and
+  authorization information
+- The ``marshmallow`` serialization Schema you will use to (de)serialize
+  Session state (user-defined session attributes), if you are caching
 
 ```Python
     from yosai.core import SecurityUtils
@@ -111,14 +111,16 @@ initialized, you can authenticate, authorize, and manage sessions.
                              session_schema=MySessionSchema)
 ```
 
-.. note::
+!!! note ""
     - CacheHandler is a Yosai extension
     - The underlying AccountStore that is referenced by the AccountStoreRealm
       object is also a Yosai extension
     - MySessionSchema is a ``marshmallow`` Schema class
 
 
-## Securing any Python Application, using Extensions and Integrations
+
+
+## Extensions and Integrations
 
 The mission of The Yosai Project is to secure any kind of Python application.
 To fulfill this mission, extensions and integrations are required.
