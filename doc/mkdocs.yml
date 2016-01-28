@@ -1,0 +1,12 @@
+site_name: Yosai
+repo_url: https://github.com/yosaiproject
+theme:  bootstrap
+markdown_extensions:
+  - admonition
+  - fenced_code
+  - codehilite:
+        noclasses: True
+        pygments_style: monokai
+pages:
+- Home: index.md
+- Get Started: get_started.md

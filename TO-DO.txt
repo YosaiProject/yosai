@@ -95,3 +95,4 @@ PEP8 standardized imports:
 
 implement deserialization validation
 
+implement init_yosai from within SecurityUtils
