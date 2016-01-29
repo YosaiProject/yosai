@@ -17,4 +17,5 @@ pages:
     - Session Management: sessionmanagement.md
     - Event Processing: events.md
     - Serialization:  serialization.md
+    - Architecture Overview:  architecture.md
     - Credits: credits.md
