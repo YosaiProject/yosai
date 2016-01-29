@@ -1,4 +1,6 @@
 # Event-Driven Architecture
+![eventdriven](img/eventdriven.png)
+
 Yosai features an event-driven architecture where events emitted during
 authentication, authorization, and session management trigger subsequent
 processing.
@@ -8,7 +10,7 @@ emits the event to a channel (an internal Event Bus) that relays the event to
 consumers who have subscribed to the event's topic. The EventBus is a singleton
 shared throughout the running instance of Yosai.
 
-image:  http://pubsub.sourceforge.net/_images/pubsub_concept.png
+![pubsub](img/pubsub.png)
 
 An EventBus relays published events to event subscribers and provides a mechanism for
 registering and unregistering event subscribers. With this pubsub paradigm,
@@ -18,9 +20,8 @@ between components, leading to a more pluggable architecture.
 
 
 ## Sending Events
-If a component wishes to publish events to other components:::
-
-    event_bus.publish(topic, *kwargs)
+If a component wishes to publish events to other components:
+`event_bus.publish(topic, *kwargs)`
 
 The event bus dispatches the event 'message' to components that wish to receive
 events of that type (known as subscribers).
@@ -31,9 +32,8 @@ A component can receive events of interest by doing the following.
 
 For each event topic you wish to consume, create a callback method
 that will be called when an specific type of event is communicated across
-the event bus.  Register the callback with the event_bus:::
-
-   event_bus.register(topic, callback)
+the event bus.  Register the callback with the event_bus:
+`event_bus.register(topic, callback)`
 
 
 ## Event Schedule
@@ -51,13 +51,16 @@ publisher of an event is, and who the subscriber(s) are:
 | AUTHORIZATION.DENIED     | MRA        | EL            |
 | AUTHORIZATION.RESULTS    | MRA        | EL            |
 
-DA = ``yosai.core.authc.authc.DefaultAuthenticator``
-EL = ``yosai.core.event.event.EventLogger``
-MRA = ``yosai.core.authz.authz.ModularRealmAuthorizer``
-SEH = ``yosai.core.session.session.SessionEventHandler``
+- DA = ``yosai.core.authc.authc.DefaultAuthenticator``
+- EL = ``yosai.core.event.event.EventLogger``
+- MRA = ``yosai.core.authz.authz.ModularRealmAuthorizer``
+- SEH = ``yosai.core.session.session.SessionEventHandler``
 
 
 ## Event Logging
+
+![logging](img/logs.png)
+
 Communicating events in a structured format facilitates processing of log
 entries by systems independent of Yosai.  Therefore, events are
 logged in a structured format by reducing event payloads to their serializable

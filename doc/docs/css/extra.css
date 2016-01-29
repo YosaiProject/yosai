@@ -15,6 +15,12 @@ h2 {
 
 h3 {
     font-family: 'Yantramanav';
+    padding: 30px 0 0;
+    color: #104578;
+}
+
+h4 {
+    font-family: 'Yantramanav';
     padding: 20px 0 0;
     color: #104578;
 }
@@ -65,9 +71,40 @@ div.col-md-9 h6:first-of-type {
     font-size: 18px;
 }
 
-img[alt=anon_architecture], img[alt=authc], img[alt=authz] {
+img[alt=anon_architecture], img[alt=authc], img[alt=authz],
+img[alt=sessionman], img[alt=eventdriven], img[alt=pubsub],
+img[alt=respect] {
     width: 40%;
     height: 40%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+img[alt=serialization]{
+    width: 80%;
+    height: 80%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+img[alt=idle_timeout] {
+    width: 75px;
+    height: 125px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+img[alt=logging] {
+    width: 175px;
+    height: 75px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+img[alt=ttl], img[alt=marshmallow] {
+    width: 125px;
+    height: 125px;
     display: block;
     margin-left: auto;
     margin-right: auto;

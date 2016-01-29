@@ -6,10 +6,15 @@ markdown_extensions:
   - codehilite:
         noclasses: True
         pygments_style: monokai
-  - admonition:
+  - admonition
 
 pages:
 - Home: index.md
 - Documentation:
+    - Installation and Setup:  installation_setup.md
     - Authentication: authentication.md
     - Authorization: authorization.md
+    - Session Management: sessionmanagement.md
+    - Event Processing: events.md
+    - Serialization:  serialization.md
+    - Credits: credits.md

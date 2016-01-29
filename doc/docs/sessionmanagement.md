@@ -1,10 +1,12 @@
 # Sessions and Session Management
 
+![sessionman](img/sessionmanagement.png)
+
 Use Sessions to track the state of a user's interactions with your application across multiple requests, over a specified period of time.  Tracking user state with Sessions enables more feature-rich user experiences.  Further, Sessions play a major role in access control.
 
 Session Management involves creating, reading, updating, and deleting of Sessions and Session attributes, and validating Sessions.
 
-Yosai's `SessionManager` uses a `CachingSessionStore` to cache sessions. If you are not caching sessions, you you are either using in-memory session storage i (the `MemorySessionStore`) or using your own custom SessionStore, which is beyond the scope of consideration in this documentation.
+Yosai's `SessionManager` uses a `CachingSessionStore` to cache sessions. If you are not caching sessions, you you are either using in-memory session storage  (the `MemorySessionStore`) or using your own custom SessionStore, which is beyond the scope of consideration in this documentation.
 
 
 ## Authentication, Authorization, and Session Management are Related
@@ -13,7 +15,7 @@ Access is limited by user identity: a guest cannot perform the operations that a
 
 The identity of an authenticated user is recorded in the Session.
 
-Since access control is limited by identity, and identity is obtained from a Session, access control is considered _bound_ to a Session.
+Since access control is limited by identity, and identity is obtained from a Session, access control is considered *bound* to a Session.
 
 
 ## Properties of a Session , Session Risk, and Risk Countermeasures
@@ -25,9 +27,12 @@ Sessions are a "threat vector":  a path that an "actor" may exploit to attack a 
 
 A Session Token is like a smart chip, or magnetic strip, on a credit card in that it contains identification-- a session identifier (SessionID).  However, unlike the elements of a credit card, the Session Token has a much shorter lifespan.
 
-The SessionID is a sensitive and critical piece of information.  It uniquely identifies a Session.  It is the Session's key in a SessionStore (cache) and it is the key that is sent with subsequent requests by a client (the user).
+The `SessionID` is a sensitive and critical piece of information.  It uniquely identifies a Session.  It is the Session's key in a SessionStore (cache) and it is the key that is sent with subsequent requests by a client (the user).
 
-Once an authenticated session is established, the SessionID is the client's key to Yosai.  Therefore, it is very important that the session identifier be unique and very difficult to reproduce.  Yosai's default method to generate a SessionID is as follows:::     sha256(sha512(urandom(20)).digest()).hexdigest()
+Once an authenticated session is established, the `SessionID` is the client's key to Yosai.  Therefore, it is very important that the session identifier be unique and very difficult to reproduce.  
+
+Yosai's default method to generate a `SessionID` is as follows:
+`sha256(sha512(urandom(20)).digest()).hexdigest()`
 
 
 ### Temporal Risks and Countermeasures
@@ -39,7 +44,9 @@ When a Session "times out", it is considered **expired**.  When a Session is **e
 The timeout thresholds are configured in the Yosai settings YAML file. Should you find their default settings unacceptable, you can easily change them.  The default settings are somewhat aggressive so as to minimize the risks that defaults may present and to encourage developers to take ownership of session time-out decisions.
 
 
-#### Idle time
+### Idle time
+
+![idle_timeout](img/idle.png)
 
 This property represents the total permissible time for a user to be inactive in a system, or idle.  Picture idle timeout as an hourglass that is turned over and reset periodically. The way that idle time is reset is by updating the Session's `last_access_time` attribute.  As to when the `last_access_time` is updated depends on what "auto_touch" has been configured to or whether you've chosen an alternative time to touch than the default (per-access).
 
@@ -48,7 +55,9 @@ A `DefaultNativeSessionManager` has an attribute, "auto_touch", that when set to
 Yosai's default idle time setting for a Session is **5 minutes**.
 
 
-#### Time to live
+### Time to live
+
+![ttl](img/ttl.png)
 
 A Session has a maximum allowable time period that it may exist.  It is the final countdown until a Session is expired. It cannot be reset, unlike idle timeout. Many computer systems refer to this as a TTL -- time to live.  Yosai's default time-to-live for a Session is **30 minutes**.
 
@@ -74,7 +83,7 @@ By default, Sessions are "lazy validated" in that they are validated at the time
 
 As discussed in an earlier section above, access control is _bound_ to a Session. Since access control is _bound_ to a Session, when a Session is invalidated so too does the authorization information cached for the Session.  Invalid authorization information is cleared from cache through event handling.
 
-.. warning::
+
 ### Idle Timeout Edge Case
 Monitoring for idle timeout increases the complexity of Session Management.
 As discussed, Session validation taxes the performance of an application and
@@ -98,8 +107,6 @@ By default, whenever Yosai detects an invalid session, it attempts to delete it 
 
 At Session expiration, Yosai ties up loose ends, so to speak, through its event-driven architecture.
 
-[image here]
-
 
 ## Session Usage
 
@@ -122,9 +129,9 @@ After a user authenticates itself, Yosai creates a new session for the user. Thi
 
 ```Python
 from yosai.core import SecurityUtils, UsernamePasswordToken
+
 # creates an "anonymous session" if the current executing subject hasn't
 # logged in yet:
-
 current_user = SecurityUtils.get_subject()
 
 authc_token = UsernamePasswordToken(username='thedude',
@@ -135,7 +142,8 @@ authc_token = UsernamePasswordToken(username='thedude',
 current_user.login(authc_token)
 ```
 
-.. note::     It is recommended that the session be regenerated by the application after     **any** privilege level change within the associated user session.
+!!! note ""
+    It is recommended that the session be regenerated by the application after     **any** privilege level change within the associated user session.
 
 
 ## Session Storage
@@ -151,7 +159,7 @@ Yosai features an in-memory MemorySessionStore and CachingSessionStore.  The Cac
 
 ## Session Events
 
-An Event is emitted to the singleton EventBus, in Yosai, when a Session is _started_, _stopped_, or _expired_.  If you would like to learn more about Event processing, please refer to the documentation about Event Processing [here].
+An Event is emitted to the singleton EventBus, in Yosai, when a Session is _started_, _stopped_, or _expired_.  If you would like to learn more about Event processing, please refer to the documentation about Event Processing.
 
 Events are communicated using a publish-subscribe paradigm.  In the case of Sessions, a `SessionEventHandler` publishes an event to a channel (an internal Event Bus). The EventBus relays an event to consumers who have subscribed to the event's topic. It relays the event by calling the callback method registered for a consumer, using the event payload as its argument(s).
 
@@ -159,12 +167,12 @@ The following table lists the Session-related events and who the subscriber(s) a
 
 Event Topic    | Subscriber(s)
 -------------- | -------------
-SESSION.START  | EL
-SESSION.STOP   | MRA, EL
-SESSION.EXPIRE | MRA, EL
+SESSION.START  | EL           
+SESSION.STOP   | MRA, EL      
+SESSION.EXPIRE | MRA, EL      
 
-MRA = `yosai.core.authz.authz.ModularRealmAuthorizer`
-SEH = `yosai.core.session.session.SessionEventHandler`
+- MRA = `yosai.core.authz.authz.ModularRealmAuthorizer`
+- SEH = `yosai.core.session.session.SessionEventHandler`
 
 
 ### Example:  SESSION.EXPIRE Event Processing
@@ -175,10 +183,162 @@ A `SESSION.EXPIRE` event is emitted by a `yosai.core.session.session.SessionEven
 
 As of yosai.core v0.1.0, the `ModularRealmAuthorizer` and `EventLogger` are the two subscribers of the `SESSION.EXPIRE` topic (see table above).  The callback method registered for each subscriber is called in an arbitrary, sequential fasion (PyPubSub design) when a SessionEventHandler emits a SESSION.EXPIRE event to the Eventbus.
 
-Here is an example of an expired-session event processing through Yosai, omitting the event logging:
+Here is an example of an `expired-session` event processing through Yosai, omitting event logging processing:
 
-[ insert sequence diagram here]
+![](img/session_event_processing.png)
 
+
+# Session Tutorial
+
+In this tutorial, you will learn how to use the Session API to perform server-side session management.  We'll use a shopping cart example to illustrate how to manage state using a Session object.  You will learn how to:     1) define a `marshmallow` Schema required to cache a shopping cart as        a Session attribute     2) manage a shopping cart using the Session API, including:
+- get_attribute
+- set_attribute
+- remove_attribute
+
+
+## Serialization Strategy
+
+This example uses Session caching.  Objects are serialized before they are cached.
+
+Yosai uses the `marshmallow` library in conjunction with an encoding library, such as MSGPack or JSON, to (de)serialize Serializable objects from(to) cache. `marshmallow` requires you to specify the Schema of the object and how to properly (de)serialize it.  A Session is a Serializable object, therefore it requires its own `marshmallow.Schema` definition.
+
+Only `Serializable` objects can be serialized in Yosai.  A Serializable class implements the serialize_abcs.Serializable abstract base class, which requires that a `marshmallow.Schema` class be defined for it within its `serialization_schema` classmethod.
+
+
+## Example:  Shopping Cart Session Management
+
+This is _not_ a primer on how to write your own e-commerce shopping cart application.  This example is intended to illustrate the Session API. **It is not intended for production use.**
+
+As per Wikipedia:
+
+> A shopping cart is a piece of e-commerce software on a web server that allows visitors to an Internet site to select items for eventual purchase... The software allows online shopping customers to _accumulate a list of items for purchase_, described metaphorically as "placing items in the shopping cart" or "add to cart." Upon checkout, the software typically calculates a total for the order, including shipping and handling (i.e., postage and packing) charges and the associated taxes, as applicable.
+
+
+### Serializing a Shopping Cart in a Session
+
+Let's define our `marshmallow.Schema` classes:
+
+```Python
+class ShoppingCartItemSchema(Schema):
+    upc = fields.String()
+    quantity = fields.Int()
+
+# A shopping_cart is a dict that uses a UPC product code as its key and quantity
+# as its value:
+class ShoppingCartSchema(Schema):
+    items = fields.Nested(ShoppingCartItemSchema, many=True)
+
+# this class is declared in case there are attributes other than a
+# shopping cart that need to be serialized:
+class SessionAttributesSchema(Schema):
+    shopping_cart = fields.Nested(ShoppingCartSchema)
+```
+
+Now that you've defined `SessionAttributesSchema`, you are ready to initialize Yosai with shopping-cart enabled session management capabilities.  Simply pass the schema class as an argument at Yosai initialization.  The rest of the arguments passed to init_yosai are omitted for clarity:
+
+```Python
+
+    SecurityUtils.init_yosai(... # omitted for this example
+                             ... # omitted for this example
+                             session_schema=SessionAttributesSchema)
+```
+
+
+### Shopping Cart
+
+ShoppingCart is a facade to the Session API for managing the shopping_cart attribute within a Session.
+
+A `shopping_cart` is a dict that uses a UPC product code as its key and quantity as its value.
+
+A ShoppingCart allows you to add, update, and removes items and adjust the quantity of each item.
+
+```Python
+class ShoppingCart(Serializable):
+    def __init__(self, current_user):
+        """
+        :type current_user: subject_abcs.Subject
+        """
+        self.current_user = current_user
+        self.session = self.current_user.get_session()
+
+    def list_items(self):
+        shopping_cart = self.session.get_attribute('shopping_cart')
+        return shopping_cart.items()
+
+    def add_item(self, upc, quantity):
+        shopping_cart = self.session.get_attribute('shopping_cart')
+        shopping_cart[item] = quantity
+        session.set_attribute('shopping_cart', shopping_cart)
+
+    def update_item(self, upc, quantity):
+        shopping_cart = self.session.get_attribute('shopping_cart')
+        shopping_cart[item] = quantity
+        session.set_attribute('shopping_cart', shopping_cart)
+
+    def remove_item(self, upc):
+        shopping_cart = self.session.get_attribute('shopping_cart')
+        shopping_cart.pop(item)
+        session.set_attribute('shopping_cart', shopping_cart)
+```
+
+!!! note ""
+    This class is designed based on the assumption that a new ShoppingCart     instance is obtained per request.  A Session is accessed at **init**.     A Session is validated only when it is accessed.  If ShoppingCart were to be     used in a web application, it would be instantiated _per request_ and     consequently the Session would be validated per-request.
+
+
+Now, you will see how your interaction with the ShoppingCart API impacts a user's Session.  We'll add four items to the shopping cart, remove one, and modify the quantity of another.  Finally, we'll remove the shopping_cart attribute entirely from the Session.
+
+
+### Operation 1:  Add four items to the shopping cart
+
+```Python
+    from yosai.core import SecurityUtils
+
+    current_user = SecurityUtils.get_subject()
+    my_cart = ShoppingCart(current_user)
+
+    my_cart.add_item('0043000200216', 4)  # we'll modify the quantity of this later
+    my_cart.add_item('016000119772', 1)
+    my_cart.add_item('52159012038', 3)
+    my_cart.add_item('00028400028196', 1)
+
+    my_cart.list_items()
+```
+
+### Operation 2:  Remove an item from the shopping cart
+
+```Python
+    from yosai.core import SecurityUtils
+
+    current_user = SecurityUtils.get_subject()
+    my_cart = ShoppingCart(current_user)
+
+    my_cart.remove_item('00028400028196')
+
+     my_cart.list_items()
+```
+
+### Operation 3:  Modify the quantity of an item in the shopping cart
+
+```Python
+    from yosai.core import SecurityUtils
+
+    current_user = SecurityUtils.get_subject()
+    my_cart = ShoppingCart(current_user)
+
+    my_cart.update_item('0043000200216', 2)
+
+    my_cart.list_items()
+```
+
+### Operation 4:  Remove the shopping cart attribute from the Session
+
+```Python
+    from yosai.core import SecurityUtils
+
+    current_user = SecurityUtils.get_subject()
+    session = self.current_user.get_session()
+    session.remove_attribute('shopping_cart')
+```
 
 ## References
 [OWASP Session Management CheatSheet]( https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)
