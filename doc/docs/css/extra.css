@@ -73,7 +73,7 @@ div.col-md-9 h6:first-of-type {
 
 img[alt=anon_architecture], img[alt=authc], img[alt=authz],
 img[alt=sessionman], img[alt=eventdriven], img[alt=pubsub],
-img[alt=respect] {
+img[alt=respect], img[alt=pluggable_security] {
     width: 40%;
     height: 40%;
     display: block;
@@ -105,6 +105,14 @@ img[alt=logging] {
 img[alt=ttl], img[alt=marshmallow] {
     width: 125px;
     height: 125px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+img[alt=batteries]{
+    width: 140px;
+    height: 140px;
     display: block;
     margin-left: auto;
     margin-right: auto;

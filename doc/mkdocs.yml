@@ -18,4 +18,5 @@ pages:
     - Event Processing: events.md
     - Serialization:  serialization.md
     - Architecture Overview:  architecture.md
+    - Library:  library.md
     - Credits: credits.md
