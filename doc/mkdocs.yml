@@ -10,4 +10,6 @@ markdown_extensions:
 
 pages:
 - Home: index.md
-- Get Started: get_started.md
+- Documentation:
+    - Authentication: authentication.md
+    - Authorization: authorization.md

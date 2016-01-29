@@ -1,6 +1,7 @@
-I) Introduction
-II) Installation and Settings
-III) Getting Started
+
+I) Getting Started
+    Introduction
+    Installation and Settings
 
 IV) Authentication
 

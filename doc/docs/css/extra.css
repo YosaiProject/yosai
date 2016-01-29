@@ -65,10 +65,10 @@ div.col-md-9 h6:first-of-type {
     font-size: 18px;
 }
 
-img[alt=anon_architecture] {
+img[alt=anon_architecture], img[alt=authc], img[alt=authz] {
     width: 40%;
     height: 40%;
     display: block;
     margin-left: auto;
-    margin-right: auto
+    margin-right: auto;
 }

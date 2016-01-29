@@ -1,17 +1,18 @@
 # Authentication
+
+![authc](img/authentication.jpg)
+
 An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject **is** who *it* claims to be.
+
 
 ## Factors of Authentication
 Authentication methodologies involve three factors:
+
 - something the user **knows**
 - something the user **has**
 - something the user **is**
 
-Authentication methods that depend on more than one factor, known as multi-factor
-authentication (MFA) methods, are considered stronger fraud deterrents than
-single-factor methods as they are more difficult to compromise.  A bank ATM
-transaction involves MFA because it requires something the user **has** -- a bank card --
-*and* it requires something the user **knows** -- a PIN code.
+Authentication methods that depend on more than one factor, known as multi-factor authentication (MFA) methods, are considered stronger fraud deterrents than single-factor methods as they are more difficult to compromise.  A bank ATM transaction involves MFA because it requires something the user **has** -- a bank card -- *and* it requires something the user **knows** -- a PIN code.
 
 The use of a username/password to login is considered single-factor
 authentication because it only involves something the user *knows*.
@@ -66,14 +67,10 @@ except AuthenticationException:
     # insert here
 ```
 
-As you can see, authentication entails a single method call: ``current_user.login(authc_token)``.
-The Subject API requires a single method call to authenticate, regardless of
-the underlying authentication strategy chosen.
+As you can see, authentication entails a single method call: ``current_user.login(authc_token)``. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.
 
-Notice that remember_me is activated in the authentication token.  Yosai
-features native 'remember me' support.  'Remember Me' is a popular
-feature where users are remembered when they return to an application.  
-Being able to remember your users offers them a more convenient user experience.  
+Notice that remember_me is activated in the authentication token.  Yosai features native 'remember me' support.  'Remember Me' is a popular feature where users are remembered when they return to an application.  Remembering your users offers a more convenient user experience for them, although it does come at a cost in security.
+
 
 ## Cryptographic Hashing
 For password-based authentication, Yosai uses the Passlib library for
@@ -102,10 +99,7 @@ remembered Subject and an actual authenticated Subject:
 
 ### Remembered
 
-A remembered Subject is not anonymous and has a known
-identity (i.e. subject.identifiers is non-empty). However, this identity is
-remembered from a previous authentication during a previous session.
-A subject is considered remembered if subject.is_remembered returns True.
+A remembered Subject is not anonymous and has a known identity (i.e. subject.identifiers is non-empty). However, this identity is remembered from a previous authentication during a previous session. A subject is considered remembered if subject.is_remembered returns True.
 
 
 ### Authenticated
@@ -125,15 +119,12 @@ for one indicates a False value for the other and vice versa.
 ### Why the Distinction?
 
 The word 'authentication' has a very strong connotation of proof. That is,
-there is an expected guarantee that the Subject has proven they are who they
-say they are.
+there is an expected guarantee that the Subject has proven that it is who it
+claims to be.
 
-When a user is only remembered from a previous interaction with the application,
-the state of proof no longer exists: the remembered identity gives the system
-an idea who that user probably is, but in reality, has no way of absolutely
-guaranteeing that the remembered Subject represents the expected user. Once the
-subject is authenticated, the user is no longer considered only remembered
-because its identity would have been verified during the current session.
+When a user is merely remembered by a previous interaction with the application,
+the state of proof no longer exists.  The remembered identity gives the system
+an idea who that user *probably* is, yet the system is has no guarantees that the remembered Subject represents an expected user. Once the subject is authenticated, the user is no longer considered only remembered because its identity would have been verified during the current session.
 
 So although many parts of the application can still perform user-specific logic
 based on the remembered identifiers, such as customized views, it should
@@ -142,8 +133,7 @@ legitimately verified its identity by executing a successful authentication
 attempt.
 
 For example, a check whether a Subject can access financial information should
-almost always depend on subject.authenticated, not subject.is_remembered, to
-guarantee an expected and verified identity.
+almost always depend on subject.authenticated rather than subject.is_remembered to guarantee an expected and verified identity.
 
 
 ### Example
@@ -172,31 +162,22 @@ subject.authenticated would now be True.
 
 This scenario happens so frequently for many types of applications, so the
 functionality is built in to Yosai so that you may leverage it for your own
-application. Now, whether you use subject.is_remembered or subject.authenticated to
-customize your views and workflows is up to you, but Yosai will maintain this
+application. Now, whether you use subject.is_remembered or subject.authenticated to customize your views and workflows is up to you, but Yosai will maintain this
 fundamental state in case you need it.
 
 
 ## Logging Out
 When you "log out" a user, you are releasing the identifying state of the user
-by the application.  A Subject is logged out when the Subject is done interacting
-with the application by calling:  ``current_user.logout()``, relinquishing all
-identifying information and invalidating the user's session.  If you are logging
-out in a web app and use the yosai.web library, the RememberMe cookie will also
-be deleted.
+by the application.  A Subject is logged out when the Subject is done interacting with the application by calling:  ``current_user.logout()``, relinquishing all identifying information and invalidating the user's session.  If you are logging out in a web app and use the yosai.web library, the RememberMe cookie will also be deleted.
 
 After a Subject logs-out, the Subject instance is considered anonymous again
 and, except for web applications, can be re-used for login again if desired.
 
-.. note::
-    Because remembered identity in web applications is often persisted with cookies,
-    and cookies can only be deleted before a Response body is committed, it
-    is highly recommended to redirect the end-user to a new view or page
-    immediately after calling current_user.logout(). Doing so guarantees that
-    any security-related cookies are deleted as expected. This is a limitation
-    of how HTTP cookies function and not a limitation of Yosai.
+!!! note ""
+    Because remembered identity in web applications is often persisted with cookies, and cookies can only be deleted before a Response body is committed, it is highly recommended to redirect the end-user to a new view or page immediately after calling current_user.logout(). Doing so guarantees that any security-related cookies are deleted as expected. This is a limitation of how HTTP cookies function and not a limitation of Yosai.
 
-[Passlib - bcrypt_sha256 documentation]( https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm)
+[For more information about Passlib's bcrypt_sha256, you may access its documentation here.](
+https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm)
 
 
 ## Authentication Events
