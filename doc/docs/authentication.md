@@ -1,3 +1,35 @@
+
+Authentication Defined
+
+
+Powerful Authentication using a Simple API
+ * Logging In and Out
+  - what does it mean to log in and log out ?
+  - here's how you do it with yosai
+
+Authentication Details
+
+    Factors of Authentication
+
+    Authenticator
+        - Authentication Strategy
+    Authenticating Realm
+
+Password based authentication is provided
+     -  Cryptographic Hashing
+
+Remember Me Services
+
+Authentication Events
+    - log in
+    - log out
+
+Welcomed Extensions from Contributors:
+    - Multi-Factor Auth (sms, yubikey)
+    - LDAP AccountStore
+    - Social Auth (OAuth1)
+
+
 # Authentication
 
 ![authc](img/authentication.jpg)
@@ -5,44 +37,55 @@
 An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject **is** who *it* claims to be.
 
 
-## Factors of Authentication
-Authentication methodologies involve three factors:
-
-- something the user **knows**
-- something the user **has**
-- something the user **is**
-
-Authentication methods that depend on more than one factor, known as multi-factor authentication (MFA) methods, are considered stronger fraud deterrents than single-factor methods as they are more difficult to compromise.  A bank ATM transaction involves MFA because it requires something the user **has** -- a bank card -- *and* it requires something the user **knows** -- a PIN code.
-
-The use of a username/password to login is considered single-factor
-authentication because it only involves something the user *knows*.
-
-Yosai is designed to accomodate multi-factor authentication methods.   Be that
-as it may, no concrete MFA implementation is provided within the core library
-because the MFA chosen is discretionary and largely subject to change among
-projects.  Instead, the Yosai community is encouraged to share extensions to enable MFA.
-
-However, although no multi-factor solution is provided, a single-factor, password-based authentication is provided in yosai.core because it remains the most widely used form of authentication.  An example follows.
-
-
 # Powerful Authentication using a Simple API
+
 Most of your interactions with Yosai are based on the currently executing user,
 called a **Subject**.  You can easily obtain a handle on your subject instance
-from anywhere in your code.
+from anywhere in your code through the SecurityUtils API.
 
 When a developer wishes to authenticate a user using password-based methods,
 the first step requires instantiation of an ``AuthenticationToken`` object
-recognizable by Yosai.  The UsernamePasswordToken implementation suffices for
-this purpose.  UsernamePasswordToken is a consolidation of a user account's
+recognizable by Yosai.  The `UsernamePasswordToken` is one such kind of token that
+ is already implemented in Yosai as part of default support for password-based
+authentication. `UsernamePasswordToken` is a consolidation of a user account's
 identifying attributes (username) and credentials (password).
 
-In this example, we "log in" a Subject, performing password-based authentication
-that raises an AuthenticationException if authentication were to fail.  Yosai
-features a rich exception hierarchy that offers detailed explanations as to why
-a login failed. This exception hierarchy helps developers diagnose bugs or
-customer service issues related to authentication.
 
-Altogether:
+## Logging-In and Logging-Out
+
+## Logging-In
+
+When you *log-in*, you are attempting to make a secured system recognize your
+presence.  The system recognizes who you are by verifying your identity.  Once your
+identity is verified, the system considers you present (logged in) by creating a new,
+verified session for you.  
+
+There are two key processes involved with logging-in:
+- Session Management
+- Authentication
+
+### Session Management
+
+Logging-in consists of authentication followed by instantiation of a new session,
+removing a guest session that was created for you earlier.
+
+As you first interact with a system secured with Yosai, Yosai recognizes you as
+a *guest*.  A guest is granted an anonymous session (a new one is created) during
+the guest's first interaction with the system.  Once authenticated, you are
+granted elevated access to the system: your status in the system changes
+from when you were anonymous.  The elevation of status involves deleting the anonymous
+session and creating a new, *verified* session for you. Once authenticated, you
+are considered present through the existence of this *verified* session.
+
+### Authentication, with Example
+
+*Authentication* is the process of verifying identity.  
+
+In the following example, we log-in a Subject by performing password-based
+authentication.  This process would raise an AuthenticationException
+if it were to fail.  Yosai features a rich exception hierarchy that offers detailed
+explanations as to why a login failed. This exception hierarchy helps developers
+diagnose bugs or customer service issues related to authentication.
 
 ```Python
 from yosai.core import SecurityUtils, UsernamePasswordToken
@@ -69,7 +112,54 @@ except AuthenticationException:
 
 As you can see, authentication entails a single method call: ``current_user.login(authc_token)``. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.
 
-Notice that remember_me is activated in the authentication token.  Yosai features native 'remember me' support.  'Remember Me' is a popular feature where users are remembered when they return to an application.  Remembering your users offers a more convenient user experience for them, although it does come at a cost in security.
+Notice that `remember_me` is activated in the authentication token.  Yosai features
+native 'remember me' support.  'Remember Me' is a popular feature where users are
+remembered when they return to an application.  Remembering your users offers a
+more convenient user experience for them, although it does come at a cost in
+security.
+
+
+## Logging Out
+
+When you *log-out*, the system no longer recognizes your presence nor will it
+honor any prior recognition of your identity (you would have to re-authenticate
+yourself if you re-engaged the system).
+
+
+### Automatic Log Out
+
+Automatic log out happens at session expiration.  Yosai expires sessions in two
+ways: idle timeout and absolute time to live timeout.  Please consult the
+Session Management documentation to learn more about timeouts.
+
+
+### Manual Log Out
+
+When you manually log-out, you are explicitly telling the system that your work
+is done and you do no wish to continue your current session with the system.  
+Manual log-out is initiated by a user engaging a log-out operation through a user
+interface, such as click a "log-out" or "sign out" button.
+
+
+## Factors of Authentication
+Authentication methodologies involve three factors:
+
+- something the user **knows**
+- something the user **has**
+- something the user **is**
+
+Authentication methods that depend on more than one factor, known as multi-factor authentication (MFA) methods, are considered stronger fraud deterrents than single-factor methods as they are more difficult to compromise.  A bank ATM transaction involves MFA because it requires something the user **has** -- a bank card -- *and* it requires something the user **knows** -- a PIN code.
+
+The use of a username/password to login is considered single-factor
+authentication because it only involves something the user *knows*.
+
+Yosai is designed to accomodate multi-factor authentication methods.   Be that
+as it may, no concrete MFA implementation is provided within the core library
+because the MFA chosen is discretionary and largely subject to change among
+projects.  Instead, the Yosai community is encouraged to share extensions to enable MFA.
+
+However, although no multi-factor solution is provided, a single-factor, password-based authentication is provided in yosai.core because it remains the most widely used form of authentication.  An example follows.
+
 
 
 ## Cryptographic Hashing
