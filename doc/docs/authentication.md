@@ -1,35 +1,3 @@
-
-Authentication Defined
-
-
-Powerful Authentication using a Simple API
- * Logging In and Out
-  - what does it mean to log in and log out ?
-  - here's how you do it with yosai
-
-Authentication Details
-
-    Factors of Authentication
-
-    Authenticator
-        - Authentication Strategy
-    Authenticating Realm
-
-Password based authentication is provided
-     -  Cryptographic Hashing
-
-Remember Me Services
-
-Authentication Events
-    - log in
-    - log out
-
-Welcomed Extensions from Contributors:
-    - Multi-Factor Auth (sms, yubikey)
-    - LDAP AccountStore
-    - Social Auth (OAuth1)
-
-
 # Authentication
 
 ![authc](img/authentication.jpg)
@@ -118,51 +86,8 @@ remembered when they return to an application.  Remembering your users offers a
 more convenient user experience for them, although it does come at a cost in
 security.
 
+### Cryptographic Hashing of Passwords
 
-## Logging Out
-
-When you *log-out*, the system no longer recognizes your presence nor will it
-honor any prior recognition of your identity (you would have to re-authenticate
-yourself if you re-engaged the system).
-
-
-### Automatic Log Out
-
-Automatic log out happens at session expiration.  Yosai expires sessions in two
-ways: idle timeout and absolute time to live timeout.  Please consult the
-Session Management documentation to learn more about timeouts.
-
-
-### Manual Log Out
-
-When you manually log-out, you are explicitly telling the system that your work
-is done and you do no wish to continue your current session with the system.  
-Manual log-out is initiated by a user engaging a log-out operation through a user
-interface, such as click a "log-out" or "sign out" button.
-
-
-## Factors of Authentication
-Authentication methodologies involve three factors:
-
-- something the user **knows**
-- something the user **has**
-- something the user **is**
-
-Authentication methods that depend on more than one factor, known as multi-factor authentication (MFA) methods, are considered stronger fraud deterrents than single-factor methods as they are more difficult to compromise.  A bank ATM transaction involves MFA because it requires something the user **has** -- a bank card -- *and* it requires something the user **knows** -- a PIN code.
-
-The use of a username/password to login is considered single-factor
-authentication because it only involves something the user *knows*.
-
-Yosai is designed to accomodate multi-factor authentication methods.   Be that
-as it may, no concrete MFA implementation is provided within the core library
-because the MFA chosen is discretionary and largely subject to change among
-projects.  Instead, the Yosai community is encouraged to share extensions to enable MFA.
-
-However, although no multi-factor solution is provided, a single-factor, password-based authentication is provided in yosai.core because it remains the most widely used form of authentication.  An example follows.
-
-
-
-## Cryptographic Hashing
 For password-based authentication, Yosai uses the Passlib library for
 cryptographic hashing and password verification.
 
@@ -178,6 +103,77 @@ documentation [1], the *bcrypt_sha256* algorithm works as follows:
 
 - Finally, the base64 string is passed on to the underlying bcrypt algorithm
   as the new password to be hashed.
+
+For more information about Passlib's bcrypt_sha256, you may [access its documentation here](https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm)
+
+
+## Logging Out
+
+When you *log-out*, the system no longer recognizes your presence nor will it
+honor any prior recognition of your identity (you would have to re-authenticate
+yourself if you re-engaged the system). When you log-out a user, you are
+releasing the identifying state of the user by the application.  A Subject is
+logged out when the Subject is done interacting with the application by calling:  ``current_user.logout()``, relinquishing all identifying information and
+invalidating the user's session.  If you are logging out in a web app and use
+the yosai.web library, the RememberMe cookie will also be deleted.
+
+After a Subject logs-out, the Subject instance is considered anonymous again
+and, except for web applications, can be re-used for login again if desired.
+
+!!! note ""
+    Because remembered identity in web applications is often persisted with cookies, and cookies can only be deleted before a Response body is committed, it is highly recommended to redirect the end-user to a new view or page immediately after calling current_user.logout(). Doing so guarantees that any security-related cookies are deleted as expected. This is a limitation of how HTTP cookies function and not a limitation of Yosai.
+
+
+### Automatic Log Out
+
+Automatic log out happens at session expiration.  Yosai expires sessions in two
+ways: idle timeout and absolute time to live timeout.  Please consult the
+Session Management documentation to learn more about timeouts.
+
+
+### Manual Log Out
+
+When you manually log-out, you are explicitly telling the system that your work
+is done and you do no wish to continue your current session with the system.  
+Manual log-out is initiated by a user engaging a log-out operation through a user
+interface, such as click a "log-out" or "sign out" button, which would ultimately
+call the `logout` method in the Subject API:
+
+```Python
+from yosai.core import SecurityUtils, UsernamePasswordToken
+
+current_user = SecurityUtils.get_subject()
+
+current_user.logout()
+```
+
+## Factors of Authentication
+
+Authentication methodologies involve three factors:
+
+- something the user **knows**
+- something the user **has**
+- something the user **is**
+
+Authentication methods that depend on more than one factor, known as multi-factor
+authentication (MFA) methods, are considered stronger fraud deterrents than single-factor
+ methods as they are more difficult to compromise.  A bank ATM transaction involves
+MFA because it requires something the user **has** -- a bank card -- *and* it
+requires something the user **knows** -- a PIN code.
+
+The use of a username/password to login is considered single-factor
+authentication because it only involves something the user *knows*.
+
+Yosai is designed to accommodate multi-factor authentication methods.  Be that
+as it may, no concrete MFA implementation is provided within the core library
+because the MFA chosen is discretionary and largely subject to change among
+projects.  Instead, the Yosai community is encouraged to share extensions to
+enable MFA.
+
+However, although no multi-factor solution is provided, a single-factor,
+password-based authentication is provided in yosai.core because it remains the
+most widely used form of authentication.  You could see an example of it in the
+logging-in documentation above.
 
 
 ## Native Support for 'Remember Me' Services
@@ -226,7 +222,7 @@ For example, a check whether a Subject can access financial information should
 almost always depend on subject.authenticated rather than subject.is_remembered to guarantee an expected and verified identity.
 
 
-### Example
+### Remember-Me Example
 The following is a fairly common scenario that helps illustrate why the the
 distinction between remembered and authenticated is important.
 
@@ -256,26 +252,14 @@ application. Now, whether you use subject.is_remembered or subject.authenticated
 fundamental state in case you need it.
 
 
-## Logging Out
-When you "log out" a user, you are releasing the identifying state of the user
-by the application.  A Subject is logged out when the Subject is done interacting with the application by calling:  ``current_user.logout()``, relinquishing all identifying information and invalidating the user's session.  If you are logging out in a web app and use the yosai.web library, the RememberMe cookie will also be deleted.
-
-After a Subject logs-out, the Subject instance is considered anonymous again
-and, except for web applications, can be re-used for login again if desired.
-
-!!! note ""
-    Because remembered identity in web applications is often persisted with cookies, and cookies can only be deleted before a Response body is committed, it is highly recommended to redirect the end-user to a new view or page immediately after calling current_user.logout(). Doing so guarantees that any security-related cookies are deleted as expected. This is a limitation of how HTTP cookies function and not a limitation of Yosai.
-
-[For more information about Passlib's bcrypt_sha256, you may access its documentation here.](
-https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm)
-
 
 ## Authentication Events
+
 An Event is emitted to the singleton EventBus when the results of
 authentication are obtained, indicating whether authentication succeeded or
 failed (without compromising credentials).  If you would like to learn more
 about Event processing, please refer to the documentation about Event
-Processing [here].
+Processing.
 
 Events are communicated using a publish-subscribe paradigm.  In the case of
 Authentication, the `DefaultAuthenticator` publishes an event to a channel (an
