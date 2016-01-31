@@ -10,13 +10,18 @@ markdown_extensions:
 
 pages:
 - Home: index.md
-- Documentation:
+- Get Started:
+    - Introduction: intro.md
     - Installation and Setup:  installation_setup.md
+- Documentation:
     - Authentication: authentication.md
     - Authorization: authorization.md
     - Session Management: sessionmanagement.md
     - Event Processing: events.md
     - Serialization:  serialization.md
     - Architecture Overview:  architecture.md
+- More:
+    - Development Status:  devstatus.md
     - Library:  library.md
+    - Community: community.md
     - Credits: credits.md

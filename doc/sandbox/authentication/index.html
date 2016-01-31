@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+	<title>Authentication - Yosai</title>
+
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.5.0.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+        <link href="../css/extra.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">Yosai</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="..">Home</a>
+                    </li>
+                
+                
+                
+                    <li class="dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                        
+                            
+<li >
+    <a href="../installation_setup/">Installation and Setup</a>
+</li>
+
+                        
+                            
+<li class="active">
+    <a href="./">Authentication</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../authorization/">Authorization</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../sessionmanagement/">Session Management</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../events/">Event Processing</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../serialization/">Serialization</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../architecture/">Architecture Overview</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../library/">Library</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../credits/">Credits</a>
+</li>
+
+                        
+                        </ul>
+                    </li>
+                
+                
+                </ul>
+            
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
+                    <li >
+                        <a rel="next" href="../installation_setup/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li >
+                        <a rel="prev" href="../authorization/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                
+                
+                    <li>
+                        <a href="https://github.com/yosaiproject">
+                            
+                                <i class="fa fa-github"></i>
+                            
+                            GitHub
+                        </a>
+                    </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#authentication">Authentication</a></li>
+        
+    
+        <li class="main "><a href="#powerful-authentication-using-a-simple-api">Powerful Authentication using a Simple API</a></li>
+        
+            <li><a href="#logging-in-and-logging-out">Logging-In and Logging-Out</a></li>
+        
+            <li><a href="#logging-in">Logging-In</a></li>
+        
+            <li><a href="#logging-out">Logging Out</a></li>
+        
+            <li><a href="#factors-of-authentication">Factors of Authentication</a></li>
+        
+            <li><a href="#native-support-for-remember-me-services">Native Support for 'Remember Me' Services</a></li>
+        
+            <li><a href="#authentication-events">Authentication Events</a></li>
+        
+            <li><a href="#references">References</a></li>
+        
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="authentication">Authentication</h1>
+<p><img alt="authc" src="../img/authentication.jpg" /></p>
+<p>An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject <strong>is</strong> who <em>it</em> claims to be.</p>
+<h1 id="powerful-authentication-using-a-simple-api">Powerful Authentication using a Simple API</h1>
+<p>Most of your interactions with Yosai are based on the currently executing user,
+called a <strong>Subject</strong>.  You can easily obtain a handle on your subject instance
+from anywhere in your code through the SecurityUtils API.</p>
+<p>When a developer wishes to authenticate a user using password-based methods,
+the first step requires instantiation of an <code>AuthenticationToken</code> object
+recognizable by Yosai.  The <code>UsernamePasswordToken</code> is one such kind of token that
+ is already implemented in Yosai as part of default support for password-based
+authentication. <code>UsernamePasswordToken</code> is a consolidation of a user account's
+identifying attributes (username) and credentials (password).</p>
+<h2 id="logging-in-and-logging-out">Logging-In and Logging-Out</h2>
+<h2 id="logging-in">Logging-In</h2>
+<p>When you <em>log-in</em>, you are attempting to make a secured system recognize your
+presence.  The system recognizes who you are by verifying your identity.  Once your
+identity is verified, the system considers you present (logged in) by creating a new,
+verified session for you.  </p>
+<p>There are two key processes involved with logging-in:
+- Session Management
+- Authentication</p>
+<h3 id="session-management">Session Management</h3>
+<p>Logging-in consists of authentication followed by instantiation of a new session,
+removing a guest session that was created for you earlier.</p>
+<p>As you first interact with a system secured with Yosai, Yosai recognizes you as
+a <em>guest</em>.  A guest is granted an anonymous session (a new one is created) during
+the guest's first interaction with the system.  Once authenticated, you are
+granted elevated access to the system: your status in the system changes
+from when you were anonymous.  The elevation of status involves deleting the anonymous
+session and creating a new, <em>verified</em> session for you. Once authenticated, you
+are considered present through the existence of this <em>verified</em> session.</p>
+<h3 id="authentication-with-example">Authentication, with Example</h3>
+<p><em>Authentication</em> is the process of verifying identity.  </p>
+<p>In the following example, we log-in a Subject by performing password-based
+authentication.  This process would raise an AuthenticationException
+if it were to fail.  Yosai features a rich exception hierarchy that offers detailed
+explanations as to why a login failed. This exception hierarchy helps developers
+diagnose bugs or customer service issues related to authentication.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">SecurityUtils,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+
+<span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_subject()</span>
+
+<span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
+                                    <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
+<span style="color: #f8f8f2">authc_token</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">remember_me</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">True</span>
+
+<span style="color: #66d9ef">try</span><span style="color: #f8f8f2">:</span>
+    <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
+<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">UnknownAccountException:</span>
+    <span style="color: #75715e"># insert here</span>
+<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">IncorrectCredentialsException:</span>
+    <span style="color: #75715e"># insert here</span>
+<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">LockedAccountException:</span>
+    <span style="color: #75715e"># insert here</span>
+<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">ExcessiveAttemptsException:</span>
+    <span style="color: #75715e"># insert here</span>
+<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">AuthenticationException:</span>
+    <span style="color: #75715e"># insert here</span>
+</pre></div>
+
+
+<p>As you can see, authentication entails a single method call: <code>current_user.login(authc_token)</code>. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.</p>
+<p>Notice that <code>remember_me</code> is activated in the authentication token.  Yosai features
+native 'remember me' support.  'Remember Me' is a popular feature where users are
+remembered when they return to an application.  Remembering your users offers a
+more convenient user experience for them, although it does come at a cost in
+security.</p>
+<h3 id="cryptographic-hashing-of-passwords">Cryptographic Hashing of Passwords</h3>
+<p>For password-based authentication, Yosai uses the Passlib library for
+cryptographic hashing and password verification.</p>
+<p>The default hashing scheme chosen for Yosai is <em>bcrypt_sha256</em>. As per Passlib
+documentation [1], the <em>bcrypt_sha256</em> algorithm works as follows:</p>
+<ul>
+<li>First, the password is encoded to UTF-8 if not already encoded.</li>
+<li>Then, the UTF-8 encoded password is run through SHA2-256, generating a 32-byte digest</li>
+<li>
+<p>The 32-byte digest is encoded using base64, resulting in a 44-byte result
+  (including the trailing padding '='):
+      For the example "password", the output from this stage would be:
+        "XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg=".</p>
+</li>
+<li>
+<p>Finally, the base64 string is passed on to the underlying bcrypt algorithm
+  as the new password to be hashed.</p>
+</li>
+</ul>
+<p>For more information about Passlib's bcrypt_sha256, you may <a href="https://pythonhosted.org/passlib/lib/passlib.hash.bcrypt_sha256.html#algorithm">access its documentation here</a></p>
+<h2 id="logging-out">Logging Out</h2>
+<p>When you <em>log-out</em>, the system no longer recognizes your presence nor will it
+honor any prior recognition of your identity (you would have to re-authenticate
+yourself if you re-engaged the system). When you log-out a user, you are
+releasing the identifying state of the user by the application.  A Subject is
+logged out when the Subject is done interacting with the application by calling:  <code>current_user.logout()</code>, relinquishing all identifying information and
+invalidating the user's session.  If you are logging out in a web app and use
+the yosai.web library, the RememberMe cookie will also be deleted.</p>
+<p>After a Subject logs-out, the Subject instance is considered anonymous again
+and, except for web applications, can be re-used for login again if desired.</p>
+<div class="admonition note">
+<p>Because remembered identity in web applications is often persisted with cookies, and cookies can only be deleted before a Response body is committed, it is highly recommended to redirect the end-user to a new view or page immediately after calling current_user.logout(). Doing so guarantees that any security-related cookies are deleted as expected. This is a limitation of how HTTP cookies function and not a limitation of Yosai.</p>
+</div>
+<h3 id="automatic-log-out">Automatic Log Out</h3>
+<p>Automatic log out happens at session expiration.  Yosai expires sessions in two
+ways: idle timeout and absolute time to live timeout.  Please consult the
+Session Management documentation to learn more about timeouts.</p>
+<h3 id="manual-log-out">Manual Log Out</h3>
+<p>When you manually log-out, you are explicitly telling the system that your work
+is done and you do no wish to continue your current session with the system.<br />
+Manual log-out is initiated by a user engaging a log-out operation through a user
+interface, such as click a "log-out" or "sign out" button, which would ultimately
+call the <code>logout</code> method in the Subject API:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">SecurityUtils,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+
+<span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_subject()</span>
+
+<span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">logout()</span>
+</pre></div>
+
+
+<h2 id="factors-of-authentication">Factors of Authentication</h2>
+<p>Authentication methodologies involve three factors:</p>
+<ul>
+<li>something the user <strong>knows</strong></li>
+<li>something the user <strong>has</strong></li>
+<li>something the user <strong>is</strong></li>
+</ul>
+<p>Authentication methods that depend on more than one factor, known as multi-factor
+authentication (MFA) methods, are considered stronger fraud deterrents than single-factor
+ methods as they are more difficult to compromise.  A bank ATM transaction involves
+MFA because it requires something the user <strong>has</strong> -- a bank card -- <em>and</em> it
+requires something the user <strong>knows</strong> -- a PIN code.</p>
+<p>The use of a username/password to login is considered single-factor
+authentication because it only involves something the user <em>knows</em>.</p>
+<p>Yosai is designed to accommodate multi-factor authentication methods.  Be that
+as it may, no concrete MFA implementation is provided within the core library
+because the MFA chosen is discretionary and largely subject to change among
+projects.  Instead, the Yosai community is encouraged to share extensions to
+enable MFA.</p>
+<p>However, although no multi-factor solution is provided, a single-factor,
+password-based authentication is provided in yosai.core because it remains the
+most widely used form of authentication.  You could see an example of it in the
+logging-in documentation above.</p>
+<h2 id="native-support-for-remember-me-services">Native Support for 'Remember Me' Services</h2>
+<p>As shown in the example above, Yosai supports "Remember Me" in addition to
+the normal login process.  Yosai makes a very precise distinction between a
+remembered Subject and an actual authenticated Subject:</p>
+<h3 id="remembered">Remembered</h3>
+<p>A remembered Subject is not anonymous and has a known identity (i.e. subject.identifiers is non-empty). However, this identity is remembered from a previous authentication during a previous session. A subject is considered remembered if subject.is_remembered returns True.</p>
+<h3 id="authenticated">Authenticated</h3>
+<p>An authenticated Subject is one that has been successfully
+authenticated (i.e. the login method was called without any exception raised)
+during the Subject's current session. A subject is considered authenticated
+if subject.authenticated returns True.</p>
+<h3 id="mutually-exclusive">Mutually Exclusive</h3>
+<p>Remembered and authenticated states are mutually exclusive --  a True value
+for one indicates a False value for the other and vice versa.</p>
+<h3 id="why-the-distinction">Why the Distinction?</h3>
+<p>The word 'authentication' has a very strong connotation of proof. That is,
+there is an expected guarantee that the Subject has proven that it is who it
+claims to be.</p>
+<p>When a user is merely remembered by a previous interaction with the application,
+the state of proof no longer exists.  The remembered identity gives the system
+an idea who that user <em>probably</em> is, yet the system is has no guarantees that the remembered Subject represents an expected user. Once the subject is authenticated, the user is no longer considered only remembered because its identity would have been verified during the current session.</p>
+<p>So although many parts of the application can still perform user-specific logic
+based on the remembered identifiers, such as customized views, it should
+typically never perform highly-sensitive operations until the user has
+legitimately verified its identity by executing a successful authentication
+attempt.</p>
+<p>For example, a check whether a Subject can access financial information should
+almost always depend on subject.authenticated rather than subject.is_remembered to guarantee an expected and verified identity.</p>
+<h3 id="remember-me-example">Remember-Me Example</h3>
+<p>The following is a fairly common scenario that helps illustrate why the the
+distinction between remembered and authenticated is important.</p>
+<p>Let's say you're using Amazon.com. You've logged-in successfully and have added
+a few books to your shopping cart. But you have to run off to a meeting, but
+forget to log out. By the time the meeting is over, it's time to go home and
+you leave the office.</p>
+<p>The next day when you come in to work, you realize you didn't complete your
+purchase, so you go back to amazon.com. This time, Amazon 'remembers' who you
+are, greets you by name, and still gives you some personalized book
+recommendations. To Amazon, subject.is_remembered would return True.</p>
+<p>But, what happens if you try to access your account to update your credit card
+information to make your book purchase? While Amazon 'remembers' you
+(is_remembered is True), it cannot guarantee that you are in fact you (for
+example, maybe a co-worker is using your computer).</p>
+<p>So before you can perform a sensitive action like updating credit card
+information, Amazon will force you to login so that they can guarantee your
+identity. After you login, your identity has been verified and to Amazon,
+subject.authenticated would now be True.</p>
+<p>This scenario happens so frequently for many types of applications, so the
+functionality is built in to Yosai so that you may leverage it for your own
+application. Now, whether you use subject.is_remembered or subject.authenticated to customize your views and workflows is up to you, but Yosai will maintain this
+fundamental state in case you need it.</p>
+<h2 id="authentication-events">Authentication Events</h2>
+<p>An Event is emitted to the singleton EventBus when the results of
+authentication are obtained, indicating whether authentication succeeded or
+failed (without compromising credentials).  If you would like to learn more
+about Event processing, please refer to the documentation about Event
+Processing.</p>
+<p>Events are communicated using a publish-subscribe paradigm.  In the case of
+Authentication, the <code>DefaultAuthenticator</code> publishes an event to a channel (an
+internal Event Bus). The EventBus relays an event to consumers who have
+subscribed to the event's topic. It relays the event by calling the callback
+method registered for a consumer, using the event payload as its argument(s).</p>
+<p>The following table lists the Authentication-related events and subscriber(s):</p>
+<table>
+<thead>
+<tr>
+<th>Event Topic</th>
+<th>Subscriber(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AUTHENTICATION.SUCCEEDED</td>
+<td>MRA, EL</td>
+</tr>
+<tr>
+<td>AUTHENTICATION.FAILED</td>
+<td>EL</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>MRA = <code>yosai.core.authz.authz.ModularRealmAuthorizer</code></li>
+<li>EL = <code>yosai.core.event.event.EventLogger</code></li>
+</ul>
+<h2 id="references">References</h2>
+<p><a href="https://www.owasp.org/index.php/Authentication_Cheat_Sheet">OWASP Authentication Cheat Sheet</a></p></div>
+            
+        </div>
+
+        <footer class="col-md-12">
+        </footer>
+
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script>var base_url = '..';</script>
+        <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+        <script src="../js/base.js"></script>
+        <script src="../js/extra.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            From here you can search these documents. Enter
+                            your search terms below.
+                        </p>
+                        <form role="form">
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                            </div>
+                        </form>
+                        <div id="mkdocs-search-results"></div>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
