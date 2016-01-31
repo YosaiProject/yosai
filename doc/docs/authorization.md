@@ -5,9 +5,6 @@
 Authorization, also known as Access Control, is concerned with the rules and
 mechanisms governing how someone or something accesses resources (in this context, within a software application). Informally speaking, authorization is concerned with “who can do what”.
 
-The objective of this documentation is to introduce the core concepts
-of Authorization in Yosai.  Please consult the API Reference further below if you wish to see the authorization API in its entirety.
-
 
 ## Role-Based Access Control
 
@@ -28,7 +25,7 @@ access control and doesn’t force one on you.  However, a basic, flat RBAC
 model was implemented for Yosai, [as an extension](https://github.com/YosaiProject/yosai_alchemystore), so to facilitate other extension projects.
 
 
-## How is Authorization conducted in Yosai?
+## Key Concepts
 
 The key concepts to understand about authorization in Yosai involve these relationships:
 
@@ -74,7 +71,7 @@ Both levels of access control can be performed using two styles:
 - The **imperative style** of authorization involves in-line access control within the operation that requires authorization.
 
 
-## Levels and Styles Illustrated
+### Levels and Styles Illustrated
 
 Following is an example of what role-level authorization looks like when using
 either style of access control.  In this example, we only allow a user to
