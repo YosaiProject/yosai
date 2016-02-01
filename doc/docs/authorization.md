@@ -8,8 +8,7 @@ mechanisms governing how someone or something accesses resources (in this contex
 
 ## Role-Based Access Control
 
-There are many access control models [in use today](https://en.wikipedia.org/wiki/Access_control).  By default, Yosai
-enforces access control by evaluating roles and permissions assigned to a user.
+There are many access control models [in use today](https://en.wikipedia.org/wiki/Access_control).  By default, Yosai enforces access control by evaluating roles and permissions assigned to a user.
 These roles and permissions are derived from a Role-Based Access Control (RBAC) model. Note that although a default support for RBAC is provided, your Realm
 implementation ultimately decides how your permissions and roles are grouped
 together and whether to return a “yes” or a “no” answer to Yosai.  This feature
@@ -240,8 +239,8 @@ Declarative-style authorization allows you to itemize access requirements for a 
         :type permission_s:  a List of Strings or List of Permission instances
 
         :param logical_operator:  indicates whether all or at least one permission
-                                  is true (and, any)
-        :type: and OR all (from python standard library)
+                                  is true (any, all)
+        :type: any OR all (from python standard library)
 
         :raises  AuthorizationException:  if the user does not have sufficient
                                           permission
@@ -261,8 +260,8 @@ Declarative-style authorization allows you to itemize access requirements for a 
         :type roleid_s:  a List of Strings
 
         :param logical_operator:  indicates whether all or at least one permission
-                                  is true (and, any)
-        :type: and OR all (from python standard library)
+                                  is true (any, all)
+        :type: any OR all (from python standard library)
 
         :raises  AuthorizationException:  if the user does not have sufficient
                                           role membership
@@ -350,7 +349,7 @@ Following is the API you may use for imperative-style authorization:
 
         :param logical_operator:  indicates whether *all* or at least one
                                   permission check is true, *any*
-        :type: and OR all (functions from python stdlib)
+        :type: any OR all (functions from python stdlib)
 
         :returns: a Boolean
         """
@@ -373,7 +372,7 @@ Following is the API you may use for imperative-style authorization:
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python stdlib)
+        :type: any OR all (from python stdlib)
 
         :raises UnauthorizedException: if any permission is unauthorized
         """
