@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+	<title>Serialization - Yosai</title>
+
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.5.0.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+        <link href="../css/extra.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+
+    </head>
+
+    <body>
+
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Collapsed navigation -->
+            <div class="navbar-header">
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <!-- Main title -->
+                <a class="active navbar-brand" href="..">Yosai</a>
+            </div>
+            <!-- Expanded navigation -->
+            <div class="navbar-collapse collapse">
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Get Started <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="../intro/">Introduction</a>
+                            </li>
+                            <li>
+                                <a href="../installation_setup/">Installation and Setup</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="../authentication/">Authentication</a>
+                            </li>
+                            <li>
+                                <a href="../authorization/">Authorization</a>
+                            </li>
+                            <li>
+                                <a href="../sessionmanagement">Session Management</a>
+                            </li>
+                            <li>
+                                <a href="../events/">Event Processing</a>
+                            </li>
+                            <li class="active">
+                                <a href="./">Serialization</a>
+                            </li>
+                            <li>
+                                <a href="../architecture/">Architecture Overview</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="../devstatus/">Development Status</a>
+                            </li>
+                            <li>
+                                <a href="../library/">Library</a>
+                            </li>
+                            <li>
+                                <a href="../community/">Community</a>
+                            </li>
+                            <li>
+                                <a href="../credits/">Credits</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                            <i class="fa fa-search"></i> Search
+                        </a>
+                    </li>
+
+                    <li >
+                        <a rel="next" href="../events/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li >
+                        <a rel="prev" href="../architecture/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="https://github.com/yosaiproject">
+
+                            <i class="fa fa-github"></i> GitHub
+                        </a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+
+        <li class="main active"><a href="#serialization">Serialization</a></li>
+
+            <li><a href="#marshmallow">Marshmallow</a></li>
+
+            <li><a href="#serializables">Serializables</a></li>
+
+            <li><a href="#serialization-manager">Serialization Manager</a></li>
+
+
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="serialization">Serialization</h1>
+<p>Yosai serializes objects when caching and when saving 'Remember Me' information.</p>
+<p>The serialization process is as follows:</p>
+<p><img alt="serialization" src="../img/serialization_process.png" /></p>
+<ol>
+<li>Reduce the state of a Yosai object to its primitive form, as a dict</li>
+<li>Enrich the payload -- that which is cached -- with metadata</li>
+<li>Encode the metadata-enriched payload<ul>
+<li>yosai.core includes msgpack and json encoders, of which <em>msgpack</em> is
+  the default</li>
+</ul>
+</li>
+</ol>
+<h2 id="marshmallow">Marshmallow</h2>
+<p><img alt="marshmallow" src="../img/marshmallow-logo.png" /></p>
+<p>Yosai uses <code>marshmallow</code> to reduce business objects to their primitive form.  As per Marshmallow's docs:</p>
+<blockquote>
+<p>Marshmallow is an ORM/ODM/framework-agnostic library for converting complex datatypes, such as objects, to and from native Python datatypes.</p>
+</blockquote>
+<h2 id="serializables">Serializables</h2>
+<p>Classes that inherit from the <code>Serializable</code> abstract base class are eligible
+for serialization in Yosai.  A Serializable class has its own marshmallow
+<code>SerializationSchema</code> class defined as an inner class of the
+<code>serialization_schema</code> classmethod.  This class is returned by the classmethod
+and used during (de)serialization:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #a6e22e">@classmethod</span>
+    <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">serialization_schema</span><span style="color: #f8f8f2">(cls):</span>
+
+        <span style="color: #66d9ef">class</span> <span style="color: #a6e22e">SerializationSchema</span><span style="color: #f8f8f2">(Schema):</span>
+            <span style="color: #f92672">...</span>
+        <span style="color: #66d9ef">return</span> <span style="color: #f8f8f2">SerializationSchema</span>
+</pre></div>
+
+
+<h3 id="examples">Examples</h3>
+<p>To understand how to reduce objects, you are encouraged to review the serialization source code of the <code>Serializable</code> classes in Yosai.  The following classes are recommended for their diversity.  The serialization code is located at the bottom of each class, within the <code>serialization_schema</code> classmethod:</p>
+<ul>
+<li><code>authz.authz.IndexedAuthorizationInfo</code></li>
+<li><code>subject.identifier.SimpleIndentifierCollection</code></li>
+<li><code>session.session.SimpleSession</code></li>
+<li><code>authz.authz.WildcardPermission</code></li>
+</ul>
+<h2 id="serialization-manager">Serialization Manager</h2>
+<p>A <code>SerializationManager</code> orchestrates the serialization process.  It is indended for your caching library, wrapping "setters" with serialization and "getters" with deserialization.</p>
+<p>For instance, the Yosai extension, <code>Yosai DPCache</code>, obtains a SerializationManager instance during its CacheHandler initialization process.  The <code>SerializationManager</code> proxies all cache communication.</p></div>
+
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script>var base_url = '..';</script>
+        <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+        <script src="../js/base.js"></script>
+        <script src="../js/extra.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            From here you can search these documents. Enter
+                            your search terms below.
+                        </p>
+                        <form role="form">
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                            </div>
+                        </form>
+                        <div id="mkdocs-search-results"></div>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>

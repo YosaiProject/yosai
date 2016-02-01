@@ -1,76 +1,371 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Yosai : Yosai is a pythonic port of Apache Shiro, a popular security framework written in Java">
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="./img/favicon.ico">
     <title>Yosai</title>
-  </head>
+    <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+    <link href="./css/font-awesome-4.5.0.css" rel="stylesheet">
+    <link href="./css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/highlight.css">
+    <link href="./css/extra.css" rel="stylesheet">
+</head>
 
-  <body>
+<body class="homepage">
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Collapsed navigation -->
+            <div class="navbar-header">
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <!-- Main title -->
+                <a class="active navbar-brand" href=".">Yosai</a>
+            </div>
+            <!-- Expanded navigation -->
+            <div class="navbar-collapse collapse">
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Get Started <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="intro/">Introduction</a>
+                            </li>
+                            <li>
+                                <a href="installation_setup/">Installation and Setup</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="authentication/">Authentication</a>
+                            </li>
+                            <li>
+                                <a href="authorization/">Authorization</a>
+                            </li>
+                            <li>
+                                <a href="sessionmanagement/">Session Management</a>
+                            </li>
+                            <li>
+                                <a href="events/">Event Processing</a>
+                            </li>
+                            <li>
+                                <a href="serialization/">Serialization</a>
+                            </li>
+                            <li>
+                                <a href="architecture/">Architecture Overview</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="devstatus/">Development Status</a>
+                            </li>
+                            <li>
+                                <a href="library/">Library</a>
+                            </li>
+                            <li>
+                                <a href="community/">Community</a>
+                            </li>
+                            <li>
+                                <a href="credits/">Credits</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                            <i class="fa fa-search"></i> Search
+                        </a>
+                    </li>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/YosaiProject/yosai">View on GitHub</a>
+                    <li class="disabled">
+                        <a rel="next">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li>
+                        <a rel="prev" href="intro/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/yosaiproject">
 
-          <h1 id="project_title">Yosai</h1>
-          <h2 id="project_tagline">Yosai is a pythonic port of Apache Shiro, a popular security framework written in Java</h2>
+                            <i class="fa fa-github"></i> GitHub
+                        </a>
+                    </li>
 
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/YosaiProject/yosai/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/YosaiProject/yosai/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
+                </ul>
+            </div>
+        </div>
     </div>
 
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h2>
-<a id="project-overview" class="anchor" href="#project-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>PROJECT OVERVIEW</h2>
+    <!-- Header -->
+    <a name="about"></a>
+    <div class="intro-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="intro-message">
+                        <h6>Yosai</h6>
+                        <span style="background-color: black;"<h5 class="text-right">Security for Any <span style="color: #18b030; font-weight: 400">Python</span> Application</span></h5>
+                    </div>
+                </div>
+            </div>
 
-<p>Please, first familiarize yourself with <a href="http://shiro.apache.org/">Apache Shiro</a>.  It is a remarkable system.</p>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.intro-header -->
 
-<p>Today, no such open-sourced security framework like Shiro exists for the Python community.  There's an unmet need for one.  Shiro has been battle tested and continues to evolve.  Let's learn from history by porting the java source.  Then, we'll refactor the source using techniques and libraries available in Python and with the expertise from this great development community.</p>
+    <!-- /.content-section-b -->
+    <div class="content-section-b">
+        <div class="container">
+            <div class="row">
+            </div>
+            <div class="row">
+                <div class="col-md-5 col-md-5 top-buffer-lg">
+                    <img class="img-responsive thumb_img" src="img/apache-shiro-logo.png" align="right">
+                </div>
+                <div class="col-sm-5 col-sm-offset-2 col-md-6 col-md-offset-0 top-buffer">
+                    <div class="clearfix"></div>
+                    <h3>Yosai is a security framework written in Python that is based on Apache Shiro: a trusted, widely-adopted technology used by the java community.</h3>
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.content-section-b -->
 
-<p>I am porting the <a href="http://svn.apache.org/repos/asf/shiro/branches/2.0-api-design-changes/">v2.0-alpha source code</a></p>
+    <!-- Page Content -->
+    <!-- Whatis 1 -->
+    <a name="whatis"></a>
+    <div class="blue-break top-buffer">
+        <div class="container">
+            <div class="col-xs-10 col-xs-offset-1 text-center">
+                <h5>Extensive Security for Python Applications</h5>
+            </div>
+        </div>
+    </div>
+    <!-- /.Whatis 1 -->
 
-<h2>
-<a id="word-origin--yosai" class="anchor" href="#word-origin--yosai" aria-hidden="true"><span class="octicon octicon-link"></span></a>WORD ORIGIN:  Yosai</h2>
+    <a name="services"></a>
+    <div class="content-section-a">
 
-<p>In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress".  Like the words, the security platforms are similiar in meaning yet not the same.</p>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-5 col-sm-6 col-md-push-1">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">Authentication</h2>
+                    <p class="lead">Verifying identity: proving that a subject is who "IT" claims to be</p>
+                </div>
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <img class="img-responsive large_img" src="img/authentication.jpg" alt="">
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.content-section-a -->
 
-<h2>
-<a id="project-status" class="anchor" href="#project-status" aria-hidden="true"><span class="octicon octicon-link"></span></a>PROJECT STATUS</h2>
+    <div class="content-section-b">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">Authorization</h2>
+                    <p class="lead">Constraining a user's access to sensitive data and interactions in a system in accordance with an access control policy</p>
+                </div>
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                    <img class="img-responsive large_img" src="img/authorization.png" alt="">
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.content-section-b -->
 
-<p>01/07/2015  I am a one man army who is eager to share the love for this open source project.   Well-seasoned 
-Python developers who understand best practices in python design and software architecture are urged to consider joining this Project.  I am nearly finished with the rough-rough-rough port to python, leaving much of the source 
-intact but addressing the lower hanging fruit.  I expect to release this v0.01 baseline to the repository within the next two weeks.</p>
+    <div class="content-section-a">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-5 col-sm-6 col-md-offset-1">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">Session Management</h2>
+                    <p class="lead">Manages a user's state in a system, across requests</p>
+                </div>
+                <div class="col-lg-6 col-sm-6">
+                    <img class="img-responsive large_img" src="img/sessionmanagement.png" alt="">
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.content-section-a -->
 
-<p>My intention for releasing v0.01 is to reveal to the community the effort being made to turn this into reality.  Upon release, the next major phase of development entails reconciling the java with the python.  Business logic inconsistences and any missing pieces will be reviewed and catalogued.</p>
-
-<h2>
-<a id="contact-information" class="anchor" href="#contact-information" aria-hidden="true"><span class="octicon octicon-link"></span></a>CONTACT INFORMATION</h2>
-
-<p>If you would like to get involved, please contact me by the email address in my github profile.  I am often
-available on FreeNode IRC channels #python and #pyramid under the nickname dowwie.</p>
-      </section>
+    <div class="blue-break top-buffer">
+        <div class="container">
+            <div class="col-xs-10 col-xs-offset-1 text-center">
+                <h5>Easy to Use and Integrate</h5>
+            </div>
+        </div>
     </div>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Yosai maintained by <a href="https://github.com/YosaiProject">YosaiProject</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
+    <div class="content-section-b">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading text-center"> An Intuitive API</h2>
+                    <p class="lead">Security permeates your application without burdening you with details.</p>
+                </div>
+                <div class="col-lg-6 col-sm-pull-6 col-sm-6">
+                    <img class="img-responsive large_img" src="img/yosai_subject.png" alt="">
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.content-section-b -->
+
+    <div class="content-section-a">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 col-sm-4 col-md-push-1">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">Integration</h2>
+                    <p class="lead">Integrates with Any Python Application</p>
+                </div>
+                <div class="col-lg-5 col-lg-offset-1">
+                    <img class="img-responsive large_img" src="img/pluggable_security.png" alt="">
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /.content-section-a -->
+
+    <div class="blue-break top-buffer-lg">
+        <div class="container">
+            <div class="col-xs-10 col-xs-offset-1 text-center">
+                <h5>Other Key Features</h5>
+            </div>
+        </div>
     </div>
 
-    
+    <div class="container top-buffer-md">
+        <div class="row">
+            <div class="col-md-4 bottom-column">
+                <img class="img-responsive thumb_img" src="img/RBAC_hierarchy.png" alt="">
+                <h3>Enables Role-Based Access Control (RBAC) policies</h3>
+            </div>
+            <div class="col-md-4 bottom-column">
+                <img class="img-responsive thumb_img" src="img/cache_bw.png" alt="">
+                <h3>Native support for caching, including serialization</h3>
+            </div>
+            <div class="col-md-4 bottom-column">
+                <img class="img-responsive thumb_img" src="img/logs.png" alt="">
+                <h3>A complete audit trail of all user interactions</h3>
+            </div>
+        </div>
 
-  </body>
+        <div class="row top-buffer-sm">
+            <div class="col-md-4 bottom-column">
+                <img class="img-responsive thumb_img" src="img/batteries_included.png" alt="">
+                <h3>Get started quickly by using integration libraries already available</h3>
+            </div>
+            <div class="col-md-4 bottom-column">
+                <img class="img-responsive thumb_img" src="img/yosai_runas.png" alt="">
+                <h3>"Run As" admin tool facilitates debugging through user impersonation</h3>
+            </div>
+            <div class="col-md-4 bottom-column">
+                <img class="img-responsive thumb_img" src="img/eventdriven.png" alt="">
+                <h3>Event-driven communication among components</h3>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="blue-break top-buffer-lg">
+        <div class="container">
+            <div class="row buffer-md">
+                <div class="col-xs-12">
+                    <ul class="list-inline">
+                        <li>
+                            <a class="btn btn-success btn-large" href="./intro/">Get Started</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="js/jquery-2.2.0.min.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+</body>
+
 </html>
+
+<script src="./js/jquery-1.10.2.min.js"></script>
+<script src="./js/bootstrap-3.0.3.min.js"></script>
+<script src="./js/highlight.pack.js"></script>
+<script>
+    var base_url = '.';
+</script>
+<script data-main="./mkdocs/js/search.js" src="./mkdocs/js/require.js"></script>
+<script src="./js/base.js"></script>
+<script src="./js/extra.js"></script>
+
+<div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter your search terms below.
+                </p>
+                <form role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+
+    </body>
+
+    </html>
+
+    <!--
+MkDocs version : 0.15.0
+Build Date UTC : 2016-01-31 21:52:17.009421
+-->

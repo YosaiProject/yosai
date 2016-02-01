@@ -1,0 +1,36 @@
+actionid: py34
+msg: getenv
+cmdargs: [local('/home/dowwie/yosai/yosai/.tox/py34/bin/pip'), 'install', 'pytest', 'pytest-catchlog', 'pytest-cov', '-rrequirements.txt']
+env: {'XDG_DATA_DIRS': '/usr/share/gnome:/usr/local/share/:/usr/share/', 'XAUTHORITY': '/var/run/gdm3/auth-for-dowwie-nJwftZ/database', 'LOGNAME': 'dowwie', 'ZSH': '/home/dowwie/.oh-my-zsh', 'NVM_NODEJS_ORG_MIRROR': 'https://nodejs.org/dist', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'DISPLAY': ':0', 'GDM_LANG': 'en_US.UTF-8', 'PAGER': 'less', 'DBUS_SESSION_BUS_ADDRESS': 'unix:abstract=/tmp/dbus-ELo58MEW1M,guid=5c6d3b820d0a1fbaed833bd1568088ca', 'SSH_AGENT_PID': '1408', 'LESS': '-R', 'USER': 'dowwie', 'NVM_PATH': '/home/dowwie/.nvm/versions/node/v4.1.1/lib/node', 'PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION': 'cpp', 'NVM_BIN': '/home/dowwie/.nvm/versions/node/v4.1.1/bin', 'YOSAI_CACHE_SETTINGS': '/home/dowwie/dpcache/yosai_dpcache/cache/conf/cache_settings.yaml', 'WINDOWID': '79691777', 'XDG_RUNTIME_DIR': '/run/user/1000', 'LC_CTYPE': 'en_US.UTF-8', 'GIO_LAUNCHED_DESKTOP_FILE': '/usr/share/applications/guake.desktop', 'PYTHONHASHSEED': '1422307979', 'HOME': '/home/dowwie', '_': '/home/dowwie/yosai/venv34/bin/tox', 'YOSAI_ALCHEMYSTORE_SETTINGS': '/home/dowwie/yosai_alchemystore/yosai_alchemystore/conf/accountstore_settings.yaml', 'SESSION_MANAGER': 'local/debian:@/tmp/.ICE-unix/1371,unix/debian:/tmp/.ICE-unix/1371', 'WINDOWPATH': '7', 'PROJECT_HOME': '/home/dowwie/Devel', 'VIRTUALENVWRAPPER_HOOK_DIR': '/home/dowwie/.virtualenvs', 'XDG_SESSION_ID': '1', 'GDMSESSION': 'default', 'LSCOLORS': 'Gxfxcxdxbxegedabagacad', 'PWD': '/home/dowwie/yosai/yosai', 'DESKTOP_SESSION': 'default', 'VISUAL': 'subl -w', 'TERM': 'xterm-256color', 'PYTHONPATH': '/usr/local/bin/flake8', 'XDG_VTNR': '7', 'XDG_MENU_PREFIX': 'gnome-', 'OLDPWD': '/home/dowwie/yosai', 'SHELL': '/bin/zsh', 'GIO_LAUNCHED_DESKTOP_FILE_PID': '13044', 'MANPATH': '/home/dowwie/.nvm/versions/node/v4.1.1/share/man:/usr/local/share/man:/usr/share/man', 'LANG': 'en_US.UTF-8', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'TOX_TESTENV_PASSENV': 'YOSAI_CORE_SETTINGS YOSAI_CACHE_SETTINGS YOSAI_ALCHEMYSTORE_SETTINGS', 'VIRTUAL_ENV': '/home/dowwie/yosai/yosai/.tox/py34', 'YOSAI_CORE_SETTINGS': '/home/dowwie/yosai/yosai/yosai/core/conf/yosai_settings.yaml', 'GJS_DEBUG_TOPICS': 'JS ERROR;JS LOG', 'EDITOR': 'subl -w', 'LD_LIBRARY_PATH': '/usr/local/lib', 'GPG_AGENT_INFO': '/run/user/1000/keyring/gpg:0:1', 'PATH': '/home/dowwie/yosai/yosai/.tox/py34/bin:/home/dowwie/yosai/venv34/bin:/home/dowwie/.nvm/versions/node/v4.1.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/local/go/bin', 'GOPATH': '/home/dowwie/Go', 'SHLVL': '1', 'PS1': '(venv34)\n%K{green}%F{black} %n@%M %k%f%F{green}%K{blue}\ue0b0%k%f%F{white}%K{blue} %1~%F{blue} %F{blue}%K{white}\ue0b0%F{white}%F{black}%K{white}$(git_prompt_info)$(git_prompt_status)%F{white} %k\ue0b0%f  ', 'XDG_SEAT': 'seat0', 'VIRTUALENVWRAPPER_PROJECT_FILENAME': '.project', 'NVM_DIR': '/home/dowwie/.nvm', 'VIRTUALENVWRAPPER_WORKON_CD': '1', 'XDG_CURRENT_DESKTOP': 'GNOME', 'NVM_IOJS_ORG_MIRROR': 'https://iojs.org/dist', 'WORKON_HOME': '/home/dowwie/.virtualenvs', 'VIRTUALENVWRAPPER_SCRIPT': '/usr/local/bin/virtualenvwrapper.sh', 'XDG_SESSION_DESKTOP': 'default', 'USERNAME': 'dowwie', 'GJS_DEBUG_OUTPUT': 'stderr'}
+
+Collecting http://github.com/YosaiProject/yosai_dpcache/archive/master.zip (from -r requirements.txt (line 15))
+  Downloading http://github.com/YosaiProject/yosai_dpcache/archive/master.zip (77kB)
+Collecting http://github.com/YosaiProject/yosai_alchemystore/archive/master.zip (from -r requirements.txt (line 16))
+  Downloading http://github.com/YosaiProject/yosai_alchemystore/archive/master.zip
+Collecting pytest
+  Using cached pytest-2.8.5-py2.py3-none-any.whl
+Collecting pytest-catchlog
+  Using cached pytest_catchlog-1.2.1-py2.py3-none-any.whl
+Collecting pytest-cov
+  Using cached pytest_cov-2.2.0-py2.py3-none-any.whl
+Collecting redis==2.10.5 (from -r requirements.txt (line 1))
+  Using cached redis-2.10.5-py2.py3-none-any.whl
+Collecting SQLAlchemy==1.0.10 (from -r requirements.txt (line 2))
+Collecting passlib==1.6.5 (from -r requirements.txt (line 3))
+  Using cached passlib-1.6.5-py2.py3-none-any.whl
+Collecting marshmallow==2.3.0 (from -r requirements.txt (line 4))
+  Using cached marshmallow-2.3.0-py2.py3-none-any.whl
+Collecting cryptography==1.1.1 (from -r requirements.txt (line 5))
+Collecting msgpack-python==0.4.6 (from -r requirements.txt (line 6))
+Collecting bcrypt==2.0.0 (from -r requirements.txt (line 7))
+Collecting python-dateutil==2.4.2 (from -r requirements.txt (line 8))
+  Using cached python_dateutil-2.4.2-py2.py3-none-any.whl
+Collecting python-rapidjson==0.0.6 (from -r requirements.txt (line 9))
+Collecting pytz==2015.4 (from -r requirements.txt (line 10))
+  Using cached pytz-2015.4-py2.py3-none-any.whl
+Collecting PyYAML==3.11 (from -r requirements.txt (line 11))
+Collecting structlog==15.1.0 (from -r requirements.txt (line 12))
+  Using cached structlog-15.1.0-py2.py3-none-any.whl
+Collecting PyPubSub (from -r requirements.txt (line 14))
+  Could not find a version that satisfies the requirement PyPubSub (from -r requirements.txt (line 14)) (from versions: )
+No matching distribution found for PyPubSub (from -r requirements.txt (line 14))
