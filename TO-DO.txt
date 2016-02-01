@@ -96,3 +96,6 @@ PEP8 standardized imports:
 implement deserialization validation
 
 implement init_yosai from within SecurityUtils
+
+synchronize imperative and declarative authz examples:
+https://yosaiproject.github.io/yosai/authorization/#access-control-levels-and-styles
