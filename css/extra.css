@@ -50,35 +50,35 @@
 
 h1 {
     font-family: 'Yantramanav';
-    padding: 70px 0 0;
-    font-size: 40px;
+    padding: 70pt 0 0;
+    font-size: 40pt;
     color: #104578;
 }
 h2 {
     font-family: 'Yantramanav';
-    padding: 50px 0 0;
+    padding: 50pt 0 0;
     color: #104578;
 }
 
 h3 {
     font-family: 'Yantramanav';
-    padding: 30px 0 0;
+    padding: 30pt 0 0;
     color: #104578;
 }
 
 h4 {
     font-family: 'Yantramanav';
-    padding: 20px 0 0;
+    padding: 20pt 0 0;
     color: #104578;
 }
 
 p, li {
     font-family: 'Yantramanav';
-    font-size: 20px;
+    font-size: 20pt;
 }
 div.col-md-9 h6:first-of-type {
     text-align: center;
-    font-size: 60px;
+    font-size: 60pt;
     font-weight: 300;
 }
 
@@ -110,11 +110,11 @@ div.col-md-9 h6:first-of-type {
 
 .codehilite pre, pre, .codehilite .hll {
     background-color: #272822;
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    border-radius: 3px;
+    border: 1pt solid #ccc;
+    padding: 6pt 10pt;
+    border-radius: 3pt;
     font-family: 'Inconsolata';
-    font-size: 24px;
+    font-size: 24pt;
 }
 
 img[alt=anon_architecture], img[alt=authc], img[alt=authz],
@@ -134,31 +134,31 @@ img[alt=serialization]{
     margin-right: auto;
 }
 img[alt=idle_timeout] {
-    width: 75px;
-    height: 125px;
+    width: 75pt;
+    height: 125pt;
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
 img[alt=logging] {
-    width: 175px;
-    height: 75px;
+    width: 175pt;
+    height: 75pt;
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
 
 img[alt=ttl], img[alt=marshmallow] {
-    width: 125px;
-    height: 125px;
+    width: 125pt;
+    height: 125pt;
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
 
 img[alt=batteries]{
-    width: 140px;
-    height: 140px;
+    width: 140pt;
+    height: 140pt;
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -169,30 +169,30 @@ img[alt=batteries]{
 
 h5 {
     font-family:  "Roboto";
-    font-size: 32px;
+    font-size: 32pt;
     color: white;
 }
 
 h6 {
     font-family: "Fontovision";
     font-weight: 500;
-	font-size: 60px;
+	font-size: 60pt;
     color: white;
 }
 
 .topnav {
-    font-size: 24px;
+    font-size: 24pt;
     font-family: "Karma";
     font-weight: 500;
 }
 
 .lead {
-    font-size: 24px;
+    font-size: 24pt;
 }
 
 .intro-header {
-    padding-top: 25px; /* If you're making other pages, make sure there is 50px of padding to make sure the navbar doesn't overlap content! */
-    padding-bottom: 25px;
+    padding-top: 25pt; /* If you're making other pages, make sure there is 50pt of padding to make sure the navbar doesn't overlap content! */
+    padding-bottom: 25pt;
     text-align: right;
     color: #f8f8f8;
     background: url(../img/intro-bg.jpg) no-repeat center center;
@@ -203,20 +203,20 @@ h6 {
     position: relative;
     padding-top: 20%;
     padding-bottom: 20%;
-    font-size: 32px;
+    font-size: 32pt;
 }
 
 .intro-message > h6 {
     margin: 0;
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+    text-shadow: 2pt 2pt 3pt rgba(0,0,0,0.6);
     font-size: 5em;
 }
 
 .intro-message > h3 {
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+    text-shadow: 2pt 2pt 3pt rgba(0,0,0,0.6);
 }
 
-@media(max-width:767px) {
+@media(max-width:767pt) {
     .intro-message {
         padding-bottom: 15%;
     }
@@ -227,7 +227,7 @@ h6 {
 
     ul.intro-social-buttons > li {
         display: block;
-        margin-bottom: 20px;
+        margin-bottom: 20pt;
         padding: 0;
     }
 
@@ -242,9 +242,9 @@ h6 {
 
 .network-name {
     text-transform: uppercase;
-    font-size: 14px;
+    font-size: 14pt;
     font-weight: 400;
-    letter-spacing: 2px;
+    letter-spacing: 2pt;
 }
 
 .col-center {
@@ -254,20 +254,20 @@ h6 {
  }
 
 .top-buffer {
-	margin-top: 100px;
+	margin-top: 100pt;
 }
 
 .top-buffer-sm {
-	margin-top: 25px;
+	margin-top: 25pt;
 }
 
 .buffer-md {
-	margin-top: 50px;
-	margin-bottom: 50px;
+	margin-top: 50pt;
+	margin-bottom: 50pt;
 }
 
 .top-buffer-lg {
-	margin-top: 150px;
+	margin-top: 150pt;
 }
 
 
@@ -277,30 +277,30 @@ h6 {
 }
 
 .content-section-a {
-    padding: 50px 0;
+    padding: 50pt 0;
     background: url(../img/grid.png) repeat-x;
-    border-bottom: 1px solid #e7e7e7;
+    border-bottom: 1pt solid #e7e7e7;
 }
 
 .content-section-b {
-    padding: 50px 0;
-    border-top: 1px solid #e7e7e7;
-    border-bottom: 1px solid #e7e7e7;
+    padding: 50pt 0;
+    border-top: 1pt solid #e7e7e7;
+    border-bottom: 1pt solid #e7e7e7;
     background: url(../img/grid.png) repeat-x;
 }
 
 .section-heading {
-    margin-bottom: 30px;
+    margin-bottom: 30pt;
 }
 
 .section-heading-spacer {
     float: left;
-    width: 200px;
-    border-top: 3px solid #e7e7e7;
+    width: 200pt;
+    border-top: 3pt solid #e7e7e7;
 }
 
 .banner {
-    padding: 100px 0;
+    padding: 100pt 0;
     color: #f8f8f8;
     background: url(../img/banner-bg.jpg) no-repeat center center;
     background-size: cover;
@@ -308,7 +308,7 @@ h6 {
 
 .banner h2 {
     margin: 0;
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+    text-shadow: 2pt 2pt 3pt rgba(0,0,0,0.6);
     font-size: 3em;
 }
 
@@ -321,23 +321,23 @@ h6 {
     margin-top: 0;
 }
 
-@media(max-width:1199px) {
+@media(max-width:1199pt) {
     ul.banner-social-buttons {
         float: left;
-        margin-top: 15px;
+        margin-top: 15pt;
     }
 }
 
-@media(max-width:767px) {
+@media(max-width:767pt) {
     .banner h2 {
         margin: 0;
-        text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+        text-shadow: 2pt 2pt 3pt rgba(0,0,0,0.6);
         font-size: 3em;
     }
 
     ul.banner-social-buttons > li {
         display: block;
-        margin-bottom: 20px;
+        margin-bottom: 20pt;
         padding: 0;
     }
 
@@ -351,7 +351,7 @@ footer {
 }
 
 .copyright {
-    margin: 15px 0 0;
+    margin: 15pt 0 0;
 }
 
 .thumb_img {
@@ -377,29 +377,29 @@ footer {
 }
 .dropdown-menu{
     font-family: "Karma";
-    font-size: 22px;
+    font-size: 22pt;
 }
 
 .btn-default,.btn-primary,.btn-success,.btn-info,.btn-warning,.btn-danger {
-    -webkit-box-shadow: 2px 3px 0px rgba(4, 4, 4, 0.3);
-    -moz-box-shadow:    2px 3px 0px rgba(4, 4, 4, 0.3);
-    box-shadow:         2px 3px 0px rgba(4, 4, 4, 0.3);
+    -webkit-box-shadow: 2pt 3pt 0pt rgba(4, 4, 4, 0.3);
+    -moz-box-shadow:    2pt 3pt 0pt rgba(4, 4, 4, 0.3);
+    box-shadow:         2pt 3pt 0pt rgba(4, 4, 4, 0.3);
     border-radius:0;
-	width: 300px;
-	height:  50px;
+	width: 300pt;
+	height:  50pt;
 	text-align: center;
 	font-family: "Karma";
-	font-size:  24px;
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+	font-size:  24pt;
+    text-shadow: 2pt 2pt 3pt rgba(0,0,0,0.6);
 }
 
 .btn-default:active,.btn-primary:active,.btn-success:active,.btn-info:active,.btn-warning:active,.btn-danger:active {
-    margin-top: 3px;
-    margin-bottom: -3px;
+    margin-top: 3pt;
+    margin-bottom: -3pt;
 }
 
 .navbar-brand{
-	font-size: 30px;
+	font-size: 30pt;
 	font-family: 'Fontovision';
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+    text-shadow: 2pt 2pt 3pt rgba(0,0,0,0.6);
 }
