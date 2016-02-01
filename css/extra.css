@@ -1,10 +1,52 @@
 @import url('http://fonts.googleapis.com/css?family=Yantramanav');
 @import url('http://fonts.googleapis.com/css?family=Inconsolata');
 @import url('http://fonts.googleapis.com/css?family=Roboto:400,300');
+
+@font-face {
+	font-family: 'Yantramanav';
+	src: url('../fonts/Yantramanav/Yantramanav-Regular.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'Yantramanav';
+	src: url('../fonts/Yantramanav/Yantramanav-Bold.ttf') format('truetype');
+	font-weight: bold;
+}
+
 @font-face {
 	font-family: 'Fontovision';
 	src: url('../fonts/fontovision_regular.ttf') format('truetype');
 }
+
+@font-face {
+	font-family: 'Roboto';
+	src: url('../fonts/Roboto/Roboto-Regular.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Roboto';
+	src: url('../fonts/Roboto/Roboto-Bold.ttf') format('truetype');
+	font-weight: bold;
+}
+
+@font-face {
+	font-family: 'Karma';
+	src: url('../fonts/Karma/Karma-Regular.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Karma';
+	src: url('../fonts/Karma/Karma-Bold.ttf') format('truetype');
+	font-weight: bold;
+}
+@font-face {
+	font-family: 'Inconsolata';
+	src: url('../fonts/Inconsolata/Inconsolata-Regular.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Inconsolata';
+	src: url('../fonts/Inconsolata/Inconsolata-Bold.ttf') format('truetype');
+	font-weight: bold;
+}
+
 
 h1 {
     font-family: 'Yantramanav';
