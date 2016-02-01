@@ -367,8 +367,8 @@ method registered for a consumer, using the event payload as its argument(s).</p
 <span style="color: #e6db74">        :type permission_s:  a List of Strings or List of Permission instances</span>
 
 <span style="color: #e6db74">        :param logical_operator:  indicates whether all or at least one permission</span>
-<span style="color: #e6db74">                                  is true (and, any)</span>
-<span style="color: #e6db74">        :type: and OR all (from python standard library)</span>
+<span style="color: #e6db74">                                  is true (any, all)</span>
+<span style="color: #e6db74">        :type: any OR all (from python standard library)</span>
 
 <span style="color: #e6db74">        :raises  AuthorizationException:  if the user does not have sufficient</span>
 <span style="color: #e6db74">                                          permission</span>
@@ -388,8 +388,8 @@ method registered for a consumer, using the event payload as its argument(s).</p
 <span style="color: #e6db74">        :type roleid_s:  a List of Strings</span>
 
 <span style="color: #e6db74">        :param logical_operator:  indicates whether all or at least one permission</span>
-<span style="color: #e6db74">                                  is true (and, any)</span>
-<span style="color: #e6db74">        :type: and OR all (from python standard library)</span>
+<span style="color: #e6db74">                                  is true (any, all)</span>
+<span style="color: #e6db74">        :type: any OR all (from python standard library)</span>
 
 <span style="color: #e6db74">        :raises  AuthorizationException:  if the user does not have sufficient</span>
 <span style="color: #e6db74">                                          role membership</span>
@@ -467,7 +467,7 @@ When this_function is called, the caller of this_function should be ready to han
 
 <span style="color: #e6db74">        :param logical_operator:  indicates whether *all* or at least one</span>
 <span style="color: #e6db74">                                  permission check is true, *any*</span>
-<span style="color: #e6db74">        :type: and OR all (functions from python stdlib)</span>
+<span style="color: #e6db74">        :type: any OR all (functions from python stdlib)</span>
 
 <span style="color: #e6db74">        :returns: a Boolean</span>
 <span style="color: #e6db74">        &quot;&quot;&quot;</span>
@@ -490,7 +490,7 @@ When this_function is called, the caller of this_function should be ready to han
 
 <span style="color: #e6db74">        :param logical_operator:  indicates whether all or at least one</span>
 <span style="color: #e6db74">                                  permission check is true (any)</span>
-<span style="color: #e6db74">        :type: and OR all (from python stdlib)</span>
+<span style="color: #e6db74">        :type: any OR all (from python stdlib)</span>
 
 <span style="color: #e6db74">        :raises UnauthorizedException: if any permission is unauthorized</span>
 <span style="color: #e6db74">        &quot;&quot;&quot;</span>
