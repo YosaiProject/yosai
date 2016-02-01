@@ -50,35 +50,35 @@
 
 h1 {
     font-family: 'Yantramanav';
-    padding: 70pt 0 0;
+    padding: 50pt 0 0;
     font-size: 40pt;
     color: #104578;
 }
 h2 {
     font-family: 'Yantramanav';
-    padding: 50pt 0 0;
+    padding: 40pt 0 0;
     color: #104578;
 }
 
 h3 {
     font-family: 'Yantramanav';
-    padding: 30pt 0 0;
+    padding: 24pt 0 0;
     color: #104578;
 }
 
 h4 {
     font-family: 'Yantramanav';
-    padding: 20pt 0 0;
+    padding: 18pt 0 0;
     color: #104578;
 }
 
 p, li {
     font-family: 'Yantramanav';
-    font-size: 20pt;
+    font-size: 14pt;
 }
 div.col-md-9 h6:first-of-type {
     text-align: center;
-    font-size: 60pt;
+    font-size: 40pt;
     font-weight: 300;
 }
 

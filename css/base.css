@@ -1,5 +1,5 @@
 body {
-    padding-top: 70pt;
+    padding-top: 20pt;
     background: url(../img/grid.png) repeat-x;
     background-attachment: fixed;
     background-color: #f8f8f8;
@@ -18,7 +18,7 @@ div.col-md-3 {
 }
 
 div.col-md-9 {
-    padding-bottom: 100pt;
+    padding-bottom: 50pt;
 }
 
 div.source-links {
@@ -46,15 +46,6 @@ h1[id]:before, h2[id]:before, h3[id]:before, h4[id]:before, h5[id]:before, h6[id
     margin-top: -75pt;
     height: 75pt;
     pointer-events: none;
-}
-
-h1 {
-    font-weight: 400;
-    font-size: 42pt;
-}
-
-h2, h3, h4, h5, h6 {
-    font-weight: 300;
 }
 
 hr {
@@ -124,7 +115,7 @@ footer {
 /* All levels of nav */
 .bs-sidebar .nav > li > a {
     display: block;
-    padding: 5pt 20pt;
+    padding: 5pt 10pt;
     z-index: 1;
 }
 .bs-sidebar .nav > li > a:hover,
@@ -148,8 +139,8 @@ footer {
 .bs-sidebar .nav .nav > li > a {
     padding-top:    3pt;
     padding-bottom: 3pt;
-    padding-left: 30pt;
-    font-size: 90%;
+    padding-left: 20pt;
+    font-size: 100%;
 }
 
 /* Show and affix the side nav when space allows it */
@@ -160,7 +151,7 @@ footer {
     /* Widen the fixed sidebar */
     .bs-sidebar.affix,
     .bs-sidebar.affix-bottom {
-        width: 213pt;
+        width: 210pt;
     }
     .bs-sidebar.affix {
         position: fixed; /* Undo the static from mobile first approach */
@@ -179,12 +170,12 @@ footer {
     /* Widen the fixed sidebar again */
     .bs-sidebar.affix-bottom,
     .bs-sidebar.affix {
-        width: 263pt;
+        width: 220pt;
     }
 }
 
 .headerlink {
-    font-family: FontAwesome;
+    font-family: 'Karma';
     font-size: 14pt;
     display: none;
     padding-left: .5em;
