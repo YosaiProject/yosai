@@ -4,9 +4,9 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
-        
-        
+
+
+
         <link rel="shortcut icon" href="../img/favicon.ico">
 
 	<title>Serialization - Yosai</title>
@@ -23,151 +23,88 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
         <![endif]-->
 
-        
+
     </head>
 
     <body>
 
-        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-    <div class="container">
-
-        <!-- Collapsed navigation -->
-        <div class="navbar-header">
-            
-            <!-- Expander button -->
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            
-
-            <!-- Main title -->
-            <a class="navbar-brand" href="..">Yosai</a>
-        </div>
-
-        <!-- Expanded navigation -->
-        <div class="navbar-collapse collapse">
-            
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Collapsed navigation -->
+            <div class="navbar-header">
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <!-- Main title -->
+                <a class="active navbar-brand" href="..">Yosai</a>
+            </div>
+            <!-- Expanded navigation -->
+            <div class="navbar-collapse collapse">
                 <!-- Main navigation -->
                 <ul class="nav navbar-nav">
-                
-                
-                    <li >
-                        <a href="..">Home</a>
-                    </li>
-                
-                
-                
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Get Started <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                        
-                            
-<li >
-    <a href="../intro/">Introduction</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../installation_setup/">Installation and Setup</a>
-</li>
-
-                        
+                            <li>
+                                <a href="../intro/">Introduction</a>
+                            </li>
+                            <li>
+                                <a href="../installation_setup/">Installation and Setup</a>
+                            </li>
                         </ul>
                     </li>
-                
-                
-                
                     <li class="dropdown active">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                        
-                            
-<li >
-    <a href="../authentication/">Authentication</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../authorization/">Authorization</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../sessionmanagement/">Session Management</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../events/">Event Processing</a>
-</li>
-
-                        
-                            
-<li class="active">
-    <a href="./">Serialization</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../architecture/">Architecture Overview</a>
-</li>
-
-                        
+                            <li>
+                                <a href="../authentication/">Authentication</a>
+                            </li>
+                            <li>
+                                <a href="../authorization/">Authorization</a>
+                            </li>
+                            <li>
+                                <a href="../sessionmanagement">Session Management</a>
+                            </li>
+                            <li>
+                                <a href="../events/">Event Processing</a>
+                            </li>
+                            <li class="active">
+                                <a href="./">Serialization</a>
+                            </li>
+                            <li>
+                                <a href="../architecture/">Architecture Overview</a>
+                            </li>
                         </ul>
                     </li>
-                
-                
-                
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                        
-                            
-<li >
-    <a href="../devstatus/">Development Status</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../library/">Library</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../community/">Community</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../credits/">Credits</a>
-</li>
-
-                        
+                            <li>
+                                <a href="../devstatus/">Development Status</a>
+                            </li>
+                            <li>
+                                <a href="../library/">Library</a>
+                            </li>
+                            <li>
+                                <a href="../community/">Community</a>
+                            </li>
+                            <li>
+                                <a href="../credits/">Credits</a>
+                            </li>
                         </ul>
                     </li>
-                
-                
                 </ul>
-            
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                            <i class="fa fa-search"></i> Search
+                        </a>
+                    </li>
 
-            <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
-                        <i class="fa fa-search"></i> Search
-                    </a>
-                </li>
-                
                     <li >
                         <a rel="next" href="../events/">
                             <i class="fa fa-arrow-left"></i> Previous
@@ -178,36 +115,33 @@
                             Next <i class="fa fa-arrow-right"></i>
                         </a>
                     </li>
-                
-                
+
                     <li>
                         <a href="https://github.com/yosaiproject">
-                            
-                                <i class="fa fa-github"></i>
-                            
-                            GitHub
+
+                            <i class="fa fa-github"></i> GitHub
                         </a>
                     </li>
-                
-            </ul>
+
+                </ul>
+            </div>
         </div>
     </div>
-</div>
 
-        <div class="container">
-            
+    <div class="container">
+
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
-    
+
         <li class="main active"><a href="#serialization">Serialization</a></li>
-        
+
             <li><a href="#marshmallow">Marshmallow</a></li>
-        
+
             <li><a href="#serializables">Serializables</a></li>
-        
+
             <li><a href="#serialization-manager">Serialization Manager</a></li>
-        
-    
+
+
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -257,12 +191,12 @@ and used during (de)serialization:</p>
 <h2 id="serialization-manager">Serialization Manager</h2>
 <p>A <code>SerializationManager</code> orchestrates the serialization process.  It is indended for your caching library, wrapping "setters" with serialization and "getters" with deserialization.</p>
 <p>For instance, the Yosai extension, <code>Yosai DPCache</code>, obtains a SerializationManager instance during its CacheHandler initialization process.  The <code>SerializationManager</code> proxies all cache communication.</p></div>
-            
+
         </div>
 
         <footer class="col-md-12">
             <hr>
-            
+
             <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
         </footer>
 
