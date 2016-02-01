@@ -100,8 +100,8 @@ footer {
 }
 
 .bs-sidebar.well {
-    padding: 0;
-    max-height: 90%;
+    padding: 5;
+    max-height: 70%;
     overflow-y: auto;
 }
 
@@ -151,7 +151,7 @@ footer {
     /* Widen the fixed sidebar */
     .bs-sidebar.affix,
     .bs-sidebar.affix-bottom {
-        width: 210pt;
+        width: 205pt;
     }
     .bs-sidebar.affix {
         position: fixed; /* Undo the static from mobile first approach */
@@ -170,7 +170,9 @@ footer {
     /* Widen the fixed sidebar again */
     .bs-sidebar.affix-bottom,
     .bs-sidebar.affix {
-        width: 220pt;
+        width: 210pt;
+        margin-top: 0;
+        margin-bottom: 0;
     }
 }
 

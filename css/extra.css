@@ -268,6 +268,7 @@ h6 {
 
 .top-buffer-lg {
 	margin-top: 150pt;
+	margin-bottom: 50pt;
 }
 
 
@@ -291,11 +292,12 @@ h6 {
 
 .section-heading {
     margin-bottom: 30pt;
+	padding: 10pt 0;
 }
 
 .section-heading-spacer {
     float: left;
-    width: 200pt;
+    width: 100pt;
     border-top: 3pt solid #e7e7e7;
 }
 
