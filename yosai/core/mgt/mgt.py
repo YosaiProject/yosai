@@ -643,7 +643,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :returns: a Boolean
         """
@@ -660,7 +660,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :returns: a List of Booleans corresponding to the permission elements
         """
@@ -686,7 +686,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :param roleid_s: 1..N role identifier
         :type roleid_s:  a Set of Strings
@@ -705,7 +705,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """

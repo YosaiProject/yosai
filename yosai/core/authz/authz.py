@@ -668,7 +668,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :returns: a Boolean
         """
@@ -703,7 +703,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :raises UnauthorizedException: if any permission is unauthorized
         """
@@ -757,7 +757,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :returns: a Boolean
         """
@@ -786,7 +786,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """

@@ -455,7 +455,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :param logical_operator:  indicates whether *all* or at least one
                                   permission check is true, *any*
-        :type: and OR all (functions from python stdlib)
+        :type: any OR all (functions from python stdlib)
 
         :returns: a Boolean
         """
@@ -493,7 +493,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python stdlib)
+        :type: any OR all (from python stdlib)
 
         :raises UnauthorizedException: if any permission is unauthorized
         """
@@ -529,7 +529,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python standard library)
+        :type: any OR all (from python standard library)
 
         :returns: a Boolean
         """
@@ -549,7 +549,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
-        :type: and OR all (from python stdlib)
+        :type: any OR all (from python stdlib)
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
