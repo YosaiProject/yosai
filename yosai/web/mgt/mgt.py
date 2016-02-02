@@ -16,10 +16,11 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
+import base64
 import logging
 
 from yosai.core import (
+    AbstractRememberMeManager,
     DefaultSubjectFactory,
     DefaultSubjectStore,
     NativeSecurityManager,
@@ -31,15 +32,16 @@ from yosai.web import (
     DefaultWebSessionStorageEvaluator,
     DefaultWebSessionManager,
     DefaultWebSubjectContext,
-    web_mgt_abcs,
-    web_session_abcs,
-    web_subject_abcs,
     WebDelegatingSubject,
     WebSessionKey,
     WebSubject,
     WebUtils,
     WSGIContainerSessionManager,
     YosaiHttpWSGIRequest,
+    web_mgt_abcs,
+    web_session_abcs,
+    web_subject_abcs,
+    web_wsgi_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -211,3 +213,234 @@ class DefaultWebSecurityManager(NativeSecurityManager,
             request = subject.wsgi_request
             if request:
                 request.set_attribute(YosaiHttpWSGIRequest.IDENTITY_REMOVED_KEY, True)
+
+
+class CookieRememberMeManager(AbstractRememberMeManager):
+    """
+    Remembers a Subject's identity by saving the Subject's identifiers to a Cookie
+    for later retrieval.
+
+    Cookie attributes (path, domain, maxAge, etc) may be set on this class's
+    default ``cookie`` attribute, which acts as a template to use to set all
+    properties of outgoing cookies created by this implementation.
+
+    The default cookie has the following attribute values set:
+
+    |Attribute Name|    Value
+    |--------------|----------------
+    | name         | rememberMe
+    | path         | /
+    | max_age      | Cookie.ONE_YEAR
+
+    Note that since this class subclasses the AbstractRememberMeManager, which
+    already provides serialization and encryption logic, this class utilizes
+    both features for added security before setting the cookie value.
+    """
+
+    DEFAULT_REMEMBER_ME_COOKIE_NAME = "rememberMe"
+
+    def __init__(self):
+        self._cookie = SimpleCookie(DEFAULT_REMEMBER_ME_COOKIE_NAME)
+        self.cookie.http_only = True
+        # One year should be long enough - most sites won't object to requiring
+        # a user to log in if they haven't visited in a year:
+        self.cookie.max_age = wsgi_abcs.Cookie.ONE_YEAR
+
+        @property
+        def cookie(self):
+            """
+            Returns the cookie 'template' that will be used to set all attributes
+            of outgoing rememberMe cookies created by this ``RememberMeManager``.
+            Outgoing cookies will match this one except for the value attribute,
+            which is necessarily set dynamically at runtime.
+
+            Please see the class-level api docs for the default cookie's attribute i
+            values.
+
+            :returns: the cookie 'template' that will be used to set all
+                      attributes of outgoing rememberMe cookies created by
+                      this ``RememberMeManager``
+            """
+            return self._cookie
+
+    @cookie.setter
+    def cookie(self, cookie):
+        """
+        Sets the cookie 'template' that will be used to set all attributes of
+        outgoing rememberMe cookies created by this ``RememberMeManager``.
+        Outgoing cookies will match this one except for the value attribute,
+        which is necessarily set dynamically at runtime.
+
+        Please see the class-level JavaDoc for the default cookie's attribute
+        values.
+
+        :param cookie: the cookie 'template' that will be used to set all
+                       attributes of outgoing rememberMe cookies created
+                       by this ``RememberMeManager``
+        """
+        self._cookie = cookie
+
+    def remember_serialized_identity(self, subject, serialized):
+        """
+        Base64-encodes the specified serialized byte array and sets that
+        base64-encoded String as the cookie value.
+
+        The ``subject`` instance is expected to be a ``WebSubject`` instance
+        with an HTTP Request/Response pair so an HTTP cookie can be set on the
+        outgoing response.  If it is not a ``WebSubject`` or that ``WebSubject``
+        does not have an HTTP Request/Response pair, this implementation does
+        nothing.
+
+        :param subject: the Subject for which the identity is being serialized
+
+        :param serialized: the serialized bytes to be persisted
+        :type serialized: bytearray
+        """
+        if not WebUtils.is_http(subject):
+            if logger.getEffectiveLevel() <= logging.DEBUG:
+                msg = ("Subject argument is not an HTTP-aware instance.  This "
+                       "is required to obtain a wsgi request and response in "
+                       "order to set the rememberMe cookie. Returning immediately "
+                       "and ignoring rememberMe operation.")
+                log.debug(msg)
+            return
+
+        request = WebUtils.get_http_request(subject)
+        response = WebUtils.get_http_response(subject)
+
+        # base 64 encode it and store as a cookie:
+        base64 = base64.b64encode(serialized)
+
+        # the attribute is really a template for the outgoing cookies:
+        template = self.cookie
+        cookie = SimpleCookie(template)
+        cookie.set_value(base64)
+        cookie.save_to(request, response)
+
+    def is_identity_removed(self, subject_context):
+        request = subject_context.resolve_wsgi_request()
+        if request:
+            removed = request.get_attribute(ShiroHttpServletRequest.IDENTITY_REMOVED_KEY)
+            return removed is not None and bool(removed)
+
+        return False
+
+    def get_remembered_serialized_identity(self, subject_context):
+        """
+        Returns a previously serialized identity byte array or None if the byte
+        array could not be acquired.
+
+        This implementation retrieves an HTTP cookie, Base64-decodes the cookie
+        value, and returns the resulting byte array.
+
+        The ``subject_context`` instance is expected to be a ``WebSubjectContext``
+        instance with an HTTP Request/Response pair so that an HTTP cookie may be
+        retrieved from an incoming request.  If it is not a ``WebSubjectContext``
+        or is one yet does not have an HTTP Request/Response pair, this
+        implementation returns None.
+
+        :param subject_context: the contextual data, usually provided by a
+                                ``SubjectBuilder`` implementation, that is being
+                                used to construct a ``Subject`` instance
+
+        :returns: a previously serialized identity bytearray or None if the byte
+                  array could not be acquired
+        """
+
+        if not WebUtils.is_http(subject_context):
+            if logger.getEffectiveLevel() <= logging.DEBUG:
+                msg = ("SubjectContext argument is not an HTTP-aware instance. "
+                       "This is required to obtain a wsgi request and response "
+                       "in order to retrieve the rememberMe cookie. Returning "
+                       "immediately and ignoring rememberMe operation.")
+                logger.debug(msg)
+
+            return None
+
+        wsc = subject_context
+        if (self.is_identity_removed(wsc)):
+            return None
+
+        request = WebUtils.get_http_request(wsc)
+        response = WebUtils.get_http_response(wsc)
+
+        base64 = self.cookie.read_value(request, response)
+
+        # Browsers do not always remove cookies immediately
+        # ignore cookies that are scheduled for removal
+        if (wsgi_abcs.Cookie.DELETED_COOKIE_VALUE.equals(base64)):
+            return None
+
+        if base64:
+            base64 = self.ensure_padding(base64)
+
+            if logger.getEffectiveLevel() <= logging.DEBUG:
+                log.debug("Acquired Base64 encoded identity [" + base64 + "]")
+
+            decoded = base64.b64decode(base64)
+
+            if logger.getEffectiveLevel() <= logging.DEBUG:
+                log.debug("Base64 decoded byte array length: {0} bytes".format(
+                          len(decoded) if decoded else 0))
+
+            return decoded
+
+        else:
+            # no cookie set - new site visitor?
+            return None
+
+    def ensure_padding(self, base64):
+        """
+        Sometimes a user agent will send the rememberMe cookie value without
+        padding, most likely because `=` is a separator in the cookie header.
+
+        :param base64: the base64 encoded String that may need to be padded
+        :returns: the base64 String, padded if necessary
+        """
+
+        pad = b'=' * (((~len(base64)) + 1) & 3)
+        base64 = base64 + pad
+        return base64
+
+    # DG:  this should be refactored (TBD):
+    def forget_identity(self, subject=None, subject_context=None,
+                        request=None, response=None):
+        """
+        Removes the 'rememberMe' cookie from the associated ``WebSubject``'s,
+        ``WebSubjectContext``'s request/response pair, or from the actual pair.
+
+        The ``subject`` instance is expected to be a ``WebSubject`` instance with
+        an HTTP Request/Response pair. If it is not a ``WebSubject`` or that
+        ``WebSubject`` does not have an HTTP Request/Response pair, this
+        implementation does nothing.
+
+        The ``subject_context`` instance is expected to be a ``WebSubjectContext``
+        instance with an HTTP Request/Response pair.  If it is not a ``WebSubjectContext``
+        or that ``WebSubjectContext`` does not have an HTTP Request/Response pair,
+        this implementation does nothing.
+
+        :param subject: the subject instance for which identity data should be
+                        forgotten from the underlying persistence
+
+        :param subject_context: the contextual data, usually provided by a
+                                ``SubjectBuilder`` implementation
+
+        :param request:  the incoming HTTP wsgi request
+        :param response: the outgoing HTTP wsgi response
+        """
+        if subject:
+            if WebUtils.is_http(subject):
+                request = WebUtils.get_http_request(subject)
+                response = WebUtils.get_http_response(subject)
+                self.forget_identity(request, response)
+            return
+
+        if subject_context:
+            if WebUtils.is_http(subject_context):
+                request = WebUtils.get_http_request(subject_context)
+                response = WebUtils.get_http_response(subject_context)
+                self.forget_identity(request, response)
+            return
+
+        # otherwise, assume the args are request/response:
+        self.cookie.remove_from(request, response)
