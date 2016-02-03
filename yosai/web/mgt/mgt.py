@@ -244,7 +244,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         self.cookie.http_only = True
         # One year should be long enough - most sites won't object to requiring
         # a user to log in if they haven't visited in a year:
-        self.cookie.max_age = wsgi_abcs.Cookie.ONE_YEAR
+        self.cookie.max_age = web_wsgi_abcs.Cookie.ONE_YEAR
 
         @property
         def cookie(self):
@@ -368,7 +368,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
 
         # Browsers do not always remove cookies immediately
         # ignore cookies that are scheduled for removal
-        if (wsgi_abcs.Cookie.DELETED_COOKIE_VALUE.equals(base64)):
+        if (web_wsgi_abcs.Cookie.DELETED_COOKIE_VALUE.equals(base64)):
             return None
 
         if base64:
