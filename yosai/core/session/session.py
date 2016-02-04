@@ -36,7 +36,6 @@ from yosai.core import (
     SessionCacheException,
     SessionCreationException,
     SessionEventException,
-    StoppableScheduledExecutor,
     StoppedSessionException,
     UnknownSessionException,
     session_settings,

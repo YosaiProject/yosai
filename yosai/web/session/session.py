@@ -20,6 +20,8 @@ import logging
 
 from yosai.core import (
     DefaultNativeSessionManager,
+    DefaultSessionContext,
+    DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     IllegalArgumentException,
     InvalidSessionException,
@@ -28,6 +30,7 @@ from yosai.core import (
 
 from yosai.web import (
     WebUtils,
+    web_utils_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -498,3 +501,130 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
         ``False`` always.
         """
         return False
+
+
+class DefaultWebSessionContext(DefaultSessionContext,
+                               web_session_abcs.WebSessionContext):
+
+    WSGI_REQUEST = "DefaultWebSessionContext.WSGI_REQUEST"
+    WSGI_RESPONSE = "DefaultWebSessionContext.WSGI_RESPONSE"
+
+    def __init__(self, context_map={}):
+        super().__init__(context_map)
+
+    @property
+    def wsgi_request(self):
+        return self.get(self.__class__.WSGI_REQUEST)
+
+    @wsgi_request.setter
+    def wsgi_request(self, request):
+        """
+        :type request: WSGIRequest
+        """
+        self.put(self.__class__.WSGI_REQUEST, request)
+
+    @property
+    def wsgi_response(self):
+        return self.get(self.__class__.WSGI_RESPONSE)
+
+    @wsgi_response.setter
+    def wsgi_response(self, response):
+        """
+        :type request: WSGIResponse
+        """
+        self.put(self.__class__.WSGI_RESPONSE, response)
+
+
+class WSGIContainerSessionManager(web_session_abcs.WebSessionManager):
+    """
+    SessionManager implementation providing ``Session`` implementations that
+    are merely wrappers for the WSGI container's ``HttpSession``.
+
+    Despite its name, this implementation *does not* itself manage Sessions since
+    the WSGI container provides the actual management support.  This class mainly
+    exists to 'impersonate' a regular Yosai ``SessionManager`` so that it can plug
+    into a normal Yosai configuration in a pure web application.
+
+    Note that because this implementation relies on the ``HttpSession``, it is
+    only functional in a wsgi container - it is not capable of supporting
+    Sessions for any clients other than those using the HTTP protocol.
+
+    Therefore, if you need ``Session`` support for heterogeneous clients (e.g. web browsers,
+    RMI clients, etc), use the ``DefaultWebSessionManager`` instead.  The
+    ``DefaultWebSessionManager`` supports both traditional web-based access as
+    well as non web-based clients.
+    """
+
+    def __init__(self):
+        pass
+
+    def start(self, session_context):
+        return self.create_session(session_context)
+
+    def get_session(self, session_key):
+        if not WebUtils.is_http(session_key):
+            msg = "SessionKey must be an HTTP compatible implementation."
+            raise IllegalArgumentException(msg)
+
+        request = WebUtils.get_http_request(session_key)
+
+        session = None
+
+        http_session = request.get_session(False)
+        if http_session:
+            session = self.create_session(http_session,
+                                          request.remote_host)
+
+        return session
+
+    def get_host(self, session_context):
+        host = session_context.host
+        if not host:
+            request = WebUtils.get_request(session_context)
+            if request:
+                host = request.remote_host
+
+        return host
+
+    def create_session(self, session_context):
+        if not WebUtils.is_http(session_context):
+            msg = "SessionContext must be an HTTP compatible implementation."
+            raise IllegalArgumentException(msg)
+
+        request = WebUtils.get_http_request(session_context)
+
+        http_session = request.session
+
+        host = self.get_host(session_context)
+
+        return self.create_session(http_session, host)
+
+    def create_session(self, http_session, host):
+        return HttpWSGISession(http_session, host)
+
+    def is_wsgi_container_sessions(self):
+        """
+        This implementation always delegates to the wsgi container for sessions,
+        so this method always returns ``True``.
+        """
+        return True
+
+
+class WebSessionKey(DefaultSessionKey,
+                    web_utils_abcs.RequestPairSource):
+    """
+    A ``SessionKey`` implementation that also retains the ``WSGIRequest`` and
+    ``WSGIResponse`` associated with the web request that is performing the
+    session lookup
+    """
+    def __init__(self, request, response, session_id=None):
+
+        self.wsgi_request = request
+        self.wsgi_response = response
+        self.session_id = session_id
+
+    def get_wsgi_request(self):
+        return self.wsgi_request
+
+    def get_wsgi_response(self):
+        return self.wsgi_response
