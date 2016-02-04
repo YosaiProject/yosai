@@ -324,7 +324,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
 
         return session_id
 
-    # DG:  should refactor this to something more pythonic (TBD)
+    # DG:  this will require refactoring (TBD)
     def get_uri_path_segment_param_value(self, request, param_name):
         """
         :type request: WSGIRequest
@@ -347,7 +347,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
 
         try:
             index = uri.index(';')
-        except valueError:
+        except ValueError:
             # no path segment params - return
             return None
 
@@ -355,7 +355,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
         # may exist:
 
         # uri now contains only the path segment params
-        uri = uri[uri.index(index + 1):]
+        uri = uri[(index + 1):]
 
         token = param_name + "="
         # we only care about the last param (SESSIONID):

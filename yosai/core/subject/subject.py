@@ -1113,7 +1113,7 @@ class SubjectBuilder:
             self.security_manager = security_manager
 
         if subject_context is None:
-            self.subject_context = DefaultSubjectContext()
+            self.subject_context = self.new_subject_context_instance()
             self.subject_context.security_manager = self.security_manager
             self.subject_context.host = host
             self.subject_context.session_id = session_id
@@ -1126,6 +1126,10 @@ class SubjectBuilder:
                 self.context_attribute(key, val)
         else:
             self.subject_context = subject_context
+
+    # DG: this is needed as it is overridden by subclasses:
+    def new_subject_context_instance(self):
+         return DefaultSubjectContext()
 
     def context_attribute(self, attribute_key, attribute_value=None):
         """
