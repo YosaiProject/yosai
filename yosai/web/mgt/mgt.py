@@ -32,6 +32,7 @@ from yosai.web import (
     DefaultWebSessionStorageEvaluator,
     DefaultWebSessionManager,
     DefaultWebSubjectContext,
+    SimpleCookie,
     WebDelegatingSubject,
     WebSessionKey,
     WebSubject,
