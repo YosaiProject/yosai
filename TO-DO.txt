@@ -99,3 +99,6 @@ implement init_yosai from within SecurityUtils
 
 synchronize imperative and declarative authz examples:
 https://yosaiproject.github.io/yosai/authorization/#access-control-levels-and-styles
+
+RunAs ought to emit an event, to help audit administrative work
+
