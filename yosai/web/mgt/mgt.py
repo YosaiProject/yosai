@@ -241,7 +241,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
     DEFAULT_REMEMBER_ME_COOKIE_NAME = "rememberMe"
 
     def __init__(self):
-        self._cookie = SimpleCookie(DEFAULT_REMEMBER_ME_COOKIE_NAME)
+        self._cookie = SimpleCookie(self.__class__.DEFAULT_REMEMBER_ME_COOKIE_NAME)
         self.cookie.http_only = True
         # One year should be long enough - most sites won't object to requiring
         # a user to log in if they haven't visited in a year:
