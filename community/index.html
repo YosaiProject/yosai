@@ -172,6 +172,7 @@ describe the issue clearly, including steps to reproduce when you report a bug.<
 <li>testing requirements</li>
 <li>documentation strategy</li>
 <li><a href="http://semver.org/">semantic versioning</a></li>
+<li><a href="https://blogs.atlassian.com/2014/01/simple-git-workflow-simple/">Git Rebase Workflow</a></li>
 </ul>
 <h3 id="step-1-fork-yosai-on-github">Step 1 - Fork yosai on GitHub</h3>
 <p>In your web browser, go to <a href="https://github.com/yosaiproject/yosai">the Yosai repository on GitHub</a> 
@@ -187,13 +188,12 @@ git add upstream git@github.com:yosaiproject/yosai.git
 </pre></div>
 
 
-<h3 id="step-3-fetch-and-merge-the-latest-from-upstreamdevelop">Step 3 - Fetch and Merge the Latest from <code>upstream/develop</code></h3>
-<p>Switch to the <code>develop</code> branch locally, fetch all <code>upstream</code> branches, and
-merge the just-fetched <code>upstream/develop</code> branch with the local <code>develop</code>
-branch: </p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git checkout develop
-git fetch upstream
-git merge upstream/develop
+<h3 id="step-3-fetch-and-merge-the-latest-from-upstreammaster">Step 3 - Fetch and Merge the Latest from <code>upstream/master</code></h3>
+<p>Switch to (checkout) the <code>master</code> branch, locally, fetch <code>origin</code> , and
+merge the just-fetched <code>upstream</code> master: </p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git checkout master 
+git fetch origin 
+git merge master 
 </pre></div>
 
 
