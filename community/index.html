@@ -178,6 +178,7 @@ describe the issue clearly, including steps to reproduce when you report a bug.<
 <p>In your web browser, go to <a href="https://github.com/yosaiproject/yosai">the Yosai repository on GitHub</a> 
 and click the <code>Fork</code> button in the top right corner. This creates a new Git 
 repository named <code>yosai</code> in <em>your</em> GitHub account.</p>
+
 <h3 id="step-2-clone-your-fork">Step 2 - Clone Your Fork</h3>
 <p>(This only has to be done once.) In your local terminal, use Git to clone <em>your</em> 
 <code>yosai</code> repository to your local computer. Also add the original GitHub 
@@ -224,32 +225,46 @@ rejected.</p>
 <p>Please run all existing tests to make sure you didn't break something.  Tox
 is provided to help you run tests.</p>
 <p>Remember to write or modify documentation to reflect your additions or changes.</p>
-<p>You will want to merge changes from upstream (i.e. the original repository)
-into your new branch from time to time, using something like: </p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git fetch upstream
-git merge upstream/develop
+
+
+<h3 id="step-6-use-rebase-to-refresh-from-master">Step 6 - Use Rebase to Refresh From Master</h3>
+<p>You will want to occasionally synchronize your new branch with changes made upstream 
+(i.e. the original repository) by using rebase: </p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git fetch origin
+git rebase origin/master
 </pre></div>
+<p>In the unusual circumstance where other people are also working on the same 
+shared remote feature branch, be sure to rebase changes coming from it: </p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">
+git rebase origin/your-branch-name
+</pre></div>
+<p><b>At this point solve any conflicts that come from the rebase.</b></p>
 
 
-<h3 id="step-6-push-your-new-branch-to-origin">Step 6 - Push Your New Branch to origin</h3>
+<h3 id="step-7-push-remotely-create-pull-request">Step 7 - Push Your New Branch and Submit Pull Request</h3>
 <p>Ensure that you've <strong>commited</strong> all that you want to include in your pull request. 
-Then push your new branch to origin (i.e. <em>your</em> remote yosai repository).</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git push origin new-branch-name
+Then push your new branch to origin.  If the branch is already set as 'upstream' and your remote is 
+called 'origin', 'git push' is enough.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git push -u origin new-branch-name
 </pre></div>
 
 
-<h3 id="step-7-create-a-pull-request">Step 7 - Create a Pull Request</h3>
+<h3 id="step-8-create-a-pull-request">Step 8 - Create a Pull Request</h3>
 <p>Go to the GitHub website and to <em>your</em> remote yosai repository (i.e. something 
 like https://github.com/your-user-name/yosai). </p>
 <p>See <a href="https://help.github.com/articles/using-pull-requests/">
 GitHub's documentation on how to initiate and send a pull request</a>
-
-Note that the destination repository should be <code>yosaiproject/yosai</code> and the destination
-branch will typically be <code>develop</code>.</p>
+</p>
 <p>Send the pull request.</p>
 <p>Someone will then merge your branch or suggest changes. If we suggest changes,
 you won't have to open a new pull request, you can just push new code to the
 same branch (on <code>origin</code>) as you did before creating the pull request.</p>
+
+<h3 id="step-9-final-rebase-cleanup">Step 9 - Perform a Final Rebase Clean-up</h3>
+<p>After the review is done, perform a final cleanup and scrub of the feature branch commit history.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">git rebase -i origin/master 
+</pre></div>
+
 
 <h1 id="contributor_code_of_conduct">Contributor Code of Conduct</h1>
 <p>As contributors and maintainers of this project, and in the interest of
