@@ -5,8 +5,6 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
-
         <link rel="shortcut icon" href="../img/favicon.ico">
 
 	<title>Authorization - Yosai</title>
@@ -230,6 +228,7 @@ roles.  In reality, we would layer additional access control to the
 remove_comment method so that the creator of the post may also delete the
 comment, but this detail is left out for simplicity's sake and only to
 highlight role-level access control:</p>
+
 <h3 id="declarative-style">Declarative Style</h3>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #a6e22e">@requires_role</span><span style="color: #f8f8f2">(roleid_s</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&#39;moderator&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #e6db74">&#39;admin&#39;</span><span style="color: #f8f8f2">],</span> <span style="color: #f8f8f2">logical_operator</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">any)</span>
 <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">remove_comment</span><span style="color: #f8f8f2">(self,</span> <span style="color: #f8f8f2">submission):</span>
@@ -248,7 +247,6 @@ highlight role-level access control:</p>
 
     <span style="color: #f8f8f2">self</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">database_handler</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">delete(submission)</span>
 </pre></div>
-
 
 <div class="admonition note">
 <p>Role-level access control is inferior to permission-level access control, but since it has its niche use, is available in Yosai.  It is highly recommended that you choose permission-level access control policies for your application.</p>
@@ -281,7 +279,6 @@ on a type of resource:</p>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%">1<span style="color: #f92672">)</span> <span style="color: #e6db74">&#39;submission:remove&#39;</span>
 2<span style="color: #f92672">)</span> <span style="color: #e6db74">&#39;comment:remove&#39;</span>
 </pre></div>
-
 
 <p>A moderator will either be assigned to a single role that includes both of these permissions or assigned to two roles where each role includes one of the above permissions.</p>
 <p>Note that if a moderator were to be assigned the above permissions that
@@ -458,8 +455,8 @@ When this_function is called, the caller of this_function should be ready to han
 <span style="color: #e6db74">        for each Permission requested.  Results are collectively evaluated using</span>
 <span style="color: #e6db74">        the logical operation provided: either ANY or ALL.</span>
 
-<span style="color: #e6db74">        If operator=ANY: returns True if any requested permission is implied</span>
-<span style="color: #e6db74">        If operator=ALL: returns True if all requested permissions are implied</span>
+<span style="color: #e6db74">        If operator=ANY: returns True if any requested permission is implied permission</span>
+<span style="color: #e6db74">        If operator=ALL: returns True if all requested permissions are implied permission</span>
 <span style="color: #e6db74">        Else returns False</span>
 
 <span style="color: #e6db74">        :param permission_s:  a List of authz_abcs.Permission objects</span>
@@ -523,7 +520,7 @@ When this_function is called, the caller of this_function should be ready to han
 <span style="color: #e6db74">        If operator=ANY, returns True if any requested role membership is</span>
 <span style="color: #e6db74">                         satisfied</span>
 <span style="color: #e6db74">        If operator=ALL: returns True if all of the requested permissions are</span>
-<span style="color: #e6db74">                         implied</span>
+<span style="color: #e6db74">                         implied permission</span>
 <span style="color: #e6db74">        Else returns False</span>
 
 <span style="color: #e6db74">        :param roleid_s: 1..N role identifiers (strings)</span>
@@ -559,6 +556,7 @@ When this_function is called, the caller of this_function should be ready to han
 <span style="color: #e6db74">        &quot;&quot;&quot;</span>
         <span style="color: #66d9ef">pass</span>
 </pre></div>
+
 
 
 <p>The first argument of every method is a List containing <em>either</em> authorization object instances (<code>Permission</code> or <code>Role</code>) <em>or</em> String(s). Yosai does <em>not</em> support a commingling of the two supported types.</p>

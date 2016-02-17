@@ -195,6 +195,7 @@ authentication.  This process would raise an AuthenticationException
 if it were to fail.  Yosai features a rich exception hierarchy that offers detailed
 explanations as to why a login failed. This exception hierarchy helps developers
 diagnose bugs or customer service issues related to authentication.</p>
+
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">SecurityUtils,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
 
 <span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_subject()</span>
@@ -273,7 +274,6 @@ call the <code>logout</code> method in the Subject API:</p>
 
 <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">logout()</span>
 </pre></div>
-
 
 <h2 id="factors-of-authentication">Factors of Authentication</h2>
 <p>Authentication methodologies involve three factors:</p>
