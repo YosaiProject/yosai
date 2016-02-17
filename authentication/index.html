@@ -126,7 +126,6 @@
             </div>
         </div>
     </div>
-
         <div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
@@ -195,27 +194,30 @@ authentication.  This process would raise an AuthenticationException
 if it were to fail.  Yosai features a rich exception hierarchy that offers detailed
 explanations as to why a login failed. This exception hierarchy helps developers
 diagnose bugs or customer service issues related to authentication.</p>
+<p>Note that the following example assumes that a <code>yosai</code> instance has already
+been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
+documentation for how to do that.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
 
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">SecurityUtils,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
+    <span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
 
-<span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_subject()</span>
+    <span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
+                                        <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
+    <span style="color: #f8f8f2">authc_token</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">remember_me</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">True</span>
 
-<span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
-                                    <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
-<span style="color: #f8f8f2">authc_token</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">remember_me</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">True</span>
-
-<span style="color: #66d9ef">try</span><span style="color: #f8f8f2">:</span>
-    <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
-<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">UnknownAccountException:</span>
-    <span style="color: #75715e"># insert here</span>
-<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">IncorrectCredentialsException:</span>
-    <span style="color: #75715e"># insert here</span>
-<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">LockedAccountException:</span>
-    <span style="color: #75715e"># insert here</span>
-<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">ExcessiveAttemptsException:</span>
-    <span style="color: #75715e"># insert here</span>
-<span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">AuthenticationException:</span>
-    <span style="color: #75715e"># insert here</span>
+    <span style="color: #66d9ef">try</span><span style="color: #f8f8f2">:</span>
+        <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
+    <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">UnknownAccountException:</span>
+        <span style="color: #75715e"># insert here</span>
+    <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">IncorrectCredentialsException:</span>
+        <span style="color: #75715e"># insert here</span>
+    <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">LockedAccountException:</span>
+        <span style="color: #75715e"># insert here</span>
+    <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">ExcessiveAttemptsException:</span>
+        <span style="color: #75715e"># insert here</span>
+    <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">AuthenticationException:</span>
+        <span style="color: #75715e"># insert here</span>
 </pre></div>
 
 
@@ -268,12 +270,16 @@ is done and you do no wish to continue your current session with the system.<br 
 Manual log-out is initiated by a user engaging a log-out operation through a user
 interface, such as click a "log-out" or "sign out" button, which would ultimately
 call the <code>logout</code> method in the Subject API:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">SecurityUtils,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+<p>Note that the following example assumes that a <code>yosai</code> instance has already
+been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
+documentation for how to do that.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
 
-<span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_subject()</span>
-
-<span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">logout()</span>
+<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
+    <span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
+    <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">logout()</span>
 </pre></div>
+
 
 <h2 id="factors-of-authentication">Factors of Authentication</h2>
 <p>Authentication methodologies involve three factors:</p>
