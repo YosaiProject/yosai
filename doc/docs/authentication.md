@@ -55,27 +55,32 @@ if it were to fail.  Yosai features a rich exception hierarchy that offers detai
 explanations as to why a login failed. This exception hierarchy helps developers
 diagnose bugs or customer service issues related to authentication.
 
+Note that the following example assumes that a ``yosai`` instance has already
+been instantiated and configured with a SecurityManager.  See the ``yosai init``
+documentation for how to do that.
+
 ```Python
-from yosai.core import SecurityUtils, UsernamePasswordToken
+from yosai.core import UsernamePasswordToken
 
-current_user = SecurityUtils.get_subject()
+with yosai:
+    current_user = yosai.subject
 
-authc_token = UsernamePasswordToken(username='thedude',
-                                    credentials='letsgobowling')
-authc_token.remember_me = True
+    authc_token = UsernamePasswordToken(username='thedude',
+                                        credentials='letsgobowling')
+    authc_token.remember_me = True
 
-try:
-    current_user.login(authc_token)
-except UnknownAccountException:
-    # insert here
-except IncorrectCredentialsException:
-    # insert here
-except LockedAccountException:
-    # insert here
-except ExcessiveAttemptsException:
-    # insert here
-except AuthenticationException:
-    # insert here
+    try:
+        current_user.login(authc_token)
+    except UnknownAccountException:
+        # insert here
+    except IncorrectCredentialsException:
+        # insert here
+    except LockedAccountException:
+        # insert here
+    except ExcessiveAttemptsException:
+        # insert here
+    except AuthenticationException:
+        # insert here
 ```
 
 As you can see, authentication entails a single method call: ``current_user.login(authc_token)``. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.
@@ -139,12 +144,15 @@ Manual log-out is initiated by a user engaging a log-out operation through a use
 interface, such as click a "log-out" or "sign out" button, which would ultimately
 call the `logout` method in the Subject API:
 
+Note that the following example assumes that a ``yosai`` instance has already
+been instantiated and configured with a SecurityManager.  See the ``yosai init``
+documentation for how to do that.
 ```Python
-from yosai.core import SecurityUtils, UsernamePasswordToken
+from yosai.core import UsernamePasswordToken
 
-current_user = SecurityUtils.get_subject()
-
-current_user.logout()
+with yosai:
+    current_user = yosai.subject
+    current_user.logout()
 ```
 
 ## Factors of Authentication

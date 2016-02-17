@@ -37,15 +37,21 @@ human beings also includes non-human, system entities.  In other words, a **Subj
 ## Authentication
 
 In this example, we "log in" a Subject, performing password-based authentication
-that raises an AuthenticationException if authentication were to fail:
+that raises an AuthenticationException if authentication were to fail.
+
+Note that the following example assumes that a ``yosai`` instance has already
+been instantiated and configured with a SecurityManager.  See the ``yosai init``
+documentation, further below, for how to do that.
 
 ```Python
-    from yosai.core import SecurityUtils, AuthenticationToken
+    from yosai.core import AuthenticationToken
 
-    authc_token = UsernamePasswordToken(username='thedude',
-                                        credentials='letsgobowling')
-    subject = SecurityUtils.get_subject()
-    subject.login(authc_token)
+    with yosai:
+        subject = yosai.subject
+
+        authc_token = UsernamePasswordToken(username='thedude',
+                                            credentials='letsgobowling')
+        subject.login(authc_token)
 ```
 
 !!! note ""
@@ -80,13 +86,15 @@ In the Authentication example above, the Subject is automatically allocated a
 new session in Yosai following successful authentication.  We manage
 the attributes of a session through a CRUD-like series of methods:
 
+Note that the following example assumes that a ``yosai`` instance has already
+been instantiated and configured with a SecurityManager.  See the ``yosai init``
+documentation, further below, for how to do that.
+
 ```Python
-    from yosai.core import SecurityUtils
-
-    subject = SecurityUtils.get_subject()
-
-    session = subject.get_session()
-    session.set_attribute('full_name', 'Jeffrey Lebowski')
+    with yosai:
+        subject = yosai.subject
+        session = subject.get_session()
+        session.set_attribute('full_name', 'Jeffrey Lebowski')
 ```
 
 
@@ -95,24 +103,33 @@ the attributes of a session through a CRUD-like series of methods:
 With Yosai initialized, you can authenticate, authorize, and manage sessions.
 
 To initialize Yosai, you must specify, at a minimum:
-- What CacheHandler to use, if you are caching
+- What CacheHandler to use, if you are caching.  In this example, we use the
+  DPCacheHandler extension.
 - The AccountStore instance(s) from which to obtain authentication and
-  authorization information
+  authorization information.  In this example, we use the AlchemyAccountStore
+  extension.
 - The ``marshmallow`` serialization Schema you will use to (de)serialize
   Session state (user-defined session attributes), if you are caching
 
 ```Python
-    from yosai.core import SecurityUtils
+    from marshmallow import Schema, fields
+    from yosai_dpcache.cache import DPCacheHandler
+    from yosai_alchemystore import AlchemyAccountStore
+    from yosai.core import SecurityUtils, AccountStoreRealm
 
-    realm = AccountStoreRealm()
+    class SessionAttributesSchema(Schema):
+        attribute1 = fields.String()
+        attribute2 = fields.String()
 
-    SecurityUtils.init_yosai(cache_handler=DPCacheHandler(),
-                             realms=(realm,),
-                             session_schema=MySessionSchema)
+    realm = AccountStoreRealm(name='UserAccountStore123',
+                              account_store=AlchemyAccountStore())
+
+    security_manager = NativeSecurityManager(cache_handler=DPCacheHandler(),
+                                             realms=(realm,),
+                                             session_schema=SessionAttributesSchema)
+
+    yosai = SecurityUtils(security_manager=security_manager)
 ```
-
 !!! note ""
-    - CacheHandler is a Yosai extension
-    - The underlying AccountStore that is referenced by the AccountStoreRealm
-      object is also a Yosai extension
-    - MySessionSchema is a ``marshmallow`` Schema class
+    - To properly serialize your session attributes, you must define a
+      ``marshmallow`` schema class, which in this example we've arbitrarily named SessionAttributesSchema

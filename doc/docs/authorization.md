@@ -92,16 +92,20 @@ def remove_comment(self, submission):
 
 ### Imperative Style
 
+Note that the following example assumes that a ``yosai`` instance has already
+been instantiated and configured with a SecurityManager.  See the ``yosai init``
+documentation for how to do that.
 ```Python
 def remove_comment(self, submission):
-    subject = SecurityUtils.get_subject()
+    with yosai:
+        subject = yosai.subject
 
-    try:
-        subject.check_role(['moderator', 'creator'], logical_operator=any)
-    except UnauthorizedException:
-        print('Cannot remove comment:  Access Denied.'')
+        try:
+            subject.check_role(['moderator', 'creator'], logical_operator=any)
+        except UnauthorizedException:
+            print('Cannot remove comment:  Access Denied.'')
 
-    self.database_handler.delete(submission)
+        self.database_handler.delete(submission)
 ```
 
 !!! note ""
@@ -449,17 +453,21 @@ The first argument of every method is a List containing *either* authorization o
 
 You will notice that some of the methods in the imperative-style authorization API include a second parameter, ``logical_operator``.  This parameter can be one of two values: either ``any`` or ``all`` functions from the python standard library.  Use ``any`` when you want to evaluate each item *independently* of the others and ``all`` when you want to evaluate items *collectively*.
 
+Note that the following set of examples assumes that a ``yosai`` instance has already
+been instantiated and configured with a SecurityManager.  See the ``yosai init``
+documentation for how to do that:
 
 ### Example 1:  is_permitted
 ```Python
-    current_user = subject.get_subject()
-    results = current_user.is_permitted(['domain1:action1', 'domain2:action2'])
+    with yosai:
+        current_user = yosai.subject
+        results = current_user.is_permitted(['domain1:action1', 'domain2:action2'])
 
-    if any(is_permitted for permission, is_permitted in results):
-        print('any permission is granted')
+        if any(is_permitted for permission, is_permitted in results):
+            print('any permission is granted')
 
-    if all(is_permitted for permission, is_permitted in results):
-        print('all permission is granted, too!')
+        if all(is_permitted for permission, is_permitted in results):
+            print('all permission is granted, too!')
 
 ```
 !!! note ""
@@ -468,17 +476,18 @@ You will notice that some of the methods in the imperative-style authorization A
 
 ### Example 2:  is_permitted_collective
 ```Python
-    current_user = subject.get_subject()
-    any_result_check = current_user.is_permitted_collective(['domain1:action1',
-                                                             'domain2:action2'], any)
-    if any_result_check:
-        print('any permission is granted')
+    with yosai:
+        current_user = yosai.subject
+        any_result_check = current_user.is_permitted_collective(['domain1:action1',
+                                                                 'domain2:action2'], any)
+        if any_result_check:
+            print('any permission is granted')
 
-    all_result_check = current_user.is_permitted_collective(['domain1:action1',
-                                                             'domain2:action2'], all)
+        all_result_check = current_user.is_permitted_collective(['domain1:action1',
+                                                                 'domain2:action2'], all)
 
-    if all_result_check:
-        print('all permission is granted, too!')
+        if all_result_check:
+            print('all permission is granted, too!')
 ```
 !!! note ""
     `any_result_check` and `all_result_check` are Boolean values
@@ -486,24 +495,25 @@ You will notice that some of the methods in the imperative-style authorization A
 
 ### Example 3:  check_permission
 ```Python
-    current_user = subject.get_subject()
-    try:
-        current_user.check_permission(['domain1:action1',
-                                       'domain2:action2'],
-                                      any)
-    except AuthorizationException:
-        print('any permission denied')
-    else:
-        print('any permission granted')
+    with yosai:
+        current_user = yosai.subject
+        try:
+            current_user.check_permission(['domain1:action1',
+                                           'domain2:action2'],
+                                          any)
+        except AuthorizationException:
+            print('any permission denied')
+        else:
+            print('any permission granted')
 
-    try:
-        current_user.check_permission(['domain1:action1',
-                                       'domain2:action2'],
-                                      all)
-    except AuthorizationException:
-        print('all permission denied')
-    else:
-        print('all permission granted')
+        try:
+            current_user.check_permission(['domain1:action1',
+                                           'domain2:action2'],
+                                          all)
+        except AuthorizationException:
+            print('all permission denied')
+        else:
+            print('all permission granted')
 ```
 !!! note ""
     `check_permission` succeeds quietly else raises an AuthorizationException
@@ -511,14 +521,15 @@ You will notice that some of the methods in the imperative-style authorization A
 
 ### Example 1:  has_role
 ```Python
-    current_user = subject.get_subject()
-    results = current_user.has_role(['role1', 'role2'])
+    with yosai:
+        current_user = yosai.subject
+        results = current_user.has_role(['role1', 'role2'])
 
-    if any(has_role for role, has_role in results):
-        print('any role is confirmed')
+        if any(has_role for role, has_role in results):
+            print('any role is confirmed')
 
-    if all(has_role for role, has_role in results):
-        print('all role is confirmed, too!')
+        if all(has_role for role, has_role in results):
+            print('all role is confirmed, too!')
 
 ```
 !!! note ""
@@ -527,16 +538,17 @@ You will notice that some of the methods in the imperative-style authorization A
 
 ### Example 2:  has_role_collective
 ```Python
-    current_user = subject.get_subject()
-    any_result_check = current_user.has_role_collective(['role1', 'role2'], any)
+    with yosai:
+        current_user = yosai.subject
+        any_result_check = current_user.has_role_collective(['role1', 'role2'], any)
 
-    if any_result_check:
-        print('any role is confirmed')
+        if any_result_check:
+            print('any role is confirmed')
 
-    all_result_check = current_user.has_role_collective(['role1', 'role2'], all)
+        all_result_check = current_user.has_role_collective(['role1', 'role2'], all)
 
-    if all_result_check:
-        print('all role is confirmed, too!')
+        if all_result_check:
+            print('all role is confirmed, too!')
 ```
 !!! note ""
     `any_result_check` and `all_result_check` are Boolean values
@@ -544,22 +556,23 @@ You will notice that some of the methods in the imperative-style authorization A
 
 ### Example 3:  check_role
 ```Python
-    current_user = subject.get_subject()
-    try:
-        current_user.check_role(['role1', 'role2'], any)
+    with yosai:
+        current_user = yosai.subject
+        try:
+            current_user.check_role(['role1', 'role2'], any)
 
-    except AuthorizationException:
-        print('any role denied')
-    else:
-        print('any role confirmed')
+        except AuthorizationException:
+            print('any role denied')
+        else:
+            print('any role confirmed')
 
-    try:
-        current_user.check_role(['role1', 'role2'], all)
+        try:
+            current_user.check_role(['role1', 'role2'], all)
 
-    except AuthorizationException:
-        print('all role denied')
-    else:
-        print('all role confirmed')
+        except AuthorizationException:
+            print('all role denied')
+        else:
+            print('all role confirmed')
 ```
 !!! note ""
     `check_role` succeeds quietly else raises an AuthorizationException
