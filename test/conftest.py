@@ -108,10 +108,10 @@ def alchemy_store(session):
 def account_store_realm(cache_handler, alchemy_store, permission_resolver,
                         role_resolver, authz_info_resolver, credential_resolver):
 
-    asr = AccountStoreRealm(name='AccountStoreRealm')
+    asr = AccountStoreRealm(name='AccountStoreRealm',
+                            account_store=alchemy_store)
 
     asr.cache_handler = cache_handler
-    asr.account_store = alchemy_store
 
     asr.credential_resolver = credential_resolver
     asr.permission_resolver = permission_resolver
