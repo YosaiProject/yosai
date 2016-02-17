@@ -39,6 +39,7 @@ from yosai.core import(
     InvalidArgumentException,
     IndexedAuthorizationInfo,
     InvalidSessionException,
+    MisconfiguredException,
     ModularRealmAuthorizer,
     PermissionResolver,
     RoleResolver,
@@ -422,6 +423,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if session_attributes_schema:
             SimpleSession.set_attributes_schema(session_attributes_schema)
 
+        # the security_utils attribute is set by SecurityUtils
+
     """
     * ===================================================================== *
     * Getters and Setters                                                   *
@@ -730,7 +733,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     """
 
     def create_subject_context(self):
-        return DefaultSubjectContext()
+        if not hasattr(self, 'security_utils'):
+            msg = "SecurityManager has no SecurityUtils attribute set."
+            raise MisconfiguredException(msg)
+        return DefaultSubjectContext(security_utils=self.security_utils)
 
     def create_subject(self,
                        authc_token=None,
@@ -900,7 +906,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.remember_me_logout(subject)
 
     def copy(self, subject_context):
-        return DefaultSubjectContext(subject_context)
+        return DefaultSubjectContext(security_utils=self.security_utils,
+                                     context=subject_context)
 
     def do_create_subject(self, subject_context):
         """

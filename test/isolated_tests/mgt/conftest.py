@@ -9,11 +9,6 @@ from .doubles import (
 )
 
 
-@pytest.fixture(scope='function')
-def native_security_manager(default_accountstorerealm):
-    return NativeSecurityManager(realms=(default_accountstorerealm,))
-
-
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def mock_remember_me_manager():
     return MockRememberMeManager()

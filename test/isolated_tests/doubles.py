@@ -374,7 +374,7 @@ class MockThreadContext:
 
 class MockSubjectBuilder:
 
-    def __init__(self, security_manager):
+    def __init__(self, security_utils, security_manager):
         pass
 
     def build_subject(self):
@@ -394,4 +394,10 @@ class MockCacheHandler(cache_abcs.CacheHandler):
 
     def delete(self, key, identifier):
         pass
+
+
+class MockSecUtil:
+
+    def __init__(self):
+        self.subject = MockSubject()
 

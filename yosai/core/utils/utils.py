@@ -20,6 +20,18 @@ under the License.
 import collections
 import datetime
 import time
+import threading
+
+
+class ThreadStateManager(threading.local):
+    def __init__(self):
+        self.stack = []
+
+global_security_manager = ThreadStateManager()
+
+
+def get_current_lib():
+    return global_security_manager.stack[-1]
 
 
 class memoized_property:

@@ -27,11 +27,13 @@ def subject_context():
 
 
 @pytest.fixture(scope='function')
-def default_subject_context(subject_context, full_mock_account, mock_session):
+def default_subject_context(configured_securityutils, subject_context, 
+                            full_mock_account, mock_session):
+    csu = configured_securityutils
     context = {value: 'value_'+value for key, value in subject_context.items()}
     context["DefaultSubjectContext.ACCOUNT"] = full_mock_account
     context["DefaultSubjectContext.AUTHENTICATED"] = False
-    return DefaultSubjectContext(context)
+    return DefaultSubjectContext(security_utils=csu, context=context)
 
 
 @pytest.fixture(scope='function')
@@ -42,7 +44,7 @@ def simple_identifiers_collection():
 
 @pytest.fixture(scope='function')
 def sic_serialized():
-    return {'source_identifiers': {'realm1': 'username'},
+    return {'source_identifiers': [['realm1', 'username']],
             '_primary_identifier': None}
 
 
@@ -76,8 +78,9 @@ def subject_builder_context(
                 attribute2='attribute2')
 
 @pytest.fixture(scope='function')
-def subject_builder(subject_builder_context):
-    return SubjectBuilder(**subject_builder_context)
+def subject_builder(subject_builder_context, configured_securityutils):
+    return SubjectBuilder(security_utils=configured_securityutils,
+                          **subject_builder_context)
 
 @pytest.fixture(scope='function')
 def default_subject_factory():

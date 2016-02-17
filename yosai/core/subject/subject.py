@@ -39,13 +39,15 @@ from yosai.core import (
     UnauthenticatedException,
     UnavailableSecurityManagerException,
     # UnsupportedOperationException,
-    thread_local,
+    global_security_manager,
     mgt_abcs,
     session_abcs,
     subject_abcs,
+    thread_local,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
     """
@@ -65,13 +67,13 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self, context={}):
+    def __init__(self, security_utils, context={}):
         """
         :param context: context's schema of reserved attributes must be named
                         according to the property names below
         :type context: dict
         """
-
+        self.security_utils = security_utils
         # to set reserved attributes correctly (using the property setters),
         # context must be set accordingly:
         super().__init__(context)
@@ -109,7 +111,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 logger.debug(msg)
 
             try:
-                security_manager = SecurityUtils.get_security_manager()
+                security_manager = self.security_utils.security_manager
             except UnavailableSecurityManagerException:
 
                 if logger.getEffectiveLevel() <= logging.DEBUG:
@@ -1077,11 +1079,11 @@ class SubjectBuilder:
     NOTE:
     This is provided for framework development support only and should typically
     never be used by application developers.  Subject instances should generally
-    be acquired by using ``SecurityUtils.get_subject()``
+    be acquired by using ``SecurityUtils.subject``
 
     The simplest usage of this builder is to construct an anonymous, session-less
     ``Subject`` instance. The returned Subject instance is *not* automatically bound
-    to the application (thread) for further use.  That is, ``SecurityUtils.get_subject()``
+    to the application (thread) for further use.  That is, ``SecurityUtils.subject``
     will not automatically return the same instance as what is returned by the
     builder.  It is up to the framework developer to bind the built
     Subject for continued use if so desired.
@@ -1094,6 +1096,7 @@ class SubjectBuilder:
     """
 
     def __init__(self,
+                 security_utils,
                  security_manager=None,
                  subject_context=None,
                  host=None,
@@ -1106,9 +1109,10 @@ class SubjectBuilder:
         """
         :type subject_context:  DefaultSubjectContext
         """
+        self.security_utils = security_utils
 
         if security_manager is None:
-            self.security_manager = SecurityUtils.get_security_manager()
+            self.security_manager = self.security_utils.security_manager
         else:
             self.security_manager = security_manager
 
@@ -1129,7 +1133,7 @@ class SubjectBuilder:
 
     # DG: this is needed as it is overridden by subclasses:
     def new_subject_context_instance(self):
-         return DefaultSubjectContext()
+         return DefaultSubjectContext(security_utils=self.security_utils)
 
     def context_attribute(self, attribute_key, attribute_value=None):
         """
@@ -1192,20 +1196,19 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own security_utils module so as to avoid circular importing:
 class SecurityUtils:
 
-    # This private security manager is a "backup" for obtaining a subject.
-    # thread_local is the primary source for Subject instances
-    security_manager = None
+    # self._security_manager is not set by init
 
-    @classmethod
-    def get_subject(cls):
+    @property
+    def subject(self):
         """
         Returns the currently accessible Subject available to the calling code
         depending on runtime environment
 
-        get_subject is provided as a way to obtain a Subject without having to
-        resort to implementation-specific methods.  get_subject allows the Yosai
-        team to change the underlying implementation of this method in the future
-        depending on requirements/updates without affecting your code that uses it.
+        The subject property-attribute is provided as a way to obtain a Subject
+        without having to resort to implementation-specific methods.  It allows
+        the Yosai team to change the underlying implementation of this method in
+        the future depending on requirements/updates without affecting your code
+        that uses it.
 
         :returns: the Subject currently accessible to the calling code
         :raises IllegalStateException: if no Subject instance or SecurityManager
@@ -1217,30 +1220,31 @@ class SecurityUtils:
         try:
             subject = thread_local.subject
         except AttributeError:
-            subject_builder = SubjectBuilder(security_manager=cls.security_manager)
+            subject_builder = SubjectBuilder(security_utils=self,
+                                             security_manager=self.security_manager)
             subject = subject_builder.build_subject()
             thread_local.subject = subject
         return subject
 
-    @classmethod
-    def get_security_manager(cls):
-
+    @property
+    def security_manager(self):
         try:
-            # thread_local.security_manager is set by the SubjectThreadState:
-            security_manager = thread_local.security_manager
+            return self._security_manager
         except AttributeError:
-            security_manager = cls.security_manager
-            if security_manager is None:
-                msg = "No SecurityManager accessible to the calling code."
-                raise UnavailableSecurityManagerException(msg)
-        return security_manager
+            msg = "No SecurityManager accessible to the calling code."
+            raise UnavailableSecurityManagerException(msg)
 
-    @classmethod
-    def set_security_manager(cls, security_manager):
+    @security_manager.setter
+    def security_manager(self, security_manager):
         """
-        Sets a singleton SecurityManager, specifically for transparent use in the
-        get_subject() implementation
-
         :type security_manager:  mgt_abcs.SecurityManager
         """
-        cls.security_manager = security_manager
+        self._security_manager = security_manager
+        self._security_manager.security_utils = self
+
+    def __enter__(self):
+        global_security_manager.stack.append(self)
+        return self
+
+    def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
+        global_security_manager.stack.pop()

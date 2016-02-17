@@ -31,21 +31,6 @@ from ..doubles import (
 # DefaultSubjectContext
 # ------------------------------------------------------------------------------
 
-
-def test_dsc_init(subject_context, default_subject_context):
-    """
-    unit tested:  __init__
-
-    test case:
-    Verify that the two subject contexts used for testing are initialized as
-    expected
-    """
-    dsc = DefaultSubjectContext()
-    assert (not dsc.attributes and
-            'DefaultSubjectContext.AUTHENTICATION_TOKEN' in
-            default_subject_context.attribute_keys)
-
-
 @pytest.mark.parametrize(
     'attr', ['security_manager', 'session_id', 'subject', 'identifiers',
              'session', 'session_creation_enabled', 'authentication_token',
@@ -93,7 +78,7 @@ def test_dsc_resolve_security_manager_exists(default_subject_context):
 
 
 def test_dsc_resolve_security_manager_none(
-        default_subject_context, monkeypatch, caplog):
+        default_subject_context, monkeypatch, caplog, configured_securityutils):
     """
     unit tested:  resolve_security_manager
 
@@ -102,15 +87,18 @@ def test_dsc_resolve_security_manager_none(
     SecurityUtils
     """
     dsc = default_subject_context
+    csu = configured_securityutils
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
-    monkeypatch.setattr(thread_local, 'security_manager', 'mysecuritymanager', raising=False)
-    result = dsc.resolve_security_manager()
-    out = caplog.text
-    assert ("No SecurityManager available" in out and
-            result == 'mysecuritymanager')
+
+    with csu:
+        monkeypatch.setattr(csu, '_security_manager', 'mysecuritymanager', raising=False)
+        result = dsc.resolve_security_manager()
+        out = caplog.text
+        assert ("No SecurityManager available" in out and
+                result == 'mysecuritymanager')
 
 def test_dsc_resolve_security_manager_none_raises(
-        default_subject_context, monkeypatch, caplog):
+        default_subject_context, monkeypatch, caplog, configured_securityutils):
     """
     unit tested:  resolve_security_manager
 
@@ -119,12 +107,15 @@ def test_dsc_resolve_security_manager_none_raises(
     """
 
     dsc = default_subject_context
+    csu = configured_securityutils
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
-    monkeypatch.setattr(thread_local, 'security_manager', None, raising=False)
-    result = dsc.resolve_security_manager()
-    out = caplog.text
-    assert ("No SecurityManager available in subject context" in out and
-            result is None)
+
+    with csu:
+        monkeypatch.delattr(csu, '_security_manager', raising=False)
+        result = dsc.resolve_security_manager()
+        out = caplog.text
+        assert ("No SecurityManager available in subject context" in out and
+                result is None)
 
 def test_dsc_resolve_identifiers_exists(default_subject_context):
     """
@@ -1434,7 +1425,7 @@ def test_dss_delete(default_subject_store):
 # SubjectBuilder
 # ------------------------------------------------------------------------------
 
-def test_sb_init_verify_argument_context(subject_builder_context):
+def test_sb_init_verify_argument_context(subject_builder_context, configured_securityutils):
     """
     unit tested:  __init__ and context_attribute
 
@@ -1443,12 +1434,15 @@ def test_sb_init_verify_argument_context(subject_builder_context):
     arguments aren't used by init
     """
     sbc = subject_builder_context
-    mycontext = DefaultSubjectContext(sbc)
-    sb = SubjectBuilder(subject_context=mycontext, **sbc)
+    csu = configured_securityutils
+    mycontext = DefaultSubjectContext(security_utils=csu, 
+                                      context=sbc)
+    sb = SubjectBuilder(security_utils=csu, subject_context=mycontext, **sbc)
     assert (sb.subject_context == mycontext)
 
 
-def test_sb_init_verify_generated_context(subject_builder_context):
+def test_sb_init_verify_generated_context(
+        subject_builder_context, configured_securityutils):
     """
     unit tested:  __init__
 
@@ -1456,13 +1450,15 @@ def test_sb_init_verify_generated_context(subject_builder_context):
     confirm that the subject context created by init reflects the arguments
     passed to the builder
     """
+    csu = configured_securityutils
     sbc = subject_builder_context
-    sb = SubjectBuilder(**sbc)
-    mycontext = DefaultSubjectContext(sbc)
+    sb = SubjectBuilder(security_utils=csu, **sbc)
+    mycontext = DefaultSubjectContext(security_utils=csu, context=sbc)
     assert (sb.subject_context == mycontext)
 
 
-def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager):
+def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager,
+                          configured_securityutils):
     """
     unit tested:  build_subject
 
@@ -1470,6 +1466,7 @@ def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager):
     build_subject defers to the security_manager's create_subject
     """
     sb = subject_builder
+    csu = configured_securityutils
 
     monkeypatch.setattr(sb, 'security_manager', mock_security_manager)
     monkeypatch.setattr(sb.security_manager, 'create_subject',
@@ -1527,11 +1524,10 @@ def test_dsf_create_subject(
 # SecurityUtils
 # ------------------------------------------------------------------------------
 
-@pytest.mark.xfail
 def test_su_get_subject_notinthreadlocal(
-        mock_subject_builder, monkeypatch, mock_security_manager):
+        mock_subject_builder, monkeypatch, configured_securityutils):
     """
-    unit tested:  get_subject
+    unit tested:  subject
 
     test case:
     - when a subject attribute isn't available from the thread_local,
@@ -1540,51 +1536,27 @@ def test_su_get_subject_notinthreadlocal(
           thread_local
     - the subject is returned
     """
+    csu = configured_securityutils
+    msb = mock_subject_builder
 
-    monkeypatch.setattr(SecurityUtils, 'security_manager',
-                        mock_security_manager)
-
-    monkeypatch.setattr(SubjectBuilder, 'build_subject', lambda x: 'sbs')
-    result = SecurityUtils.get_subject()
-
-    assert (result == 'sbs' and thread_local.subject == result)
+    with csu:
+        with mock.patch('yosai.core.SubjectBuilder', return_value=msb):
+            result = csu.subject
+            assert (result == 'subjectbuildsubject' and 
+                    thread_local.subject == result)
 
 
-def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder):
+def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
+                                      configured_securityutils):
     """
     unit tested:  get_subject
 
     test case:
     when a subject is bound to a threadlocal, it is returned
     """
+    csu = configured_securityutils
     monkeypatch.setattr(thread_local, 'subject', 'threadlocalsubject',
                         raising=False)
-    result = SecurityUtils.get_subject()
-    assert result == 'threadlocalsubject'
-
-
-def test_su_getsecuritymanager_in_threadlocal(monkeypatch):
-    """
-    unit tested:  security_manager.getter
-
-    test case:
-    obtains a security_manager from the thread_local
-    """
-    monkeypatch.setattr(thread_local, 'security_manager',
-                        'threadlocalsecuritymanager', raising=False)
-    result = SecurityUtils.get_security_manager()
-    assert result == 'threadlocalsecuritymanager'
-
-
-def test_su_getsecuritymanager_notin_threadlocal_from_securityutils(
-        monkeypatch):
-    """
-    unit tested:  security_manager.getter
-
-    test case:
-    - security_manager not available from the thread_local
-    - SecurityUtils.security_manager returned
-    """
-    monkeypatch.setattr(SecurityUtils, 'security_manager', 'local_security_manager')
-    result = SecurityUtils.get_security_manager()
-    assert result == SecurityUtils.security_manager
+    with csu:
+        result = csu.subject
+        assert result == 'threadlocalsubject'

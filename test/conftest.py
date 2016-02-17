@@ -1,15 +1,47 @@
 import pytest
+from marshmallow import Schema, fields
+
 from yosai.core import (
+    AccountStoreRealm,
     AuthzInfoResolver,
     Credential,
     CredentialResolver,
     DefaultPermission,
     IndexedAuthorizationInfo,
+    NativeSecurityManager,
     PermissionResolver,
     RoleResolver,
+    SecurityUtils,
     SimpleRole,
     UsernamePasswordToken,
+    event_bus,
 )
+from yosai_dpcache.cache import DPCacheHandler
+from yosai_alchemystore import (
+    AlchemyAccountStore,
+    Base,
+    init_engine,
+    init_session,
+)
+
+
+@pytest.fixture(scope='session')
+def session(request):
+    engine = init_engine()
+    Base.metadata.create_all(engine)
+
+    def drop_all():
+        Base.metadata.drop_all(engine)
+
+    request.addfinalizer(drop_all)
+
+    return init_session(engine=engine)
+
+
+@pytest.fixture(scope='session')
+def yosai():
+    return SecurityUtils()
+
 
 @pytest.fixture(scope='session')
 def authz_info_resolver():
@@ -60,4 +92,54 @@ def username_password_token():
                                  password='secret',
                                  remember_me=False,
                                  host='127.0.0.1')
+
+
+@pytest.fixture(scope='session')
+def cache_handler():
+    return DPCacheHandler()
+
+
+@pytest.fixture(scope='session')
+def alchemy_store(session):
+    return AlchemyAccountStore(session=session)
+
+
+@pytest.fixture(scope='session')
+def account_store_realm(cache_handler, alchemy_store, permission_resolver,
+                        role_resolver, authz_info_resolver, credential_resolver):
+
+    asr = AccountStoreRealm(name='AccountStoreRealm')
+
+    asr.cache_handler = cache_handler
+    asr.account_store = alchemy_store
+
+    asr.credential_resolver = credential_resolver
+    asr.permission_resolver = permission_resolver
+    asr.authz_info_resolver = authz_info_resolver
+    asr.role_resolver = role_resolver
+
+    return asr
+
+
+@pytest.fixture(scope='session')
+def configured_securityutils(native_security_manager, yosai):
+    yosai.security_manager = native_security_manager
+    return yosai
+
+
+@pytest.fixture(scope='session')
+def native_security_manager(account_store_realm, cache_handler, 
+                            yosai):
+
+    class AttributesSchema(Schema):
+        name = fields.String()
+
+    nsm = NativeSecurityManager(realms=(account_store_realm,),
+                                session_attributes_schema=AttributesSchema)
+    nsm.cache_handler = cache_handler
+    nsm.event_bus = event_bus
+    yosai.security_manager = nsm
+
+    return nsm
+
 

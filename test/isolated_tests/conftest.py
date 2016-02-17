@@ -19,6 +19,7 @@ from .doubles import (
     MockAccountStore,
     MockPubSub,
     MockSecurityManager,
+    MockSecUtil,
     MockSession,
     MockSubject,
     MockSubjectBuilder,
@@ -156,8 +157,10 @@ def mock_thread_context():
 
 
 @pytest.fixture(scope='function')
-def mock_subject_builder(mock_security_manager):
-    return MockSubjectBuilder(security_manager=mock_security_manager)
+def mock_subject_builder(mock_security_manager, configured_securityutils):
+    csu = configured_securityutils
+    return MockSubjectBuilder(security_utils=csu, 
+                              security_manager=mock_security_manager)
 
 
 @pytest.fixture(scope='function')
@@ -182,4 +185,9 @@ def modular_realm_authorizer_patched(
     monkeypatch.setattr(a, '_realms', authz_realms_collection)
     monkeypatch.setattr(a, '_event_bus', event_bus)
     return a
+
+
+@pytest.fixture(scope='function')
+def mock_secutil():
+    return MockSecUtil()
 

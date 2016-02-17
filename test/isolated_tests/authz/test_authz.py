@@ -17,7 +17,6 @@ from yosai.core import (
     UnauthorizedException,
     requires_permission,
     requires_role,
-    SecurityUtils,
     event_bus
 )
 
@@ -843,7 +842,8 @@ def test_srv_has_role(simple_role_verifier, indexed_authz_info):
 # Decorator Tests
 # -----------------------------------------------------------------------------
 
-def test_requires_permission_succeeds(monkeypatch, mock_subject):
+def test_requires_permission_succeeds(monkeypatch, mock_subject, 
+                                      configured_securityutils):
     """
     unit tested:  requires_permission
 
@@ -852,19 +852,21 @@ def test_requires_permission_succeeds(monkeypatch, mock_subject):
     - calls subject.check_permission, which does not raise any exception
     - failing to raise any exception, the decorated method is finally called
     """
-    monkeypatch.setattr(mock_subject, 'check_permission', lambda x, y: None)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_permission('domain1:action1')
     def do_something():
         return "something was done"
+    
+    with csu:
+        monkeypatch.setattr(csu.subject, 'check_permission', lambda x, y: None)
+        result = do_something()
 
-    result = do_something()
-
-    assert result == "something was done"
+        assert result == "something was done"
 
 
-def test_requires_permission_raises(monkeypatch, mock_subject):
+def test_requires_permission_raises(monkeypatch, mock_subject, 
+                                    configured_securityutils):
     """
     unit tested:  requires_permission
 
@@ -872,20 +874,20 @@ def test_requires_permission_raises(monkeypatch, mock_subject):
     - obtains current executing subject
     - calls subject.check_permission, which raises an exception
     """
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_permission('domain1:action1')
     def do_something():
         return "something was done"
 
-    with mock.patch.object(MockSubject, 'check_permission') as cp:
+    with mock.patch.object(csu.subject, 'check_permission') as cp:
         cp.side_effect = UnauthorizedException
-
         with pytest.raises(UnauthorizedException):
-            result = do_something()
+            with csu:
+                do_something()
 
 
-def test_requires_role_succeeds(monkeypatch, mock_subject):
+def test_requires_role_succeeds(monkeypatch, mock_subject, configured_securityutils):
     """
     unit tested:  requires_role
 
@@ -894,19 +896,20 @@ def test_requires_role_succeeds(monkeypatch, mock_subject):
     - calls subject.check_role, which does not raise any exception
     - failing to raise any exception, the decorated method is finally called
     """
-    monkeypatch.setattr(mock_subject, 'check_role', lambda x, y: None)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_role('role1')
     def do_something():
         return "something was done"
 
-    result = do_something()
+    with csu:
+        monkeypatch.setattr(csu.subject, 'check_role', lambda x, y: None)
+        result = do_something()
 
-    assert result == "something was done"
+        assert result == "something was done"
 
 
-def test_requires_role_raises(monkeypatch, mock_subject):
+def test_requires_role_raises(monkeypatch, mock_subject, configured_securityutils):
     """
     unit tested:  requires_role
 
@@ -914,14 +917,15 @@ def test_requires_role_raises(monkeypatch, mock_subject):
     - obtains current executing subject
     - calls subject.check_role, which raises an exception
     """
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_role('role1')
     def do_something():
         return "something was done"
 
-    with mock.patch.object(MockSubject, 'check_role') as cp:
+    with mock.patch.object(csu.subject, 'check_role') as cp:
         cp.side_effect = UnauthorizedException
 
         with pytest.raises(UnauthorizedException):
-            do_something()
+            with csu:
+                do_something()

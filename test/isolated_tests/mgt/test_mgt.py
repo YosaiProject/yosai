@@ -15,6 +15,7 @@ from yosai.core import (
     SerializationManager,
     UsernamePasswordToken,
     authc_abcs,
+    event_bus,
     mgt_settings,
 )
 
@@ -32,8 +33,7 @@ from .doubles import (
 
 
 def test_nsm_setauthenticator_da(
-        native_security_manager, default_authenticator, monkeypatch,
-        default_accountstorerealm):
+        native_security_manager, default_authenticator, monkeypatch):
     """
     unit tested:  authenticator.setter
 
@@ -53,7 +53,7 @@ def test_nsm_setauthenticator_da(
 
         mock_aeb.assert_called_once_with(da)
 
-        assert nsm.authenticator.realms == (default_accountstorerealm,)
+        assert nsm.authenticator.realms
 
 
 def test_nsm_setauthenticator_raises(
@@ -71,8 +71,8 @@ def test_nsm_setauthenticator_raises(
 
 
 def test_nsm_setauthorizer(
-        native_security_manager, modular_realm_authorizer_patched,
-        default_accountstorerealm):
+        native_security_manager, modular_realm_authorizer_patched):
+        
     """
     unit tested:  authorizer.setter
 
@@ -89,7 +89,7 @@ def test_nsm_setauthorizer(
 
         mock_aev.assert_called_once_with(nsm.authorizer)
 
-        assert nsm.authorizer.realms == (default_accountstorerealm,)
+        assert nsm.authorizer.realms
 
 
 def test_nsm_setauthorizer_raises(native_security_manager):
@@ -154,11 +154,11 @@ def test_nsm_set_eventbus(native_security_manager):
     with mock.patch.object(NativeSecurityManager,
                            'apply_event_bus') as nsm_aeb:
         nsm_aeb.return_value = None
-        nsm.event_bus = 'eventbus'
+        nsm.event_bus = event_bus 
         calls = [mock.call(nsm._authenticator), mock.call(nsm._authorizer),
                  mock.call(nsm._session_manager)]
         nsm_aeb.assert_has_calls(calls)
-        assert nsm.event_bus == 'eventbus'
+        assert nsm.event_bus == event_bus 
 
 
 def test_nsm_set_eventbus_raises(native_security_manager):
@@ -438,10 +438,13 @@ def test_nsm_create_subject_context(
     returns a new DefaultSubjectContext instance
     """
     nsm = native_security_manager
+
     result = nsm.create_subject_context()
     assert isinstance(result, DefaultSubjectContext)
 
-def test_nsm_create_subject_wo_context(native_security_manager):
+
+def test_nsm_create_subject_wo_context(
+        native_security_manager, configured_securityutils):
     """
     unit tested:  create_subject
 
@@ -451,8 +454,9 @@ def test_nsm_create_subject_wo_context(native_security_manager):
     saved and then returned.
     """
     nsm = native_security_manager
+    csu = configured_securityutils
 
-    testcontext = DefaultSubjectContext()
+    testcontext = DefaultSubjectContext(security_utils=csu)
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account = 'dumb_account'
@@ -479,7 +483,8 @@ def test_nsm_create_subject_wo_context(native_security_manager):
                         nsm_dcs.assert_called_once_with(testcontext)
                         assert result == 'subject'
 
-def test_nsm_create_subject_w_context(native_security_manager):
+def test_nsm_create_subject_w_context(native_security_manager,
+                                      configured_securityutils):
     """
     unit tested:  create_subject
 
@@ -487,8 +492,9 @@ def test_nsm_create_subject_w_context(native_security_manager):
     context is passed as an argument, and so it is used
     """
     nsm = native_security_manager
+    csu = configured_securityutils
 
-    testcontext = DefaultSubjectContext()
+    testcontext = DefaultSubjectContext(security_utils=csu)
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account = 'dumb_account'
@@ -775,17 +781,19 @@ def test_nsm_before_logout(native_security_manager):
         nsm_rml.assert_called_once_with('subject')
 
 
-def test_nsm_copy(native_security_manager):
+def test_nsm_copy(native_security_manager, configured_securityutils):
     """
     unit tested:  copy
 
     test case:
     returns a new DefaultSubjectContext
     """
+    csu = configured_securityutils
     nsm = native_security_manager
 
     result = nsm.copy({'subject_context': 'subject_context'})
-    assert result == DefaultSubjectContext({'subject_context': 'subject_context'})
+    assert result == DefaultSubjectContext(security_utils=csu,
+                                           context={'subject_context': 'subject_context'})
 
 def test_nsm_do_create_subject(native_security_manager, monkeypatch):
     """
@@ -1410,7 +1418,8 @@ def test_armm_remember_identity_wo_identitiersarg(
         rsi.assert_called_once_with('subject', 'serialized')
 
 
-def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
+def test_armm_remember_identity_w_identitiersarg(
+        mock_remember_me_manager, simple_identifier_collection):
     """
     unit tested:  remember_identity
 
@@ -1419,6 +1428,7 @@ def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
     subject
     """
     mrmm = mock_remember_me_manager
+    sic = simple_identifier_collection
 
     with mock.patch.object(MockRememberMeManager,
                            'convert_identifiers_to_bytes') as citb:
@@ -1429,10 +1439,10 @@ def test_armm_remember_identity_w_identitiersarg(mock_remember_me_manager):
             rsi.return_value = None
 
             mrmm.remember_identity('subject',
-                                   identifiers='identifiers',
+                                   identifiers=sic,
                                    account='account')
 
-            citb.assert_called_once_with('identifiers')
+            citb.assert_called_once_with(sic)
             rsi.assert_called_once_with('subject', 'serialized')
 
 def test_armm_get_identity_to_remember(

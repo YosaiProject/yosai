@@ -14,7 +14,6 @@ from yosai.core import (
     DefaultCompositeAccount,
     UnauthenticatedException,
     UsernamePasswordToken,
-    SecurityUtils,
     requires_authentication,
     requires_user,
     requires_guest,
@@ -348,7 +347,8 @@ def test_da_notify_falure_raises(default_authenticator, monkeypatch):
 # Decorator Tests
 # -----------------------------------------------------------------------------
 
-def test_requires_authentication_succeeds(monkeypatch, mock_subject):
+def test_requires_authentication_succeeds(
+        monkeypatch, mock_subject, mock_secutil, configured_securityutils):
     """
     unit tested:  requires_authentication
 
@@ -356,19 +356,21 @@ def test_requires_authentication_succeeds(monkeypatch, mock_subject):
     a decorated method that requires authentication succeds to authenticate and
     then is called
     """
-
-    monkeypatch.setattr(mock_subject, '_authenticated', True)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_authentication
     def do_something():
         return "something was done"
 
-    result = do_something()
+    with csu:
+        monkeypatch.setattr(csu.subject, '_authenticated', True)
+        result = do_something()
 
-    assert result == "something was done"
+        assert result == "something was done"
 
-def test_requires_authentication_raises(monkeypatch, mock_subject):
+
+def test_requires_authentication_raises(monkeypatch, mock_subject, yosai,
+                                        configured_securityutils):
 
     """
     unit tested:  requires_authentication
@@ -377,19 +379,19 @@ def test_requires_authentication_raises(monkeypatch, mock_subject):
     a decorated method that requires authentication rails to authenticate and
     raises
     """
-
-    monkeypatch.setattr(mock_subject, '_authenticated', False)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_authentication
     def do_something():
         return "something was done"
 
     with pytest.raises(UnauthenticatedException):
-        result = do_something()
+        with csu:
+            do_something()
 
 
-def test_requires_user_succeeds(monkeypatch, mock_subject):
+def test_requires_user_succeeds(monkeypatch, mock_subject,
+                                configured_securityutils):
     """
     unit tested:  requires_user
 
@@ -397,18 +399,21 @@ def test_requires_user_succeeds(monkeypatch, mock_subject):
     a decorated method that requires a 'User-Subject' succeeds to obtain
     a User status and then is called
     """
-    monkeypatch.setattr(mock_subject, '_identifiers', True)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_user
     def do_something():
         return "something was done"
 
-    result = do_something()
+    with csu:
+        monkeypatch.setattr(csu.subject, '_identifiers', True)
+        result = do_something()
 
-    assert result == "something was done"
+        assert result == "something was done"
 
-def test_requires_user_raises(monkeypatch, mock_subject):
+
+def test_requires_user_raises(monkeypatch, mock_subject,
+                              configured_securityutils):
     """
     unit tested:  requires_user
 
@@ -416,18 +421,19 @@ def test_requires_user_raises(monkeypatch, mock_subject):
     a decorated method that requires a 'User-Subject' fails to obtain
     a User status and raises
     """
-    monkeypatch.setattr(mock_subject, '_identifiers', None)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_user
     def do_something():
         return "something was done"
 
     with pytest.raises(UnauthenticatedException):
-        result = do_something()
+        with csu:
+            do_something()
 
 
-def test_requires_guest_succeeds(monkeypatch, mock_subject):
+def test_requires_guest_succeeds(monkeypatch, mock_subject,
+                                 configured_securityutils):
     """
     unit tested:
 
@@ -435,20 +441,20 @@ def test_requires_guest_succeeds(monkeypatch, mock_subject):
     a decorated method that requires a 'Guest-Subject' status succeeds in
     finding one
     """
-
-    monkeypatch.setattr(mock_subject, '_identifiers', None)
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_guest
     def do_something():
         return "something was done"
 
-    result = do_something()
+    with csu:
+        monkeypatch.setattr(csu.subject, '_identifiers', None) 
+        result = do_something()
 
-    assert result == "something was done"
+        assert result == "something was done"
 
 
-def test_requires_guest_raises(monkeypatch, mock_subject):
+def test_requires_guest_raises(monkeypatch, mock_subject, configured_securityutils):
     """
     unit tested:
 
@@ -456,11 +462,13 @@ def test_requires_guest_raises(monkeypatch, mock_subject):
     a decorated method that requires a 'Guest-Subject' status fails to find
     one, raising
     """
-    monkeypatch.setattr(SecurityUtils, 'get_subject', lambda: mock_subject)
+    csu = configured_securityutils
 
     @requires_guest
     def do_something():
         return "something was done"
 
     with pytest.raises(UnauthenticatedException):
-        do_something()
+        with csu:
+            monkeypatch.setattr(csu.subject, '_identifiers', True) 
+            do_something()

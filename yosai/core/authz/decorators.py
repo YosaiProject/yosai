@@ -1,6 +1,6 @@
 import functools
 from yosai.core import (
-    SecurityUtils,
+    get_current_lib,
 )
 
 
@@ -32,7 +32,8 @@ def requires_permission(permission_s, logical_operator=all):
         @functools.wraps(fn)
         def inner_wrap(*args, **kwargs):
 
-            subject = SecurityUtils.get_subject()
+            yosai = get_current_lib()
+            subject = yosai.subject
 
             subject.check_permission(permission_s, logical_operator)
 
@@ -68,7 +69,8 @@ def requires_role(roleid_s, logical_operator=all):
         @functools.wraps(fn)
         def inner_wrap(*args, **kwargs):
 
-            subject = SecurityUtils.get_subject()
+            yosai = get_current_lib()
+            subject = yosai.subject
 
             subject.check_role(roleid_s, logical_operator)
 
