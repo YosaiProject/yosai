@@ -116,6 +116,7 @@ class WebSubjectBuilder(SubjectBuilder):
     """
 
     def __init__(self,
+                 security_utils,
                  security_manager=None,
                  subject_context=None,
                  host=None,
@@ -140,7 +141,8 @@ class WebSubjectBuilder(SubjectBuilder):
         :type request:  WSGIRequest
         :type response:  WSGIReponse
         """
-        super().__init__(security_manager=None,
+        super().__init__(security_utils=security_utils,
+                         security_manager=None,
                          subject_context=None,
                          host=None,
                          session_id=None,
@@ -171,7 +173,7 @@ class WebSubjectBuilder(SubjectBuilder):
 
             :returns: a new ``WebSubject`` instance
             """
-            subject = super().build_subject()
+            subject = super().build_subject()  # in turn calls the WebSecurityManager 
 
             if not isinstance(subject, web_subject_abcs.WebSubject):
                 msg = ("Subject implementation returned from the SecurityManager"

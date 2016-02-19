@@ -103,6 +103,7 @@ documentation, further below, for how to do that.
 With Yosai initialized, you can authenticate, authorize, and manage sessions.
 
 To initialize Yosai, you must specify, at a minimum:
+
 - What CacheHandler to use, if you are caching.  In this example, we use the
   DPCacheHandler extension.
 - The AccountStore instance(s) from which to obtain authentication and

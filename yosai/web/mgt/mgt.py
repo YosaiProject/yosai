@@ -104,7 +104,10 @@ class DefaultWebSecurityManager(NativeSecurityManager,
         self.session_mode = 'http'
         self.subject_factory = DefaultWebSubjectFactory()
         self.remember_me_manager = CookieRememberMeManager()
-        self.session_manager = WSGIContainerSessionManager()
+
+        # yosai uses the native web session manager as default, unlike Shiro,
+        # which uses the middleware version instead
+        self.session_manager = DefaultWebSessionManager()
 
     # override base method
     def create_subject_context(self):
@@ -121,7 +124,7 @@ class DefaultWebSecurityManager(NativeSecurityManager,
 
     @property
     def session_manager(self):
-        return super().session_manager
+        return self.session_manager  # inherited
 
     # extends the property of the parent:
     @session_manager.setter
@@ -138,7 +141,6 @@ class DefaultWebSecurityManager(NativeSecurityManager,
                        "This may cause unexpected behavior.".format(
                        self.__class__.__name__, sessionmanager.__class__.__name__))
                 logger.warning(msg)
-
 
         # this is the syntax used to call the property setter of the parent:
         super_dwsm = super(DefaultWebSecurityManager, DefaultWebSecurityManager)
@@ -167,7 +169,7 @@ class DefaultWebSecurityManager(NativeSecurityManager,
 
     def create_session_manager(self, session_mode):
         if (session_mode is None) or (not session_mode.lower() == 'native'):
-            msg = "http mode - enabling ServletContainerSessionManager (HTTP-only Sessions)"
+            msg = "http mode - enabling WSGIContainerSessionManager (HTTP-only Sessions)"
             logger.info(msg)
             return WSGIContainerSessionManager()
         else:
@@ -176,7 +178,7 @@ class DefaultWebSecurityManager(NativeSecurityManager,
             return DefaultWebSessionManager()
 
     # overridden:
-    def create_session_sontext(self, subject_context):
+    def create_session_context(self, subject_context):
         session_context = super().create_session_context(subject_context)
         if isinstance(subject_context, web_subject_abcs.WebSubjectContext):
             wsc = subject_context

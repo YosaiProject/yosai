@@ -102,3 +102,8 @@ https://yosaiproject.github.io/yosai/authorization/#access-control-levels-and-st
 
 RunAs ought to emit an event, to help audit administrative work
 
+Document RunAs
+
+Revise examples in documentation so to make it more clear that yosai is instantiated
+once per application
+

@@ -1133,7 +1133,7 @@ class SubjectBuilder:
 
     # DG: this is needed as it is overridden by subclasses:
     def new_subject_context_instance(self):
-         return DefaultSubjectContext(security_utils=self.security_utils)
+        return DefaultSubjectContext(security_utils=self.security_utils)
 
     def context_attribute(self, attribute_key, attribute_value=None):
         """
