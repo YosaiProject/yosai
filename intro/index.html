@@ -167,68 +167,6 @@ managing state between requests.  In other words, Yosai offers authentication,
 <p><img alt="anon_architecture" src="../img/anon_architecture.png" /></p>
 <p>Although it is customizable, Yosai features a set of default implementations to address its most anticipated uses. It is "built to contract", featuring concrete implementations of abstract base classes that collectively define Yosai's architecture. Developers who find Yosai's default concrete implementations unsuitable for their needs may implement their own components according to ABC specifications and swap components.</p>
 <h1 id="fundamentals">Fundamentals</h1>
-<h2 id="introducing-subject">Introducing: Subject</h2>
-<p>The three core services provided by Yosai are:</p>
-<ol>
-<li>Authentication</li>
-<li>Authorization</li>
-<li>Session Management</li>
-</ol>
-<p>These services share a common API that you will use to interact with them:  the Subject API.</p>
-<p>Every security related operation is performed in the context of a <strong>Subject</strong>.
-The term "Subject" is generally synonymous with "User" except that aside from
-human beings also includes non-human, system entities.  In other words, a <strong>Subject</strong> is a <em>person</em> or a <em>thing</em>.</p>
-<h2 id="authentication">Authentication</h2>
-<p>In this example, we "log in" a Subject, performing password-based authentication
-that raises an AuthenticationException if authentication were to fail.</p>
-<p>Note that the following example assumes that a <code>yosai</code> instance has already
-been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
-documentation, further below, for how to do that.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">AuthenticationToken</span>
-
-    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
-        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
-
-        <span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
-                                            <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
-        <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
-</pre></div>
-
-
-<div class="admonition note">
-<p>UsernamePasswordToken is a consolidation of a user account's identifying
-attributes (username) and credentials (password) submitted by a user
-during an authentication attempt</p>
-</div>
-<h2 id="authorization">Authorization</h2>
-<p>Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by expicitly calling
-one of Subject's access control methods.</p>
-<p>The following example confirms whether the user logged in above has sufficient
-privileges to approve a bowling tournament application.  We illustrate what is known as the <em>declarative style</em> authorization.  Information about authorization styles can be found in the authorization documentation.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">check_permission</span>
-
-    <span style="color: #a6e22e">@check_permission</span><span style="color: #f8f8f2">([</span><span style="color: #e6db74">&#39;tournament:approve&#39;</span><span style="color: #f8f8f2">])</span>
-    <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">approve_tournament_application</span><span style="color: #f8f8f2">(self,</span> <span style="color: #f8f8f2">tournament_application):</span>
-        <span style="color: #f8f8f2">tournament_application</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">status</span> <span style="color: #f92672">=</span> <span style="color: #e6db74">&#39;APPROVED&#39;</span>
-        <span style="color: #f8f8f2">self</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">notify_approval(tournament_application)</span>
-</pre></div>
-
-
-<h2 id="session-management">Session Management</h2>
-<p>Yosai offers session management for anonymous guests or authenticated users.
-In the Authentication example above, the Subject is automatically allocated a
-new session in Yosai following successful authentication.  We manage
-the attributes of a session through a CRUD-like series of methods:</p>
-<p>Note that the following example assumes that a <code>yosai</code> instance has already
-been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
-documentation, further below, for how to do that.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
-        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
-        <span style="color: #f8f8f2">session</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_session()</span>
-        <span style="color: #f8f8f2">session</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">set_attribute(</span><span style="color: #e6db74">&#39;full_name&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #e6db74">&#39;Jeffrey Lebowski&#39;</span><span style="color: #f8f8f2">)</span>
-</pre></div>
-
-
 <h2 id="initializing-yosai">Initializing Yosai</h2>
 <p>With Yosai initialized, you can authenticate, authorize, and manage sessions.</p>
 <p>To initialize Yosai, you must specify, at a minimum:</p>
@@ -259,14 +197,75 @@ documentation, further below, for how to do that.</p>
 
     <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils(security_manager</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">security_manager)</span>
 </pre></div>
+<div class="admonition note">
+    <ul>
+    <li>To properly serialize your session attributes, you must define a
+      <code>marshmallow</code> schema class, which in this example we've arbitrarily named SessionAttributesSchema</li>
+    </ul>
+</div>
 
+<h2 id="introducing-subject">Introducing: Subject</h2>
+<p>The three core services provided by Yosai are:</p>
+<ol>
+<li>Authentication</li>
+<li>Authorization</li>
+<li>Session Management</li>
+</ol>
+<p>These services share a common API that you will use to interact with them:  the Subject API.</p>
+<p>Every security related operation is performed in the context of a <strong>Subject</strong>.
+The term "Subject" is generally synonymous with "User" except that aside from
+human beings also includes non-human, system entities.  In other words, a <strong>Subject</strong> is a <em>person</em> or a <em>thing</em>.</p>
+<h2 id="authentication">Authentication</h2>
+<p>In this example, we "log in" a Subject, performing password-based authentication
+that raises an AuthenticationException if authentication were to fail.</p>
+<p>Note that the following example assumes that a <code>yosai</code> instance has already
+been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
+documentation, at the top of this page, for how to do that.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">AuthenticationToken</span>
+
+    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
+        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
+
+        <span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
+                                            <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
+        <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
+</pre></div>
 
 <div class="admonition note">
-<ul>
-<li>To properly serialize your session attributes, you must define a
-  <code>marshmallow</code> schema class, which in this example we've arbitrarily named SessionAttributesSchema</li>
-</ul>
-</div></div>
+<p>UsernamePasswordToken is a consolidation of a user account's identifying
+attributes (username) and credentials (password) submitted by a user
+during an authentication attempt</p>
+</div>
+<h2 id="authorization">Authorization</h2>
+<p>Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by expicitly calling
+one of Subject's access control methods.</p>
+<p>The following example confirms whether the user logged in above has sufficient
+privileges to approve a bowling tournament application.  We illustrate what is known as the <em>declarative style</em> authorization.  Information about authorization styles can be found in the authorization documentation.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">check_permission</span>
+
+    <span style="color: #a6e22e">@check_permission</span><span style="color: #f8f8f2">([</span><span style="color: #e6db74">&#39;tournament:approve&#39;</span><span style="color: #f8f8f2">])</span>
+    <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">approve_tournament_application</span><span style="color: #f8f8f2">(self,</span> <span style="color: #f8f8f2">tournament_application):</span>
+        <span style="color: #f8f8f2">tournament_application</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">status</span> <span style="color: #f92672">=</span> <span style="color: #e6db74">&#39;APPROVED&#39;</span>
+        <span style="color: #f8f8f2">self</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">notify_approval(tournament_application)</span>
+</pre></div>
+
+
+<h2 id="session-management">Session Management</h2>
+<p>Yosai offers session management for anonymous guests or authenticated users.
+In the Authentication example above, the Subject is automatically allocated a
+new session in Yosai following successful authentication.  We manage
+the attributes of a session through a CRUD-like series of methods:</p>
+<p>Note that the following example assumes that a <code>yosai</code> instance has already
+been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
+documentation, at the top of this page, for how to do that.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
+        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
+        <span style="color: #f8f8f2">session</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_session()</span>
+        <span style="color: #f8f8f2">session</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">set_attribute(</span><span style="color: #e6db74">&#39;full_name&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #e6db74">&#39;Jeffrey Lebowski&#39;</span><span style="color: #f8f8f2">)</span>
+</pre></div>
+
+
+</div>
 
         </div>
 
