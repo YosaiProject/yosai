@@ -19,6 +19,44 @@ Although it is customizable, Yosai features a set of default implementations to 
 
 # Fundamentals
 
+## Initializing Yosai
+
+With Yosai initialized, you can authenticate, authorize, and manage sessions.
+
+To initialize Yosai, you must specify, at a minimum:
+
+- What CacheHandler to use, if you are caching.  In this example, we use the
+  DPCacheHandler extension.
+- The AccountStore instance(s) from which to obtain authentication and
+  authorization information.  In this example, we use the AlchemyAccountStore
+  extension.
+- The ``marshmallow`` serialization Schema you will use to (de)serialize
+  Session state (user-defined session attributes), if you are caching
+
+```Python
+    from marshmallow import Schema, fields
+    from yosai_dpcache.cache import DPCacheHandler
+    from yosai_alchemystore import AlchemyAccountStore
+    from yosai.core import SecurityUtils, AccountStoreRealm
+
+    class SessionAttributesSchema(Schema):
+        attribute1 = fields.String()
+        attribute2 = fields.String()
+
+    realm = AccountStoreRealm(name='UserAccountStore123',
+                              account_store=AlchemyAccountStore())
+
+    security_manager = NativeSecurityManager(cache_handler=DPCacheHandler(),
+                                             realms=(realm,),
+                                             session_schema=SessionAttributesSchema)
+
+    yosai = SecurityUtils(security_manager=security_manager)
+```
+!!! note ""
+    - To properly serialize your session attributes, you must define a
+      ``marshmallow`` schema class, which in this example we've arbitrarily named SessionAttributesSchema
+
+
 ## Introducing: Subject
 
 The three core services provided by Yosai are:
@@ -98,39 +136,3 @@ documentation, further below, for how to do that.
 ```
 
 
-## Initializing Yosai
-
-With Yosai initialized, you can authenticate, authorize, and manage sessions.
-
-To initialize Yosai, you must specify, at a minimum:
-
-- What CacheHandler to use, if you are caching.  In this example, we use the
-  DPCacheHandler extension.
-- The AccountStore instance(s) from which to obtain authentication and
-  authorization information.  In this example, we use the AlchemyAccountStore
-  extension.
-- The ``marshmallow`` serialization Schema you will use to (de)serialize
-  Session state (user-defined session attributes), if you are caching
-
-```Python
-    from marshmallow import Schema, fields
-    from yosai_dpcache.cache import DPCacheHandler
-    from yosai_alchemystore import AlchemyAccountStore
-    from yosai.core import SecurityUtils, AccountStoreRealm
-
-    class SessionAttributesSchema(Schema):
-        attribute1 = fields.String()
-        attribute2 = fields.String()
-
-    realm = AccountStoreRealm(name='UserAccountStore123',
-                              account_store=AlchemyAccountStore())
-
-    security_manager = NativeSecurityManager(cache_handler=DPCacheHandler(),
-                                             realms=(realm,),
-                                             session_schema=SessionAttributesSchema)
-
-    yosai = SecurityUtils(security_manager=security_manager)
-```
-!!! note ""
-    - To properly serialize your session attributes, you must define a
-      ``marshmallow`` schema class, which in this example we've arbitrarily named SessionAttributesSchema
