@@ -231,14 +231,16 @@ documentation, further below, for how to do that.</p>
 
 <h2 id="initializing-yosai">Initializing Yosai</h2>
 <p>With Yosai initialized, you can authenticate, authorize, and manage sessions.</p>
-<p>To initialize Yosai, you must specify, at a minimum:
-- What CacheHandler to use, if you are caching.  In this example, we use the
-  DPCacheHandler extension.
-- The AccountStore instance(s) from which to obtain authentication and
+<p>To initialize Yosai, you must specify, at a minimum:</p>
+<ul>
+<li>What CacheHandler to use, if you are caching.  In this example, we use the
+  DPCacheHandler extension.</li>
+<li>The AccountStore instance(s) from which to obtain authentication and
   authorization information.  In this example, we use the AlchemyAccountStore
-  extension.
-- The <code>marshmallow</code> serialization Schema you will use to (de)serialize
-  Session state (user-defined session attributes), if you are caching</p>
+  extension.</li>
+<li>The <code>marshmallow</code> serialization Schema you will use to (de)serialize
+  Session state (user-defined session attributes), if you are caching</li>
+</ul>
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">marshmallow</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Schema,</span> <span style="color: #f8f8f2">fields</span>
     <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai_dpcache.cache</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">DPCacheHandler</span>
     <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai_alchemystore</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">AlchemyAccountStore</span>
