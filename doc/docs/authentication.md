@@ -2,7 +2,7 @@
 
 ![authc](img/authentication.jpg)
 
-An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject **is** who *it* claims to be.
+An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject is who *it* claims to be.
 
 
 # Powerful Authentication using a Simple API
