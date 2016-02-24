@@ -55,12 +55,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             - as of shiro v2 alpha rev1693638, shiro doesn't (yet)
     """
 
-    def __init__(self, name):
+    def __init__(self, name, account_store=None):
         """
         :type name:  str
         """
         self.name = name
-        self._account_store = None
+        self._account_store = account_store 
         self._cache_handler = None
 
         # resolvers are setter-injected after init

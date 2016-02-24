@@ -451,7 +451,7 @@ class DelegatingSubject(subject_abcs.Subject):
         raise IdentifiersNotSetException(msg)
 
     # refactored is_permitted_all:
-    def is_permitted_collective(self, permission_s, logical_operator):
+    def is_permitted_collective(self, permission_s, logical_operator=all):
         """
         :param permission_s:  a List of authz_abcs.Permission objects
 
@@ -488,7 +488,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 "denied.")
             raise UnauthenticatedException(msg)
 
-    def check_permission(self, permission_s, logical_operator):
+    def check_permission(self, permission_s, logical_operator=all):
         """
         :param permission_s: a collection of 1..N permissions
         :type permission_s: List of authz_abcs.Permission objects or Strings
@@ -524,7 +524,7 @@ class DelegatingSubject(subject_abcs.Subject):
         raise IdentifiersNotSetException(msg)
 
     # refactored has_all_roles:
-    def has_role_collective(self, roleid_s, logical_operator):
+    def has_role_collective(self, roleid_s, logical_operator=all):
         """
         :param roleid_s: 1..N role identifier
         :type roleid_s:  a Set of Strings
@@ -544,7 +544,7 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = 'Cannot check roles when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
-    def check_role(self, role_ids, logical_operator):
+    def check_role(self, role_ids, logical_operator=all):
         """
         :param role_ids:  1 or more RoleIds
         :type role_ids: a Set of Strings
@@ -1193,10 +1193,12 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
                                  session_creation_enabled=session_creation_enabled,
                                  security_manager=security_manager)
 
+
 # moved from its own security_utils module so as to avoid circular importing:
 class SecurityUtils:
 
-    # self._security_manager is not set by init
+    def __init__(self, security_manager=None):
+        self._security_manager = security_manager
 
     @property
     def subject(self):
