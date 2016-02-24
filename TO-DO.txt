@@ -107,3 +107,4 @@ Document RunAs
 Revise examples in documentation so to make it more clear that yosai is instantiated
 once per application
 
+Investigate using the Hypothesis testing library in addition to pytest
