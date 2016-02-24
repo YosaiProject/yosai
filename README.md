@@ -104,7 +104,6 @@ PyTest Coverage stats (ao 12/22/2015):
 GROUP COMMUNICATION
 -----------------------------------------------------------------------
 Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
-Freenode IRC:  #yosai
 
 
 CONTACT INFORMATION
