@@ -65,11 +65,12 @@ def requires_dynamic_permission(permission_s, logical_operator=all):
 
     Elaborate Example:
         requires_permission(
-            permission_s=['domain1:action1,action2', 'domain2:action1'],
+            permission_s=['{kwarg1.domainid}:action1,action2',
+                           '{kwarg2.domainid}:action1'],
             logical_operator=any)
 
     Basic Example:
-        requires_permission('domain1:action1,action2')
+        requires_permission(['{kwarg.domainid}:action1,action2'])
     """
     def outer_wrap(fn):
         @functools.wraps(fn)
