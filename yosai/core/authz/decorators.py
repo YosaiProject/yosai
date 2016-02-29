@@ -26,7 +26,7 @@ def requires_permission(permission_s, logical_operator=all):
             logical_operator=any)
 
     Basic Example:
-        requires_permission('domain1:action1,action2')
+        requires_permission(['domain1:action1,action2'])
     """
     def outer_wrap(fn):
         @functools.wraps(fn)
@@ -36,6 +36,50 @@ def requires_permission(permission_s, logical_operator=all):
             subject = yosai.subject
 
             subject.check_permission(permission_s, logical_operator)
+
+            return fn(*args, **kwargs)
+        return inner_wrap
+    return outer_wrap
+
+
+def requires_dynamic_permission(permission_s, logical_operator=all):
+    """
+    This method requires that the calling Subject be authorized to the extent
+    that is required to satisfy the dynamic permission_s specified and the logical
+    operation upon them.  Unlike ``requires_permission``, which uses statically
+    defined permissions, this function derives a permission from arguments
+    specified at declaration.
+
+    Dynamic permissioning requires that the dynamic arguments be keyword
+    arguments of the decorated method.
+
+    :param permission_s:   the permission(s) required
+    :type permission_s:  a List of Strings or List of Permission instances
+
+    :param logical_operator:  indicates whether all or at least one permission
+                              is true (and, any)
+    :type: and OR all (from python standard library)
+
+    :raises  AuthorizationException:  if the user does not have sufficient
+                                      permission
+
+    Elaborate Example:
+        requires_permission(
+            permission_s=['domain1:action1,action2', 'domain2:action1'],
+            logical_operator=any)
+
+    Basic Example:
+        requires_permission('domain1:action1,action2')
+    """
+    def outer_wrap(fn):
+        @functools.wraps(fn)
+        def inner_wrap(*args, **kwargs):
+            newperms = [perm.format(**kwargs) for perm in permission_s]
+
+            yosai = get_current_lib()
+            subject = yosai.subject
+
+            subject.check_permission(newperms, logical_operator)
 
             return fn(*args, **kwargs)
         return inner_wrap

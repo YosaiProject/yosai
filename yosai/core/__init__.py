@@ -293,6 +293,7 @@ from yosai.core.authc.decorators import (
 
 
 from yosai.core.authz.decorators import (
+    requires_dynamic_permission,
     requires_permission,
     requires_role,
 )

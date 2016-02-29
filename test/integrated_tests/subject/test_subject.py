@@ -8,6 +8,9 @@ from yosai.core import (
     UnauthenticatedException,
     UnknownSessionException,
     event_bus,
+    requires_dynamic_permission,
+    requires_role,
+    requires_permission,
 )
 import datetime
 
@@ -310,3 +313,141 @@ def test_absolute_expired_session(
     with pytest.raises(UnknownSessionException):
         new_subject.is_permitted(tp['perms'])
         new_subject.logout()
+
+
+def test_requires_permission_succeeds(
+        configured_securityutils, authz_info, new_subject, 
+        valid_username_password_token, thedude_credentials):
+
+    status = None
+
+    @requires_permission(['money:write:bankcheck_19911109069'])
+    def do_something():
+        nonlocal status 
+        status = True
+
+    yosai = configured_securityutils
+
+    with yosai:
+        new_subject.login(valid_username_password_token)
+        do_something()
+        new_subject.logout()
+        assert status
+
+
+def test_requires_permission_fails(
+        configured_securityutils, authz_info, new_subject, 
+        valid_username_password_token, thedude_credentials):
+
+    status = None
+
+    @requires_permission(['money:write:bankcheck_12345'])
+    def do_something():
+        nonlocal status 
+        status = True
+
+    yosai = configured_securityutils
+
+    with yosai:
+        new_subject.login(valid_username_password_token)
+        try:
+            do_something()
+        except UnauthorizedException:
+            assert status is None
+            new_subject.logout()
+        else:
+            raise Exception('failed to raise')
+
+def test_requires_dynamic_permission_succeeds(
+        configured_securityutils, authz_info, new_subject, 
+        valid_username_password_token, thedude_credentials):
+
+    class BankCheck:
+        def __init__(self):
+            self.bankcheck_id = 'bankcheck_19911109069'
+
+    status = None
+
+    @requires_dynamic_permission(['money:write:{bankcheck.bankcheck_id}'])
+    def do_something(bankcheck):
+        nonlocal status 
+        status = True
+
+    yosai = configured_securityutils
+
+    with yosai:
+        new_subject.login(valid_username_password_token)
+        do_something(bankcheck=BankCheck())
+        new_subject.logout()
+        assert status
+
+
+def test_requires_dynamic_permission_fails(
+        configured_securityutils, authz_info, new_subject, 
+        valid_username_password_token, thedude_credentials):
+
+    class BankCheck:
+        def __init__(self):
+            self.bankcheck_id = 'bankcheck_12345'
+
+    status = None
+
+    @requires_dynamic_permission(['money:write:{bankcheck.bankcheck_id}'])
+    def do_something(bankcheck):
+        nonlocal status 
+        status = True
+
+    yosai = configured_securityutils
+
+    with yosai:
+        new_subject.login(valid_username_password_token)
+        try:
+            do_something(bankcheck=BankCheck())
+        except UnauthorizedException:
+            new_subject.logout()
+            assert status is None
+        else:
+            raise Exception('failed to raise')
+
+
+def test_requires_role_succeeds(
+        configured_securityutils, authz_info, new_subject, 
+        valid_username_password_token, thedude_credentials):
+
+    status = None
+
+    @requires_role(['courier'])
+    def do_something():
+        nonlocal status 
+        status = True
+
+    yosai = configured_securityutils
+
+    with yosai:
+        new_subject.login(valid_username_password_token)
+        do_something()
+        assert status
+        new_subject.logout()
+
+
+def test_requires_role_fails(
+        configured_securityutils, authz_info, new_subject, 
+        valid_username_password_token, thedude_credentials):
+
+    status = None
+
+    @requires_role(['thief'])
+    def do_something():
+        nonlocal status 
+        status = True
+
+    yosai = configured_securityutils
+
+    with yosai:
+        new_subject.login(valid_username_password_token)
+        try:
+            do_something()
+        except UnauthorizedException:
+            assert status is None
+            new_subject.logout()
+
