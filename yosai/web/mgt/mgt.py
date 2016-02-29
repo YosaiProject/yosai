@@ -378,13 +378,13 @@ class CookieRememberMeManager(AbstractRememberMeManager):
             base64 = self.ensure_padding(base64)
 
             if logger.getEffectiveLevel() <= logging.DEBUG:
-                log.debug("Acquired Base64 encoded identity [" + base64 + "]")
+                logger.debug("Acquired Base64 encoded identity [" + base64 + "]")
 
             decoded = base64.b64decode(base64)
 
             if logger.getEffectiveLevel() <= logging.DEBUG:
-                log.debug("Base64 decoded byte array length: {0} bytes".format(
-                          len(decoded) if decoded else 0))
+                logger.debug("Base64 decoded byte array length: {0} bytes".format(
+                             len(decoded) if decoded else 0))
 
             return decoded
 

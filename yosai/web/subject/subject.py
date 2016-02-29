@@ -164,7 +164,7 @@ class WebSubjectBuilder(SubjectBuilder):
 
             :returns: a new instance of a ``DefaultWebSubjectContext``
             """
-            return DefaultWebSubjectContext()
+            return DefaultWebSubjectContext(self.security_utils)
 
         def build_web_subject(self):
             """
@@ -173,7 +173,7 @@ class WebSubjectBuilder(SubjectBuilder):
 
             :returns: a new ``WebSubject`` instance
             """
-            subject = super().build_subject()  # in turn calls the WebSecurityManager 
+            subject = super().build_subject()  # in turn calls the WebSecurityManager
 
             if not isinstance(subject, web_subject_abcs.WebSubject):
                 msg = ("Subject implementation returned from the SecurityManager"
