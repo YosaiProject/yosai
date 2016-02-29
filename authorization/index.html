@@ -125,41 +125,40 @@
         </div>
     </div>
         <div class="container">
-
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
-
+    
         <li class="main active"><a href="#authorization">Authorization</a></li>
-
+        
             <li><a href="#role-based-access-control">Role-Based Access Control</a></li>
-
+        
             <li><a href="#key-concepts">Key Concepts</a></li>
-
+        
             <li><a href="#access-control-levels-and-styles">Access Control Levels and Styles</a></li>
-
-
+        
+    
         <li class="main "><a href="#permissions">Permissions</a></li>
-
+        
             <li><a href="#1-string-formatted-permission">1. String-formatted Permission</a></li>
-
+        
             <li><a href="#2-permission-object-instance">2. Permission object instance</a></li>
-
+        
             <li><a href="#permission-modeling">Permission Modeling</a></li>
-
+        
             <li><a href="#you-implement-your-authorization-policy-yosai-enforces-it">You Implement Your Authorization Policy, Yosai enforces it</a></li>
-
+        
             <li><a href="#authorization-events">Authorization Events</a></li>
-
-
+        
+    
         <li class="main "><a href="#authorization-api-reference">Authorization API Reference</a></li>
-
+        
             <li><a href="#declarative-style-authorization">Declarative-Style Authorization</a></li>
-
+        
             <li><a href="#imperative-style-authorization">Imperative-Style Authorization</a></li>
-
+        
             <li><a href="#references">References</a></li>
-
-
+        
+    
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -374,6 +373,29 @@ method registered for a consumer, using the event payload as its argument(s).</p
         <span style="color: #66d9ef">pass</span>
 
 
+    <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">requires_dynamic_permission</span><span style="color: #f8f8f2">(permission_s,</span> <span style="color: #f8f8f2">logical_operator</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">all):</span>
+        <span style="color: #e6db74">&quot;&quot;&quot;</span>
+<span style="color: #e6db74">        This method requires that the calling Subject be authorized to the extent</span>
+<span style="color: #e6db74">        that is required to satisfy the dynamic permission_s specified and the logical</span>
+<span style="color: #e6db74">        operation upon them.  Unlike ``requires_permission``, which uses statically</span>
+<span style="color: #e6db74">        defined permissions, this function derives a permission from arguments</span>
+<span style="color: #e6db74">        specified at declaration.</span>
+
+<span style="color: #e6db74">        Dynamic permissioning requires that the dynamic arguments be keyword</span>
+<span style="color: #e6db74">        arguments of the decorated method.</span>
+
+<span style="color: #e6db74">        :param permission_s:   the permission(s) required</span>
+<span style="color: #e6db74">        :type permission_s:  a List of Strings or List of Permission instances</span>
+
+<span style="color: #e6db74">        :param logical_operator:  indicates whether all or at least one permission</span>
+<span style="color: #e6db74">                                  is true (and, any)</span>
+<span style="color: #e6db74">        :type: and OR all (from python standard library)</span>
+
+<span style="color: #e6db74">        :raises  AuthorizationException:  if the user does not have sufficient</span>
+<span style="color: #e6db74">                                          permission</span>
+<span style="color: #e6db74">        &quot;&quot;&quot;</span>
+        <span style="color: #66d9ef">pass</span>
+
     <span style="color: #75715e"># Role-level</span>
     <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">requires_role</span><span style="color: #f8f8f2">(roleid_s,</span> <span style="color: #f8f8f2">logical_operator</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">all):</span>
         <span style="color: #e6db74">&quot;&quot;&quot;</span>
@@ -428,6 +450,18 @@ When this_function is called, the caller of this_function should be ready to han
 <div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #a6e22e">@requires_role</span><span style="color: #f8f8f2">([</span><span style="color: #e6db74">&#39;role1&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #e6db74">&#39;role2&#39;</span><span style="color: #f8f8f2">],</span> <span style="color: #f8f8f2">any)</span>
 <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">this_function</span><span style="color: #f8f8f2">(</span><span style="color: #f92672">...</span><span style="color: #f8f8f2">):</span>
     <span style="color: #f92672">...</span>
+</pre></div>
+
+
+<h3 id="example-5-any-permission-specified-dynamically-is-acceptable">Example 5:  Any Permission, Specified Dynamically, is Acceptable</h3>
+<p>The following permissions are required, each independently satisfying the access control requirement, to call this_function.  Notice how arguments are obtaining dynamically.  If you decide to use dynamic-argument permissions, you reference the arguments using string-formatting syntax.
+Dynamic arguments must be passed as keyword arguments to the decorated function.  In
+this example, this_function must be called like this_function(kwarg1=..., kwarg2=...)</p>
+<p>When this_function is called, the caller should be ready to handle an AuthorizationException if the user is denied access:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #a6e22e">@requires_dynamic_permission</span><span style="color: #f8f8f2">([</span><span style="color: #e6db74">&#39;{kwarg1.domain}:action1&#39;</span><span style="color: #f8f8f2">,</span>
+                                  <span style="color: #e6db74">&#39;{kwarg2.domain}:action2&#39;</span><span style="color: #f8f8f2">],</span> <span style="color: #f8f8f2">any)</span>
+    <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">this_function</span><span style="color: #f8f8f2">(</span><span style="color: #f92672">...</span><span style="color: #f8f8f2">):</span>
+        <span style="color: #f92672">...</span>
 </pre></div>
 
 
@@ -686,12 +720,12 @@ documentation for how to do that:</p>
 </div>
 <h2 id="references">References</h2>
 <p><a href="https://www.owasp.org/index.php/Access_Control_Cheat_Sheet">OWASP Access Control Cheat Sheet</a></p></div>
-
+            
         </div>
 
         <footer class="col-md-12">
             <hr>
-
+            
             <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
         </footer>
 
