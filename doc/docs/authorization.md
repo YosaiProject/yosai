@@ -252,6 +252,29 @@ Declarative-style authorization allows you to itemize access requirements for a 
         pass
 
 
+    def requires_dynamic_permission(permission_s, logical_operator=all):
+        """
+        This method requires that the calling Subject be authorized to the extent
+        that is required to satisfy the dynamic permission_s specified and the logical
+        operation upon them.  Unlike ``requires_permission``, which uses statically
+        defined permissions, this function derives a permission from arguments
+        specified at declaration.
+
+        Dynamic permissioning requires that the dynamic arguments be keyword
+        arguments of the decorated method.
+
+        :param permission_s:   the permission(s) required
+        :type permission_s:  a List of Strings or List of Permission instances
+
+        :param logical_operator:  indicates whether all or at least one permission
+                                  is true (and, any)
+        :type: and OR all (from python standard library)
+
+        :raises  AuthorizationException:  if the user does not have sufficient
+                                          permission
+        """
+        pass
+
     # Role-level
     def requires_role(roleid_s, logical_operator=all):
         """
@@ -314,6 +337,20 @@ def this_function(...):
     ...
 ```
 
+
+### Example 5:  Any Permission, Specified Dynamically, is Acceptable
+
+The following permissions are required, each independently satisfying the access control requirement, to call this_function.  Notice how arguments are obtaining dynamically.  If you decide to use dynamic-argument permissions, you reference the arguments using string-formatting syntax.
+Dynamic arguments must be passed as keyword arguments to the decorated function.  In
+this example, this_function must be called like this_function(kwarg1=..., kwarg2=...)
+
+When this_function is called, the caller should be ready to handle an AuthorizationException if the user is denied access:
+```Python
+    @requires_dynamic_permission(['{kwarg1.domain}:action1',
+                                  '{kwarg2.domain}:action2'], any)
+    def this_function(...):
+        ...
+```
 
 ## Imperative-Style Authorization
 
