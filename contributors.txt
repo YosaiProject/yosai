@@ -20,7 +20,8 @@ Author:
 Darin Gordon
 
 Special Thanks to:
-Alex Gronholm
-Michael Merickel
-Graham Dumpleton
+    Alex Gronholm
+    Michael Merickel
+    Graham Dumpleton
+    Charlie Clark
 

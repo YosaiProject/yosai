@@ -1199,6 +1199,7 @@ class SecurityUtils:
 
     def __init__(self, security_manager=None):
         self._security_manager = security_manager
+        self._subject = None
 
     @property
     def subject(self):
@@ -1219,14 +1220,14 @@ class SecurityUtils:
                                         application configuration because a Subject
                                         should *always* be available to the caller)
         """
-        try:
-            subject = thread_local.subject
-        except AttributeError:
-            subject_builder = SubjectBuilder(security_utils=self,
-                                             security_manager=self.security_manager)
-            subject = subject_builder.build_subject()
-            thread_local.subject = subject
-        return subject
+        if not self._subject:
+            self.load_subject()
+        return self._subject
+
+    def load_subject(self):
+        subject_builder = SubjectBuilder(security_utils=self,
+                                         security_manager=self.security_manager)
+        self._subject = subject_builder.build_subject()
 
     @property
     def security_manager(self):
@@ -1249,4 +1250,5 @@ class SecurityUtils:
         return self
 
     def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
+        self._subject = None
         global_security_manager.stack.pop()
