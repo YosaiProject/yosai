@@ -336,7 +336,7 @@ def test_requires_permission_succeeds(
 
 
 def test_requires_permission_fails(
-        configured_securityutils, authz_info, new_subject, 
+        configured_securityutils, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -349,6 +349,7 @@ def test_requires_permission_fails(
     yosai = configured_securityutils
 
     with yosai:
+        new_subject = yosai.subject
         new_subject.login(valid_username_password_token)
         try:
             do_something()
@@ -359,7 +360,7 @@ def test_requires_permission_fails(
             raise Exception('failed to raise')
 
 def test_requires_dynamic_permission_succeeds(
-        configured_securityutils, authz_info, new_subject, 
+        configured_securityutils, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     class BankCheck:
@@ -376,6 +377,7 @@ def test_requires_dynamic_permission_succeeds(
     yosai = configured_securityutils
 
     with yosai:
+        new_subject = yosai.subject
         new_subject.login(valid_username_password_token)
         do_something(bankcheck=BankCheck())
         new_subject.logout()
@@ -383,7 +385,7 @@ def test_requires_dynamic_permission_succeeds(
 
 
 def test_requires_dynamic_permission_fails(
-        configured_securityutils, authz_info, new_subject, 
+        configured_securityutils, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     class BankCheck:
@@ -400,6 +402,7 @@ def test_requires_dynamic_permission_fails(
     yosai = configured_securityutils
 
     with yosai:
+        new_subject = yosai.subject
         new_subject.login(valid_username_password_token)
         try:
             do_something(bankcheck=BankCheck())
@@ -411,7 +414,7 @@ def test_requires_dynamic_permission_fails(
 
 
 def test_requires_role_succeeds(
-        configured_securityutils, authz_info, new_subject, 
+        configured_securityutils, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -424,6 +427,7 @@ def test_requires_role_succeeds(
     yosai = configured_securityutils
 
     with yosai:
+        new_subject = yosai.subject
         new_subject.login(valid_username_password_token)
         do_something()
         assert status
@@ -431,7 +435,7 @@ def test_requires_role_succeeds(
 
 
 def test_requires_role_fails(
-        configured_securityutils, authz_info, new_subject, 
+        configured_securityutils, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -444,6 +448,7 @@ def test_requires_role_fails(
     yosai = configured_securityutils
 
     with yosai:
+        new_subject = yosai.subject
         new_subject.login(valid_username_password_token)
         try:
             do_something()

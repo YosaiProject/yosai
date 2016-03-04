@@ -178,108 +178,59 @@ class DefaultWebSecurityManager(NativeSecurityManager,
     # overridden:
     def create_session_context(self, subject_context):
         session_context = super().create_session_context(subject_context)
-        if isinstance(subject_context, web_subject_abcs.WebSubjectContext):
-            wsc = subject_context
-            request = wsc.resolve_wsgi_request()
-            response = wsc.resolve_wsgi_response()
+        try:  # will only succeed with WebSubjectContext instances
             web_session_context = DefaultWebSessionContext(session_context)
 
-            if request:
-                web_session_context.wsgi_request = request
-
-            if response:
-                web_session_context.wsgi_response = response
+            web_registry = subject_context.resolve_web_registry()
+            web_session_context.web_registry = web_registry
 
             session_context = web_session_context
+        except AttributeError:
+            pass
 
         return session_context
 
     # overridden
     def get_session_key(self, subject_context):
-        if (WebUtils.is_web(subject_context)):
+        try:
             session_id = subject_context.session_id
-            request = WebUtils.get_request(subject_context)
-            response = WebUtils.get_response(subject_context)
-            return WebSessionKey(session_id, request, response)
-        else:
+            web_registry = subject_context.resolve_web_registry()
+            return WebSessionKey(session_id, web_registry)
+        except AttributeError:  # not dealing with a WebSubjectContext
             return super().get_session_key(subject_context)
 
     # overridden
     def before_logout(self, subject):
         super().before_logout(subject)
-        self.remove_request_identity(subject)
+        self.remove_identity(subject)
 
-    def remove_request_identity(self, subject):
-        if isinstance(subject, WebSubject):
-            request = subject.wsgi_request
-            if request:
-                request.set_attribute(YosaiHttpWSGIRequest.IDENTITY_REMOVED_KEY, True)
+    def remove_identity(self, subject):
+        try:
+            subject.web_registry.remove_identity()
+        except AttributeError:  # then it's not a WebSubject
+            pass
 
 
 class CookieRememberMeManager(AbstractRememberMeManager):
     """
     Remembers a Subject's identity by saving the Subject's identifiers to a Cookie
-    for later retrieval.
-
-    Cookie attributes (path, domain, maxAge, etc) may be set on this class's
-    default ``cookie`` attribute, which acts as a template to use to set all
-    properties of outgoing cookies created by this implementation.
-
-    The default cookie has the following attribute values set:
-
-    |Attribute Name|    Value
-    |--------------|----------------
-    | name         | rememberMe
-    | path         | /
-    | max_age      | Cookie.ONE_YEAR
+    for later retrieval.  The Cookie is accessed through the WebRegistry api.
 
     Note that since this class subclasses the AbstractRememberMeManager, which
     already provides serialization and encryption logic, this class utilizes
     both features for added security before setting the cookie value.
     """
 
-    DEFAULT_REMEMBER_ME_COOKIE_NAME = "rememberMe"
+    def __init__(self, web_registry):
+        self._web_registry = web_registry
 
-    def __init__(self):
-        self._cookie = SimpleCookie(self.__class__.DEFAULT_REMEMBER_ME_COOKIE_NAME)
-        self.cookie.http_only = True
-        # One year should be long enough - most sites won't object to requiring
-        # a user to log in if they haven't visited in a year:
-        self.cookie.max_age = web_wsgi_abcs.Cookie.ONE_YEAR
+    @property
+    def web_registry(self):
+        return self._web_registry
 
-        @property
-        def cookie(self):
-            """
-            Returns the cookie 'template' that will be used to set all attributes
-            of outgoing rememberMe cookies created by this ``RememberMeManager``.
-            Outgoing cookies will match this one except for the value attribute,
-            which is necessarily set dynamically at runtime.
-
-            Please see the class-level api docs for the default cookie's attribute i
-            values.
-
-            :returns: the cookie 'template' that will be used to set all
-                      attributes of outgoing rememberMe cookies created by
-                      this ``RememberMeManager``
-            """
-            return self._cookie
-
-    @cookie.setter
-    def cookie(self, cookie):
-        """
-        Sets the cookie 'template' that will be used to set all attributes of
-        outgoing rememberMe cookies created by this ``RememberMeManager``.
-        Outgoing cookies will match this one except for the value attribute,
-        which is necessarily set dynamically at runtime.
-
-        Please see the class-level JavaDoc for the default cookie's attribute
-        values.
-
-        :param cookie: the cookie 'template' that will be used to set all
-                       attributes of outgoing rememberMe cookies created
-                       by this ``RememberMeManager``
-        """
-        self._cookie = cookie
+    @web_registry.setter
+    def web_registry(self, web_registry):
+        self._web_registry = web_registry
 
     def remember_serialized_identity(self, subject, serialized):
         """
@@ -287,9 +238,9 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         base64-encoded String as the cookie value.
 
         The ``subject`` instance is expected to be a ``WebSubject`` instance
-        with an HTTP Request/Response pair so an HTTP cookie can be set on the
+        with a web_registry handle so that an HTTP cookie may be set on an
         outgoing response.  If it is not a ``WebSubject`` or that ``WebSubject``
-        does not have an HTTP Request/Response pair, this implementation does
+        does not have a web_registry handle, this implementation does
         nothing.
 
         :param subject: the Subject for which the identity is being serialized
@@ -306,17 +257,8 @@ class CookieRememberMeManager(AbstractRememberMeManager):
                 log.debug(msg)
             return
 
-        request = WebUtils.get_http_request(subject)
-        response = WebUtils.get_http_response(subject)
-
         # base 64 encode it and store as a cookie:
-        base64 = base64.b64encode(serialized)
-
-        # the attribute is really a template for the outgoing cookies:
-        template = self.cookie
-        cookie = SimpleCookie(template)
-        cookie.set_value(base64)
-        cookie.save_to(request, response)
+        self.web_registry.remember_me = base64.b64encode(serialized)
 
     def is_identity_removed(self, subject_context):
         request = subject_context.resolve_wsgi_request()
@@ -389,19 +331,6 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         else:
             # no cookie set - new site visitor?
             return None
-
-    def ensure_padding(self, base64):
-        """
-        Sometimes a user agent will send the rememberMe cookie value without
-        padding, most likely because `=` is a separator in the cookie header.
-
-        :param base64: the base64 encoded String that may need to be padded
-        :returns: the base64 String, padded if necessary
-        """
-
-        pad = b'=' * (((~len(base64)) + 1) & 3)
-        base64 = base64 + pad
-        return base64
 
     # DG:  this should be refactored (TBD):
     def forget_identity(self, subject=None, subject_context=None,
