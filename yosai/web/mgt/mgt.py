@@ -93,7 +93,9 @@ class DefaultWebSecurityManager(NativeSecurityManager,
                          session_attributes_schema=session_attributes_schema)
 
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
-        self.session_mode = 'http'
+
+        # yosai omits any session_mode logic since no wsgi middleware exists, yet
+
         self.subject_factory = DefaultWebSubjectFactory()
         self.remember_me_manager = CookieRememberMeManager()
 
@@ -153,21 +155,7 @@ class DefaultWebSecurityManager(NativeSecurityManager,
 
         return super().copy(subject_context)
 
-    @property
-    def is_http_session_mode(self):
-        sm = self.session_manager
-        return (isinstance(sm, web_session_abcs.WebSessionManager) and
-                sm.is_wsgi_container_sessions)
-
-    def create_session_manager(self, session_mode):
-        if (session_mode is None) or (not session_mode.lower() == 'native'):
-            msg = "http mode - enabling WSGIContainerSessionManager (HTTP-only Sessions)"
-            logger.info(msg)
-            return WSGIContainerSessionManager()
-        else:
-            msg = "native mode - enabling DefaultWebSessionManager (non-HTTP and HTTP Sessions)"
-            logger.info(msg)
-            return DefaultWebSessionManager()
+    # yosai omits session_mode logic, and so doesn't need create_session_manager
 
     # overridden:
     def create_session_context(self, subject_context):
@@ -200,7 +188,7 @@ class DefaultWebSecurityManager(NativeSecurityManager,
 
     def remove_identity(self, subject):
         try:
-            subject.web_registry.remove_identity()
+            del subject.web_registry.remember_me  # descriptor sets to None
         except AttributeError:  # then it's not a WebSubject
             pass
 
@@ -248,9 +236,9 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         except AttributeError:
             if logger.getEffectiveLevel() <= logging.DEBUG:
                 msg = ("Subject argument is not an HTTP-aware instance.  This "
-                       "is required to obtain a wsgi request and response in "
-                       "order to set the rememberMe cookie. Returning immediately "
-                       "and ignoring rememberMe operation.")
+                       "is required to obtain a web registry in order to"
+                       "set the RememberMe cookie. Returning immediately "
+                       "and ignoring RememberMe operation.")
                 logger.debug(msg)
             return
 
@@ -283,10 +271,10 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         value, and returns the resulting byte array.
 
         The ``subject_context`` instance is expected to be a ``WebSubjectContext``
-        instance with an HTTP Request/Response pair so that an HTTP cookie may be
+        instance with a web_registry so that an HTTP cookie may be
         retrieved from an incoming request.  If it is not a ``WebSubjectContext``
-        or is one yet does not have an HTTP Request/Response pair, this
-        implementation returns None.
+        or is one yet does not have a web_registry, this implementation returns
+        None.
 
         :param subject_context: the contextual data, usually provided by a
                                 ``SubjectBuilder`` implementation, that is being
