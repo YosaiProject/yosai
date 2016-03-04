@@ -27,22 +27,16 @@ from yosai.core import (
 )
 
 from yosai.web import (
-    CookieRememberMeManager,
     DefaultWebSessionContext,
     DefaultWebSessionStorageEvaluator,
     DefaultWebSessionManager,
     DefaultWebSubjectContext,
-    SimpleCookie,
     WebDelegatingSubject,
     WebSessionKey,
-    WebSubject,
-    WebUtils,
     WSGIContainerSessionManager,
-    YosaiHttpWSGIRequest,
     web_mgt_abcs,
     web_session_abcs,
     web_subject_abcs,
-    web_wsgi_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -248,25 +242,37 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         :param serialized: the serialized bytes to be persisted
         :type serialized: bytearray
         """
-        if not WebUtils.is_http(subject):
+        try:
+            # base 64 encode it and store as a cookie:
+            self.web_registry.remember_me = base64.b64encode(serialized)
+        except AttributeError:
             if logger.getEffectiveLevel() <= logging.DEBUG:
                 msg = ("Subject argument is not an HTTP-aware instance.  This "
                        "is required to obtain a wsgi request and response in "
                        "order to set the rememberMe cookie. Returning immediately "
                        "and ignoring rememberMe operation.")
-                log.debug(msg)
+                logger.debug(msg)
             return
 
-        # base 64 encode it and store as a cookie:
-        self.web_registry.remember_me = base64.b64encode(serialized)
-
     def is_identity_removed(self, subject_context):
-        request = subject_context.resolve_wsgi_request()
-        if request:
-            removed = request.get_attribute(ShiroHttpServletRequest.IDENTITY_REMOVED_KEY)
-            return removed is not None and bool(removed)
+        try:
+            registry = subject_context.resolve_web_registry()
+            return registry.remember_me is None
+        except AttributeError:
+            return False
 
-        return False
+    def ensure_padding(self, base64):
+        """
+        Sometimes a user agent will send the rememberMe cookie value without
+        padding, most likely because `=` is a separator in the cookie header.
+
+        :param base64: the base64 encoded String that may need to be padded
+        :returns: the base64 String, padded if necessary
+        """
+
+        pad = b'=' * (((~len(base64)) + 1) & 3)
+        base64 = base64 + pad
+        return base64
 
     def get_remembered_serialized_identity(self, subject_context):
         """
@@ -289,33 +295,27 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         :returns: a previously serialized identity bytearray or None if the byte
                   array could not be acquired
         """
-
-        if not WebUtils.is_http(subject_context):
-            if logger.getEffectiveLevel() <= logging.DEBUG:
-                msg = ("SubjectContext argument is not an HTTP-aware instance. "
-                       "This is required to obtain a wsgi request and response "
-                       "in order to retrieve the rememberMe cookie. Returning "
-                       "immediately and ignoring rememberMe operation.")
-                logger.debug(msg)
+        if (self.is_identity_removed(subject_context)):
+            if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
+                if logger.getEffectiveLevel() <= logging.DEBUG:
+                    msg = ("SubjectContext argument is not an HTTP-aware instance. "
+                           "This is required to obtain a web registry "
+                           "in order to retrieve the RememberMe cookie. Returning "
+                           "immediately and ignoring rememberMe operation.")
+                    logger.debug(msg)
 
             return None
 
-        wsc = subject_context
-        if (self.is_identity_removed(wsc)):
-            return None
+        base64_rememberme = self.web_registry.remember_me
 
-        request = WebUtils.get_http_request(wsc)
-        response = WebUtils.get_http_response(wsc)
-
-        base64 = self.cookie.read_value(request, response)
-
+        # TBD:
         # Browsers do not always remove cookies immediately
         # ignore cookies that are scheduled for removal
-        if (web_wsgi_abcs.Cookie.DELETED_COOKIE_VALUE.equals(base64)):
-            return None
+        # if (web_wsgi_abcs.Cookie.DELETED_COOKIE_VALUE.equals(base64)):
+        #     return None
 
-        if base64:
-            base64 = self.ensure_padding(base64)
+        if base64_rememberme:
+            base64 = self.ensure_padding(base64_rememberme)
 
             if logger.getEffectiveLevel() <= logging.DEBUG:
                 logger.debug("Acquired Base64 encoded identity [" + base64 + "]")
@@ -332,45 +332,17 @@ class CookieRememberMeManager(AbstractRememberMeManager):
             # no cookie set - new site visitor?
             return None
 
-    # DG:  this should be refactored (TBD):
-    def forget_identity(self, subject=None, subject_context=None,
-                        request=None, response=None):
+    #    Currently, both subject and subject_context serving any function
+    #    after porting to Python (TBD):
+    def forget_identity(self, subject=None, subject_context=None):
         """
-        Removes the 'rememberMe' cookie from the associated ``WebSubject``'s,
-        ``WebSubjectContext``'s request/response pair, or from the actual pair.
-
-        The ``subject`` instance is expected to be a ``WebSubject`` instance with
-        an HTTP Request/Response pair. If it is not a ``WebSubject`` or that
-        ``WebSubject`` does not have an HTTP Request/Response pair, this
-        implementation does nothing.
-
-        The ``subject_context`` instance is expected to be a ``WebSubjectContext``
-        instance with an HTTP Request/Response pair.  If it is not a ``WebSubjectContext``
-        or that ``WebSubjectContext`` does not have an HTTP Request/Response pair,
-        this implementation does nothing.
+        Removes the 'rememberMe' cookie from the WebRegistry.
 
         :param subject: the subject instance for which identity data should be
                         forgotten from the underlying persistence
 
         :param subject_context: the contextual data, usually provided by a
                                 ``SubjectBuilder`` implementation
-
-        :param request:  the incoming HTTP wsgi request
-        :param response: the outgoing HTTP wsgi response
         """
-        if subject:
-            if WebUtils.is_http(subject):
-                request = WebUtils.get_http_request(subject)
-                response = WebUtils.get_http_response(subject)
-                self.forget_identity(request, response)
-            return
 
-        if subject_context:
-            if WebUtils.is_http(subject_context):
-                request = WebUtils.get_http_request(subject_context)
-                response = WebUtils.get_http_response(subject_context)
-                self.forget_identity(request, response)
-            return
-
-        # otherwise, assume the args are request/response:
-        self.cookie.remove_from(request, response)
+        del self.web_registry.remember_me  # no use of subject data (TBD)

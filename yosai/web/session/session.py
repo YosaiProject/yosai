@@ -266,7 +266,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
             session_key = WebSessionKey(session.session_id, request, response)
             return DelegatingSession(self, session_key)
 
-        if not WebUtils.is_web(session_key=session_key):
+        if not self.web_registry:  # presumably not dealing with a web request
             return super().create_exposed_session(session=session,
                                                   session_key=session_key)
 
