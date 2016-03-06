@@ -23,14 +23,14 @@ from yosai.core import (
     DefaultSessionContext,
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
+    DelegatingSession,
     IllegalArgumentException,
     InvalidSessionException,
     session_abcs,
 )
 
 from yosai.web import (
-    WebUtils,
-    web_utils_abcs,
+    web_session_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -95,186 +95,52 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
                 not isinstance(self.session_manager, session_abcs.NativeSessionManager)):
             return False
 
-        return WebUtils._is_session_creation_enabled(subject)  # DG:  TBD, refactor?
+        web_registry = subject.web_registry
+
+        return web_registry.session_creation_enabled
 
 
-class DefaultWebSessionManager(DefaultNativeSessionManager,
-                               web_session_abcs.WebSessionManager):
+class DefaultWebSessionManager(DefaultNativeSessionManager):
 
     """
-    Web-application capable SessionManager implementation
+    Web-application capable SessionManager implementation.  Initialize it
+    with a ``WebRegistry`` so that it may create/remove/update/read a session_id
+    cookie.
     """
 
-    def __init__(self):
-
-        sessionidname = web_session_abcs.YosaiHttpSession.DEFAULT_SESSION_ID_NAME
-        cookie = SimpleCookie(sessionidname)
-        cookie.http_only = True # more secure, protects against XSS attacks
-        self.session_id_cookie = cookie
-        self.session_id_cookie_enabled = True
+    def __init__(self, web_registry):
+        super().__init__()
+        self.web_registry = web_registry
 
     @property
-    def session_id_name(self):
-        try:
-            name = self.session_id_cookie.name
-        except AttributeError:
-            name = None
-
-        if not name:
-            return web_session_abcs.YosaiHttpSession.DEFAULT_SESSION_ID_NAME
-
-        return name
-
-
-    @property
-    def is_session_id_cookie_enabled(self):
-        return sessionIdCookieEnabled
-
-    def store_session_id(self, current_id, request, response):
-        """
-        :type currentId: String
-        :type request: HttpWSGIRequest
-        :type response: HttpWSGIResponse
-        """
-        template = self.session_id_cookie
-        cookie = SimpleCookie(template)
-
-        cookie.set_value(current_id)
-        cookie.save_to(request, response)
-
-        logger.debug("Set session ID cookie for session with id " + str(current_id))
-
-    def remove_session_id_cookie(self, request, response):
-        self.session_id_cookie.remove_from(request, response)
-
-    def get_session_id_cookie_value(self, request, response):
+    def session_id(self):
         if not self.is_session_id_cookie_enabled:
             msg = ("Session ID cookie is disabled - session id will not be "
                    "acquired from a request cookie.")
             logger.debug(msg)
             return None
 
-        if not isinstance(request, HttpWSGIRequest):
-            msg = ("Current request is not an HttpWSGIRequest - cannot get "
-                   "session ID cookie.  Returning None.")
-            logger.debug(msg)
-            return None
+        return self.web_registry.session_id
 
-        response = WebUtils.to_http(response)
-        return self.session_id_cookie.read_value(request, response)
-
-    def get_referenced_session_id(self, request, response):
-
-        session_id = self.get_session_id_cookie_value(request, response)
-        if session_id:
-            request.set_attribute(web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_ID_SOURCE,
-                                  web_session_abcs.YosaiHttpWSGIRequest.COOKIE_SESSION_ID_SOURCE)
-        else:
-            # not in a cookie, or cookie is disabled - try the request URI as a
-            # fallback (i.e. due to URL rewriting):
-
-            # try the URI path segment parameters first:
-            session_name = web_session_abcs.YosaiHttpSession.DEFAULT_SESSION_ID_NAME
-            session_id = self.get_uri_path_segment_param_value(request,
-                                                               session_name)
-
-            if not session_id:
-                # not a URI path segment parameter, try the query parameters:
-                name = self.session_id_name
-                session_id = request.get_parameter(name)
-                if not session_id:
-                    # try lowercase:
-                    session_id = request.get_parameter(name.lower())
-
-            if session_id:
-                ref_src = web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_ID_SOURCE
-                url_src = web_session_abcs.YosaiHttpWSGIRequest.URL_SESSION_ID_SOURCE
-                request.set_attribute(ref_src, url_src)
-
-        if session_id:
-            ref_id = web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_ID
-            request.set_attribute(ref_id, session_id)
-
-            # Automatically mark it valid here.  If it is invalid, the
-            # on_unknown_session method below will be invoked and we'll remove
-            # the attribute at that time.
-            ref_isvalid = web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_ID_IS_VALID
-            request.set_attribute(ref_isvalid, True)
-
-        return session_id
-
-    # DG:  this will require refactoring (TBD)
-    def get_uri_path_segment_param_value(self, request, param_name):
-        """
-        :type request: WSGIRequest
-        :type param_name: String
-        """
-
-        if not isinstance(wsgi_request, HttpWSGIRequest):
-            return None
-
-        uri = request.request_uri
-
-        if uri is None:
-            return None
-
-        try:
-            # try to get rid of the query string
-            uri = uri[:uri.index('?')]
-        except ValueError:
-            pass
-
-        try:
-            index = uri.index(';')
-        except ValueError:
-            # no path segment params - return
-            return None
-
-        # there are path segment params, so let's get the last one that
-        # may exist:
-
-        # uri now contains only the path segment params
-        uri = uri[(index + 1):]
-
-        token = param_name + "="
-        # we only care about the last param (SESSIONID):
-        index = uri.rfind(token)
-        if (index < 0):
-            # no segment param:
-            return None
-
-        uri = uri[index + len(token):]
-
-        try:
-            # strip off any remaining segment params:
-            index = uri.index(';')
-            uri = uri[0:index]
-        except:
-            pass
-
-        # what remains is the value:
-        return uri
+    # yosai omits get_referenced_session_id method
 
     def create_exposed_session(self, session, session_context=None, session_key=None):
-        if session_context:
-            if not WebUtils.is_web(session_context=session_context):
-                return super().create_exposed_session(session=session,
-                                                      session_context=session_context)
-
-            request = WebUtils.get_request(session_context)
-            response = WebUtils.get_response(session_context)
-            session_key = WebSessionKey(session.session_id, request, response)
-            return DelegatingSession(self, session_key)
 
         if not self.web_registry:  # presumably not dealing with a web request
             return super().create_exposed_session(session=session,
                                                   session_key=session_key)
 
-        request = WebUtils.get_request(session_key)
-        response = WebUtils.get_response(session_key)
-        session_key = WebSessionKey(session.session_id, request, response)
-        return DelegatingSession(self, session_key)
+        session_key = WebSessionKey(self.web_registry, session.session_id)
 
+        if session_context:
+            try:
+                return super().create_exposed_session(session=session,
+                                                      session_context=session_context)
+            except AttributeError:
+                pass
+
+        # otherwise, assume we are dealing with a Web-enabled request
+        return DelegatingSession(self, session_key)
 
     # overridden
     def on_start(self, session, session_context):
@@ -285,41 +151,28 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
         :param session: the session that was just ``createSession`` created
         """
         super().on_start(session, session_context)
-
-        if not WebUtils.is_http(session_context):
-            msg = ("SessionContext argument is not HTTP compatible or does not "
-                   "have an HTTP request/response pair. No session ID cookie"
-                   "will be set.")
-            logger.debug(msg)
-            return
-
-        request = WebUtils.get_http_request(session_context)
-        response = WebUtils.get_http_response(session_context)
+        session_id = session.session_id
 
         if self.is_session_id_cookie_enabled:
-            session_dd = session.session_id
-            self.store_session_id(session_id, request, response)
+            self.web_registry.session_id = session_id
+            logger.debug("Set SessionID cookie using id: " + str(session_id))
+
         else:
             msg = ("Session ID cookie is disabled.  No cookie has been set for "
-                   "new session with id " + str(session.session_id))
-            log.debug(msg)
-
-        sid_src = web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_ID_SOURCE
-        request.remove_attribute(sid_src)
-
-        rs_is_new = web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_IS_NEW
-        request.setAttribute(rs_is_new, True)
+                   "new session with id: " + str(session_id))
+            logger.debug(msg)
 
     # overridden
-    def get_session_id(self, session_key=None, request=None, response=None):
+    def get_session_id(self, session_key=None):
+        session_id = None
         if session_key:
             session_id = super().get_session_id(session_key)
-            if (not session_id and WebUtils.is_web(session_key)):
-                request = WebUtils.get_request(session_key)
-                response = WebUtils.get_response(session_key)
-            else:
-                return session_id
-        return get_referenced_session_id(request, response)
+        if not session_id:
+            try:
+                session_id = self.web_registry.session_id
+            except AttributeError:
+                pass
+        return session_id
 
     # overridden
     def on_expiration(self, session, ese, session_key):
@@ -341,62 +194,31 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
         if session:
             super().on_invalidation(session, ise, session_key)
 
-        request = WebUtils.get_request(session_key)
-
-        if request:
-            rsid_is_valid = web_session_abcs.YosaiHttpWSGIRequest.REFERENCED_SESSION_ID_IS_VALID
-            request.remove_attribute(rsid_is_valid)
-
-        if WebUtils.is_http(session_key)
-            msg = "Referenced session was invalid.  Removing session ID cookie."
-            logger.debug(msg)
-            self.remove_session_id_cookie(WebUtils.get_http_request(session_key),
-                                          WebUtils.get_http_response(sessionkey))
-        else:
-            msg = ("SessionKey argument is not HTTP compatible or does not have"
-                   "an HTTP request/response pair. Session ID cookie will not "
-                   "be removed due to invalidated session.")
-            logger.debug(msg)
+        del self.web_registry.session_id
 
     # overridden
     def on_stop(self, session, session_key):
         super().on_stop(session, session_key)
-        if WebUtils.is_http(session_key):
-            request = WebUtils.get_http_request(session_key)
-            response = WebUtils.get_http_response(session_key)
+        try:
             msg = ("Session has been stopped (subject logout or explicit stop)."
                    "  Removing session ID cookie.")
             logger.debug(msg)
-            self.remove_session_id_cookie(request, response)
-        else:
-            msg = ("SessionKey argument is not HTTP compatible or does not have "
-                   "an HTTP request/response pair. Session ID cookie will not be"
-                   " removed due to stopped session.")
+
+            del self.web_registry.session_id
+
+        except AttributeError:
+            msg = ("Could not delete SessionID cookie.  It is likely that either"
+                   " the SessionKey argument is not Web compatible or the"
+                   " SessionManager does not have  a web registry. Session ID"
+                   " cookie will not be removed as session is stopped.")
             logger.debug(msg)
 
-    def is_wsgi_container_sessions(self):
-        """
-        This is a native session manager implementation, so this method returns
-        ``False`` always.
-        """
-        return False
 
-
-class WebSessionKey(DefaultSessionKey,
-                    web_utils_abcs.RequestPairSource):
+class WebSessionKey(DefaultSessionKey):
     """
-    A ``SessionKey`` implementation that also retains the ``WSGIRequest`` and
-    ``WSGIResponse`` associated with the web request that is performing the
-    session lookup
+    A ``SessionKey`` implementation that also retains the ``WebRegistry``
+    associated with the web request that is performing the session lookup
     """
-    def __init__(self, request, response, session_id=None):
-
-        self.wsgi_request = request
-        self.wsgi_response = response
+    def __init__(self, web_registry, session_id=None):
+        self.web_registry = web_registry
         self.session_id = session_id
-
-    def get_wsgi_request(self):
-        return self.wsgi_request
-
-    def get_wsgi_response(self):
-        return self.wsgi_response

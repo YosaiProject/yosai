@@ -88,6 +88,8 @@ Packaging
 
 -----------------------------------------------------------------------------
 
+remove the logging level checks -- not necessary in python
+
 PEP8 standardized imports:
     First group:  import stdlib modules
     Second group:  third party libs
@@ -108,3 +110,4 @@ Revise examples in documentation so to make it more clear that yosai is instanti
 once per application
 
 Investigate using the Hypothesis testing library in addition to pytest
+
