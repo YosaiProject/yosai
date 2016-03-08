@@ -102,10 +102,11 @@ class DefaultWebSecurityManager(NativeSecurityManager,
         # yosai uses the native web session manager as default, unlike Shiro,
         # which uses the middleware version instead
         self.session_manager = DefaultWebSessionManager()
+        self._web_registry = None
 
     # override base method
     def create_subject_context(self):
-        return DefaultWebSubjectContext()
+        return DefaultWebSubjectContext(web_registry=self.web_registry)
 
     @property
     def subject_store(self):
@@ -141,6 +142,16 @@ class DefaultWebSecurityManager(NativeSecurityManager,
         super_dwsm.session_manager.__set__(self, sessionmanager)
 
         self.apply_session_manager_to_sse_if_possible()
+
+    @property
+    def web_registry(self):
+        return self._web_registry
+
+    @web_registry.setter
+    def web_registry(self, webregistry):
+        self._web_registry = webregistry
+        self.remember_me_manager.web_registry = webregistry
+        self.session_manager.web_registry = webregistry
 
     def apply_session_manager_to_sse_if_possible(self):
         if isinstance(self.subject_store, DefaultSubjectStore):
@@ -203,8 +214,8 @@ class CookieRememberMeManager(AbstractRememberMeManager):
     both features for added security before setting the cookie value.
     """
 
-    def __init__(self, web_registry):
-        self._web_registry = web_registry
+    def __init__(self):
+        self._web_registry = None
 
     @property
     def web_registry(self):

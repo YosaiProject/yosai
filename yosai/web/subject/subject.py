@@ -22,6 +22,7 @@ from yosai.core import (
     DefaultSubjectContext,
     DelegatingSubject,
     IllegalStateException,
+    SecurityUtils,
     SubjectBuilder,
 )
 
@@ -77,7 +78,7 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
 class WebSubjectBuilder(SubjectBuilder):
     """
     A ``WebSubjectBuilder`` performs the same function as a ``SubjectBuilder``,
-    but additionally ensures that the web request, coordinating with the 
+    but additionally ensures that the web request, coordinating with the
     request/response objects,  is retained for use by internal Yosai components.
     """
 
@@ -199,3 +200,31 @@ class WebDelegatingSubject(DelegatingSubject,
         wsc.web_registry = self.web_registry
 
         return wsc
+
+
+class WebSecurityUtils(SecurityUtils):
+    """
+    This is a web-enabled SecurityUtils.  It is initialized using a
+    WebSecurityManager.  Unlike ``SecurityUtils``, ``WebSecurityUtils`` is
+    callable, passing it a ``WebRegistry`` instance that contains web request and
+    response objects and functionality to manage cookies.
+    """
+
+    def __init__(self, security_manager=None):
+        super().__init__(security_manager)
+
+    @property
+    def web_registry(self):
+        return self._web_registry
+
+    @web_registry.setter
+    def web_registry(self, web_registry):
+        self._web_registry = web_registry
+        self.security_manager.web_registry = web_registry
+
+    def __call__(self, web_registry):
+        self.web_registry = web_registry
+
+    def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
+        super().__exit__()
+        self.web_registry = None

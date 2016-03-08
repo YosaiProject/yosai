@@ -101,16 +101,15 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
 
 
 class DefaultWebSessionManager(DefaultNativeSessionManager):
-
     """
     Web-application capable SessionManager implementation.  Initialize it
     with a ``WebRegistry`` so that it may create/remove/update/read a session_id
     cookie.
     """
 
-    def __init__(self, web_registry):
+    def __init__(self):
         super().__init__()
-        self.web_registry = web_registry
+        self._web_registry = None
 
     @property
     def session_id(self):
@@ -122,6 +121,14 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
 
         return self.web_registry.session_id
 
+    @property
+    def web_registry(self):
+        return self._web_registry
+
+    @web_registry.setter
+    def web_registry(self, webregistry):
+        self._web_registry = webregistry
+
     # yosai omits get_referenced_session_id method
 
     def create_exposed_session(self, session, session_context=None, session_key=None):
@@ -129,8 +136,6 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         if not self.web_registry:  # presumably not dealing with a web request
             return super().create_exposed_session(session=session,
                                                   session_key=session_key)
-
-        session_key = WebSessionKey(self.web_registry, session.session_id)
 
         if session_context:
             try:
@@ -140,6 +145,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
                 pass
 
         # otherwise, assume we are dealing with a Web-enabled request
+        session_key = WebSessionKey(self.web_registry, session.session_id)
         return DelegatingSession(self, session_key)
 
     # overridden
@@ -199,19 +205,11 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     # overridden
     def on_stop(self, session, session_key):
         super().on_stop(session, session_key)
-        try:
-            msg = ("Session has been stopped (subject logout or explicit stop)."
-                   "  Removing session ID cookie.")
-            logger.debug(msg)
+        msg = ("Session has been stopped (subject logout or explicit stop)."
+               "  Removing session ID cookie.")
+        logger.debug(msg)
 
-            del self.web_registry.session_id
-
-        except AttributeError:
-            msg = ("Could not delete SessionID cookie.  It is likely that either"
-                   " the SessionKey argument is not Web compatible or the"
-                   " SessionManager does not have  a web registry. Session ID"
-                   " cookie will not be removed as session is stopped.")
-            logger.debug(msg)
+        del self.web_registry.session_id
 
 
 class WebSessionKey(DefaultSessionKey):
