@@ -46,10 +46,6 @@ class IllegalStateException(YosaiException):
     pass
 
 
-class InvalidArgumentException(YosaiException):
-    pass
-
-
 class UnavailableSecurityManagerException(YosaiException):
     pass
 

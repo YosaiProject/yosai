@@ -24,9 +24,12 @@ from yosai.core import (
     IllegalStateException,
     SecurityUtils,
     SubjectBuilder,
+    global_security_manager,
 )
 
 from yosai.web import (
+    DefaultWebSessionContext,
+    MissingWebRegistryException,
     web_subject_abcs,
 )
 
@@ -105,57 +108,61 @@ class WebSubjectBuilder(SubjectBuilder):
         :type web_registry:  WebRegistry
         """
         super().__init__(security_utils=security_utils,
-                         security_manager=None,
-                         subject_context=None,
-                         host=None,
-                         session_id=None,
-                         session=None,
-                         identifiers=None,
-                         session_creation_enabled=True,
-                         authenticated=False,
-                         **context_attributes)
+                         security_manager=security_manager,
+                         subject_context=subject_context,
+                         host=host,
+                         session_id=session_id,
+                         session=session,
+                         identifiers=identifiers,
+                         session_creation_enabled=session_creation_enabled,
+                         authenticated=authenticated,
+                         context_attributes=context_attributes)
 
-        self.subject_context.web_registry = web_registry
         self.web_registry = web_registry
 
-        # using properties, for consistency:
-        @property
-        def web_registry(self):
-            return self._web_registry
+    def resolve_subject_context(self):
+        super().resolve_subject_context()
+        self.subject_context.web_registry = self.web_registry
 
-        @web_registry.setter
-        def web_registry(self, web_registry):
-            self._web_registry = web_registry
+    # using properties, for consistency:
+    @property
+    def web_registry(self):
+        return self._web_registry
 
-        # overridden:
-        def new_subject_context_instance(self):
-            """
-            Overrides the parent implementation to return a new instance of a
-            ``DefaultWebSubjectContext`` to account for the additional
-            web_registry attribute
+    @web_registry.setter
+    def web_registry(self, web_registry):
+        self._web_registry = web_registry
 
-            :returns: a new instance of a ``DefaultWebSubjectContext``
-            """
-            return DefaultWebSubjectContext(web_registry=self.web_registry,
-                                            security_utils=self.security_utils)
+    # overridden:
 
-        def build_web_subject(self):
-            """
-            Returns ``super().build_subject()``, but additionally ensures that
-            the returned instance is an instance of ``WebSubject``.
+    def new_subject_context_instance(self):
+        """
+        Overrides the parent implementation to return a new instance of a
+        ``DefaultWebSubjectContext`` to account for the additional
+        web_registry attribute
 
-            :returns: a new ``WebSubject`` instance
-            """
-            subject = super().build_subject()  # in turn calls the WebSecurityManager
+        :returns: a new instance of a ``DefaultWebSubjectContext``
+        """
+        return DefaultWebSubjectContext(web_registry=self.web_registry,
+                                        security_utils=self.security_utils)
 
-            if not isinstance(subject, web_subject_abcs.WebSubject):
-                msg = ("Subject implementation returned from the SecurityManager"
-                       "was not a WebSubject implementation.  Please ensure a "
-                       "Web-enabled SecurityManager has been configured and made"
-                       "available to this builder.")
-                raise IllegalStateException(msg)
+    def build_subject(self):
+        """
+        Returns ``super().build_subject()``, but additionally ensures that
+        the returned instance is an instance of ``WebSubject``.
 
-            return subject
+        :returns: a new ``WebSubject`` instance
+        """
+        subject = super().build_subject()  # in turn calls the WebSecurityManager
+
+        if not isinstance(subject, web_subject_abcs.WebSubject):
+            msg = ("Subject implementation returned from the SecurityManager"
+                   "was not a WebSubject implementation.  Please ensure a "
+                   "Web-enabled SecurityManager has been configured and made"
+                   "available to this builder.")
+            raise IllegalStateException(msg)
+
+        return subject
 
 
 class WebDelegatingSubject(DelegatingSubject,
@@ -165,8 +172,8 @@ class WebDelegatingSubject(DelegatingSubject,
     retain a web registry
     """
     def __init__(self, identifiers, authenticated,
-                 host, session, session_enabled=True,
-                 web_registry, security_manager):
+                 host, session, web_registry, security_manager,
+                 session_enabled=True):
 
         super().__init__(identifiers, authenticated, host, session,
                          session_enabled, security_manager)
@@ -241,13 +248,15 @@ class WebSecurityUtils(SecurityUtils):
                                                 security_manager=self.security_manager,
                                                 web_registry=self.web_registry)
         except AttributeError:
-            msg = "WebSecurityUtils cannot create a  "
+            msg = "WebSecurityUtils:  WebSubjectBuilder cannot create a Subject"
             raise MissingWebRegistryException(msg)
         self._subject = subject_builder.build_subject()
 
     def __call__(self, web_registry):
         self.web_registry = web_registry
+        return self
 
     def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
-        super().__exit__()
+        self._subject = None
         self.web_registry = None
+        global_security_manager.stack.pop()

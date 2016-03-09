@@ -24,13 +24,12 @@ from yosai.core import (
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
-    IllegalArgumentException,
-    InvalidSessionException,
     session_abcs,
 )
 
 from yosai.web import (
     web_session_abcs,
+    web_subject_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -109,7 +108,8 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
             return False
 
         # non-web subject instances can't be saved to web-only session managers:
-        if (not isinstance(subject, WebSubject) and self.session_manager and
+        if (not isinstance(subject, web_subject_abcs.WebSubject) and
+            self.session_manager and
                 not isinstance(self.session_manager, session_abcs.NativeSessionManager)):
             return False
 
@@ -118,7 +118,8 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
         return web_registry.session_creation_enabled
 
 
-class DefaultWebSessionManager(DefaultNativeSessionManager):
+class DefaultWebSessionManager(DefaultNativeSessionManager,
+                               web_session_abcs.WebSessionManager):
     """
     Web-application capable SessionManager implementation.  Initialize it
     with a ``WebRegistry`` so that it may create/remove/update/read a session_id

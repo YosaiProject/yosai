@@ -17,3 +17,16 @@ class WebSessionContext(session_abcs.SessionContext):
     @abstractmethod
     def web_registry(self, web_registry):
         pass
+
+
+class WebSessionManager(session_abcs.SessionManager):
+
+    @property
+    @abstractmethod
+    def web_registry(self):
+        pass
+
+    @web_registry.setter
+    @abstractmethod
+    def web_registry(self, web_registry):
+        pass

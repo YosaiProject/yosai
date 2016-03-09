@@ -7,6 +7,5 @@ class YosaiWebException(YosaiException):
     pass
 
 
-class WSGIException(YosaiWebException):
+class MissingWebRegistryException(YosaiWebException):
     pass
-

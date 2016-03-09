@@ -32,14 +32,9 @@ from yosai.web.utils import abcs as web_abcs  # since it is the primary api
 
 from .exceptions import (
     YosaiWebException,
-    WSGIException,
+    MissingWebRegistryException,
 )
 
-from yosai.web.mgt.mgt import (
-    DefaultWebSubjectFactory,
-    DefaultWebSecurityManager,
-    CookieRememberMeManager,
-)
 
 from yosai.web.session.session import (
     DefaultWebSessionContext,
@@ -48,9 +43,16 @@ from yosai.web.session.session import (
     WebSessionKey,
 )
 
-from yosai.web.mgt.subject import (
+
+from yosai.web.subject.subject import (
     WebSubjectBuilder,
     DefaultWebSubjectContext,
     WebDelegatingSubject,
     WebSecurityUtils,
+)
+
+from yosai.web.mgt.mgt import (
+    DefaultWebSubjectFactory,
+    DefaultWebSecurityManager,
+    CookieRememberMeManager,
 )

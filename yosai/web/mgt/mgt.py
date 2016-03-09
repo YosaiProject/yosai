@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import base64
 import logging
 
@@ -33,7 +34,6 @@ from yosai.web import (
     DefaultWebSubjectContext,
     WebDelegatingSubject,
     WebSessionKey,
-    web_mgt_abcs,
     web_session_abcs,
     web_subject_abcs,
 )
@@ -50,13 +50,10 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
     def __init__(self):
         super().__init__()
 
-    def create_subject(self, subject_context):
-        """
-        :type subject_context:  subject_abcs.SubjectContext
-        """
+    def create_subject(self, subject_context=None):
 
-        if not isinstance(subject_context, web_mgt_abcs.WebSubjectContext):
-            return super().create_subject(subject_context)
+        if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
+            return super().create_subject(subject_context=subject_context)
 
         security_manager = subject_context.resolve_security_manager()
         session = subject_context.resolve_session()
@@ -71,42 +68,43 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
                                     authenticated=authenticated,
                                     host=host,
                                     session=session,
-                                    session_enabled=session_enabled,
                                     web_registry=web_registry,
-                                    security_manager=security_manager)
+                                    security_manager=security_manager,
+                                    session_enabled=session_enabled)
 
 
-class DefaultWebSecurityManager(NativeSecurityManager,
-                                web_mgt_abcs.WebSecurityManager):
+class DefaultWebSecurityManager(NativeSecurityManager):
     """
     This is the default ``WebSecurityManager`` implementation used in web-based
     applications or any application that requires HTTP connectivity.
+
+    - yosai omits any session_mode logic since no wsgi middleware exists (yet)
+
+    - yosai uses the native web session manager as default, unlike Shiro,
+      which uses the middleware version instead
+
+    - the security_utils attribute is set by WebSecurityUtils when the
+      SecurityManager is passed to the WebSecurityUtils
+
     """
 
-    def __init__(self, realms=None, session_attributes_schema=None):
+    def __init__(self,
+                 realms=None,
+                 cache_handler=None,
+                 session_attributes_schema=None):
         """
         :type realms: tuple
         :type session_attributes_schema: marshmallow.Schema
         """
         super().__init__(realms=realms,
-                         session_attributes_schema=session_attributes_schema)
+                         cache_handler=cache_handler,
+                         session_attributes_schema=session_attributes_schema,
+                         session_manager=DefaultWebSessionManager(),
+                         subject_factory=DefaultWebSubjectFactory(),
+                         remember_me_manager=CookieRememberMeManager())
 
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
-
-        # yosai omits any session_mode logic since no wsgi middleware exists, yet
-
-        self.subject_factory = DefaultWebSubjectFactory()
-
-        self.remember_me_manager = CookieRememberMeManager()
-
-        # yosai uses the native web session manager as default, unlike Shiro,
-        # which uses the middleware version instead
-        self.session_manager = DefaultWebSessionManager()
-
         self._web_registry = None
-
-        # the security_utils attribute is set by WebSecurityUtils when the
-        # SecurityManager is passed to the WebSecurityUtils
 
     # override base method
     def create_subject_context(self):
@@ -114,17 +112,8 @@ class DefaultWebSecurityManager(NativeSecurityManager,
                                         security_utils=self.security_utils)
 
     @property
-    def subject_store(self):
-        return self._subject_store
-
-    @subject_store.setter
-    def subject_store(self, subject_store):
-        self._subject_store = subject_store
-        self.apply_session_manager_to_sse_if_possible()
-
-    @property
     def session_manager(self):
-        return self.session_manager  # inherited
+        return self._session_manager  # inherited
 
     # extends the property of the parent:
     @session_manager.setter
@@ -146,7 +135,8 @@ class DefaultWebSecurityManager(NativeSecurityManager,
         super_dwsm = super(DefaultWebSecurityManager, DefaultWebSecurityManager)
         super_dwsm.session_manager.__set__(self, sessionmanager)
 
-        self.apply_session_manager_to_sse_if_possible()
+        evaluator = self.subject_store.session_storage_evaluator
+        evaluator.session_manager = sessionmanager
 
     @property
     def web_registry(self):
@@ -157,12 +147,6 @@ class DefaultWebSecurityManager(NativeSecurityManager,
         self._web_registry = webregistry
         self.remember_me_manager.web_registry = webregistry
         self.session_manager.web_registry = webregistry
-
-    def apply_session_manager_to_sse_if_possible(self):
-        if isinstance(self.subject_store, DefaultSubjectStore):
-            evaluator = self.subject_store.session_storage_evaluator
-            if isinstance(evaluator, DefaultWebSessionStorageEvaluator):
-                evaluator.session_manager = self.session_manager
 
     # overidden parent method
     def copy(self, subject_context):

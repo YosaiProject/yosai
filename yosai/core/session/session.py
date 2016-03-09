@@ -1138,7 +1138,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         """
         session_id = session_key.session_id
         msg = ("do_get_session: Attempting to retrieve session with key " +
-               session_id)
+               str(session_id))
         logger.debug(msg)
 
         session = self._retrieve_session(session_key)

@@ -412,12 +412,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.credential_resolver = credential_resolver
         self.permission_resolver = permission_resolver
         self.role_resolver = role_resolver
+        self.subject_store = subject_store
         self.session_manager = session_manager
         self.realms = realms
         self.authenticator = authenticator
         self.authorizer = authorizer
         self.remember_me_manager = remember_me_manager
-        self.subject_store = subject_store
         self.subject_factory = subject_factory
 
         if session_attributes_schema:
@@ -772,7 +772,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :returns:  the Subject instance that represents the context and session
                    data for the newly authenticated subject
         """
-
         if subject_context is None:
             context = self.create_subject_context()
 

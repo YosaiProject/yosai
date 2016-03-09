@@ -1116,20 +1116,29 @@ class SubjectBuilder:
         else:
             self.security_manager = security_manager
 
-        if subject_context is None:
+        self.subject_context = subject_context
+        self.host = host
+        self.session_id = session_id
+        self.session = session
+        self.identifiers = identifiers
+        self.session_creation_enabled = session_creation_enabled
+        self.authenticated = authenticated
+        self.context_attributes = context_attributes
+
+    # new to yosai:
+    def resolve_subject_context(self):
+        if self.subject_context is None:
             self.subject_context = self.new_subject_context_instance()
             self.subject_context.security_manager = self.security_manager
-            self.subject_context.host = host
-            self.subject_context.session_id = session_id
-            self.subject_context.session = session
-            self.subject_context.identifiers = identifiers
-            self.subject_context.session_creation_enabled = session_creation_enabled
-            self.subject_context.authenticated = authenticated
+            self.subject_context.host = self.host
+            self.subject_context.session_id = self.session_id
+            self.subject_context.session = self.session
+            self.subject_context.identifiers = self.identifiers
+            self.subject_context.session_creation_enabled = self.session_creation_enabled
+            self.subject_context.authenticated = self.authenticated
 
-            for key, val in context_attributes.items():
+            for key, val in self.context_attributes.items():
                 self.context_attribute(key, val)
-        else:
-            self.subject_context = subject_context
 
     # DG: this is needed as it is overridden by subclasses:
     def new_subject_context_instance(self):
@@ -1166,6 +1175,7 @@ class SubjectBuilder:
             self.subject_context.put(attribute_key, attribute_value)
 
     def build_subject(self):
+        self.resolve_subject_context()
         return self.security_manager.create_subject(subject_context=self.subject_context)
 
 
