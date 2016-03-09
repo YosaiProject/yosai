@@ -42,11 +42,12 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
 
     WEB_REGISTRY = "DefaultWebSubjectContext.WEB_REGISTRY"
 
-    def __init__(self, subject_context):
+    def __init__(self, web_registry, security_utils, context={}):
         """
         :subject_context:  WebSubjectContext
         """
-        super().__init__(subject_context)
+        super().__init__(security_utils=security_utils, context=context)
+        self.web_registry = web_registry
 
     # overridden:
     def resolve_host(self):
@@ -85,6 +86,7 @@ class WebSubjectBuilder(SubjectBuilder):
     def __init__(self,
                  security_utils,
                  security_manager=None,
+                 web_registry=None,
                  subject_context=None,
                  host=None,
                  session_id=None,
@@ -92,7 +94,6 @@ class WebSubjectBuilder(SubjectBuilder):
                  identifiers=None,
                  session_creation_enabled=True,
                  authenticated=False,
-                 web_registry=None,
                  **context_attributes):
         """
         Constructs a new ``WebSubjectBuilder`` instance using the ``SecurityManager``
@@ -115,6 +116,16 @@ class WebSubjectBuilder(SubjectBuilder):
                          **context_attributes)
 
         self.subject_context.web_registry = web_registry
+        self.web_registry = web_registry
+
+        # using properties, for consistency:
+        @property
+        def web_registry(self):
+            return self._web_registry
+
+        @web_registry.setter
+        def web_registry(self, web_registry):
+            self._web_registry = web_registry
 
         # overridden:
         def new_subject_context_instance(self):
@@ -125,7 +136,8 @@ class WebSubjectBuilder(SubjectBuilder):
 
             :returns: a new instance of a ``DefaultWebSubjectContext``
             """
-            return DefaultWebSubjectContext(self.security_utils)
+            return DefaultWebSubjectContext(web_registry=self.web_registry,
+                                            security_utils=self.security_utils)
 
         def build_web_subject(self):
             """
@@ -158,16 +170,16 @@ class WebDelegatingSubject(DelegatingSubject,
 
         super().__init__(identifiers, authenticated, host, session,
                          session_enabled, security_manager)
-        self._web_registry = web_registry
+        self.web_registry = web_registry
 
     # property is required for interface enforcement:
     @property
     def web_registry(self):
         return self._web_registry
 
-    @property
-    def web_registry(self):
-        return self._web_registry
+    @web_registry.setter
+    def web_registry(self, web_registry):
+        self._web_registry = web_registry
 
     # overridden
     @property
@@ -191,13 +203,11 @@ class WebDelegatingSubject(DelegatingSubject,
 
     # overridden
     def create_session_context(self):
-        wsc = DefaultWebSessionContext()
+        wsc = DefaultWebSessionContext(web_registry=self.web_registry)
 
         host = self.host
         if host:
-            wsc.host = host
-
-        wsc.web_registry = self.web_registry
+            wsc.host = host  # parent class puts it into the context map
 
         return wsc
 
@@ -221,6 +231,19 @@ class WebSecurityUtils(SecurityUtils):
     def web_registry(self, web_registry):
         self._web_registry = web_registry
         self.security_manager.web_registry = web_registry
+
+    # overridden:
+    def load_subject(self):
+        # there should always be a web_registry at this moment, so propagate
+        # an exception if that is not the case:
+        try:
+            subject_builder = WebSubjectBuilder(security_utils=self,
+                                                security_manager=self.security_manager,
+                                                web_registry=self.web_registry)
+        except AttributeError:
+            msg = "WebSecurityUtils cannot create a  "
+            raise MissingWebRegistryException(msg)
+        self._subject = subject_builder.build_subject()
 
     def __call__(self, web_registry):
         self.web_registry = web_registry

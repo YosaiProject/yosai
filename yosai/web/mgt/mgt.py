@@ -33,7 +33,6 @@ from yosai.web import (
     DefaultWebSubjectContext,
     WebDelegatingSubject,
     WebSessionKey,
-    WSGIContainerSessionManager,
     web_mgt_abcs,
     web_session_abcs,
     web_subject_abcs,
@@ -97,16 +96,22 @@ class DefaultWebSecurityManager(NativeSecurityManager,
         # yosai omits any session_mode logic since no wsgi middleware exists, yet
 
         self.subject_factory = DefaultWebSubjectFactory()
+
         self.remember_me_manager = CookieRememberMeManager()
 
         # yosai uses the native web session manager as default, unlike Shiro,
         # which uses the middleware version instead
         self.session_manager = DefaultWebSessionManager()
+
         self._web_registry = None
+
+        # the security_utils attribute is set by WebSecurityUtils when the
+        # SecurityManager is passed to the WebSecurityUtils
 
     # override base method
     def create_subject_context(self):
-        return DefaultWebSubjectContext(web_registry=self.web_registry)
+        return DefaultWebSubjectContext(web_registry=self.web_registry,
+                                        security_utils=self.security_utils)
 
     @property
     def subject_store(self):

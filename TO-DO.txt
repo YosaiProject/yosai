@@ -6,7 +6,7 @@ regarding copyright ownership.  The ASF licenses this file
 to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
- 
+
     http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
@@ -17,11 +17,9 @@ specific language governing permissions and limitations
 under the License.
 """
 
-refactoring shiro thread-based concurrency to an appropriate concurrency 
-solution in python
-    - porting callables, runnables, etc (used in DelegatingSubject)
-
-add semantic versioning to Yosai
+refactoring shiro thread-based concurrency to an appropriate concurrency
+    - alternative concurrency solution in python:
+        - porting callables, runnables, etc (used in DelegatingSubject)
 
 add the "fingerprint" attribute wherever the host attribute is currently captured
 
@@ -55,7 +53,7 @@ add excessive-login-attempts logic:
 
 ---------------------------------------------------------------------
 
-create a ContextFactory to replace the piecemeal xxxSettings classes that 
+create a ContextFactory to replace the piecemeal xxxSettings classes that
 interface with yosai settings
 
 porting functionality provided by servlet web-filter facility to pythonic decorators
@@ -71,7 +69,7 @@ create a SimpleAuthorizer, which maintains only ONE authorizing realm
 
 within the ModularAuthorizer, keep a mapping in memory between identifier and realm
 
-a sessionexecutor raises expired session events, which are received by the 
+a sessionexecutor raises expired session events, which are received by the
 Authorizer and then relayed to the realm to clear cache
 
 an expired session clears authorization and session cache
@@ -110,4 +108,3 @@ Revise examples in documentation so to make it more clear that yosai is instanti
 once per application
 
 Investigate using the Hypothesis testing library in addition to pytest
-

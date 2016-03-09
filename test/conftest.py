@@ -16,6 +16,13 @@ from yosai.core import (
     UsernamePasswordToken,
     event_bus,
 )
+
+from yosai.web import (
+    DefaultWebSecurityManager,
+    WebSecurityUtils,
+)
+
+
 from yosai_dpcache.cache import DPCacheHandler
 from yosai_alchemystore import (
     AlchemyAccountStore,
@@ -24,6 +31,13 @@ from yosai_alchemystore import (
     init_session,
 )
 
+from .doubles import (
+    MockWebRegistry,
+)
+
+# -----------------------------------------------------------------------------
+# Core Fixtures
+# -----------------------------------------------------------------------------
 
 @pytest.fixture(scope='session')
 def session(request):
@@ -128,7 +142,7 @@ def configured_securityutils(native_security_manager, yosai):
 
 
 @pytest.fixture(scope='session')
-def native_security_manager(account_store_realm, cache_handler, 
+def native_security_manager(account_store_realm, cache_handler,
                             yosai):
 
     class AttributesSchema(Schema):
@@ -138,8 +152,40 @@ def native_security_manager(account_store_realm, cache_handler,
                                 session_attributes_schema=AttributesSchema)
     nsm.cache_handler = cache_handler
     nsm.event_bus = event_bus
-    yosai.security_manager = nsm
+    yosai.security_manager = nsm  # why is this here?  TBD.
 
     return nsm
 
 
+# -----------------------------------------------------------------------------
+# Web Fixtures
+# -----------------------------------------------------------------------------
+
+@pytest.fixture(scope='session')
+def mock_web_registry():
+    return MockWebRegistry()
+
+
+@pytest.fixture(scope='session')
+def web_yosai():
+    return WebSecurityUtils()
+
+
+@pytest.fixture(scope='session')
+def web_security_manager(account_store_realm, cache_handler):
+
+    class AttributesSchema(Schema):
+        name = fields.String()
+
+    wsm = DefaultWebSecurityManager(realms=(account_store_realm,),
+                                    session_attributes_schema=AttributesSchema)
+    wsm.cache_handler = cache_handler
+    wsm.event_bus = event_bus
+
+    return wsm
+
+
+@pytest.fixture(scope='session')
+def configured_web_securityutils(web_security_manager, web_yosai):
+    yosai.security_manager = web_security_manager
+    return yosai

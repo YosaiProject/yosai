@@ -36,6 +36,24 @@ from yosai.web import (
 logger = logging.getLogger(__name__)
 
 
+class DefaultWebSessionContext(DefaultSessionContext,
+                               web_session_abcs.WebSessionContext):
+
+    WEB_REGISTRY = "DefaultWebSessionContext.WEB_REGISTRY"
+
+    def __init__(self, web_registry, context_map=None):
+        super().__init__(context_map=context_map)
+        self.web_registry = web_registry
+
+    @property
+    def web_registry(self):
+        return self.get(self.__class__.WEB_REGISTRY)
+
+    @web_registry.setter
+    def web_registry(self, webregistry):
+        self.put(self.__class__.WEB_REGISTRY, webregistry)
+
+
 class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
     """
     A web-specific ``SessionStorageEvaluator`` that performs the same logic as

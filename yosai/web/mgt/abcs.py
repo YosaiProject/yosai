@@ -22,9 +22,6 @@ from yosai.core import (
     mgt_abcs,
     session_abcs,
 )
-from yosai.web import (
-    web_util_abcs,
-)
 
 from abc import abstractmethod
 
@@ -49,8 +46,7 @@ class WebSecurityManager(mgt_abcs.SecurityManager):
         pass
 
 
-class WebSessionContext(session_abcs.SessionContext,
-                        web_util_abcs.RequestPairSource):
+class WebSessionContext(session_abcs.SessionContext):
     """
      A ```WebSubjectContext`` is a ``SessionContext`` that additionally
      provides methods to set and retrieve a ``WSGIRequest`` and ``WSGIResponse``,
@@ -58,8 +54,8 @@ class WebSessionContext(session_abcs.SessionContext,
     construction of web-initiated {@code Session} instances.
     """
 
-    @abstractmethod
     @property
+    @abstractmethod
     def wsgi_request(self):
         """
         Returns the ``WSGIRequest`` received by the wsgi container triggering
@@ -67,8 +63,8 @@ class WebSessionContext(session_abcs.SessionContext,
         """
         pass
 
-    @abstractmethod
     @wsgi_request.setter
+    @abstractmethod
     def wsgi_request(self, request):
         """
         Sets the ``WSGIRequest`` received by the wsgi container triggering the
@@ -79,8 +75,8 @@ class WebSessionContext(session_abcs.SessionContext,
         """
         pass
 
-    @abstractmethod
     @property
+    @abstractmethod
     def wsgi_response(self):
         """
         The paired ``WSGIResponse`` corresponding to the associated
@@ -91,8 +87,8 @@ class WebSessionContext(session_abcs.SessionContext,
         """
         pass
 
-    @abstractmethod
     @wsgi_response.setter
+    @abstractmethod
     def wsgi_response(self, response):
         """
         Sets the paired ``WSGIResponse`` corresponding to the associated
