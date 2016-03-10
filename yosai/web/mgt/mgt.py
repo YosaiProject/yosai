@@ -32,7 +32,6 @@ from yosai.web import (
     DefaultWebSubjectContext,
     WebDelegatingSubject,
     WebSessionKey,
-    web_session_abcs,
     web_subject_abcs,
 )
 

@@ -108,3 +108,7 @@ Revise examples in documentation so to make it more clear that yosai is instanti
 once per application
 
 Investigate using the Hypothesis testing library in addition to pytest
+
+Way too much interaction with cache -- need to optimize cache i/o.
+
+

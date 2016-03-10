@@ -1040,6 +1040,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
             raise SessionEventException(msg)
 
 
+# 5 monopoly dollars to the person who helps me rename this:
 class DefaultNativeSessionHandler(session_abcs.SessionHandler,
                                   event_abcs.EventBusAware):
 
@@ -1365,8 +1366,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
         # Don't expose the EIS-tier Session object to the client-tier, but
         # rather a DelegatingSession:
-        return self.create_exposed_session(session=session,
-                                           session_context=session_context)
+        return self.create_exposed_session(session=session, context=session_context)
 
     def stop(self, session_key, identifiers):
         session = self._lookup_required_session(session_key)

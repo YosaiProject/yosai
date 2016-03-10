@@ -19,6 +19,7 @@ under the License.
 import logging
 
 from yosai.core import (
+    DefaultNativeSessionHandler,
     DefaultNativeSessionManager,
     DefaultSessionContext,
     DefaultSessionKey,
@@ -118,37 +119,16 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
         return web_registry.session_creation_enabled
 
 
-class DefaultWebSessionManager(DefaultNativeSessionManager):
-    """
-    Web-application capable SessionManager implementation
-    """
-    def __init__(self):
-        super().__init__()
+class WebSessionHandler(DefaultNativeSessionHandler):
 
-    # yosai omits get_referenced_session_id method
+    def __init__(self, session_event_handler, auto_touch=True,
+                 delete_invalid_sessions=True):
 
-    def create_exposed_session(self, session, key=None, context=None):
-        """
-        This was an overloaded method ported from java that should be refactored. (TBD)
-        Until it is refactored, it is called in one of two ways:
-            1) passing it session and session_context
-            2) passing it session and session_key
-        """
+        super().__init__(session_event_handler=session_event_handler,
+                         auto_touch=auto_touch,
+                         delete_invalid_sessions=delete_invalid_sessions)
 
-        try:
-            web_registry = context.web_registry
-        except AttributeError:
-            return super().create_exposed_session(session, context=context)
-        except SyntaxError:  # implies session_context is None
-            try:
-                web_registry = key.web_registry
-            except AttributeError:
-                return super().create_exposed_session(session, key=key)
-
-        # otherwise, assume we are dealing with a Web-enabled request
-        session_key = WebSessionKey(session_id=session.session_id,
-                                    web_registry=web_registry)
-        return DelegatingSession(self, session_key)
+        self.is_session_id_cookie_enabled = True
 
     # overridden
     def on_start(self, session, session_context):
@@ -171,6 +151,51 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
             msg = ("Session ID cookie is disabled.  No cookie has been set for "
                    "new session with id: " + str(session_id))
             logger.debug(msg)
+
+    # overridden
+    def on_stop(self, session, session_key):
+        super().on_stop(session, session_key)
+        msg = ("Session has been stopped (subject logout or explicit stop)."
+               "  Removing session ID cookie.")
+        logger.debug(msg)
+
+        web_registry = session_key.web_registry
+
+        del web_registry.session_id
+
+
+class DefaultWebSessionManager(DefaultNativeSessionManager):
+    """
+    Web-application capable SessionManager implementation
+    """
+    def __init__(self):
+        super().__init__()  # this initializes a session_event_handler
+        self.session_handler = \
+            WebSessionHandler(session_event_handler=self.session_event_handler)
+
+    # yosai omits get_referenced_session_id method
+
+    def create_exposed_session(self, session, key=None, context=None):
+        """
+        This was an overloaded method ported from java that should be refactored. (TBD)
+        Until it is refactored, it is called in one of two ways:
+            1) passing it session and session_context
+            2) passing it session and session_key
+        """
+        try:
+            web_registry = context.web_registry
+        except AttributeError:
+            return super().create_exposed_session(session, context=context)
+        except SyntaxError:  # implies session_context is None
+            try:
+                web_registry = key.web_registry
+            except AttributeError:
+                return super().create_exposed_session(session, key=key)
+
+        # otherwise, assume we are dealing with a Web-enabled request
+        session_key = WebSessionKey(session_id=session.session_id,
+                                    web_registry=web_registry)
+        return DelegatingSession(self, session_key)
 
     # overridden
     def get_session_id(self, session_key=None, web_registry=None):
@@ -211,17 +236,6 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
 
         del web_registry.session_id
 
-    # overridden
-    def on_stop(self, session, session_key):
-        super().on_stop(session, session_key)
-        msg = ("Session has been stopped (subject logout or explicit stop)."
-               "  Removing session ID cookie.")
-        logger.debug(msg)
-
-        web_registry = session_key.web_registry
-
-        del web_registry.session_id
-
 
 class WebSessionKey(DefaultSessionKey):
     """
@@ -231,3 +245,7 @@ class WebSessionKey(DefaultSessionKey):
     def __init__(self, session_id=None, web_registry=None):
         self.session_id = session_id
         self.web_registry = web_registry
+
+    def __repr__(self):
+        return "WebSessionKey(session_id={0}, web_registry={1})".\
+            format(self.session_id, self.web_registry)
