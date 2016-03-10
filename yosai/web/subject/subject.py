@@ -77,6 +77,7 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
             except AttributeError:  # implies that it's not a WebSubject
                 return None
 
+        return registry
 
 # yosai renamed:
 class WebSubjectBuilder(SubjectBuilder):
@@ -175,8 +176,13 @@ class WebDelegatingSubject(DelegatingSubject,
                  host, session, web_registry, security_manager,
                  session_enabled=True):
 
-        super().__init__(identifiers, authenticated, host, session,
-                         session_enabled, security_manager)
+        super().__init__(identifiers=identifiers,
+                         authenticated=authenticated,
+                         host=host,
+                         session=session,
+                         session_creation_enabled=session_enabled,
+                         security_manager=security_manager)
+
         self.web_registry = web_registry
 
     # property is required for interface enforcement:
@@ -205,7 +211,7 @@ class WebDelegatingSubject(DelegatingSubject,
                    request-specific override has disabled sessions for this
                    subject, False otherwise
         """
-        return (self.session_creation_enabled and
+        return (self._session_creation_enabled and
                 self.web_registry.session_creation_enabled)
 
     # overridden

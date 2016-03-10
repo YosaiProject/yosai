@@ -977,6 +977,9 @@ class DefaultSessionKey(session_abcs.SessionKey,
         except AttributeError:
             return False
 
+    def __repr__(self):
+        return "SessionKey(session_id={0})".format(self.session_id)
+
     @classmethod
     def serialization_schema(cls):
         class SerializationSchema(Schema):
@@ -1108,12 +1111,16 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
     # Session Lookup Methods
     # -------------------------------------------------------------------------
 
+    # this method is necessary because it is overridden by yosai.web:
+    def get_session_id(self, session_key):
+        return session_key.session_id
+
     def _retrieve_session(self, session_key):
         """
         :type session_key: DefaultSessionKey
         :returns: SimpleSession
         """
-        session_id = session_key.session_id
+        session_id = self.get_session_id(session_key)
         if (session_id is None):
             msg = ("Unable to resolve session ID from SessionKey [{0}]."
                    "Returning null to indicate a session could not be "
@@ -1358,7 +1365,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
         # Don't expose the EIS-tier Session object to the client-tier, but
         # rather a DelegatingSession:
-        return self.create_exposed_session(session, session_context)
+        return self.create_exposed_session(session=session,
+                                           session_context=session_context)
 
     def stop(self, session_key, identifiers):
         session = self._lookup_required_session(session_key)

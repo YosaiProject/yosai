@@ -40,7 +40,7 @@ class DefaultWebSessionContext(DefaultSessionContext,
 
     WEB_REGISTRY = "DefaultWebSessionContext.WEB_REGISTRY"
 
-    def __init__(self, web_registry, context_map=None):
+    def __init__(self, web_registry, context_map={}):
         super().__init__(context_map=context_map)
         self.web_registry = web_registry
 
@@ -118,53 +118,36 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
         return web_registry.session_creation_enabled
 
 
-class DefaultWebSessionManager(DefaultNativeSessionManager,
-                               web_session_abcs.WebSessionManager):
+class DefaultWebSessionManager(DefaultNativeSessionManager):
     """
-    Web-application capable SessionManager implementation.  Initialize it
-    with a ``WebRegistry`` so that it may create/remove/update/read a session_id
-    cookie.
+    Web-application capable SessionManager implementation
     """
-
     def __init__(self):
         super().__init__()
-        self._web_registry = None
-
-    @property
-    def session_id(self):
-        if not self.is_session_id_cookie_enabled:
-            msg = ("Session ID cookie is disabled - session id will not be "
-                   "acquired from a request cookie.")
-            logger.debug(msg)
-            return None
-
-        return self.web_registry.session_id
-
-    @property
-    def web_registry(self):
-        return self._web_registry
-
-    @web_registry.setter
-    def web_registry(self, webregistry):
-        self._web_registry = webregistry
 
     # yosai omits get_referenced_session_id method
 
-    def create_exposed_session(self, session, session_context=None, session_key=None):
+    def create_exposed_session(self, session, key=None, context=None):
+        """
+        This was an overloaded method ported from java that should be refactored. (TBD)
+        Until it is refactored, it is called in one of two ways:
+            1) passing it session and session_context
+            2) passing it session and session_key
+        """
 
-        if not self.web_registry:  # presumably not dealing with a web request
-            return super().create_exposed_session(session=session,
-                                                  session_key=session_key)
-
-        if session_context:
+        try:
+            web_registry = context.web_registry
+        except AttributeError:
+            return super().create_exposed_session(session, context=context)
+        except SyntaxError:  # implies session_context is None
             try:
-                return super().create_exposed_session(session=session,
-                                                      session_context=session_context)
+                web_registry = key.web_registry
             except AttributeError:
-                pass
+                return super().create_exposed_session(session, key=key)
 
         # otherwise, assume we are dealing with a Web-enabled request
-        session_key = WebSessionKey(self.web_registry, session.session_id)
+        session_key = WebSessionKey(session_id=session.session_id,
+                                    web_registry=web_registry)
         return DelegatingSession(self, session_key)
 
     # overridden
@@ -176,10 +159,12 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
         :param session: the session that was just ``createSession`` created
         """
         super().on_start(session, session_context)
+
         session_id = session.session_id
+        web_registry = session_context.web_registry
 
         if self.is_session_id_cookie_enabled:
-            self.web_registry.session_id = session_id
+            web_registry.session_id = session_id
             logger.debug("Set SessionID cookie using id: " + str(session_id))
 
         else:
@@ -188,16 +173,19 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
             logger.debug(msg)
 
     # overridden
-    def get_session_id(self, session_key=None):
+    def get_session_id(self, session_key=None, web_registry=None):
+        """
+        this should be refactored as it is a port of an overridden method (TBD)
+        """
         session_id = None
-        if session_key:
-            session_id = super().get_session_id(session_key)
-        if not session_id:
-            try:
-                session_id = self.web_registry.session_id
-            except AttributeError:
-                pass
-        return session_id
+        try:
+            session_id = session_key.session_id
+            if not session_id:
+                return session_key.web_registry.session_id
+        except SyntaxError:  # implies session_key is None
+            session_id = web_registry.session_id
+        except AttributeError:  # then not dealing with a Web-enabled object
+            return None
 
     # overridden
     def on_expiration(self, session, ese, session_key):
@@ -219,7 +207,9 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
         if session:
             super().on_invalidation(session, ise, session_key)
 
-        del self.web_registry.session_id
+        web_registry = session_key.web_registry
+
+        del web_registry.session_id
 
     # overridden
     def on_stop(self, session, session_key):
@@ -228,7 +218,9 @@ class DefaultWebSessionManager(DefaultNativeSessionManager,
                "  Removing session ID cookie.")
         logger.debug(msg)
 
-        del self.web_registry.session_id
+        web_registry = session_key.web_registry
+
+        del web_registry.session_id
 
 
 class WebSessionKey(DefaultSessionKey):
@@ -236,6 +228,6 @@ class WebSessionKey(DefaultSessionKey):
     A ``SessionKey`` implementation that also retains the ``WebRegistry``
     associated with the web request that is performing the session lookup
     """
-    def __init__(self, web_registry, session_id=None):
-        self.web_registry = web_registry
+    def __init__(self, session_id=None, web_registry=None):
         self.session_id = session_id
+        self.web_registry = web_registry

@@ -361,7 +361,7 @@ class DelegatingSubject(subject_abcs.Subject):
         else:
             self.session = None
 
-        self.session_creation_enabled = session_creation_enabled
+        self._session_creation_enabled = session_creation_enabled
         self.run_as_identifiers_session_key = 'run_as_identifiers_session_key'
 
     def decorate(self, session):
@@ -388,6 +388,14 @@ class DelegatingSubject(subject_abcs.Subject):
             self._security_manager = security_manager
         else:
             raise InvalidArgumentException('must use SecurityManager')
+
+    @property
+    def session_creation_enabled(self):
+        return self._session_creation_enabled
+
+    @session_creation_enabled.setter
+    def session_creation_enabled(self, enabled):
+        self._session_creation_enabled = enabled
 
     # new to yosai.core.
     # security_manager is required for certain operations

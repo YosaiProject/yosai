@@ -16,14 +16,12 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
 import base64
 import logging
 
 from yosai.core import (
     AbstractRememberMeManager,
     DefaultSubjectFactory,
-    DefaultSubjectStore,
     NativeSecurityManager,
 )
 
@@ -119,18 +117,6 @@ class DefaultWebSecurityManager(NativeSecurityManager):
     @session_manager.setter
     def session_manager(self, sessionmanager):
 
-        if (sessionmanager is not None and
-            not isinstance(sessionmanager, web_session_abcs.WebSessionManager)):
-
-            if logger.getEffectiveLevel() <= logging.WARNING:
-                msg = ("The {0} implementation expects SessionManager instances "
-                       "to implement the WebSessionManager interface.  The " +
-                       "configured instance of the sessionmanager argument is of"
-                       "type [{1}] which does not implement this interface.."
-                       "This may cause unexpected behavior.".format(
-                       self.__class__.__name__, sessionmanager.__class__.__name__))
-                logger.warning(msg)
-
         # this is the syntax used to call the property setter of the parent:
         super_dwsm = super(DefaultWebSecurityManager, DefaultWebSecurityManager)
         super_dwsm.session_manager.__set__(self, sessionmanager)
@@ -146,7 +132,6 @@ class DefaultWebSecurityManager(NativeSecurityManager):
     def web_registry(self, webregistry):
         self._web_registry = webregistry
         self.remember_me_manager.web_registry = webregistry
-        self.session_manager.web_registry = webregistry
 
     # overidden parent method
     def copy(self, subject_context):
@@ -177,7 +162,8 @@ class DefaultWebSecurityManager(NativeSecurityManager):
         try:
             session_id = subject_context.session_id
             web_registry = subject_context.resolve_web_registry()
-            return WebSessionKey(web_registry=web_registry, session_id=session_id)
+            return WebSessionKey(session_id=session_id,
+                                 web_registry=web_registry)
         except AttributeError:  # not dealing with a WebSubjectContext
             return super().get_session_key(subject_context)
 
