@@ -109,6 +109,6 @@ once per application
 
 Investigate using the Hypothesis testing library in addition to pytest
 
-Way too much interaction with cache -- need to optimize cache i/o.
+Way too much interaction with cache at login -- need to optimize cache i/o.
 
 

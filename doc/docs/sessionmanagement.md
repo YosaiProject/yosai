@@ -113,14 +113,15 @@ At Session expiration, Yosai ties up loose ends, so to speak, through its event-
 
 ### Session Initialization
 
-A Session can be used to manage state for a Subject regardless of whether the Subject has authenticated itself or remains anonymous.  Yosai initializes a server-side Session the moment that a Subject is instantiated:
+A Session can be used to manage state for a Subject regardless of whether the Subject has authenticated itself or remains anonymous.  Yosai initializes a server-side Session when a Subject is instantiated and it's get_session() is called for anonymous guest sessions or at successful authentication.
 
 ```Python
 from yosai.core import SecurityUtils, UsernamePasswordToken
 
 # creates an "anonymous session" if the current executing subject hasn't
 # logged in yet:
-guest = SecurityUtils.get_subject()
+guest = SecurityUtils.subject
+subject.get_session()
 ```
 
 You can then manage state as necessary using the session, but more about that later: .. code-block:: python     session = guest.get_session()  # returns an anonymous session (guest)
