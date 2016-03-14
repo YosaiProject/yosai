@@ -2,11 +2,12 @@
 
 ## Installation
 
-First, install Yosai from PyPi:
+First, install Yosai from PyPI using pip:
     ``pip install yosai``
 
-This will install yosai.core, including its default configuration, and
-its dependencies.
+Installing from PyPI, using pip, will install the project package that includes
+``yosai.core`` and ``yosai.web``, a default configuration, and project dependencies.
+
 
 
 ## Setup

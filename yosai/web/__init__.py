@@ -53,6 +53,6 @@ from yosai.web.subject.subject import (
 
 from yosai.web.mgt.mgt import (
     DefaultWebSubjectFactory,
-    DefaultWebSecurityManager,
+    WebSecurityManager,
     CookieRememberMeManager,
 )

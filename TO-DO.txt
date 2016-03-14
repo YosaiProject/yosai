@@ -111,4 +111,4 @@ Investigate using the Hypothesis testing library in addition to pytest
 
 Way too much interaction with cache at login -- need to optimize cache i/o.
 
-
+yosai default config settings:  point to /config within package

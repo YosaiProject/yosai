@@ -70,7 +70,7 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
                                     session_enabled=session_enabled)
 
 
-class DefaultWebSecurityManager(NativeSecurityManager):
+class WebSecurityManager(NativeSecurityManager):
     """
     This is the default ``WebSecurityManager`` implementation used in web-based
     applications or any application that requires HTTP connectivity.
@@ -117,7 +117,7 @@ class DefaultWebSecurityManager(NativeSecurityManager):
     def session_manager(self, sessionmanager):
 
         # this is the syntax used to call the property setter of the parent:
-        super_dwsm = super(DefaultWebSecurityManager, DefaultWebSecurityManager)
+        super_dwsm = super(WebSecurityManager, WebSecurityManager)
         super_dwsm.session_manager.__set__(self, sessionmanager)
 
         evaluator = self.subject_store.session_storage_evaluator
