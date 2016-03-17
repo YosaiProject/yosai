@@ -1,26 +1,29 @@
 # Yosai:  Quick-Start
 
-Yosai is a powerful framework that you can do a lot with.  This Quick-Start
-guide is intended to help you get started using Yosai without burdening you with
-detail (yet).  It is an opinionated quick-start in that it requires that you use
-Redis for caching and a relational database for your data store.
+Yosai is a powerful framework that can take you far.  This Quick-Start
+guide is intended to help you get started by going through basic usage while
+not burdening you with detail.  This is an opinionated quick-start in that it
+requires that you use Redis for caching and a relational database for your
+data store.
 
 
 ## Overview
 
 Following are the steps that you will go through to use Yosai:
 
-1) Install
-2) Configure
-3) Extend
-4) Instantiate
-5) Use
+1. Install
+2. Configure
+3. Extend
+4. Instantiate
+5. Use
 
 
 ## Install
 
 First, install Yosai from PyPI using pip:
-    ``pip install yosai``
+```bash
+pip install yosai
+```
 
 Installing from PyPI, using pip, will install the project package that includes
 ``yosai.core`` and ``yosai.web``, a default configuration, and project dependencies.
@@ -29,24 +32,11 @@ Installing from PyPI, using pip, will install the project package that includes
 ## Configure
 
 Yosai can be configured in a couple of ways, but since you are quick-starting
-you will use Yosai's default settings.  You don't have to do anything extra work
+you will use Yosai's default settings.  You don't have to do any extra work
 to make use of the default settings.
 
 
 ## Extend
-
-### Yosai Core vs Web
-
-The ``yosai`` project features a ``yosai.core`` package and ``yosai.web``
-integration library.
-
-If you're using Yosai for web application development, use the ``yosai.web``
-library to instantiate Yosai.  ``yosai.web`` is a derivative of ``yosai.core``,
-extending it to support interactions with web request/response objects.
-
-If you aren't using Yosai for web development, you will either use ``yosai.core``
-or a derivative of it, just as ``yosai.web`` is a derivative of ``yosai.core``.
-
 
 ### Caching
 
@@ -59,7 +49,9 @@ customized for Yosai's serialization preferences.  Currently, ``yosai_dpcache``
 supports Redis but a PR for Memcached, Riak, or other cache stores is welcome.
 
 Install yosai_dpcache from PyPI using pip:
-    ``pip install yosai_dpcache``
+```bash
+pip install yosai_dpcache
+```
 
 ``yosai_dpcache`` is configured either through a settings file + env variable or
 by instantiating a DPCacheHandler object with settings arguments. For quickstart
@@ -102,7 +94,9 @@ started:  ``yosai_alchemystore``.  ``yosai_alchemystore`` uses the SQLAlchemy OR
 to interface with an underlying relational database.  
 
 Install yosai_alchemystore from PyPI using pip:
-    ``pip install yosai_alchemystore``
+```bash
+pip install yosai_alchemystore
+```
 
 Just as with ``yosai_dpcache``, ``yosai_alchemystore`` is configured either using
 a settings file + env variable or by instantiating an instance with a settings
@@ -181,9 +175,23 @@ Altogether, here is how you instantiate an instance of Yosai.
 A Session ``marshmallow`` schema is omitted from this example.  You'd define a
 schema to cache session attributes (state).
 
-In the last step, we instantiate a "native" yosai instance.  We could have easily
+
+### Yosai Web
+
+The ``yosai`` project features a ``yosai.core`` package and ``yosai.web``
+integration library.
+
+If you're using Yosai for web application development, use the ``yosai.web``
+library to instantiate Yosai.  ``yosai.web`` is a derivative of ``yosai.core``,
+extending it to support interactions with web request/response objects.
+
+If you aren't using Yosai for web development, you will either use ``yosai.core``
+or a derivative of it, just as ``yosai.web`` is a derivative of ``yosai.core``.
+
+In the last step above, we instantiate a "native" yosai instance.  We could have easily
 instantiated a web-enabled instance instead by replacing ``SecurityUtils`` with
-``WebSecurityUtils`` and ``NativeSecurityManager`` with ``
+``WebSecurityUtils`` and ``NativeSecurityManager`` with ``WebSecurityManager``
+from ``yosai.web``:
 
 ```Python
 from yosai.web import WebSecurityUtils, WebSecurityManager
@@ -193,8 +201,70 @@ security_manager = WebSecurityManager(realms=(realm,),
                                       session_attributes_schema=AttributesSchema)
 yosai = WebSecurityUtils()
 yosai.security_manager = security_manager
+```
 
+
+## Use
+
+The following example was created to illustrate the myriad ways that you
+can declare an authorization policy in an application, ranging from general
+role-level specification to very specific "scoped" permissions.  The
+authorization policy is as follows:
+
+- Either a user with role membership "patient" or "nurse" may request a
+  refill of a medical prescription
+- A user who is granted permission to write prescriptions may obtain the
+  list of pending prescription refill requests
+- A user who is granted permission to write prescriptions for a specific
+  patient may issue a prescription for that patient
+
+```Python
+from yosai.core import requires_role, requires_permission, requires_dynamic_permission
+
+
+@requires_role(roleid_s=['patient', 'nurse'], logical_operator=any)
+def request_prescription_refill(patient, prescription):
+    ...
+
+
+@requires_permission(['prescription:write'])
+def get_prescription_refill_requests(patient):
+    ...
+
+
+@requires_dynamic_permission(['prescription:write:{patient.patient_id}'])
+def issue_prescription(patient, prescription):
+    ...
 
 ```
 
-## Use
+Note how the authorization policy is declared using yosai's authorization
+decorators.  These global decorators are associated with the yosai instance
+when the yosai instance is used as a context manager.  
+
+**Always use yosai through the context manager.**
+
+```Python
+
+with yosai:
+    issue_prescription(patient)
+
+    for prescription in get_prescription_refill_requests(patient):
+        issue_prescription(patient, prescription)
+
+```
+
+If you were using Yosai with a web application, the syntax would be similar
+to that above but requires that a ``WebRegistry`` instance be passed as
+as argument to the context manager.  The web integration library is further
+elaborated upon in the Web Integration section of this documentation.
+
+```Python
+
+with yosai(web_registry):
+    issue_prescription(patient)
+
+    for prescription in get_prescription_refill_requests(patient):
+        issue_prescription(patient, prescription)
+
+```

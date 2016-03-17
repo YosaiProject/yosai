@@ -13,6 +13,7 @@ pages:
 - Get Started:
     - Introduction: intro.md
     - Installation and Setup:  installation_setup.md
+    - Quick-Start:  quickstart.md
 - Documentation:
     - Authentication: authentication.md
     - Authorization: authorization.md
@@ -20,6 +21,7 @@ pages:
     - Event Processing: events.md
     - Serialization:  serialization.md
     - Architecture Overview:  architecture.md
+    - Web Integration:  web.md
 - More:
     - Development Status:  devstatus.md
     - Library:  library.md
