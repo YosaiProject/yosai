@@ -52,12 +52,6 @@ def test_del_attr_from_existing_wrapped(lazy_settings):
     assert lazy_settings.anything is None
 
 
-def test_setup_envvar_exception(monkeypatch):
-    lazy_settings = LazySettings('env_var')
-    with pytest.raises(MisconfiguredException):
-        lazy_settings._setup()
-
-
 # Settings Tests
 def test_get_config_file_not_exists_exception(empty_settings):
     with pytest.raises(FileNotFoundException):
@@ -65,11 +59,6 @@ def test_get_config_file_not_exists_exception(empty_settings):
 
 def test_get_config_file_exists(settings_file, empty_settings):
     assert empty_settings.get_config(settings_file)  # only needs to be True
-
-def test_load_config_with_none_config():
-    with mock.patch.object(Settings, 'get_config', return_value=3):
-        with pytest.raises(MisconfiguredException):
-            assert Settings('')
 
 def test_load_config_with_config(settings_fixture):
     assert settings_fixture

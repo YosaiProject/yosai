@@ -27,6 +27,7 @@ configuration are obtained by (global) default settings.
 
 This design is inspired by, or a copy of, source code written for Django.
 """
+import logging
 from pathlib import Path
 import yaml
 import os
@@ -37,6 +38,7 @@ from yosai.core import (
 
 ENV_VAR = "YOSAI_CORE_SETTINGS"
 empty = object()
+logger = logging.getLogger(__name__)
 
 
 class LazySettings:
@@ -84,11 +86,11 @@ class LazySettings:
         envvar = self.__dict__['env_var']
         settings_file = os.environ.get(envvar)
         if not settings_file:
-            msg = ("Requested {desc}, but settings are not configured. "
-                   "You must define the environment variable: {envvar}".
-                   format(desc=("setting: " + name) if name else "settings",
-                          envvar=envvar))
-            raise MisconfiguredException(msg)
+            msg = ("Requested settings, but none can be obtained for the envvar."
+                   "Since no config filepath can be obtained, a default config "
+                   "will be used.")
+            logger.warning(msg)
+            settings_file = "yosai_settings.yaml"
 
         self._wrapped = Settings(settings_file)
 

@@ -25,10 +25,9 @@ used to track SessionID and RememberMe and manages other related attributes.
 
 ## Web Registry API
 
-``yosai.web`` is designed for integration with any kind of web application.  
-It can integrate with any application framework, such as Django, Pyramid, Flask,
-or Bottle.  This is made possible through application-specific implementations of
-the WebRegistry API.  
+``yosai.web`` is designed to integrate with any kind of web application. It can integrate
+with any application framework, such as Django, Pyramid, Flask, or Bottle.  This is
+made possible through application-specific implementations of the WebRegistry API.  
 
 The WebRegistry API is an interface, specified by an abstract base class (like the
 rest of the interfaces defined in Yosai). For instance, a ``pyramid_yosai`` integration
@@ -67,3 +66,9 @@ with yosai(web_registry):
         issue_prescription(patient, prescription)
 
 ```
+
+
+## Middleware Support:  TBD
+
+Yosai does not yet include any WSGI middleware ports of Apache Shiro's servlet
+related functionality.  Pull requests are welcome.
