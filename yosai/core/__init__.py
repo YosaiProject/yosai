@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-__version__ = '0.1.0'
 __license__ = 'Apache 2.0'
 __author__ = 'Darin Gordon'
 __credits__ = ['Apache Shiro']

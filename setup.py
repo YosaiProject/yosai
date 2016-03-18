@@ -1,5 +1,4 @@
 import os
-import re
 
 from setuptools import setup, find_packages, Command
 
@@ -21,29 +20,30 @@ class CleanCommand(Command):
 here = os.path.abspath(os.path.dirname(__file__))
 
 try:
-    with open(os.path.join(here, 'yosai', 'core', '__init__.py')) as v:
-        VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
     with open(os.path.join(here, 'README.md')) as f:
         README = f.read()
 except IOError:
     VERSION = README = ''
 
 install_requires = [
-    'PyYAML==3.11',
-    'python-dateutil==2.4.2',
-    'pytz==2016.1',
-    'PyPubSub==3.3.0',
-    'bcrypt==2.0.0',
-    'passlib==1.6.5',
-    'marshmallow==2.6.1',
-    'cryptography==1.1.1',
-    'msgpack-python==0.4.6',
-    'python-rapidjson==0.0.6',
+    'PyYAML',
+    'python-dateutil',
+    'pytz',
+    'PyPubSub',
+    'bcrypt',
+    'passlib',
+    'marshmallow',
+    'cryptography',
+    'msgpack-python',
+    'python-rapidjson',
 ]
 
 setup(
     name='yosai',
-    version=VERSION,
+    use_scm_version={
+        'version_scheme': 'post-release',
+        'local_scheme': 'dirty-tag'
+    },
     description="Yosai is a powerful security framework with an intuitive api.",
     long_description=README,
     classifiers=[
@@ -64,6 +64,9 @@ setup(
     url='http://yosaiproject.github.io/yosai',
     license='Apache License 2.0',
     packages=find_packages('.', exclude=['ez_setup', 'test*']),
+    setup_requires=[
+        'setuptools_scm >= 1.7.0'
+    ],
     install_requires=install_requires,
     zip_safe=False,
     cmdclass={'clean': CleanCommand}

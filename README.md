@@ -1,71 +1,76 @@
-<h1 align=center>🏯 Yosai</h1>
-<h2 align=center>Application Security Management for Python</h2>
+# Yosai
+## Security Framework for Python Applications
 
-![alt text](http://i.imgur.com/QDhDfKN.jpg "Yosai 🏯 ")
+![yosai_logo](/doc/docs/img/yosai_logo_with_title.png)
 
-Yosai is a security management framework.   It is a port of Apache Shiro,  written in Java and widely used today.
-Yosai encompasses Authentication, Authorization, and Session Management.  It uses a highly modular architecture,
-featuring a simple, intuitive API that will help develops adopt robust security management for their applications in little time.
-
-Yosai offers developers separation of concern between security management and other aspects of any complicated system built today.  An intuitive user-developer API allows Yosai to be integrated with a system within minutes.  Yosai is a framework with well-defined interfaces between components and so it can be easily extended.
-
-Authentication, Authorization, and Session Management that can support whatever you are looking for:
-
-Does your system require a complicated authorization policy? Yosai supports whatever method of access control that you'll need for your system, from DAC to RBAC.
-
-Looking for two-factor authentication?  Yosai supports X-factor authentication.
-
-[ ![Build Status] [travis-image] ] [travis]
-[ ![Release] [release-image] ] [releases]
+Project web site:  http://yosaiproject.github.io/yosai
 
 
-PROJECT OVERVIEW
------------------------------------------------------------------------
-Please, first familiarize yourself with [Apache Shiro](http://shiro.apache.org/).  It is a remarkable system.
+# What is Yosai
 
-Today, no such open-sourced security framework like Shiro exists for the Python community.  There's an unmet need for one.  Shiro has been battle tested.  Let's learn from history by porting the java source.  Then, we'll refactor the source using techniques and libraries available in Python, using expertise from this great development community.
+Yosai is a "security framework" that features authentication, authorization, and session
+management from a common, intuitive API.  
 
-I am porting the [v2.0-alpha source code](http://svn.apache.org/repos/asf/shiro/branches/2.0-api-design-changes/)
+![authc_authz_sess](/doc/docs/img/authc_authz_sess.png)
+
+Yosai is based on Apache Shiro, written in Java and widely used today.
+
+
+# Yosai is a Framework
+
+![framework](/doc/docs/img/yosai_framework.png)
+
+It is a framework that is is designed in such a way that it can be used to secure
+a variety of python applications, not just web applications.  This is accomplished
+by completely decoupling security-related services from the rest of an application
+and writing adapters for each specific type of client.  
+
+
+# Key Features
+
+
+
+# Batteries are Included
+
+![batteries](/doc/docs/img/batteries_included.png)
+
+Yosai is a framework, which means you have to plug in a few things to get it to
+work.  Although Yosai is a framework, it features a library of default components
+that are tested and ready to "plug in".
+
+
 
 
 WORD ORIGIN:  Yosai
 -----------------------------------------------------------------------
-In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress"🏯  . Like the words, the security platforms are similiar in meaning yet not the same.
+
+In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress"🏯  . Like the words, the frameworks are similar yet different.
 
 
 
-PROJECT STATUS
-==============
-
-12/22/2015
----------------------
-Yosai.core testing is complete.
-
-Yosai is being released with batteries included so that it may be used in a 
+Yosai is being released with batteries included so that it may be used in a
 project without requiring additional module implementation.  To achieve this goal:
 
 * two integration projects were added to The Yosai Project, providing
-access to a peristence layer and caching: 
+access to a peristence layer and caching:
 
 ###I) Yosai AlchemyStore
-An AccountStore implemented with SQLAlchemy.  The project includes a 
+An AccountStore implemented with SQLAlchemy.  The project includes a
 basic RBAC data model that uses a flat, non-heirarchical design.  
 
 ###II) Yosai DPCache
 This is an integration of the dogpile.cache project.  Yosai reduces objects
 to their serializable form using Marshmallow, encodes them, and then caches.
-Objects obtained from cache are de-serialized into reduced form and then 
+Objects obtained from cache are de-serialized into reduced form and then
 re-materialized into Yosai objects.  dogpile.cache supports Redis, Memcached,
 and Riak off the shelf, featuring thread-safe asynchronous interaction using a
 dogpile lock mechanism.  A “dogpile” lock is one that allows a single thread to
 generate an expensive resource while other threads use the “old” value until
 the “new” value is ready.
 
-Currently, the Redis integration has been tested.  If you would like to 
+Currently, the Redis integration has been tested.  If you would like to
 add other backends, your pull request is welcome.  Note that dogpile.cache's
 other backends are not compatible from off the shelf.
-
-* port of Shiro's /web package , used to help integrate Yosai with web applications
 
 PyTest Coverage stats (ao 12/22/2015):
 
@@ -97,34 +102,11 @@ PyTest Coverage stats (ao 12/22/2015):
 | yosai/core/utils/utils.py              | 66  | 38 | 42%  |
 |-------  -------------------------------|-----|----|------|
 
-
-
-
-
-GROUP COMMUNICATION
------------------------------------------------------------------------
+# GROUP COMMUNICATION
 Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
 
 
-CONTACT INFORMATION
------------------------------------------------------------------------
+# CONTACT INFORMATION
 If you would like to get involved, please contact me by:
-- emailing dkcdkg at the popular "G search engine" mail
+- emailing dkcdkg at gmail
 - finding me on Freenode under the nickname dowwie
-
-
-APACHE SHIRO VERSION USED
------------------------------------------------------------------------
-Shiro uses subversion, which features project revision numbers.
-
-Each sub-package is based on the latest Shiro revision at the time of unit testing.
-When Yosai unit testing is completed, its revision versions will be reconciled,
-using the revision that was ported and the most up to date revision.
-Any materials changes discovered from revision reconciliation will be
-applied to Yosai, ensuring that each subpackage reflects the most recent updates
-and standarding the entire project with a common revision.
-
-Yosai vX.X.X is as of Apache Shiro 2.0 Alpha, Revision xxxxxx
-
-
-![alt text](http://i.imgur.com/Wf9UGVY.jpg "Join the Project!")
