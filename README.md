@@ -1,9 +1,9 @@
-# Yosai
-## Security Framework for Python Applications
 
 ![yosai_logo](/doc/docs/img/yosai_logo_with_title.png)
 
-Project web site:  http://yosaiproject.github.io/yosai
+# A Security Framework for Python Applications
+
+## Project web site:  http://yosaiproject.github.io/yosai
 
 
 # What is Yosai
@@ -28,51 +28,96 @@ and writing adapters for each specific type of client.
 
 # Key Features
 
+- Enables Role-Based Access Control Policies
+- Native Support for Caching, Including Serialization
+- A Complete Audit Trail of Events
+- Batteries Included:  Extensions Ready for Use
+- "RunAs" Administration Tool
+- Event-driven Processing
 
 
-# Batteries are Included
+## Authentication Example
+```Python
 
-![batteries](/doc/docs/img/batteries_included.png)
+with yosai:
+    current_user = yosai.subject
 
-Yosai is a framework, which means you have to plug in a few things to get it to
-work.  Although Yosai is a framework, it features a library of default components
-that are tested and ready to "plug in".
+    authc_token = UsernamePasswordToken(username='thedude',
+                                        credentials='letsgobowling')
+
+    try:
+        current_user.login(authc_token)
+    except AuthenticationException:
+        # insert here
+```
+
+## Authorization Example
+
+The following example was created to illustrate the myriad ways that you
+can declare an authorization policy in an application, ranging from general
+role-level specification to very specific "scoped" permissions.  The
+authorization policy for this example is as follows:
+
+- Either a user with role membership "patient" or "nurse" may request a
+  refill of a medical prescription
+- A user who is granted permission to write prescriptions may obtain the
+  list of pending prescription refill requests
+- A user who is granted permission to write prescriptions for a specific
+  patient may issue a prescription for that patient
+
+```Python
+@requires_role(roleid_s=['patient', 'nurse'], logical_operator=any)
+def request_prescription_refill(patient, prescription):
+    ...
+
+@requires_permission(['prescription:write'])
+def get_prescription_refill_requests(patient):
+    ...
+
+@requires_dynamic_permission(['prescription:write:{patient.patient_id}'])
+def issue_prescription(patient, prescription):
+    ...
+
+```
+
+Note how the authorization policy is declared using yosai's authorization
+decorators.  These global decorators are associated with the yosai instance
+when the yosai instance is used as a context manager.  
+
+```Python
+
+with yosai:
+    issue_prescription(patient)
+
+    for prescription in get_prescription_refill_requests(patient):
+        issue_prescription(patient, prescription)
+```
+
+If you were using Yosai with a web application, the syntax would be similar
+to that above but requires that a ``WebRegistry`` instance be passed as
+as argument to the context manager.  The web integration library is further
+elaborated upon in the Web Integration section of this documentation.
+
+```Python
+
+with yosai(web_registry):
+    issue_prescription(patient)
+
+    for prescription in get_prescription_refill_requests(patient):
+        issue_prescription(patient, prescription)
+
+```
 
 
+# WORD ORIGIN:  Yosai
+
+In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress".
+Like the words, the frameworks are similar yet different.
 
 
-WORD ORIGIN:  Yosai
------------------------------------------------------------------------
+# Development Status
 
-In Japanese, the word Shiro translates to "Castle".  Yosai translates to "Fortress"🏯  . Like the words, the frameworks are similar yet different.
-
-
-
-Yosai is being released with batteries included so that it may be used in a
-project without requiring additional module implementation.  To achieve this goal:
-
-* two integration projects were added to The Yosai Project, providing
-access to a peristence layer and caching:
-
-###I) Yosai AlchemyStore
-An AccountStore implemented with SQLAlchemy.  The project includes a
-basic RBAC data model that uses a flat, non-heirarchical design.  
-
-###II) Yosai DPCache
-This is an integration of the dogpile.cache project.  Yosai reduces objects
-to their serializable form using Marshmallow, encodes them, and then caches.
-Objects obtained from cache are de-serialized into reduced form and then
-re-materialized into Yosai objects.  dogpile.cache supports Redis, Memcached,
-and Riak off the shelf, featuring thread-safe asynchronous interaction using a
-dogpile lock mechanism.  A “dogpile” lock is one that allows a single thread to
-generate an expensive resource while other threads use the “old” value until
-the “new” value is ready.
-
-Currently, the Redis integration has been tested.  If you would like to
-add other backends, your pull request is welcome.  Note that dogpile.cache's
-other backends are not compatible from off the shelf.
-
-PyTest Coverage stats (ao 12/22/2015):
+yosai.core coverage stats (ao 12/22/2015):
 
 |Name                                    | Stmts |Miss  | Cover |
 |:---------------------------------------|:-----:|:----:|:------:|
