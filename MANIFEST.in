@@ -1,6 +1,0 @@
-recursive-include doc *.html *.css *.txt *.js *.jpg *.png *.py Makefile *.rst *.sty
-recursive-include test *.py
-
-include README* LICENSE CHANGES* CODE_OF_CONDUCT* test.cfg CONTRIBUTING.* contributors.txt
-
-prune doc/build/output
