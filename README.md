@@ -109,6 +109,8 @@ with yosai(web_registry):
 
 ```
 
+This is just a README file.  Please visit [the project web site](http://yosaiproject.github.io/yosai) to get a full overview.
+
 
 # WORD ORIGIN:  Yosai
 
@@ -156,3 +158,7 @@ Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
 If you would like to get involved, please contact me by:
 - emailing dkcdkg at gmail
 - finding me on Freenode under the nickname dowwie
+
+
+# LICENSE
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use any portion of  Yosai except in compliance with the License. Contributors agree to license their work under the same License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
