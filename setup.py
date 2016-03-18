@@ -1,9 +1,7 @@
 import os
 import re
-import sys
 
 from setuptools import setup, find_packages, Command
-from setuptools.command.test import test as TestCommand
 
 
 class CleanCommand(Command):
@@ -20,51 +18,53 @@ class CleanCommand(Command):
         os.system('rm -vrf ./build ./dist ./*.pyc ./*.tgz ./*.egg-info')
 
 
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
+here = os.path.abspath(os.path.dirname(__file__))
 
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
+try:
+    with open(os.path.join(here, 'yosai', 'core', '__init__.py')) as v:
+        VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
+    with open(os.path.join(here, 'README.md')) as f:
+        README = f.read()
+except IOError:
+    VERSION = README = ''
 
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
-
-
-v = open(os.path.join(os.path.dirname(__file__), 'yosai', 'core', '__init__.py'))
-VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
-v.close()
-
-readme = os.path.join(os.path.dirname(__file__), 'README.md')
+install_requires = [
+    'PyYAML==3.11',
+    'python-dateutil==2.4.2',
+    'pytz==2016.1',
+    'PyPubSub==3.3.0',
+    'bcrypt==2.0.0',
+    'passlib==1.6.5',
+    'marshmallow==2.6.1',
+    'cryptography==1.1.1',
+    'msgpack-python==0.4.6',
+    'python-rapidjson==0.0.6',
+]
 
 setup(
     name='yosai',
     version=VERSION,
-    description="A security framework featuring session management, authentication, and authorization",
-    long_description=open(readme).read(),
+    description="Yosai is a powerful security framework with an intuitive api.",
+    long_description=README,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Topic :: Security',
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    keywords='security,rbac,session,authentication,authorization',
+    keywords='security rbac session authentication authorization',
     author='Darin Gordon',
     author_email='dkcdkg@gmail.com',
-    url='https://github.com/YosaiProject/yosai',
+    url='http://yosaiproject.github.io/yosai',
     license='Apache License 2.0',
     packages=find_packages('.', exclude=['ez_setup', 'test*']),
+    install_requires=install_requires,
     zip_safe=False,
-    # tests_require=['pytest', 'pytest-cov'],
-    cmdclass={'test': PyTest,
-              'clean': CleanCommand}
+    cmdclass={'clean': CleanCommand}
 )
