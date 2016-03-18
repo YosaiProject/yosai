@@ -34,6 +34,7 @@ and writing adapters for each specific type of client.
 - Batteries Included:  Extensions Ready for Use
 - "RunAs" Administration Tool
 - Event-driven Processing
+- Ready for Web Integration
 
 
 ## Authentication Example
