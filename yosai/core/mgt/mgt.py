@@ -214,7 +214,6 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
             except AttributeError:
                 msg = "Neither account nor identifier arguments passed"
                 raise InvalidArgumentException(msg)
-
         serialized = self.convert_identifiers_to_bytes(identifiers)
         self.remember_serialized_identity(subject, serialized)
 

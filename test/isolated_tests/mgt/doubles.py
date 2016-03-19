@@ -16,6 +16,6 @@ class MockRememberMeManager(AbstractRememberMeManager):
     def get_remembered_serialized_identity(self):
         pass
 
-    def remember_serialized_identity(self):
+    def remember_serialized_identity(self, subject, serialized):
         pass
 

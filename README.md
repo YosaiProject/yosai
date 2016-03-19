@@ -37,6 +37,15 @@ and writing adapters for each specific type of client.
 - Ready for Web Integration
 
 
+## Installation
+
+First, install Yosai from PyPI using pip:
+    ``pip install yosai``
+
+Installing from PyPI, using pip, will install the project package that includes
+``yosai.core`` and ``yosai.web``, a default configuration, and project dependencies.
+
+
 ## Authentication Example
 ```Python
 

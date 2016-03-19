@@ -601,7 +601,7 @@ def test_nsm_start(default_native_session_manager, monkeypatch):
     nsm = default_native_session_manager
     dumbsession = type('DumbSession', (object,), {'session_id': '1234'})()
     monkeypatch.setattr(nsm, '_create_session', lambda x: dumbsession)
-    monkeypatch.setattr(nsm, 'create_exposed_session', lambda x, y: dumbsession)
+    monkeypatch.setattr(nsm, 'create_exposed_session', lambda session=None, context=None: dumbsession)
 
     with mock.patch.object(nsm.session_handler, 'on_start') as mock_os:
         mock_os.return_value = None

@@ -18,7 +18,7 @@ from yosai.core import (
 )
 
 from yosai.web import (
-    DefaultWebSecurityManager,
+    WebSecurityManager,
     WebSecurityUtils,
 )
 
@@ -177,8 +177,8 @@ def web_security_manager(account_store_realm, cache_handler):
     class AttributesSchema(Schema):
         name = fields.String()
 
-    wsm = DefaultWebSecurityManager(realms=(account_store_realm,),
-                                    session_attributes_schema=AttributesSchema)
+    wsm = WebSecurityManager(realms=(account_store_realm,),
+                             session_attributes_schema=AttributesSchema)
     wsm.cache_handler = cache_handler
     wsm.event_bus = event_bus
 

@@ -3,6 +3,7 @@ from unittest import mock
 from cryptography.fernet import Fernet
 
 from yosai.core import (
+    AbstractRememberMeManager,
     AuthenticationException,
     SaveSubjectException,
     DefaultAuthenticator,
@@ -72,7 +73,7 @@ def test_nsm_setauthenticator_raises(
 
 def test_nsm_setauthorizer(
         native_security_manager, modular_realm_authorizer_patched):
-        
+
     """
     unit tested:  authorizer.setter
 
@@ -154,11 +155,11 @@ def test_nsm_set_eventbus(native_security_manager):
     with mock.patch.object(NativeSecurityManager,
                            'apply_event_bus') as nsm_aeb:
         nsm_aeb.return_value = None
-        nsm.event_bus = event_bus 
+        nsm.event_bus = event_bus
         calls = [mock.call(nsm._authenticator), mock.call(nsm._authorizer),
                  mock.call(nsm._session_manager)]
         nsm_aeb.assert_has_calls(calls)
-        assert nsm.event_bus == event_bus 
+        assert nsm.event_bus == event_bus
 
 
 def test_nsm_set_eventbus_raises(native_security_manager):
@@ -1419,7 +1420,7 @@ def test_armm_remember_identity_wo_identitiersarg(
 
 
 def test_armm_remember_identity_w_identitiersarg(
-        mock_remember_me_manager, simple_identifier_collection):
+        mock_remember_me_manager, simple_identifier_collection, monkeypatch):
     """
     unit tested:  remember_identity
 
@@ -1430,20 +1431,17 @@ def test_armm_remember_identity_w_identitiersarg(
     mrmm = mock_remember_me_manager
     sic = simple_identifier_collection
 
+    monkeypatch.setattr(mrmm, 'convert_identifiers_to_bytes', lambda x: 'serialized')
+
     with mock.patch.object(MockRememberMeManager,
-                           'convert_identifiers_to_bytes') as citb:
-        citb.return_value = 'serialized'
+                           'remember_serialized_identity') as rsi:
+        rsi.return_value = None
 
-        with mock.patch.object(MockRememberMeManager,
-                               'remember_serialized_identity') as rsi:
-            rsi.return_value = None
+        mrmm.remember_identity('subject',
+                               identifiers=sic,
+                               account='account')
 
-            mrmm.remember_identity('subject',
-                                   identifiers=sic,
-                                   account='account')
-
-            citb.assert_called_once_with(sic)
-            rsi.assert_called_once_with('subject', 'serialized')
+    rsi.assert_called_once_with('subject', 'serialized')
 
 def test_armm_get_identity_to_remember(
         mock_remember_me_manager, full_mock_account):

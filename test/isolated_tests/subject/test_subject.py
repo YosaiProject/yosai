@@ -1435,9 +1435,10 @@ def test_sb_init_verify_argument_context(subject_builder_context, configured_sec
     """
     sbc = subject_builder_context
     csu = configured_securityutils
-    mycontext = DefaultSubjectContext(security_utils=csu, 
+    mycontext = DefaultSubjectContext(security_utils=csu,
                                       context=sbc)
     sb = SubjectBuilder(security_utils=csu, subject_context=mycontext, **sbc)
+    sb.resolve_subject_context()
     assert (sb.subject_context == mycontext)
 
 
@@ -1453,6 +1454,7 @@ def test_sb_init_verify_generated_context(
     csu = configured_securityutils
     sbc = subject_builder_context
     sb = SubjectBuilder(security_utils=csu, **sbc)
+    sb.resolve_subject_context()
     mycontext = DefaultSubjectContext(security_utils=csu, context=sbc)
     assert (sb.subject_context == mycontext)
 
@@ -1483,6 +1485,7 @@ def test_sb_context_attribute_raises(subject_builder, monkeypatch):
     key cannot be None
     """
     sb = subject_builder
+    sb.resolve_subject_context()
     pytest.raises(InvalidArgumentException, "sb.context_attribute(None)")
 
 
@@ -1494,6 +1497,7 @@ def test_sb_context_attribute_removes(subject_builder):
     passing a key but no value will remove the key from the context
     """
     sb = subject_builder
+    sb.resolve_subject_context()
     assert sb.subject_context.get('attribute1')
     sb.context_attribute('attribute1')
     assert sb.subject_context.get('attribute1') is None
@@ -1530,10 +1534,9 @@ def test_su_get_subject_notinthreadlocal(
     unit tested:  subject
 
     test case:
-    - when a subject attribute isn't available from the thread_local,
+    - when a subject attribute isn't available from the SecurityUtils instance,
       subject_builder creates one
-        - the newly created subject is bound to the thread managed by the
-          thread_local
+        - the newly created subject is bound to the SecurityUtils instance
     - the subject is returned
     """
     csu = configured_securityutils
@@ -1542,8 +1545,7 @@ def test_su_get_subject_notinthreadlocal(
     with csu:
         with mock.patch('yosai.core.SubjectBuilder', return_value=msb):
             result = csu.subject
-            assert (result == 'subjectbuildsubject' and 
-                    thread_local.subject == result)
+            assert csu._subject == result
 
 
 def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
@@ -1552,11 +1554,10 @@ def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
     unit tested:  get_subject
 
     test case:
-    when a subject is bound to a threadlocal, it is returned
+    when a subject is bound to a SecurityUtils, it is returned
     """
     csu = configured_securityutils
-    monkeypatch.setattr(thread_local, 'subject', 'threadlocalsubject',
-                        raising=False)
+    monkeypatch.setattr(csu, '_subject', 'subject', raising=False)
     with csu:
         result = csu.subject
-        assert result == 'threadlocalsubject'
+        assert result == 'subject'
