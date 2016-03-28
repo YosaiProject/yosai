@@ -218,7 +218,7 @@ claims to be.
 
 When a user is merely remembered by a previous interaction with the application,
 the state of proof no longer exists.  The remembered identity gives the system
-an idea who that user *probably* is, yet the system is has no guarantees that the remembered Subject represents an expected user. Once the subject is authenticated, the user is no longer considered only remembered because its identity would have been verified during the current session.
+an idea who that user *probably* is, yet the system has no guarantees that the remembered Subject represents an expected user. Once the subject is authenticated, the user is no longer considered only remembered because its identity would have been verified during the current session.
 
 So although many parts of the application can still perform user-specific logic
 based on the remembered identifiers, such as customized views, it should
