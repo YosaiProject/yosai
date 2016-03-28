@@ -197,7 +197,7 @@ Access control begins with an authorization policy.  A user is granted permissio
 
 ## Authorization Events
 
-An Event is emitted to the singleton EventBus when the results of authorization are obtained.  The results are comprehensive:  every permission or role that is checked is included along with a Boolean indicating whether authorization was granted for it.  A summary "granted" or "denied" event is also communicated when a Boolean check-authorization is submitted to Yosai. If you would like to learn more about Event processing, please refer to the documentation about EventProcessing [here].
+An Event is emitted to the singleton EventBus when the results of authorization are obtained.  The results are comprehensive:  every permission or role that is checked is included along with a Boolean indicating whether authorization was granted for it.  A summary "granted" or "denied" event is also communicated when a Boolean check-authorization is submitted to Yosai. If you would like to learn more about Event processing, please refer to the documentation about EventProcessing [here](http://yosaiproject.github.io/yosai/events/).
 
 Events are communicated using a publish-subscribe paradigm.  In the case of
 Authorization, the `ModularRealmAuthorizer` publishes an event to a channel (an
