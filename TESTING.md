@@ -1,3 +1,7 @@
+To run the tests you need to install additional requirements:
+    pip install pytest
+    pip install pytest-capturelog
+
 Tests are categorized as integrated and isolated (unit).  
 
 Integrated tests are used for complete, end-to-end tests.  Consequently, integrated tests require a cache and accountstore.  For integrated testing, YosaiAlchemyStore is used with a sqlite backend and YosaiDPCache with a redis backend.  
