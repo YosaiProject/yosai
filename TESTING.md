@@ -1,3 +1,7 @@
+To run the tests you need to install additional requirements:
+    pip install pytest
+    pip install pytest-catchlog
+
 Tests are categorized as integrated and isolated (unit).  
 
 Integrated tests are used for complete, end-to-end tests.  Consequently, integrated tests require a cache and accountstore.  For integrated testing, YosaiAlchemyStore is used with a sqlite backend and YosaiDPCache with a redis backend.  
@@ -14,15 +18,12 @@ YOSAI_ALCHEMYSTORE_SETTINGS=/path/to/your/accountstore_settings.yaml
 
 Again, Yosai uses sqlite as the backend for AlchemyAccountStore for integrated testing.  The accountstore_settings.yaml is simply:
 
-<--------------- cut below this line
----
-ENGINE_CONFIG: 
-    dialect:  sqlite
-    path: '//'
-    userid:
-    password:
-    hostname:
-    port:
-    db:
----------------> cut above this line
+    ENGINE_CONFIG: 
+        dialect:  sqlite
+        path: '//'
+        userid:
+        password:
+        hostname:
+        port:
+        db:
 
