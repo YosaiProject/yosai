@@ -1,6 +1,6 @@
 To run the tests you need to install additional requirements:
     pip install pytest
-    pip install pytest-catchlog
+    pip install pytest-capturelog
 
 Tests are categorized as integrated and isolated (unit).  
 
