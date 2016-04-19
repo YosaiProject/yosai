@@ -38,7 +38,8 @@ and writing adapters for each specific type of client.
 
 ## Python 3 Supported
 
-Yosai v0.1.0 requires python3 and there are no plans to support python2.
+Yosai v0.1.0 requires py3.3 or newer. There are no plans to support python2 
+due to anticipated optimizations that require newer versions of python.
 
 
 ## Installation
