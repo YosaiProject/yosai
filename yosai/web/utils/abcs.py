@@ -97,16 +97,6 @@ class WebRegistry(metaclass=ABCMeta):
     def remote_host(self):
         pass
 
-    @remote_host.setter
-    @abstractmethod
-    def remote_host(self, remote_host):
-        pass
-
-    @remote_host.deleter
-    @abstractmethod
-    def remote_host(self):
-        pass
-
     @property
     @abstractmethod
     def session_creation_enabled(self):
