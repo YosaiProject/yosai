@@ -16,6 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
+
 import collections
 import logging
 import pytz
@@ -255,14 +257,16 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
         return session
 
-    def update(self, session):
+    def update(self, session, update_identifiers_map):
 
         # for write-through caching:
         # self._do_update(session)
 
         if (session.is_valid):
             self._cache(session, session.session_id)
-            self._cache_identifiers_to_key_map(session, session.session_id)
+
+            if update_identifiers_map:
+                self._cache_identifiers_to_key_map(session, session.session_id)
         else:
             self._uncache(session)
 
@@ -285,16 +289,15 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
 
     def _cache_identifiers_to_key_map(self, session, session_id):
         """
-        creates a cache entry within a user's cache space that is used to
-        identify the active session associated with the user
+        When a session is associated with a user, it will have an identifiers
+        attribute.  This method creates a cache entry within a user's cache space
+        that is used to identify the active session associated with the user.
 
-        when a session is associated with a user, it will have an identifiers
-        attribute
-
-        including a primary identifier is new to yosai
+        using the primary identifier within the key is new to yosai
         """
         isk = 'identifiers_session_key'
         identifiers = session.get_internal_attribute(isk)
+
         try:
             self.cache_handler.set(domain='session',
                                    identifier=identifiers.primary_identifier,
@@ -330,7 +333,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                           identifier=primary_id)
             except AttributeError:
                 msg = '_uncache: Could not obtain identifiers from session'
-                logger.warning(msg)
+                logger.warn(msg)
 
         except AttributeError:
             msg = "Cannot uncache without a cache_handler."
@@ -433,11 +436,37 @@ class ProxiedSession(session_abcs.Session):
     def get_attribute(self, key):
         return self._delegate.get_attribute(key)
 
+    # new to yosai
+    def get_attributes(self, attributes):
+        """
+        :param attributes: the keys of attributes to get from the session
+        :type attributes: list of strings
+
+        :returns: a dict containing the attributes requested
+        """
+        return self._delegate.get_attributes(attributes)
+
     def set_attribute(self, key, value):
         self._delegate.set_attribute(key, value)
 
+    # new to yosai
+    def set_attributes(self, attributes):
+        """
+        :param attributes: the attributes to add to the session
+        :type attributes: dict
+        """
+        self._delegate.set_attributes(attributes)
+
     def remove_attribute(self, key):
-        self._delegate.remove_attribute(key)
+        self._delegate.remove_attribute(key)  # you could validate here
+
+    # new to yosai
+    def remove_attributes(self, keys):
+        """
+        :param attributes: the keys of attributes to remove from the session
+        :type attributes: list of strings
+        """
+        self._delegate.remove_attributes(keys)  # you could validate here
 
     def __repr__(self):
         return "ProxiedSession(session_id={0}, attributes={1})".format(
@@ -654,11 +683,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         else:
 
-            if logger.getEffectiveLevel() == logging.DEBUG:
-                msg2 = ("Timeouts not set for session with id [" +
-                        str(self.session_id) + "]. Session is not considered "
-                        "expired.")
-                logger.debug(msg2)
+            msg2 = ("Timeouts not set for session with id [" +
+                    str(self.session_id) + "]. Session is not considered "
+                    "expired.")
+            logger.debug(msg2)
 
         return False
 
@@ -695,8 +723,7 @@ class SimpleSession(session_abcs.ValidatingSession,
                     " absolute timeout is set to " + str(absolute_timeout) +
                     " seconds (" + absolute_timeout_min + "minutes)")
 
-            if logger.getEffectiveLevel() == logging.DEBUG:
-                logger.debug(msg2)
+            logger.debug(msg2)
 
             raise ExpiredSessionException(msg2)
 
@@ -724,18 +751,45 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         return self.attributes.get(key)
 
+    # new to yosai
+    def get_attributes(self, keys):
+        """
+        :param attributes: the keys of attributes to get from the session
+        :type attributes: list of strings
+
+        :returns: a dict containing the attributes requested
+        """
+        return {key: self.attributes.get(key) for key in keys}
+
     def set_attribute(self, key, value=None):
         if (not value):
             self.remove_attribute(key)
         else:
             self.attributes[key] = value
 
+    # new to yosai is the bulk setting/getting/removing
+    def set_attributes(self, attributes):
+        """
+        :param attributes: the attributes to add to the session
+        :type attributes: dict
+        """
+        self.attributes.update(attributes)
+
     def remove_attribute(self, key):
         if (not self.attributes):
             return None
         else:
-            return self.attributes.pop(key, None)
+            return self.attributes.pop(key)
 
+    # new to yosai
+    def remove_attributes(self, keys):
+        """
+        :param attributes: the keys of attributes to remove from the session
+        :type attributes: list of strings
+
+        :returns: a list of popped attribute values
+        """
+        return [self.attributes.pop(key) for key in keys]
 
     # deleted on_equals as it is unecessary in python
     # deleted hashcode method as python's __hash__ may be fine -- TBD!
@@ -941,6 +995,10 @@ class DelegatingSession(session_abcs.Session):
         return self.session_manager.get_attribute(self.session_key,
                                                   attribute_key)
 
+    def get_attributes(self, attribute_keys):
+        return self.session_manager.get_attributes(self.session_key,
+                                                   attribute_keys)
+
     def set_attribute(self, attribute_key, value=None):
         if (value is None):
             self.remove_attribute(attribute_key)
@@ -949,9 +1007,16 @@ class DelegatingSession(session_abcs.Session):
                                                attribute_key,
                                                value)
 
+    def set_attributes(self, attributes):
+        self.session_manager.set_attributes(self.session_key, attributes)
+
     def remove_attribute(self, attribute_key):
         return self.session_manager.remove_attribute(self.session_key,
                                                      attribute_key)
+
+    def remove_attributes(self, attribute_keys):
+        return self.session_manager.remove_attribute(self.session_key,
+                                                     attribute_keys)
 
     def __repr__(self):
         return "DelegatingSession(session_id: {0})".format(self.session_id)
@@ -1044,10 +1109,13 @@ class SessionEventHandler(event_abcs.EventBusAware):
 class DefaultNativeSessionHandler(session_abcs.SessionHandler,
                                   event_abcs.EventBusAware):
 
-    def __init__(self, session_event_handler, auto_touch=False,
+    def __init__(self,
+                 session_event_handler,
+                 auto_touch=False,
+                 session_store=CachingSessionStore(),
                  delete_invalid_sessions=True):
         self.delete_invalid_sessions = delete_invalid_sessions
-        self._session_store = CachingSessionStore()
+        self._session_store = session_store
         self.session_event_handler = session_event_handler
         self.auto_touch = auto_touch
         self._cache_handler = None  # setter injected
@@ -1276,10 +1344,11 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         finally:
             self.after_stopped(session)
 
-    def on_change(self, session):
+    def on_change(self, session, update_identifiers_map=False):
         if self.auto_touch and not session.is_stopped:  # new to yosai
             session.touch()
-        self.session_store.update(session)
+
+        self.session_store.update(session, update_identifiers_map)
 
 
 class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
@@ -1519,9 +1588,13 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         else:
             session = self._lookup_required_session(session_key)
             session.set_internal_attribute(attribute_key, value)
-            self.session_handler.on_change(session)
+
+            # if it's an internal attribute that is set, map the cached session
+            # to the user id
+            self.session_handler.on_change(session, update_identifiers_map=True)
 
     def remove_internal_attribute(self, session_key, attribute_key):
+        # unless orphaned session/useridentifier map cache entries become an issue.. TBD
         session = self._lookup_required_session(session_key)
         removed = session.remove_internal_attribute(attribute_key)
         if (removed is not None):
@@ -1539,6 +1612,13 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         return self._lookup_required_session(session_key).\
             get_attribute(attribute_key)
 
+    def get_attributes(self, session_key, attribute_keys):
+        """
+        :type attribute_keys: a list of strings
+        """
+        return self._lookup_required_session(session_key).\
+            get_attributes(attribute_keys)
+
     def set_attribute(self, session_key, attribute_key, value=None):
         if (value is None):
             self.remove_attribute(session_key, attribute_key)
@@ -1547,10 +1627,29 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
             session.set_attribute(attribute_key, value)
             self.session_handler.on_change(session)
 
+    # new to yosai
+    def set_attributes(self, session_key, attributes):
+        """
+        :type attributes: dict
+        """
+        session = self._lookup_required_session(session_key)
+        session.set_attributes(attributes)
+        self.session_handler.on_change(session)
+
     def remove_attribute(self, session_key, attribute_key):
         session = self._lookup_required_session(session_key)
         removed = session.remove_attribute(attribute_key)
         if (removed is not None):
+            self.session_handler.on_change(session)
+        return removed
+
+    def remove_attributes(self, session_key, attribute_keys):
+        """
+        :type attribute_keys: a list of strings
+        """
+        session = self._lookup_required_session(session_key)
+        removed = session.remove_attributes(attribute_keys)
+        if removed:
             self.session_handler.on_change(session)
         return removed
 

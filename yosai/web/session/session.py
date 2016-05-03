@@ -16,9 +16,11 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import logging
 
 from yosai.core import (
+    CachingSessionStore,
     DefaultNativeSessionHandler,
     DefaultNativeSessionManager,
     DefaultSessionContext,
@@ -52,6 +54,33 @@ class DefaultWebSessionContext(DefaultSessionContext,
     @web_registry.setter
     def web_registry(self, webregistry):
         self.put(self.__class__.WEB_REGISTRY, webregistry)
+
+
+class WebCachingSessionStore(CachingSessionStore):
+
+    def __init__(self):
+        super().__init__()
+
+    def _cache_identifiers_to_key_map(self, session, session_id):
+        """
+        creates a cache entry within a user's cache space that is used to
+        identify the active session associated with the user
+
+        when a session is associated with a user, it will have an identifiers
+        attribute
+
+        including a primary identifier is new to yosai
+        """
+        isk = 'identifiers_session_key'
+        identifiers = session.get_internal_attribute(isk)
+
+        try:
+            self.cache_handler.set(domain='session',
+                                   identifier=identifiers.primary_identifier,
+                                   value=WebSessionKey(session_id=session_id))
+        except AttributeError:
+            msg = "Could not cache identifiers_session_key."
+            logger.warning(msg)
 
 
 class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
@@ -126,6 +155,7 @@ class WebSessionHandler(DefaultNativeSessionHandler):
 
         super().__init__(session_event_handler=session_event_handler,
                          auto_touch=auto_touch,
+                         session_store=WebCachingSessionStore(),
                          delete_invalid_sessions=delete_invalid_sessions)
 
         self.is_session_id_cookie_enabled = True
@@ -138,8 +168,6 @@ class WebSessionHandler(DefaultNativeSessionHandler):
 
         :param session: the session that was just ``createSession`` created
         """
-        super().on_start(session, session_context)
-
         session_id = session.session_id
         web_registry = session_context.web_registry
 
@@ -163,57 +191,26 @@ class WebSessionHandler(DefaultNativeSessionHandler):
 
         del web_registry.session_id
 
-
-class DefaultWebSessionManager(DefaultNativeSessionManager):
-    """
-    Web-application capable SessionManager implementation
-    """
-    def __init__(self):
-        super().__init__()  # this initializes a session_event_handler
-        self.session_handler = \
-            WebSessionHandler(session_event_handler=self.session_event_handler)
-
-    # yosai omits get_referenced_session_id method
-
-    def create_exposed_session(self, session, key=None, context=None):
-        """
-        This was an overloaded method ported from java that should be refactored. (TBD)
-        Until it is refactored, it is called in one of two ways:
-            1) passing it session and session_context
-            2) passing it session and session_key
-        """
-        try:
-            web_registry = context.web_registry
-        except AttributeError:
-            return super().create_exposed_session(session, context=context)
-        except SyntaxError:  # implies session_context is None
-            try:
-                web_registry = key.web_registry
-            except AttributeError:
-                return super().create_exposed_session(session, key=key)
-
-        # otherwise, assume we are dealing with a Web-enabled request
-        session_key = WebSessionKey(session_id=session.session_id,
-                                    web_registry=web_registry)
-        return DelegatingSession(self, session_key)
-
     # overridden
-    def get_session_id(self, session_key=None, web_registry=None):
+    def get_session_id(self, session_key=None):
         """
         this should be refactored as it is a port of an overridden method (TBD)
         """
         session_id = None
+        # pdb.set_trace()
         try:
             session_id = session_key.session_id
+
             if not session_id:
-                return session_key.web_registry.session_id
-        except SyntaxError:  # implies session_key is None
-            session_id = web_registry.session_id
+                session_id = session_key.web_registry.session_id
+
         except AttributeError:  # then not dealing with a Web-enabled object
             return None
 
+        return session_id
+
     # overridden
-    def on_expiration(self, session, ese, session_key):
+    def on_expiration(self, session, ese=None, session_key=None):
         """
         :type session: session_abcs.Session
         :type ese: ExpiredSessionException
@@ -237,13 +234,48 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         del web_registry.session_id
 
 
+class DefaultWebSessionManager(DefaultNativeSessionManager):
+    """
+    Web-application capable SessionManager implementation
+    """
+    def __init__(self):
+        super().__init__()  # this initializes a session_event_handler
+        self.session_handler = \
+            WebSessionHandler(session_event_handler=self.session_event_handler)
+
+    # yosai omits get_referenced_session_id method
+
+    # overidden
+    def create_exposed_session(self, session, key=None, context=None):
+        """
+        This was an overloaded method ported from java that should be refactored. (TBD)
+        Until it is refactored, it is called in one of two ways:
+            1) passing it session and session_context
+            2) passing it session and session_key
+        """
+        try:
+            web_registry = context.web_registry
+        except AttributeError:
+            return super().create_exposed_session(session, context=context)
+        except SyntaxError:  # implies session_context is None
+            try:
+                web_registry = key.web_registry
+            except AttributeError:
+                return super().create_exposed_session(session, key=key)
+
+        # otherwise, assume we are dealing with a Web-enabled request
+        session_key = WebSessionKey(session_id=session.session_id,
+                                    web_registry=web_registry)
+        return DelegatingSession(self, session_key)
+
+
 class WebSessionKey(DefaultSessionKey):
     """
     A ``SessionKey`` implementation that also retains the ``WebRegistry``
     associated with the web request that is performing the session lookup
     """
     def __init__(self, session_id=None, web_registry=None):
-        self.session_id = session_id
+        super().__init__(session_id)
         self.web_registry = web_registry
 
     def __repr__(self):

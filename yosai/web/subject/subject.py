@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import logging
 
 from yosai.core import (
@@ -75,9 +76,12 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
             try:
                 return self.subject.web_registry
             except AttributeError:  # implies that it's not a WebSubject
+                msg = "WebSubjectContext could not find a WebRegistry."
+                logger.warn(msg)
                 return None
 
         return registry
+
 
 # yosai renamed:
 class WebSubjectBuilder(SubjectBuilder):
@@ -120,10 +124,6 @@ class WebSubjectBuilder(SubjectBuilder):
                          context_attributes=context_attributes)
 
         self.web_registry = web_registry
-
-    def resolve_subject_context(self):
-        super().resolve_subject_context()
-        self.subject_context.web_registry = self.web_registry
 
     # using properties, for consistency:
     @property
@@ -236,33 +236,30 @@ class WebSecurityUtils(SecurityUtils):
     def __init__(self, security_manager=None):
         super().__init__(security_manager)
 
-    @property
-    def web_registry(self):
-        return self._web_registry
-
-    @web_registry.setter
-    def web_registry(self, web_registry):
-        self._web_registry = web_registry
-        self.security_manager.web_registry = web_registry
+    @memoized_property
+    def subject_builder(self):
+        self._subject_builder = WebSubjectBuilder(security_utils=self,
+                                                  security_manager=self.security_manager)
+        return self._subject_builder
 
     # overridden:
-    def load_subject(self):
+    def load_subject(self, web_registry):
         # there should always be a web_registry at this moment, so propagate
         # an exception if that is not the case:
         try:
-            subject_builder = WebSubjectBuilder(security_utils=self,
-                                                security_manager=self.security_manager,
-                                                web_registry=self.web_registry)
+            self._subject = self.subject_builder.build_subject(web_registry=web_registry)
+
         except AttributeError:
             msg = "WebSecurityUtils:  WebSubjectBuilder cannot create a Subject"
             raise MissingWebRegistryException(msg)
-        self._subject = subject_builder.build_subject()
 
     def __call__(self, web_registry):
-        self.web_registry = web_registry
+        """
+        :returns: a DelegatingSubject instance
+        """
+        self.load_subject(web_registry)
         return self
 
     def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
         self._subject = None
-        self.web_registry = None
         global_security_manager.stack.pop()

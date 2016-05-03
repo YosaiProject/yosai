@@ -142,6 +142,8 @@ class WebSecurityManager(NativeSecurityManager):
     # yosai omits session_mode logic, and so doesn't need create_session_manager
 
     # overridden:
+    # DG:  it's not clear to me why this method exists, as it doesn't seem to be
+    # called (TBD)
     def create_session_context(self, subject_context):
         session_context = super().create_session_context(subject_context)
         try:  # will only succeed with WebSubjectContext instances
@@ -159,8 +161,9 @@ class WebSecurityManager(NativeSecurityManager):
     # overridden
     def get_session_key(self, subject_context):
         try:
-            session_id = subject_context.session_id
             web_registry = subject_context.resolve_web_registry()
+            session_id = subject_context.session_id
+
             return WebSessionKey(session_id=session_id,
                                  web_registry=web_registry)
         except AttributeError:  # not dealing with a WebSubjectContext
@@ -219,12 +222,11 @@ class CookieRememberMeManager(AbstractRememberMeManager):
             # base 64 encode it and store as a cookie:
             self.web_registry.remember_me = base64.b64encode(serialized)
         except AttributeError:
-            if logger.getEffectiveLevel() <= logging.DEBUG:
-                msg = ("Subject argument is not an HTTP-aware instance.  This "
-                       "is required to obtain a web registry in order to"
-                       "set the RememberMe cookie. Returning immediately "
-                       "and ignoring RememberMe operation.")
-                logger.debug(msg)
+            msg = ("Subject argument is not an HTTP-aware instance.  This "
+                   "is required to obtain a web registry in order to"
+                   "set the RememberMe cookie. Returning immediately "
+                   "and ignoring RememberMe operation.")
+            logger.debug(msg)
             return
 
     def is_identity_removed(self, subject_context):
@@ -270,12 +272,11 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         """
         if (self.is_identity_removed(subject_context)):
             if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
-                if logger.getEffectiveLevel() <= logging.DEBUG:
-                    msg = ("SubjectContext argument is not an HTTP-aware instance. "
-                           "This is required to obtain a web registry "
-                           "in order to retrieve the RememberMe cookie. Returning "
-                           "immediately and ignoring rememberMe operation.")
-                    logger.debug(msg)
+                msg = ("SubjectContext argument is not an HTTP-aware instance. "
+                       "This is required to obtain a web registry "
+                       "in order to retrieve the RememberMe cookie. Returning "
+                       "immediately and ignoring rememberMe operation.")
+                logger.debug(msg)
 
             return None
 
@@ -290,14 +291,12 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         if base64_rememberme:
             base64 = self.ensure_padding(base64_rememberme)
 
-            if logger.getEffectiveLevel() <= logging.DEBUG:
-                logger.debug("Acquired Base64 encoded identity [" + base64 + "]")
+            logger.debug("Acquired Base64 encoded identity [" + base64 + "]")
 
             decoded = base64.b64decode(base64)
 
-            if logger.getEffectiveLevel() <= logging.DEBUG:
-                logger.debug("Base64 decoded byte array length: {0} bytes".format(
-                             len(decoded) if decoded else 0))
+            logger.debug("Base64 decoded byte array length: {0} bytes".format(
+                         len(decoded) if decoded else 0))
 
             return decoded
 

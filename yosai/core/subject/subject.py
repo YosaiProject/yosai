@@ -43,7 +43,7 @@ from yosai.core import (
     mgt_abcs,
     session_abcs,
     subject_abcs,
-    thread_local,
+    memoized_property,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,21 +104,19 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         security_manager = self.security_manager
         if (security_manager is None):
 
-            if logger.getEffectiveLevel() <= logging.DEBUG:
-                msg = ("No SecurityManager available in subject context map.  " +
-                       "Falling back to SecurityUtils.security_manager for" +
-                       " lookup.")
-                logger.debug(msg)
+            msg = ("No SecurityManager available in subject context map.  " +
+                   "Falling back to SecurityUtils.security_manager for" +
+                   " lookup.")
+            logger.debug(msg)
 
             try:
                 security_manager = self.security_utils.security_manager
             except UnavailableSecurityManagerException:
 
-                if logger.getEffectiveLevel() <= logging.DEBUG:
-                    msg = ("DefaultSubjectContext.resolve_security_manager cannot "
-                           "obtain security_manager! No SecurityManager available "
-                           "via SecurityUtils.  Heuristics exhausted.")
-                    logger.debug(msg, exc_info=True)
+            msg = ("DefaultSubjectContext.resolve_security_manager cannot "
+                   "obtain security_manager! No SecurityManager available "
+                   "via SecurityUtils.  Heuristics exhausted.")
+            logger.debug(msg, exc_info=True)
 
         return security_manager
 
@@ -652,12 +650,11 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         :type create:  bool
         """
-        if logger.getEffectiveLevel() <= logging.DEBUG:
-            msg = ("attempting to get session; create = " + str(create) +
-                   "; \'session is None\' = " + str(self.session is None) +
-                   "; \'session has id\' = " +
-                   str(self.session is not None and bool(self.session.session_id)))
-            logger.debug(msg)
+        msg = ("attempting to get session; create = " + str(create) +
+               "; \'session is None\' = " + str(self.session is None) +
+               "; \'session has id\' = " +
+               str(self.session is not None and bool(self.session.session_id)))
+        logger.debug(msg)
 
         if (not self.session and create):
             if (not self.session_creation_enabled):
@@ -995,7 +992,8 @@ class DefaultSubjectStore:
         :type subject:  subject_abcs.Subject
         """
         # performs merge logic, only updating the Subject's session if it
-        # does not match the current state:
+        # does not match the current state.  This process can be refactored
+        # and made more efficient by consolidating both requests and updates (TBD)
         self.merge_identifiers(subject)
         self.merge_authentication_state(subject)
 
@@ -1187,9 +1185,9 @@ class SubjectBuilder:
         return self.security_manager.create_subject(subject_context=self.subject_context)
 
 
-# moved from /mgt, reconciled, ready to test:
+# the subject factory is used exclusively by the mgt module, so look into
+# moving it over (TBD)
 class DefaultSubjectFactory(subject_abcs.SubjectFactory):
-
     def __init__(self):
         pass
 
@@ -1219,6 +1217,12 @@ class SecurityUtils:
         self._security_manager = security_manager
         self._subject = None
 
+    @memoized_property
+    def subject_builder(self):
+        self._subject_builder = SubjectBuilder(security_utils=self,
+                                              security_manager=self.security_manager)
+        return self._subject_builder
+
     @property
     def subject(self):
         """
@@ -1243,9 +1247,7 @@ class SecurityUtils:
         return self._subject
 
     def load_subject(self):
-        subject_builder = SubjectBuilder(security_utils=self,
-                                         security_manager=self.security_manager)
-        self._subject = subject_builder.build_subject()
+        self._subject = self.subject_builder.build_subject()
 
     @property
     def security_manager(self):
