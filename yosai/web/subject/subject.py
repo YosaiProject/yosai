@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
 import logging
 
 from yosai.core import (
@@ -26,11 +25,11 @@ from yosai.core import (
     SecurityUtils,
     SubjectBuilder,
     global_security_manager,
+    memoized_property,
 )
 
 from yosai.web import (
     DefaultWebSessionContext,
-    MissingWebRegistryException,
     web_subject_abcs,
 )
 
@@ -46,16 +45,17 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
 
     WEB_REGISTRY = "DefaultWebSubjectContext.WEB_REGISTRY"
 
-    def __init__(self, web_registry, security_utils, context={}):
+    def __init__(self, security_utils, security_manager, web_registry, context={}):
         """
         :subject_context:  WebSubjectContext
         """
-        super().__init__(security_utils=security_utils, context=context)
+        super().__init__(security_utils, security_manager, context=context)
+
         self.web_registry = web_registry
 
     # overridden:
-    def resolve_host(self):
-        host = super().resolve_host()
+    def resolve_host(self, session=None):
+        host = super().resolve_host(session)
 
         if not host:
             return self.resolve_web_registry().remote_host
@@ -91,70 +91,33 @@ class WebSubjectBuilder(SubjectBuilder):
     request/response objects,  is retained for use by internal Yosai components.
     """
 
-    def __init__(self,
-                 security_utils,
-                 security_manager=None,
-                 web_registry=None,
-                 subject_context=None,
-                 host=None,
-                 session_id=None,
-                 session=None,
-                 identifiers=None,
-                 session_creation_enabled=True,
-                 authenticated=False,
-                 **context_attributes):
+    def __init__(self, security_utils, security_manager=None):
         """
         Constructs a new ``WebSubjectBuilder`` instance using the ``SecurityManager``
         obtained by calling ``SecurityUtils.security_manager``.  If you want
         to specify your own SecurityManager instance, pass it as an argument.
 
+        """
+        self.security_utils = security_utils
+        self.security_manager = security_manager
+
+    # overridden
+    def create_subject_context(self, web_registry):
+        subject_context = DefaultWebSubjectContext(security_utils=self.security_utils,
+                                                   security_manager=self.security_manager,
+                                                   web_registry=web_registry)
+        return subject_context
+
+    def build_subject(self, web_registry):
+        """
         :param web_registry:  facilitates interaction with request and response
                               objects used by the web application
         :type web_registry:  WebRegistry
-        """
-        super().__init__(security_utils=security_utils,
-                         security_manager=security_manager,
-                         subject_context=subject_context,
-                         host=host,
-                         session_id=session_id,
-                         session=session,
-                         identifiers=identifiers,
-                         session_creation_enabled=session_creation_enabled,
-                         authenticated=authenticated,
-                         context_attributes=context_attributes)
-
-        self.web_registry = web_registry
-
-    # using properties, for consistency:
-    @property
-    def web_registry(self):
-        return self._web_registry
-
-    @web_registry.setter
-    def web_registry(self, web_registry):
-        self._web_registry = web_registry
-
-    # overridden:
-
-    def new_subject_context_instance(self):
-        """
-        Overrides the parent implementation to return a new instance of a
-        ``DefaultWebSubjectContext`` to account for the additional
-        web_registry attribute
-
-        :returns: a new instance of a ``DefaultWebSubjectContext``
-        """
-        return DefaultWebSubjectContext(web_registry=self.web_registry,
-                                        security_utils=self.security_utils)
-
-    def build_subject(self):
-        """
-        Returns ``super().build_subject()``, but additionally ensures that
-        the returned instance is an instance of ``WebSubject``.
 
         :returns: a new ``WebSubject`` instance
         """
-        subject = super().build_subject()  # in turn calls the WebSecurityManager
+        subject_context = self.create_subject_context(web_registry)
+        subject = self.security_manager.create_subject(subject_context=subject_context)
 
         if not isinstance(subject, web_subject_abcs.WebSubject):
             msg = ("Subject implementation returned from the SecurityManager"
@@ -169,18 +132,25 @@ class WebSubjectBuilder(SubjectBuilder):
 class WebDelegatingSubject(DelegatingSubject,
                            web_subject_abcs.WebSubject):
     """
-    Default ``WebSubject`` implementation that additionally ensures the ability to
-    retain a web registry
+    A ``WebDelegatingSubject`` delegates method calls to an underlying ``WebSecurityManager``
+    instance for security checks.  It is essentially a ``WebSecurityManager`` proxy,
+    just as ``DelegatingSession`` is to ``DefaultNativeSessionManager``.
+
+    This implementation does not maintain security-related state such as roles and
+    permissions. Instead, it asks the underlying ``WebSecurityManager`` to check
+    authorization. However, Subject-specific state, such as username, and
+    the WebRegistry object is saved so to facilitate subject-specific processing
+    in the context of a web request.
     """
     def __init__(self, identifiers, authenticated,
                  host, session, web_registry, security_manager,
-                 session_enabled=True):
+                 session_creation_enabled=True):
 
         super().__init__(identifiers=identifiers,
                          authenticated=authenticated,
                          host=host,
                          session=session,
-                         session_creation_enabled=session_enabled,
+                         session_creation_enabled=session_creation_enabled,
                          security_manager=security_manager)
 
         self.web_registry = web_registry
@@ -224,6 +194,9 @@ class WebDelegatingSubject(DelegatingSubject,
 
         return wsc
 
+    def __repr__(self):
+        return "WebDelegatingSubject"
+
 
 class WebSecurityUtils(SecurityUtils):
     """
@@ -244,14 +217,7 @@ class WebSecurityUtils(SecurityUtils):
 
     # overridden:
     def load_subject(self, web_registry):
-        # there should always be a web_registry at this moment, so propagate
-        # an exception if that is not the case:
-        try:
-            self._subject = self.subject_builder.build_subject(web_registry=web_registry)
-
-        except AttributeError:
-            msg = "WebSecurityUtils:  WebSubjectBuilder cannot create a Subject"
-            raise MissingWebRegistryException(msg)
+        self._subject = self.subject_builder.build_subject(web_registry=web_registry)
 
     def __call__(self, web_registry):
         """

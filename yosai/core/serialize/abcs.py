@@ -18,7 +18,7 @@ under the License.
 """
 
 from abc import ABCMeta, abstractmethod
-from marshmallow import fields
+from yosai.core import DeserializationException
 
 
 class Serializable(metaclass=ABCMeta):
@@ -47,7 +47,12 @@ class Serializable(metaclass=ABCMeta):
         :returns: a deserialized object
         """
         schema = cls.serialization_schema()()
-        return schema.load(data=data).data
+        result = schema.load(data=data)
+        if result.errors:
+            msg = 'Failed to de-serialize:  data={0}, errors={1}'.\
+                  format(result.data, result.errors)
+            raise DeserializationException(msg)
+        return result.data
 
     def __eq__(self, other):
         if self is other:

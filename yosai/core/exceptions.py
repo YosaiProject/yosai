@@ -322,6 +322,10 @@ class SerializationException(YosaiException):
     pass
 
 
+class DeserializationException(SerializationException):
+    pass
+
+
 class InvalidSerializationFormatException(SerializationException):
     pass
 

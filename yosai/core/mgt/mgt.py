@@ -729,11 +729,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     * ===================================================================== *
     """
 
-    def create_subject_context(self):
+    # existing_subject is used by WebSecurityManager:
+    def create_subject_context(self, existing_subject):
         if not hasattr(self, 'security_utils'):
             msg = "SecurityManager has no SecurityUtils attribute set."
             raise MisconfiguredException(msg)
-        return DefaultSubjectContext(security_utils=self.security_utils)
+        return DefaultSubjectContext(self.security_utils, self)
 
     def create_subject(self,
                        authc_token=None,
@@ -743,6 +744,14 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         """
         Creates a ``Subject`` instance for the user represented by the given method
         arguments.
+
+        It is an overloaded method, due to porting java to python, and is
+        consequently eligible for refactoring.  It gets called in one of two
+        ways:
+        1) the subject_builder creating an anonymous subject, passing create_subject
+           a subject_context argument
+
+        2) following a after successful login
 
         This implementation functions as follows:
 
@@ -769,8 +778,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :returns:  the Subject instance that represents the context and session
                    data for the newly authenticated subject
         """
-        if subject_context is None:
-            context = self.create_subject_context()
+        if subject_context is None:  # this that means a successful login just happened
+            # passing existing_subject is new to yosai:
+            context = self.create_subject_context(existing_subject)
 
             context.authenticated = True
             context.authentication_token = authc_token
@@ -780,7 +790,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 context.subject = existing_subject
 
         else:
-            context = copy.copy(subject_context)
+            context = copy.copy(subject_context)  # if this necessary? TBD.
 
         # ensure that the context has a security_manager instance, and if
         # not, add one:
@@ -796,7 +806,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         # Similarly, the subject_factory should not require any concept of
         # remember_me -- translate that here first if possible before handing
         # off to the subject_factory:
-
         context = self.resolve_identifiers(context)
 
         subject = self.do_create_subject(context)  # DelegatingSubject
@@ -898,6 +907,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def copy(self, subject_context):
         return DefaultSubjectContext(security_utils=self.security_utils,
+                                     security_manager=self,
                                      context=subject_context)
 
     def do_create_subject(self, subject_context):
@@ -955,8 +965,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         """
         try:
             if (subject_context.resolve_security_manager() is not None):
-                msg = ("Subject Context already contains a security_manager "
-                       "instance. Returning.")
+                msg = ("Subject Context resolved a security_manager "
+                       "instance, so not re-assigning.  Returning.")
                 logger.debug(msg)
                 return subject_context
 
@@ -1031,7 +1041,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         ensures that a subject_context has identifiers and if it doesn't will
         attempt to locate them using heuristics
         """
-        identifiers = subject_context.resolve_identifiers()
+        session = subject_context.session
+        identifiers = subject_context.resolve_identifiers(session)
 
         if (not identifiers):
             msg = ("No identity (identifier_collection) found in the "
@@ -1067,7 +1078,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if (session_id):
             session_context.session_id = session_id
 
-        host = subject_context.resolve_host()
+        host = subject_context.resolve_host(None)
         if (host):
             session_context.host = host
 

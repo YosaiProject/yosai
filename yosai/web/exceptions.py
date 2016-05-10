@@ -24,7 +24,3 @@ from yosai.core import (
 
 class YosaiWebException(YosaiException):
     pass
-
-
-class MissingWebRegistryException(YosaiWebException):
-    pass

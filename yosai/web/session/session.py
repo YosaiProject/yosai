@@ -16,8 +16,10 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
+import traceback 
 import logging
+
+from marshmallow import Schema, fields, post_load
 
 from yosai.core import (
     CachingSessionStore,
@@ -80,7 +82,9 @@ class WebCachingSessionStore(CachingSessionStore):
                                    value=WebSessionKey(session_id=session_id))
         except AttributeError:
             msg = "Could not cache identifiers_session_key."
-            logger.warning(msg)
+            if not identifiers:
+                msg += '  \'identifiers\' internal attribute not set.'
+            logger.debug(msg)
 
 
 class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
@@ -143,6 +147,10 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
                 not isinstance(self.session_manager, session_abcs.NativeSessionManager)):
             return False
 
+        with open('/home/dowwie/traceback_test.log', 'a') as myfile:
+            traceback.print_stack(file=myfile)
+            myfile.write('\n----------------------------------------------\n')
+
         web_registry = subject.web_registry
 
         return web_registry.session_creation_enabled
@@ -197,7 +205,6 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         this should be refactored as it is a port of an overridden method (TBD)
         """
         session_id = None
-        # pdb.set_trace()
         try:
             session_id = session_key.session_id
 
@@ -241,7 +248,8 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     def __init__(self):
         super().__init__()  # this initializes a session_event_handler
         self.session_handler = \
-            WebSessionHandler(session_event_handler=self.session_event_handler)
+            WebSessionHandler(session_event_handler=self.session_event_handler,
+                              auto_touch=True)
 
     # yosai omits get_referenced_session_id method
 
@@ -281,3 +289,17 @@ class WebSessionKey(DefaultSessionKey):
     def __repr__(self):
         return "WebSessionKey(session_id={0}, web_registry={1})".\
             format(self.session_id, self.web_registry)
+
+    @classmethod
+    def serialization_schema(cls):
+        class SerializationSchema(Schema):
+            _session_id = fields.Str(allow_none=True)
+
+            @post_load
+            def make_default_session_key(self, data):
+                mycls = WebSessionKey
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+                return instance
+
+        return SerializationSchema

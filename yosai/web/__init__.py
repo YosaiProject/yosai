@@ -31,7 +31,6 @@ from yosai.web.utils import abcs as web_abcs  # since it is the primary api
 
 from .exceptions import (
     YosaiWebException,
-    MissingWebRegistryException,
 )
 
 

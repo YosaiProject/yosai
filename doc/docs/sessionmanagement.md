@@ -205,6 +205,10 @@ Yosai uses the `marshmallow` library in conjunction with an encoding library, su
 
 Only `Serializable` objects can be serialized in Yosai.  A Serializable class implements the serialize_abcs.Serializable abstract base class, which requires that a `marshmallow.Schema` class be defined for it within its `serialization_schema` classmethod.
 
+If you want to save a None-valued session attribute, you *must* specify allow_none=True 
+within the fields declaration in the Schema class or Yosai will raise a DeserializationException
+revealing this requirement to you.
+
 
 ## Example:  Shopping Cart Session Management
 
@@ -221,8 +225,8 @@ Let's define our `marshmallow.Schema` classes:
 
 ```Python
 class ShoppingCartItemSchema(Schema):
-    upc = fields.String()
-    quantity = fields.Int()
+    upc = fields.String(allow_none=True)
+    quantity = fields.Int(allow_none=True)
 
 # A shopping_cart is a dict that uses a UPC product code as its key and quantity
 # as its value:

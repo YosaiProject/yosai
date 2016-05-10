@@ -22,6 +22,7 @@ import logging
 from yosai.core import (
     AbstractRememberMeManager,
     DefaultSubjectFactory,
+    MisconfiguredException,
     NativeSecurityManager,
 )
 
@@ -54,20 +55,22 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
 
         security_manager = subject_context.resolve_security_manager()
         session = subject_context.resolve_session()
-        session_enabled = subject_context.session_creation_enabled
-        identifiers = subject_context.resolve_identifiers()
-        authenticated = subject_context.resolve_authenticated()
-        host = subject_context.resolve_host()
+        session_creation_enabled = subject_context.session_creation_enabled
+
+        # passing the session arg is new to yosai, eliminating redunant
+        # get_session calls:
+        identifiers = subject_context.resolve_identifiers(session)
+        authenticated = subject_context.resolve_authenticated(session)
+        host = subject_context.resolve_host(session)
 
         web_registry = subject_context.web_registry
-
         return WebDelegatingSubject(identifiers=identifiers,
                                     authenticated=authenticated,
                                     host=host,
                                     session=session,
                                     web_registry=web_registry,
                                     security_manager=security_manager,
-                                    session_enabled=session_enabled)
+                                    session_creation_enabled=session_creation_enabled)
 
 
 class WebSecurityManager(NativeSecurityManager):
@@ -101,12 +104,14 @@ class WebSecurityManager(NativeSecurityManager):
                          remember_me_manager=CookieRememberMeManager())
 
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
-        self._web_registry = None
 
-    # override base method
-    def create_subject_context(self):
-        return DefaultWebSubjectContext(web_registry=self.web_registry,
-                                        security_utils=self.security_utils)
+    def create_subject_context(self, subject):
+        if not hasattr(self, 'security_utils'):
+            msg = "WebSecurityManager has no WebSecurityUtils attribute set."
+            raise MisconfiguredException(msg)
+
+        web_registry = subject.web_registry
+        return DefaultWebSubjectContext(self.security_utils, self, web_registry)
 
     @property
     def session_manager(self):
@@ -122,15 +127,6 @@ class WebSecurityManager(NativeSecurityManager):
 
         evaluator = self.subject_store.session_storage_evaluator
         evaluator.session_manager = sessionmanager
-
-    @property
-    def web_registry(self):
-        return self._web_registry
-
-    @web_registry.setter
-    def web_registry(self, webregistry):
-        self._web_registry = webregistry
-        self.remember_me_manager.web_registry = webregistry
 
     # overidden parent method
     def copy(self, subject_context):
@@ -185,22 +181,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
     """
     Remembers a Subject's identity by saving the Subject's identifiers to a Cookie
     for later retrieval.  The Cookie is accessed through the WebRegistry api.
-
-    Note that since this class subclasses the AbstractRememberMeManager, which
-    already provides serialization and encryption logic, this class utilizes
-    both features for added security before setting the cookie value.
     """
-
-    def __init__(self):
-        self._web_registry = None
-
-    @property
-    def web_registry(self):
-        return self._web_registry
-
-    @web_registry.setter
-    def web_registry(self, web_registry):
-        self._web_registry = web_registry
 
     def remember_serialized_identity(self, subject, serialized):
         """

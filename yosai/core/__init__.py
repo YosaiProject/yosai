@@ -44,6 +44,7 @@ from .exceptions import (
     CredentialsException,
     CryptContextException,
     DeleteSubjectException,
+    DeserializationException,
     DisabledAccountException,
     DisabledSessionException,
     EventBusMessageDataException,

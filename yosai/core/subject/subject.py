@@ -67,16 +67,19 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self, security_utils, context={}):
+    def __init__(self, security_utils, security_manager, context={}):
         """
         :param context: context's schema of reserved attributes must be named
                         according to the property names below
         :type context: dict
         """
+        super().__init__(context)
+
         self.security_utils = security_utils
+        self.security_manager = security_manager
+
         # to set reserved attributes correctly (using the property setters),
         # context must be set accordingly:
-        super().__init__(context)
         for key, value in self.context.items():
             if hasattr(self, key):
                 setattr(self, key, value)  # uses the property setters
@@ -113,10 +116,10 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 security_manager = self.security_utils.security_manager
             except UnavailableSecurityManagerException:
 
-            msg = ("DefaultSubjectContext.resolve_security_manager cannot "
-                   "obtain security_manager! No SecurityManager available "
-                   "via SecurityUtils.  Heuristics exhausted.")
-            logger.debug(msg, exc_info=True)
+                msg = ("DefaultSubjectContext.resolve_security_manager cannot "
+                       "obtain security_manager! No SecurityManager available "
+                       "via SecurityUtils.  Heuristics exhausted.")
+                logger.debug(msg, exc_info=True)
 
         return security_manager
 
@@ -153,7 +156,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         """
         self.none_safe_put(self.get_key('IDENTIFIERS'), identifiers)
 
-    def resolve_identifiers(self):
+    def resolve_identifiers(self, session):
         identifiers = self.identifiers
 
         if not identifiers:
@@ -171,7 +174,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
         # otherwise, use the session key as the identifier:
         if not identifiers:
-            session = self.resolve_session()
             try:
                 identifiers = session.get_internal_attribute(
                     self.get_key('identifiers_session_key'))
@@ -228,7 +230,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         """
         self.put(self.get_key('AUTHENTICATED'), authc)
 
-    def resolve_authenticated(self):
+    def resolve_authenticated(self, session):
         authc = self.authenticated
 
         if authc is None:
@@ -240,10 +242,12 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 pass
         if authc is None:
             #  fall back to a session check:
-            session = self.resolve_session()
-            if (session is not None):
+
+            try:
                 authc = session.get_internal_attribute(
                     self.get_key('authenticated_session_key'))
+            except AttributeError:
+                authc = None
 
         return bool(authc)
 
@@ -281,7 +285,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         """
         self.put(self.get_key('HOST'), host)
 
-    def resolve_host(self):
+    def resolve_host(self, session):
         host = self.host
         if host is None:
             # check to see if there is an AuthenticationToken from which to
@@ -293,7 +297,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
         if host is None:
             try:
-                session = self.resolve_session()
                 host = session.host
             except AttributeError:
                 pass
@@ -307,10 +310,11 @@ class DelegatingSubject(subject_abcs.Subject):
     instance for security checks.  It is essentially a ``SecurityManager`` proxy,
     just as ``DelegatingSession`` is to ``DefaultNativeSessionManager``.
 
-    This implementation does not maintain state such as roles and permissions
-    (only Subject identifier, such as usernames or user primary keys) for
-    better performance in a stateless architecture.  It instead asks the
-    underlying SecurityManager every time to perform the authorization check.
+    This implementation does not maintain security-related state such as roles and
+    permissions. Instead, it asks the underlying SecurityManager to check
+    authorization. However, Subject-specific state, such as username, is
+    saved.  Furthermore, if you are using the WebDelegatingSubject derivative, the
+    WebRegistry object is saved.
 
     A common misconception in using this implementation is that an EIS resource
     (RDBMS, etc) would be 'hit' every time a method is called.  This is not
@@ -321,10 +325,6 @@ class DelegatingSubject(subject_abcs.Subject):
     implementation or its delegate components manage caching, not this class.
     A ``SecurityManager`` is considered a business-tier component, where caching
     strategies are better managed.
-
-    Applications from large and clustered to simple and local all benefit from
-    stateless architectures.  This implementation plays a part in the stateless
-    programming paradigm and should be used whenever possible.
 
     Run-As
     --------
@@ -650,7 +650,7 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         :type create:  bool
         """
-        msg = ("attempting to get session; create = " + str(create) +
+        msg = ("DelegatingSubject attempting to get session; create = " + str(create) +
                "; \'session is None\' = " + str(self.session is None) +
                "; \'session has id\' = " +
                str(self.session is not None and bool(self.session.session_id)))
@@ -1095,94 +1095,28 @@ class SubjectBuilder:
     Subject for continued use if so desired.
 
     Shiro uses the Builder design pattern for this class, including it as an
-    inner class of the Subject interface.  Unlike Shiro, Yosai separates the
-    SubjectBuilder from the Subject abc -- it is independent of the other.
-    Further, Yosai uses python's support for default keyword arguments to provide
-    the same flexibility in Subject creation as provided by the Builder pattern.
-    """
+    inner class of the Subject interface.  Unlike Shiro, Yosai doesn't use the
+    builder pattern and simplifies builder's responsibilities a bit.
 
-    def __init__(self,
-                 security_utils,
-                 security_manager=None,
-                 subject_context=None,
-                 host=None,
-                 session_id=None,
-                 session=None,
-                 identifiers=None,
-                 session_creation_enabled=True,
-                 authenticated=False,
-                 **context_attributes):
+    In future releases, this class may be refactored or removed entirely.  TBD
+    """
+    def __init__(self, security_utils, security_manager):
         """
         :type subject_context:  DefaultSubjectContext
         """
         self.security_utils = security_utils
+        self.security_manager = security_manager
 
-        if security_manager is None:
-            self.security_manager = self.security_utils.security_manager
-        else:
-            self.security_manager = security_manager
+    # yosai omits context_attributes
 
-        self.subject_context = subject_context
-        self.host = host
-        self.session_id = session_id
-        self.session = session
-        self.identifiers = identifiers
-        self.session_creation_enabled = session_creation_enabled
-        self.authenticated = authenticated
-        self.context_attributes = context_attributes
-
-    # new to yosai:
-    def resolve_subject_context(self):
-        if self.subject_context is None:
-            self.subject_context = self.new_subject_context_instance()
-            self.subject_context.security_manager = self.security_manager
-            self.subject_context.host = self.host
-            self.subject_context.session_id = self.session_id
-            self.subject_context.session = self.session
-            self.subject_context.identifiers = self.identifiers
-            self.subject_context.session_creation_enabled = self.session_creation_enabled
-            self.subject_context.authenticated = self.authenticated
-
-            for key, val in self.context_attributes.items():
-                self.context_attribute(key, val)
-
-    # DG: this is needed as it is overridden by subclasses:
-    def new_subject_context_instance(self):
-        return DefaultSubjectContext(security_utils=self.security_utils)
-
-    def context_attribute(self, attribute_key, attribute_value=None):
-        """
-        Allows custom attributes to be added to the underlying context Map used
-        to construct the Subject instance.
-
-        A None key throws an ``InvalidArgumentException``.
-        A None value effectively removes any previously stored attribute under
-        the given key from the context map.
-
-        NOTE: This method is only useful when configuring Yosai with a custom
-        ``SubjectFactory`` implementation.  This method allows end-users to append
-        additional data to the context map which the ``SubjectFactory``
-        implementation can use when building custom ``Subject`` instances. As such,
-        this method is only useful when a custom ``SubjectFactory`` implementation
-        has been configured.
-
-        :param attribute_key:  the key under which the corresponding value will
-                               be stored in the context Map
-        :param attribute_value: the value to store in the context map under the
-                                specified attribute_key
-        :raises InvalidArgumentException: if the attribute_key is None
-        """
-        if (not attribute_key):
-            msg = "Subject context map key cannot be None"
-            raise InvalidArgumentException(msg)
-        if (not attribute_value):
-            self.subject_context.remove(attribute_key)
-        else:
-            self.subject_context.put(attribute_key, attribute_value)
+    # refactored resolve_subject_context:
+    def create_subject_context(self):
+        return DefaultSubjectContext(security_utils=self.security_utils,
+                                     security_manager=self.security_manager)
 
     def build_subject(self):
-        self.resolve_subject_context()
-        return self.security_manager.create_subject(subject_context=self.subject_context)
+        subject_context = self.create_subject_context()
+        return self.security_manager.create_subject(subject_context=subject_context)
 
 
 # the subject factory is used exclusively by the mgt module, so look into
@@ -1198,9 +1132,12 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         security_manager = subject_context.resolve_security_manager()
         session = subject_context.resolve_session()
         session_creation_enabled = subject_context.session_creation_enabled
-        identifiers = subject_context.resolve_identifiers()
-        authenticated = subject_context.resolve_authenticated()
-        host = subject_context.resolve_host()
+
+        # passing the session arg is new to yosai, eliminating redunant
+        # get_session calls:
+        identifiers = subject_context.resolve_identifiers(session)
+        authenticated = subject_context.resolve_authenticated(session)
+        host = subject_context.resolve_host(session)
 
         return DelegatingSubject(identifiers=identifiers,
                                  authenticated=authenticated,
@@ -1220,7 +1157,7 @@ class SecurityUtils:
     @memoized_property
     def subject_builder(self):
         self._subject_builder = SubjectBuilder(security_utils=self,
-                                              security_manager=self.security_manager)
+                                               security_manager=self.security_manager)
         return self._subject_builder
 
     @property
@@ -1264,6 +1201,7 @@ class SecurityUtils:
         """
         self._security_manager = security_manager
         self._security_manager.security_utils = self
+        self.subject_builder.security_manager = security_manager
 
     def __enter__(self):
         global_security_manager.stack.append(self)

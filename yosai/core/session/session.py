@@ -16,8 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
-
 import collections
 import logging
 import pytz
@@ -32,7 +30,6 @@ from yosai.core import (
     InvalidArgumentException,
     IllegalStateException,
     InvalidSessionException,
-    memoized_property,
     RandomSessionIDGenerator,
     SimpleIdentifierCollection,
     SessionCacheException,
@@ -279,6 +276,7 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     def _get_cached_session(self, sessionid):
         try:
             # assume that sessionid isn't None
+
             return self.cache_handler.get(domain='session',
                                           identifier=sessionid)
         except AttributeError:
@@ -304,7 +302,9 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
                                    value=DefaultSessionKey(session_id))
         except AttributeError:
             msg = "Could not cache identifiers_session_key."
-            logger.warning(msg)
+            if not identifiers:
+                msg += '  \'identifiers\' internal attribute not set.'
+            logger.debug(msg)
 
     def _cache(self, session, session_id):
 
@@ -366,7 +366,6 @@ class ProxiedSession(session_abcs.Session):
 
     This class is mostly useful for framework subclassing to intercept certain
     Session calls and perform additional logic.
-
     """
 
     def __init__(self, target_session):
@@ -511,10 +510,8 @@ class SimpleSession(session_abcs.ValidatingSession,
         """
         self._absolute_timeout = abs_timeout
 
-    @memoized_property
+    @property
     def attributes(self):
-        if not hasattr(self, '_attributes'):
-            self._attributes = {}
         return self._attributes
 
     @property
@@ -523,7 +520,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             return None
         return set(self.attributes)  # a set of keys
 
-    @memoized_property
+    @property
     def internal_attributes(self):
         if not hasattr(self, '_internal_attributes'):
             self._internal_attributes = {}
@@ -746,9 +743,6 @@ class SimpleSession(session_abcs.ValidatingSession,
             return self.internal_attributes.pop(key, None)
 
     def get_attribute(self, key):
-        if (not self.attributes):
-            return None
-
         return self.attributes.get(key)
 
     # new to yosai
@@ -757,15 +751,12 @@ class SimpleSession(session_abcs.ValidatingSession,
         :param attributes: the keys of attributes to get from the session
         :type attributes: list of strings
 
-        :returns: a dict containing the attributes requested
+        :returns: a dict containing the attributes requested, if they exist
         """
-        return {key: self.attributes.get(key) for key in keys}
+        return {key: self.attributes.get(key) for key in keys if key in self.attributes}
 
-    def set_attribute(self, key, value=None):
-        if (not value):
-            self.remove_attribute(key)
-        else:
-            self.attributes[key] = value
+    def set_attribute(self, key, value):
+        self.attributes[key] = value
 
     # new to yosai is the bulk setting/getting/removing
     def set_attributes(self, attributes):
@@ -776,10 +767,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         self.attributes.update(attributes)
 
     def remove_attribute(self, key):
-        if (not self.attributes):
-            return None
-        else:
-            return self.attributes.pop(key)
+        return self.attributes.pop(key, None)
 
     # new to yosai
     def remove_attributes(self, keys):
@@ -789,7 +777,7 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a list of popped attribute values
         """
-        return [self.attributes.pop(key) for key in keys]
+        return [self.attributes.pop(key, None) for key in keys]
 
     # deleted on_equals as it is unecessary in python
     # deleted hashcode method as python's __hash__ may be fine -- TBD!
@@ -814,11 +802,13 @@ class SimpleSession(session_abcs.ValidatingSession,
         return ("SimpleSession(session_id: {0}, start_timestamp: {1}, "
                 "stop_timestamp: {2}, last_access_time: {3},"
                 "idle_timeout: {4}, absolute_timeout: {5}, is_expired: {6},"
-                "host: {7})".format(self.session_id, self.start_timestamp,
-                                    self.stop_timestamp, self.last_access_time,
-                                    self.idle_timeout, self.absolute_timeout,
-                                    self.is_expired, self.host))
+                "host: {7}, attributes:{8})".
+                format(self.session_id, self.start_timestamp,
+                       self.stop_timestamp, self.last_access_time,
+                       self.idle_timeout, self.absolute_timeout,
+                       self.is_expired, self.host, self._attributes))
 
+    # the developer using Yosai must define the attribute schema:
     class AttributesSchema(Schema):
         pass
 
@@ -860,7 +850,6 @@ class SimpleSession(session_abcs.ValidatingSession,
 
                 return data
 
-
         class SerializationSchema(Schema):
             _session_id = fields.Str(allow_none=True)
             _start_timestamp = fields.DateTime(allow_none=True)  # iso is default
@@ -878,7 +867,7 @@ class SimpleSession(session_abcs.ValidatingSession,
                                                  allow_none=True)
 
             _attributes = fields.Nested(cls.AttributesSchema,
-                                        allow_none=True)
+                                        allow_null=True)
 
             @post_load
             def make_simple_session(self, data):
@@ -992,31 +981,36 @@ class DelegatingSession(session_abcs.Session):
         return self.session_manager.get_attribute_keys(self.session_key)
 
     def get_attribute(self, attribute_key):
-        return self.session_manager.get_attribute(self.session_key,
-                                                  attribute_key)
+        if attribute_key:
+            return self.session_manager.get_attribute(self.session_key,
+                                                      attribute_key)
+        return None
 
     def get_attributes(self, attribute_keys):
-        return self.session_manager.get_attributes(self.session_key,
-                                                   attribute_keys)
+        if attribute_keys:
+            return self.session_manager.get_attributes(self.session_key,
+                                                       attribute_keys)
+        return None
 
-    def set_attribute(self, attribute_key, value=None):
-        if (value is None):
-            self.remove_attribute(attribute_key)
-        else:
+    def set_attribute(self, attribute_key, value):
+        if all([attribute_key, value]):
             self.session_manager.set_attribute(self.session_key,
                                                attribute_key,
                                                value)
 
     def set_attributes(self, attributes):
-        self.session_manager.set_attributes(self.session_key, attributes)
+        if attributes:
+            self.session_manager.set_attributes(self.session_key, attributes)
 
     def remove_attribute(self, attribute_key):
-        return self.session_manager.remove_attribute(self.session_key,
-                                                     attribute_key)
+        if attribute_key:
+            return self.session_manager.remove_attribute(self.session_key,
+                                                         attribute_key)
 
     def remove_attributes(self, attribute_keys):
-        return self.session_manager.remove_attribute(self.session_key,
-                                                     attribute_keys)
+        if attribute_keys:
+            return self.session_manager.remove_attribute(self.session_key,
+                                                         attribute_keys)
 
     def __repr__(self):
         return "DelegatingSession(session_id: {0})".format(self.session_id)
@@ -1111,7 +1105,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
 
     def __init__(self,
                  session_event_handler,
-                 auto_touch=False,
+                 auto_touch=True,
                  session_store=CachingSessionStore(),
                  delete_invalid_sessions=True):
         self.delete_invalid_sessions = delete_invalid_sessions
