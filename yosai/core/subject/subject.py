@@ -112,11 +112,10 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             try:
                 security_manager = self.security_utils.security_manager
             except UnavailableSecurityManagerException:
-
-            msg = ("DefaultSubjectContext.resolve_security_manager cannot "
-                   "obtain security_manager! No SecurityManager available "
-                   "via SecurityUtils.  Heuristics exhausted.")
-            logger.debug(msg, exc_info=True)
+                msg = ("DefaultSubjectContext.resolve_security_manager cannot "
+                       "obtain security_manager! No SecurityManager available "
+                       "via SecurityUtils.  Heuristics exhausted.")
+                logger.debug(msg, exc_info=True)
 
         return security_manager
 

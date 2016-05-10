@@ -26,6 +26,7 @@ from yosai.core import (
     SecurityUtils,
     SubjectBuilder,
     global_security_manager,
+    memoized_property,
 )
 
 from yosai.web import (
