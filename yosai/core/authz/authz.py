@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 import itertools
+import logging
 
 from yosai.core import (
     AuthorizationEventException,
@@ -34,6 +35,8 @@ from yosai.core import (
 
 import collections
 from marshmallow import Schema, fields, post_load, post_dump
+
+logger = logging.getLogger(__name__)
 
 
 class WildcardPermission(serialize_abcs.Serializable):
@@ -805,18 +808,28 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         :type items: namedtuple
         """
-        identifiers = items.identifiers
-        identifier = identifiers.primary_identifier
-        for realm in self.realms:
-            realm.clear_cached_authorization_info(identifier)
+        try:
+            identifiers = items.identifiers
+            identifier = identifiers.primary_identifier
+            for realm in self.realms:
+                realm.clear_cached_authorization_info(identifier)
+        except AttributeError:
+            msg = ('Could not clear authz_info from cache after event. '
+                   'items: ' + str(items))
+            logger.warn(msg)
 
     def authc_clears_cache(self, identifiers=None):
         """
         :type items: namedtuple
         """
-        identifier = identifiers.primary_identifier
-        for realm in self.realms:
-            realm.clear_cached_authorization_info(identifier)
+        try:
+            identifier = identifiers.primary_identifier
+            for realm in self.realms:
+                realm.clear_cached_authorization_info(identifier)
+        except AttributeError:
+            msg = ('Could not clear authc_info from cache after event. '
+                   'identifiers: ' + str(identifiers))
+            logger.warn(msg)
 
     def register_cache_clear_listener(self):
         if self.event_bus:

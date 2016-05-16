@@ -1092,6 +1092,7 @@ class SessionEventHandler(event_abcs.EventBusAware):
         """
         :type identifiers:  SimpleIdentifierCollection
         """
+
         try:
             self.event_bus.publish('SESSION.EXPIRE', items=session_tuple)
         except AttributeError:
@@ -1174,16 +1175,12 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
     # Session Lookup Methods
     # -------------------------------------------------------------------------
 
-    # this method is necessary because it is overridden by yosai.web:
-    def get_session_id(self, session_key):
-        return session_key.session_id
-
     def _retrieve_session(self, session_key):
         """
         :type session_key: DefaultSessionKey
         :returns: SimpleSession
         """
-        session_id = self.get_session_id(session_key)
+        session_id = session_key.session_id
         if (session_id is None):
             msg = ("Unable to resolve session ID from SessionKey [{0}]."
                    "Returning null to indicate a session could not be "
@@ -1297,6 +1294,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
                 session_tuple = collections.namedtuple(
                     'session_tuple', ['identifiers', 'session_key'])
                 mysession = session_tuple(identifiers, session_key)
+
                 self.session_event_handler.notify_expiration(mysession)
             except:
                 raise

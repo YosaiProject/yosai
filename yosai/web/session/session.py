@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import traceback 
 import logging
 
 from marshmallow import Schema, fields, post_load
@@ -147,10 +146,6 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
                 not isinstance(self.session_manager, session_abcs.NativeSessionManager)):
             return False
 
-        with open('/home/dowwie/traceback_test.log', 'a') as myfile:
-            traceback.print_stack(file=myfile)
-            myfile.write('\n----------------------------------------------\n')
-
         web_registry = subject.web_registry
 
         return web_registry.session_creation_enabled
@@ -198,23 +193,6 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         web_registry = session_key.web_registry
 
         del web_registry.session_id
-
-    # overridden
-    def get_session_id(self, session_key=None):
-        """
-        this should be refactored as it is a port of an overridden method (TBD)
-        """
-        session_id = None
-        try:
-            session_id = session_key.session_id
-
-            if not session_id:
-                session_id = session_key.web_registry.session_id
-
-        except AttributeError:  # then not dealing with a Web-enabled object
-            return None
-
-        return session_id
 
     # overridden
     def on_expiration(self, session, ese=None, session_key=None):
@@ -285,10 +263,26 @@ class WebSessionKey(DefaultSessionKey):
     def __init__(self, session_id=None, web_registry=None):
         super().__init__(session_id)
         self.web_registry = web_registry
+        self.resolve_session_id()
+
+    @property
+    def session_id(self):
+        if not self._session_id:
+            self.resolve_session_id()
+            return self._session_id
+        return self._session_id
+
+    def resolve_session_id(self):
+        session_id = self._session_id
+
+        if not session_id:
+            session_id = self.web_registry.session_id
+
+        self._session_id = session_id
 
     def __repr__(self):
         return "WebSessionKey(session_id={0}, web_registry={1})".\
-            format(self.session_id, self.web_registry)
+            format(self._session_id, self.web_registry)
 
     @classmethod
     def serialization_schema(cls):

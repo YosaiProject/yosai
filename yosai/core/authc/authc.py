@@ -280,11 +280,16 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         session-expire event, whose results attribute is a
         namedtuple(identifiers, session_key)
         """
-        for realm in self.realms:
-            identifiers = items.identifiers
-            realm_identifier = identifiers.from_source(realm.name)
-            if realm_identifier:
-                realm.clear_cached_credentials(realm_identifier)
+        try:
+            for realm in self.realms:
+                identifiers = items.identifiers
+                realm_identifier = identifiers.from_source(realm.name)
+                if realm_identifier:
+                    realm.clear_cached_credentials(realm_identifier)
+        except AttributeError:
+            msg = ('Could not clear authc_info from cache after event. '
+                   'items: ' + str(items))
+            logger.warn(msg)
 
     def register_cache_clear_listener(self):
         if self.event_bus:
