@@ -79,6 +79,9 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
 
     @password.setter
     def password(self, password):
+        if not password:
+            raise InvalidTokenPasswordException('Password must be defined.')
+
         if isinstance(password, bytearray):
             self._password = password
         if isinstance(password, str):
@@ -100,6 +103,9 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
 
     @username.setter
     def username(self, username):
+        if not username:
+            raise InvalidTokenPasswordException('Username must be defined.')
+
         self._username = username
 
     @property
@@ -331,6 +337,9 @@ class Credential(serialize_abcs.Serializable):
 
     def __eq__(self, other):
         return self.credential == other.credential
+
+    def __bool__(self):
+        return bool(self.credential)
 
     @classmethod
     def serialization_schema(cls):

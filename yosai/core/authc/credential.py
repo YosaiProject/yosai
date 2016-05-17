@@ -87,9 +87,14 @@ class PasswordVerifier(authc_abcs.CredentialsVerifier):
 
     def get_submitted_password(self, authc_token):
         try:
-            return authc_token.credentials
+            creds = authc_token.credentials
         except AttributeError:
             raise PasswordVerifierInvalidTokenException
+
+        if not creds:
+            raise PasswordVerifierInvalidTokenException('A password is required.')
+
+        return creds
 
     def get_stored_password(self, account):
         try:

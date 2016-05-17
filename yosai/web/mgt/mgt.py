@@ -201,7 +201,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         """
         try:
             # base 64 encode it and store as a cookie:
-            self.web_registry.remember_me = base64.b64encode(serialized)
+            subject.web_registry.remember_me = base64.b64encode(serialized)
         except AttributeError:
             msg = ("Subject argument is not an HTTP-aware instance.  This "
                    "is required to obtain a web registry in order to"
@@ -261,7 +261,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
 
             return None
 
-        base64_rememberme = self.web_registry.remember_me
+        base64_rememberme = self.subject_context.web_registry.remember_me
 
         # TBD:
         # Browsers do not always remove cookies immediately
@@ -298,4 +298,4 @@ class CookieRememberMeManager(AbstractRememberMeManager):
                                 ``SubjectBuilder`` implementation
         """
 
-        del self.web_registry.remember_me  # no use of subject data (TBD)
+        del subject.web_registry.remember_me  # no use of subject data (TBD)

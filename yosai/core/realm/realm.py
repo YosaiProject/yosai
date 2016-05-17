@@ -20,6 +20,7 @@ import logging
 
 from yosai.core import (
     Account,
+    AccountException,
     AuthzInfoNotFoundException,
     CredentialsNotFoundException,
     InvalidArgumentException,
@@ -60,7 +61,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :type name:  str
         """
         self.name = name
-        self._account_store = account_store 
+        self._account_store = account_store
         self._cache_handler = None
 
         # resolvers are setter-injected after init
@@ -304,6 +305,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             raise InvalidArgumentException(msg)
 
         account = self.get_credentials(identifier)
+
+        if not account:
+            msg = "Could not obtain account credentials for: " + str(identifier)
+            raise AccountException(msg)
 
         self.assert_credentials_match(authc_token, account)
 
