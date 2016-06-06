@@ -111,3 +111,8 @@ class WebRegistry(metaclass=ABCMeta):
     @abstractmethod
     def session_creation_enabled(self):
         pass
+
+    def __repr__(self):
+        return "{0}(request={1}, response={2})".format(self.__class__.__name__,
+                                                       id(self._request),
+                                                       id(self._response) if self._response else None)

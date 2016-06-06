@@ -153,7 +153,7 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
 
 class WebSessionHandler(DefaultNativeSessionHandler):
 
-    def __init__(self, session_event_handler, auto_touch=True,
+    def __init__(self, session_event_handler, auto_touch=False,
                  delete_invalid_sessions=True):
 
         super().__init__(session_event_handler=session_event_handler,
@@ -227,7 +227,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         super().__init__()  # this initializes a session_event_handler
         self.session_handler = \
             WebSessionHandler(session_event_handler=self.session_event_handler,
-                              auto_touch=True)
+                              auto_touch=False)
 
     # yosai omits get_referenced_session_id method
 

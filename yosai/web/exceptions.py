@@ -24,3 +24,7 @@ from yosai.core import (
 
 class YosaiWebException(YosaiException):
     pass
+
+
+class CookieException(YosaiWebException):
+    pass

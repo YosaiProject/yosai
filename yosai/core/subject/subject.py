@@ -832,6 +832,10 @@ class DelegatingSubject(subject_abcs.Subject):
                 self.clear_run_as_identities()
         return popped
 
+    def __repr__(self):
+        return "{0}(_identifiers={1}, _authenticated={2})".\
+            format(self.__class__.__name__, self._identifiers, self._authenticated)
+
     # inner class:
     class StoppingAwareProxiedSession(ProxiedSession):
 
@@ -851,8 +855,8 @@ class DelegatingSubject(subject_abcs.Subject):
             super().stop(identifiers)
             self.owner.session_stopped()
 
-    def __repr__(self):
-        return "StoppingAwareProxiedSession()"
+        def __repr__(self):
+            return "StoppingAwareProxiedSession()"
 
 
 # migrated from /mgt:

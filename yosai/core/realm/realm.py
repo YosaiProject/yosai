@@ -324,6 +324,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # new to yosai: until a better approach is found, is the overriding /
         # enrichment of the account_id attribute with a SIC
         account.account_id = identifiers
+
+        self.clear_cached_credentials(identifiers.primary_identifier)
+
         return account
 
     def assert_credentials_match(self, authc_token, account):

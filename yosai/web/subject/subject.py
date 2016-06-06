@@ -194,9 +194,6 @@ class WebDelegatingSubject(DelegatingSubject,
 
         return wsc
 
-    def __repr__(self):
-        return "WebDelegatingSubject"
-
 
 class WebSecurityUtils(SecurityUtils):
     """
