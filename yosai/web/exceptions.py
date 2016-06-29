@@ -28,3 +28,7 @@ class YosaiWebException(YosaiException):
 
 class CookieException(YosaiWebException):
     pass
+
+
+class CSRFTokenException(YosaiWebException):
+    pass

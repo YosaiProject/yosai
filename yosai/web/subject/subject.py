@@ -194,6 +194,20 @@ class WebDelegatingSubject(DelegatingSubject,
 
         return wsc
 
+    # this override is new to yosai, to support CSRF token synchronization:
+    def get_session(self, create=True):
+        """
+        :type create:  bool
+
+        A CSRF Token is generated for each new session (and at successful login).
+        """
+        super().get_session(create)
+
+        if create:
+            self.security_manager.set_csrf_token(self.session)
+
+        return self.session
+
 
 class WebSecurityUtils(SecurityUtils):
     """

@@ -18,6 +18,8 @@ under the License.
 """
 import base64
 import logging
+import binascii
+import os
 
 from yosai.core import (
     AbstractRememberMeManager,
@@ -27,6 +29,7 @@ from yosai.core import (
 )
 
 from yosai.web import (
+    CSRFTokenException,
     DefaultWebSessionContext,
     DefaultWebSessionStorageEvaluator,
     DefaultWebSessionManager,
@@ -175,6 +178,21 @@ class WebSecurityManager(NativeSecurityManager):
             del subject.web_registry.remember_me  # descriptor sets to None
         except AttributeError:  # then it's not a WebSubject
             pass
+
+    # new to yosai
+    def set_csrf_token(self, session):
+        csrf_token = binascii.hexlify(os.urandom(20)).decode('utf-8')
+
+        # the session should already exist, so an exception ought to raise otherwise
+        try:
+            session.set_attribute('CSRF_TOKEN', csrf_token)
+        except AttributeError:
+            raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
+
+    # new to yosai, overriding to support CSRF token synchronization
+    def on_successful_login(self, authc_token, account, subject):
+        self.set_csrf_token(subject.session)
+        super().remember_me_successful_login(authc_token, account, subject)
 
 
 class CookieRememberMeManager(AbstractRememberMeManager):
