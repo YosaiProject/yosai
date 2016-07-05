@@ -22,7 +22,7 @@ from yosai.core import (
     DefaultSubjectContext,
     DelegatingSubject,
     IllegalStateException,
-    SecurityUtils,
+    Yosai,
     SubjectBuilder,
     global_security_manager,
     memoized_property,
@@ -94,7 +94,7 @@ class WebSubjectBuilder(SubjectBuilder):
     def __init__(self, security_utils, security_manager=None):
         """
         Constructs a new ``WebSubjectBuilder`` instance using the ``SecurityManager``
-        obtained by calling ``SecurityUtils.security_manager``.  If you want
+        obtained by calling ``Yosai.security_manager``.  If you want
         to specify your own SecurityManager instance, pass it as an argument.
 
         """
@@ -209,10 +209,10 @@ class WebDelegatingSubject(DelegatingSubject,
         return self.session
 
 
-class WebSecurityUtils(SecurityUtils):
+class WebYosai(Yosai):
     """
-    This is a web-enabled SecurityUtils.  It is initialized using a
-    WebSecurityManager.  Unlike ``SecurityUtils``, ``WebSecurityUtils`` is
+    This is a web-enabled Yosai.  It is initialized using a
+    WebSecurityManager.  Unlike ``Yosai``, ``WebYosai`` is
     callable, passing it a ``WebRegistry`` instance that contains web request and
     response objects and functionality to manage cookies.
     """

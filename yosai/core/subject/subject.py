@@ -108,7 +108,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         if (security_manager is None):
 
             msg = ("No SecurityManager available in subject context map.  " +
-                   "Falling back to SecurityUtils.security_manager for" +
+                   "Falling back to Yosai.security_manager for" +
                    " lookup.")
             logger.debug(msg)
 
@@ -118,7 +118,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
 
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
                        "obtain security_manager! No SecurityManager available "
-                       "via SecurityUtils.  Heuristics exhausted.")
+                       "via Yosai.  Heuristics exhausted.")
                 logger.debug(msg, exc_info=True)
 
         return security_manager
@@ -1089,11 +1089,11 @@ class SubjectBuilder:
     NOTE:
     This is provided for framework development support only and should typically
     never be used by application developers.  Subject instances should generally
-    be acquired by using ``SecurityUtils.subject``
+    be acquired by using ``Yosai.subject``
 
     The simplest usage of this builder is to construct an anonymous, session-less
     ``Subject`` instance. The returned Subject instance is *not* automatically bound
-    to the application (thread) for further use.  That is, ``SecurityUtils.subject``
+    to the application (thread) for further use.  That is, ``Yosai.subject``
     will not automatically return the same instance as what is returned by the
     builder.  It is up to the framework developer to bind the built
     Subject for continued use if so desired.
@@ -1152,7 +1152,7 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 
 
 # moved from its own security_utils module so as to avoid circular importing:
-class SecurityUtils:
+class Yosai:
 
     def __init__(self, security_manager=None):
         self._security_manager = security_manager

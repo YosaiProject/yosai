@@ -212,7 +212,7 @@ from yosai.core.session.session import (
 thread_local = threading.local()  # use only one global instance
 
 from yosai.core.subject.subject import(
-    SecurityUtils,
+    Yosai,
     DefaultSubjectContext,
     DefaultSubjectStore,
     DefaultSubjectFactory,

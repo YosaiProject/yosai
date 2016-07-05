@@ -420,7 +420,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if session_attributes_schema:
             SimpleSession.set_attributes_schema(session_attributes_schema)
 
-        # the security_utils attribute is set by SecurityUtils
+        # the security_utils attribute is set by Yosai
 
     """
     * ===================================================================== *
@@ -732,7 +732,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     # existing_subject is used by WebSecurityManager:
     def create_subject_context(self, existing_subject):
         if not hasattr(self, 'security_utils'):
-            msg = "SecurityManager has no SecurityUtils attribute set."
+            msg = "SecurityManager has no Yosai attribute set."
             raise MisconfiguredException(msg)
         return DefaultSubjectContext(self.security_utils, self)
 

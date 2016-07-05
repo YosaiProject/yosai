@@ -86,8 +86,8 @@ class WebSecurityManager(NativeSecurityManager):
     - yosai uses the native web session manager as default, unlike Shiro,
       which uses the middleware version instead
 
-    - the security_utils attribute is set by WebSecurityUtils when the
-      SecurityManager is passed to the WebSecurityUtils
+    - the security_utils attribute is set by WebYosai when the
+      SecurityManager is passed to the WebYosai
 
     """
 
@@ -110,7 +110,7 @@ class WebSecurityManager(NativeSecurityManager):
 
     def create_subject_context(self, subject):
         if not hasattr(self, 'security_utils'):
-            msg = "WebSecurityManager has no WebSecurityUtils attribute set."
+            msg = "WebSecurityManager has no WebYosai attribute set."
             raise MisconfiguredException(msg)
 
         web_registry = subject.web_registry
@@ -181,6 +181,10 @@ class WebSecurityManager(NativeSecurityManager):
 
     # new to yosai
     def set_csrf_token(self, session):
+        """
+        :rtype: str
+        :returns: a CSRF token
+        """
         csrf_token = binascii.hexlify(os.urandom(20)).decode('utf-8')
 
         # the session should already exist, so an exception ought to raise otherwise
@@ -188,6 +192,8 @@ class WebSecurityManager(NativeSecurityManager):
             session.set_attribute('CSRF_TOKEN', csrf_token)
         except AttributeError:
             raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
+
+        return csrf_token
 
     # new to yosai, overriding to support CSRF token synchronization
     def on_successful_login(self, authc_token, account, subject):

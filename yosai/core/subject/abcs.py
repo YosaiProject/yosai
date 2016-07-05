@@ -422,9 +422,9 @@ class Subject(metaclass=ABCMeta):
     Acquiring a Subject
     ----------------------
     To acquire the currently-executing Subject, application developers will
-    almost always use SecurityUtils:
+    almost always use Yosai:
 
-        SecurityUtils.get_subject()
+        Yosai.get_subject()
 
     Almost all security operations should be performed with the Subject returned
     from this method.

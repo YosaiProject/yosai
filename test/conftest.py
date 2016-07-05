@@ -11,7 +11,7 @@ from yosai.core import (
     NativeSecurityManager,
     PermissionResolver,
     RoleResolver,
-    SecurityUtils,
+    Yosai,
     SimpleRole,
     UsernamePasswordToken,
     event_bus,
@@ -19,7 +19,7 @@ from yosai.core import (
 
 from yosai.web import (
     WebSecurityManager,
-    WebSecurityUtils,
+    WebYosai,
 )
 
 
@@ -54,7 +54,7 @@ def session(request):
 
 @pytest.fixture(scope='session')
 def yosai():
-    return SecurityUtils()
+    return Yosai()
 
 
 @pytest.fixture(scope='session')
@@ -168,7 +168,7 @@ def mock_web_registry():
 
 @pytest.fixture(scope='session')
 def web_yosai():
-    return WebSecurityUtils()
+    return WebYosai()
 
 
 @pytest.fixture(scope='session')

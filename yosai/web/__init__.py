@@ -48,7 +48,7 @@ from yosai.web.subject.subject import (
     WebSubjectBuilder,
     DefaultWebSubjectContext,
     WebDelegatingSubject,
-    WebSecurityUtils,
+    WebYosai,
 )
 
 from yosai.web.mgt.mgt import (

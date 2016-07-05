@@ -16,7 +16,7 @@ from yosai.core import (
     SimpleIdentifierCollection,
     SessionException,
     SubjectBuilder,
-    SecurityUtils,
+    Yosai,
     thread_local,
     UnauthenticatedException,
 )
@@ -84,7 +84,7 @@ def test_dsc_resolve_security_manager_none(
 
     test case:
     when no security manager attribute exists, next tries to obtain one from
-    SecurityUtils
+    Yosai
     """
     dsc = default_subject_context
     csu = configured_securityutils
@@ -1525,7 +1525,7 @@ def test_dsf_create_subject(
 
 
 # ------------------------------------------------------------------------------
-# SecurityUtils
+# Yosai
 # ------------------------------------------------------------------------------
 
 def test_su_get_subject_notinthreadlocal(
@@ -1534,9 +1534,9 @@ def test_su_get_subject_notinthreadlocal(
     unit tested:  subject
 
     test case:
-    - when a subject attribute isn't available from the SecurityUtils instance,
+    - when a subject attribute isn't available from the Yosai instance,
       subject_builder creates one
-        - the newly created subject is bound to the SecurityUtils instance
+        - the newly created subject is bound to the Yosai instance
     - the subject is returned
     """
     csu = configured_securityutils
@@ -1554,7 +1554,7 @@ def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
     unit tested:  get_subject
 
     test case:
-    when a subject is bound to a SecurityUtils, it is returned
+    when a subject is bound to a Yosai, it is returned
     """
     csu = configured_securityutils
     monkeypatch.setattr(csu, '_subject', 'subject', raising=False)
