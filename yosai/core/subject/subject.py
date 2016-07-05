@@ -17,12 +17,10 @@ specific language governing permissions and limitations
 under the License.
 """
 import collections
+import copy
 import logging
 from contextlib import contextmanager
-
-# Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
-# from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
-#                         Thread)
+import weakref
 
 from yosai.core import (
     MapContext,
@@ -1199,7 +1197,8 @@ class Yosai:
     @staticmethod
     @contextmanager
     def set_context(subject):
-        global_subject_context.stack.append(subject)
+        mysubject = copy.copy(subject)
+        global_subject_context.stack.append(weakref.proxy(mysubject, list.remove))
         yield Yosai.get_current_subject()
         global_subject_context.stack.pop()
 
