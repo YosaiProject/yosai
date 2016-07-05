@@ -395,6 +395,10 @@ class DisabledSessionException(SubjectException):
     pass
 
 
+class SubjectContextException(SubjectException):
+    pass
+
+
 class UnrecognizedIdentifierException(SubjectException):
     pass
 

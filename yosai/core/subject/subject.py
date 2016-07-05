@@ -18,6 +18,7 @@ under the License.
 """
 import collections
 import logging
+from contextlib import contextmanager
 
 # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
 # from concurrency import (Callable, Runnable, SubjectCallable, SubjectRunnable,
@@ -36,10 +37,11 @@ from yosai.core import (
     ProxiedSession,
     SecurityManagerNotSetException,
     SessionException,
+    SubjectContextException,
+    ThreadStateManager,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
     # UnsupportedOperationException,
-    global_security_manager,
     mgt_abcs,
     session_abcs,
     subject_abcs,
@@ -1156,7 +1158,6 @@ class Yosai:
 
     def __init__(self, security_manager=None):
         self._security_manager = security_manager
-        self._subject = None
 
     @memoized_property
     def subject_builder(self):
@@ -1164,17 +1165,10 @@ class Yosai:
                                                security_manager=self.security_manager)
         return self._subject_builder
 
-    @property
-    def subject(self):
+    def get_subject(self):
         """
         Returns the currently accessible Subject available to the calling code
-        depending on runtime environment
-
-        The subject property-attribute is provided as a way to obtain a Subject
-        without having to resort to implementation-specific methods.  It allows
-        the Yosai team to change the underlying implementation of this method in
-        the future depending on requirements/updates without affecting your code
-        that uses it.
+        depending on runtime environment.
 
         :returns: the Subject currently accessible to the calling code
         :raises IllegalStateException: if no Subject instance or SecurityManager
@@ -1183,12 +1177,7 @@ class Yosai:
                                         application configuration because a Subject
                                         should *always* be available to the caller)
         """
-        if not self._subject:
-            self.load_subject()
-        return self._subject
-
-    def load_subject(self):
-        self._subject = self.subject_builder.build_subject()
+        return self.subject_builder.build_subject()
 
     @property
     def security_manager(self):
@@ -1207,10 +1196,21 @@ class Yosai:
         self._security_manager.security_utils = self
         self.subject_builder.security_manager = security_manager
 
-    def __enter__(self):
-        global_security_manager.stack.append(self)
-        return self
+    @staticmethod
+    @contextmanager
+    def set_context(subject):
+        global_subject_context.stack.append(subject)
+        yield Yosai.get_current_subject()
+        global_subject_context.stack.pop()
 
-    def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
-        self._subject = None
-        global_security_manager.stack.pop()
+    @staticmethod
+    def get_current_subject():
+        try:
+            return global_subject_context.stack[-1]
+        except IndexError:
+            msg = 'A subject instance does not exist in the global context.'
+            raise SubjectContextException(msg)
+
+
+# Set Global State Manager
+global_subject_context = ThreadStateManager()

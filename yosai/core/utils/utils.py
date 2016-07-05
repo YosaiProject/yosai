@@ -27,12 +27,6 @@ class ThreadStateManager(threading.local):
     def __init__(self):
         self.stack = []
 
-global_security_manager = ThreadStateManager()
-
-
-def get_current_lib():
-    return global_security_manager.stack[-1]
-
 
 class memoized_property:
     """A read-only @property that is only evaluated once.  Copied from

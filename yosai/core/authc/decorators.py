@@ -1,7 +1,7 @@
 import functools
 from yosai.core import (
     UnauthenticatedException,
-    get_current_lib,
+    get_current_yosai,
 )
 
 
@@ -16,7 +16,7 @@ def requires_authentication(fn):
 
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
-        yosai = get_current_lib()
+        yosai = get_current_yosai()
         subject = yosai.subject
 
         if not subject.authenticated:
@@ -43,7 +43,7 @@ def requires_user(fn):
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
 
-        yosai = get_current_lib()
+        yosai = get_current_yosai()
         subject = yosai.subject
 
         if subject.identifiers is None:
@@ -73,7 +73,7 @@ def requires_guest(fn):
     @functools.wraps(fn)
     def wrap(*args, **kwargs):
 
-        yosai = get_current_lib()
+        yosai = get_current_yosai()
         subject = yosai.subject
 
         if subject.identifiers is not None:

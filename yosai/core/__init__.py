@@ -97,6 +97,7 @@ from .exceptions import (
     SessionException,
     SessionEventException,
     StoppedSessionException,
+    SubjectContextException,
     SubjectException,
     UnauthenticatedException,
     UnauthorizedException,
@@ -160,10 +161,9 @@ from yosai.core.concurrency.concurrency import (
 
 from yosai.core.utils.utils import (
     OrderedSet,
+    ThreadStateManager,
     memoized_property,
     unix_epoch_time,
-    global_security_manager,
-    get_current_lib,
 )
 
 
@@ -297,10 +297,3 @@ from yosai.core.authz.decorators import (
     requires_permission,
     requires_role,
 )
-
-
-
-# sm_config = mgt_settings.security_manager_config
-# sm_factory = SecurityManagerFactory(sm_config)
-# security_utils.security_manager = sm_factory.create_instance()
-# logger.info('Yosai Initialized')

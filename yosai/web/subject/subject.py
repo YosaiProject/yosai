@@ -24,7 +24,8 @@ from yosai.core import (
     IllegalStateException,
     Yosai,
     SubjectBuilder,
-    global_security_manager,
+    global_yosai_context,
+    global_subject_context,
     memoized_property,
 )
 
@@ -227,16 +228,19 @@ class WebYosai(Yosai):
         return self._subject_builder
 
     # overridden:
-    def load_subject(self, web_registry):
-        self._subject = self.subject_builder.build_subject(web_registry=web_registry)
-
-    def __call__(self, web_registry):
+    def get_subject(self, web_registry):
         """
-        :returns: a DelegatingSubject instance
-        """
-        self.load_subject(web_registry)
-        return self
+        Returns the currently accessible Subject available to the calling code
+        depending on runtime environment.
 
-    def __exit__(self, exc_type=None, exc_value=None, exc_trace=None):
-        self._subject = None
-        global_security_manager.stack.pop()
+        :param web_registry:  The WebRegistry instance that knows how to interact
+                              with the web application's request and response APIs
+
+        :returns: the Subject currently accessible to the calling code
+        :raises IllegalStateException: if no Subject instance or SecurityManager
+                                       instance is available to obtain a Subject
+                                       (such an setup is considered an invalid
+                                        application configuration because a Subject
+                                        should *always* be available to the caller)
+        """
+        return self.subject_builder.build_subject(web_registry=web_registry)
