@@ -1196,9 +1196,8 @@ class Yosai:
 
     @staticmethod
     @contextmanager
-    def set_context(subject):
-        mysubject = copy.copy(subject)
-        global_subject_context.stack.append(weakref.proxy(mysubject, list.remove))
+    def context(subject):
+        global_subject_context.stack.append(subject)  # how to weakref? TBD
         yield Yosai.get_current_subject()
         global_subject_context.stack.pop()
 
