@@ -24,7 +24,6 @@ from yosai.core import (
     IllegalStateException,
     Yosai,
     SubjectBuilder,
-    global_yosai_context,
     global_subject_context,
     memoized_property,
 )

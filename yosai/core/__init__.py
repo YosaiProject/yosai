@@ -218,6 +218,7 @@ from yosai.core.subject.subject import(
     DefaultSubjectFactory,
     DelegatingSubject,
     SubjectBuilder,
+    global_subject_context,
 )
 
 
