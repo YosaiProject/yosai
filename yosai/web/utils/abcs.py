@@ -23,96 +23,90 @@ from abc import ABCMeta, abstractmethod
 
 class WebRegistry(metaclass=ABCMeta):
     """
-    Cookie attributes (path, domain, maxAge, etc) may be set on this class's
-    default ``cookie`` attribute, which acts as a template to use to set all
-    properties of outgoing cookies created by this implementation.
+    notes (TBD):
+        shiro marked cookies as deleted and ignored those because cookies weren't
+        immediately removed by browsers (or through servlets?).. not sure how to
+        address this in Yosai yet
 
-    The default cookie has the following attribute values set:
-
-    |Attribute Name|    Value
-    |--------------|----------------
-    | name         | rememberMe
-    | path         | /
-    | max_age      | Cookie.ONE_YEAR
-
-    http-only attribute support
-
-    shiro marked cookies as deleted and ignored those because cookies weren't
-    immediately removed by browsers (or through servlets?).. not sure how to
-    address this in Yosai yet (TBD)
-
-    removed cookies should return None values for their __get__'s
-
-    set http-only to True
-
-    Note:  when session is created, REFERENCED_SESSION_ID_SOURCE attribute is
-    removed from the servlet and REFERENCED_SESSION_IS_NEW attribute gets set
-
-    removing a cookie entails removing from request and response objects
-
-    take a close look at the cookie arguments used in the SessionManager,
-    including:
-        REFERENCED_SESSION_ID
-        REFERENCED_SESSION_ID_SOURCE
-        REFERENCED_SESSION_IS_NEW
-        REFERENCED_SESSION_ID_IS_VALID
+        - set http-only to True
     """
 
     @abstractmethod
-    def __init__(self, request=None, response=None):
-        pass
+    def __init__(self, request, secret):
+        self.request = request
+        self.secret = secret
+        self.cookies = {'set_cookie': {}, 'delete_cookie': set()}
+        self._session_creation_enabled = True
+        self.set_cookie_attributes = {}  # TBD
+
+        self.register_response_callback()
 
     @property
-    @abstractmethod
     def remember_me(self):
-        pass
+        return self._get_cookie('remember_me', self.secret)
 
     @remember_me.setter
-    @abstractmethod
     def remember_me(self, rememberme):
-        pass
+        cookie = {'value': rememberme}
+        self.cookies['set_cookie']['remember_me'] = cookie
 
     @remember_me.deleter
-    @abstractmethod
     def remember_me(self):
-        pass
+        self.cookies['delete_cookie'].add('remember_me')
 
     @property
-    @abstractmethod
     def session_id(self):
-        pass
+        return self._get_cookie('session_id', self.secret)
 
     @session_id.setter
-    @abstractmethod
     def session_id(self, session_id):
-        pass
+        cookie = {'value': session_id}
+        self.cookies['set_cookie']['session_id'] = cookie
 
     @session_id.deleter
-    @abstractmethod
     def session_id(self):
-        pass
+        self.cookies['delete_cookie'].add('session_id')
 
     @property
-    @abstractmethod
     def remote_host(self):
-        pass
+        return self.request.client_addr
 
     @property
-    @abstractmethod
     def session_creation_enabled(self):
-        pass
+        return self._session_creation_enabled
 
     @session_creation_enabled.setter
-    @abstractmethod
     def session_creation_enabled(self, session_creation_enabled):
-        pass
+        self._session_creation_enabled = session_creation_enabled
 
     @session_creation_enabled.deleter
-    @abstractmethod
     def session_creation_enabled(self):
+        self._session_creation_enabled = None
+
+    def webregistry_callback(self, request, response):
+        while self.cookies['set_cookie']:
+            key, value = self.cookies['set_cookie'].popitem()
+            self._set_cookie(response, key, **value)
+
+        while self.cookies['delete_cookie']:
+            key = self.cookies['delete_cookie'].pop()
+            self._delete_cookie(response, key)
+
+    @abstractmethod
+    def _get_cookie(self, cookie_name, secret):
+        pass
+
+    @abstractmethod
+    def _set_cookie(self, response, cookie_name, cookie_val):
+        pass
+
+    @abstractmethod
+    def _delete_cookie(self, response, cookie_name):
+        pass
+
+    @abstractmethod
+    def register_response_callback(self):
         pass
 
     def __repr__(self):
-        return "{0}(request={1}, response={2})".format(self.__class__.__name__,
-                                                       id(self._request),
-                                                       id(self._response) if self._response else None)
+        return "{0}(request={1})".format(self.__class__.__name__, id(self._request))

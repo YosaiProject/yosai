@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 import logging
+from uuid import uuid4
 
 from yosai.core import (
     Account,
@@ -56,7 +57,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             - as of shiro v2 alpha rev1693638, shiro doesn't (yet)
     """
 
-    def __init__(self, name, account_store=None):
+    def __init__(self, name='AccountStoreRealm_' + str(uuid4()), account_store=None):
         """
         :type name:  str
         """

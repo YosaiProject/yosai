@@ -17,10 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 import collections
-import copy
 import logging
 from contextlib import contextmanager
-import weakref
 
 from yosai.core import (
     MapContext,
@@ -1199,7 +1197,7 @@ class Yosai:
     def context(subject):
         global_subject_context.stack.append(subject)  # how to weakref? TBD
         yield Yosai.get_current_subject()
-        global_subject_context.stack.pop()
+        global_subject_context.stack.remove(subject)
 
     @staticmethod
     def get_current_subject():
