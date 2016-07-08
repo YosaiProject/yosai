@@ -24,7 +24,6 @@ from yosai.core import (
     IllegalStateException,
     Yosai,
     SubjectBuilder,
-    global_subject_context,
     memoized_property,
 )
 
@@ -204,7 +203,7 @@ class WebDelegatingSubject(DelegatingSubject,
         super().get_session(create)
 
         if create:
-            self.security_manager.set_csrf_token(self.session)
+            self.session.new_csrf_token()
 
         return self.session
 

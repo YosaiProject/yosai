@@ -882,8 +882,8 @@ class SimpleSession(session_abcs.ValidatingSession,
 
 class SimpleSessionFactory(session_abcs.SessionFactory):
 
-    @classmethod
-    def create_session(cls, session_context=None):
+    @staticmethod
+    def create_session(session_context=None):
         return SimpleSession(host=getattr(session_context, 'host', None))
 
 
@@ -1372,8 +1372,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     """
 
-    def __init__(self):
-        self.session_factory = SimpleSessionFactory()
+    def __init__(self, session_factory=SimpleSessionFactory()):
+        self.session_factory = session_factory
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
             DefaultNativeSessionHandler(session_event_handler=self.session_event_handler,

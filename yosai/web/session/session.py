@@ -17,6 +17,9 @@ specific language governing permissions and limitations
 under the License.
 """
 import logging
+import binascii
+import os
+import collections
 
 from marshmallow import Schema, fields, post_load
 
@@ -28,16 +31,85 @@ from yosai.core import (
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
+    SimpleIdentifierCollection,
+    SimpleSession,
     session_abcs,
 )
 
 from yosai.web import (
+    CSRFTokenException,
     web_session_abcs,
     web_subject_abcs,
 )
 
 logger = logging.getLogger(__name__)
 
+
+# new to yosai:
+class WebDelegatingSession(DelegatingSession):
+
+    def __init__(self, session_manager, session_key):
+        super().__init__(session_manager, session_key)
+
+    # new to yosai
+    def new_csrf_token(self):
+        """
+        :rtype: str
+        :returns: a CSRF token
+        """
+
+        try:
+            csrf_token = binascii.hexlify(os.urandom(20)).decode('utf-8')
+            self.set_internal_attribute('csrf_token', csrf_token)
+        except AttributeError:
+            raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
+
+        return csrf_token
+
+    # new to yosai
+    def get_csrf_token(self):
+        token = self.get_internal_attribute('csrf_token')
+        if token is None:
+            return self.new_csrf_token()
+
+
+class WebSimpleSession(SimpleSession):
+
+    @classmethod
+    def serialization_schema(cls):
+
+        class InternalSessionAttributesSchema(Schema):
+            identifiers_session_key = fields.Nested(
+                SimpleIdentifierCollection.serialization_schema(),
+                attribute='identifiers_session_key',
+                allow_none=False)
+
+            authenticated_session_key = fields.Boolean(
+                attribute='authenticated_session_key',
+                allow_none=False)
+
+            run_as_identifiers_session_key = fields.Nested(
+                SimpleIdentifierCollection.serialization_schema(),
+                attribute='run_as_identifiers_session_key',
+                many=True,
+                allow_none=False)
+
+            csrf_token = fields.Str(attribute='csrf_token', allow_none=False)
+
+            @post_load
+            def make_internal_attributes(self, data):
+                try:
+                    raisk = 'run_as_identifiers_session_key'
+                    runas = data.get(raisk)
+                    if runas:
+                        que = collections.deque(runas)
+                        data[raisk] = que
+                except TypeError:
+                    msg = ("Session de-serialization note: "
+                           "run_as_identifiers_session_key attribute N/A.")
+                    logger.warning(msg)
+
+                return data
 
 class DefaultWebSessionContext(DefaultSessionContext,
                                web_session_abcs.WebSessionContext):
@@ -219,12 +291,19 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         del web_registry.session_id
 
 
+class WebSessionFactory(session_abcs.SessionFactory):
+
+    @staticmethod
+    def create_session(session_context=None):
+        return WebSimpleSession(host=getattr(session_context, 'host', None))
+
+
 class DefaultWebSessionManager(DefaultNativeSessionManager):
     """
     Web-application capable SessionManager implementation
     """
     def __init__(self):
-        super().__init__()  # this initializes a session_event_handler
+        super().__init__(session_factory=WebSessionFactory())
         self.session_handler = \
             WebSessionHandler(session_event_handler=self.session_event_handler,
                               auto_touch=False)
@@ -252,7 +331,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         # otherwise, assume we are dealing with a Web-enabled request
         session_key = WebSessionKey(session_id=session.session_id,
                                     web_registry=web_registry)
-        return DelegatingSession(self, session_key)
+        return WebDelegatingSession(self, session_key)
 
 
 class WebSessionKey(DefaultSessionKey):
