@@ -72,8 +72,33 @@ class WebDelegatingSession(DelegatingSession):
         if token is None:
             return self.new_csrf_token()
 
+    # new to yosai
+    # flash_messages is a dict of lists
+    def flash(self, msg, queue='default', allow_duplicate=False):
+        flash_messages = self.get_internal_attribute('flash_messages')
+
+        if allow_duplicate or (msg not in flash_messages[queue]):
+            flash_messages[queue].append(msg)
+            self.set_internal_attribute('flash_messages', flash_messages)
+
+    # new to yosai
+    def peek_flash(self, queue='default'):
+        return self.get_internal_attribute('flash_messages')[queue]
+
+    # new to yosai
+    def pop_flash(self, queue='default'):
+        flash_messages = self.get_internal_attribute('flash_messages')
+        message = flash_messages.pop(queue)
+        self.set_internal_attribute('flash_messages', flash_messages)
+        return message
+
 
 class WebSimpleSession(SimpleSession):
+
+    def __init__(self, host=None):
+        super().__init__(host=host)
+        self.set_internal_attribute('flash_messages',
+                                    collections.defaultdict(list))
 
     @classmethod
     def serialization_schema(cls):
@@ -96,6 +121,8 @@ class WebSimpleSession(SimpleSession):
 
             csrf_token = fields.Str(attribute='csrf_token', allow_none=False)
 
+            flash_messages = fields.Dict(attribute='flash_messages', allow_none=False)  # a Dict of Lists
+
             @post_load
             def make_internal_attributes(self, data):
                 try:
@@ -104,12 +131,19 @@ class WebSimpleSession(SimpleSession):
                     if runas:
                         que = collections.deque(runas)
                         data[raisk] = que
+
+                    flash_messages = data.get('flash_messages')
+                    if flash_messages:
+                        newdict = collections.defaultdict(list, data['flash_messages'])
+                        data['flash_messages'] = newdict
+
                 except TypeError:
                     msg = ("Session de-serialization note: "
-                           "run_as_identifiers_session_key attribute N/A.")
+                           " Internal attribute N/A.")
                     logger.warning(msg)
 
                 return data
+
 
 class DefaultWebSessionContext(DefaultSessionContext,
                                web_session_abcs.WebSessionContext):
