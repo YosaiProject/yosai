@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import base64
 import logging
 
@@ -107,7 +108,8 @@ class WebSecurityManager(NativeSecurityManager):
 
     def create_subject_context(self, subject):
         if not hasattr(self, 'security_utils'):
-            msg = "WebSecurityManager has no WebYosai attribute set."
+            pdb.set_trace()
+            msg = "WebSecurityManager has no security_utils attribute set."
             raise MisconfiguredException(msg)
 
         web_registry = subject.web_registry

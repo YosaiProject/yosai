@@ -1152,8 +1152,8 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own security_utils module so as to avoid circular importing:
 class Yosai:
 
-    def __init__(self, security_manager=None):
-        self._security_manager = security_manager
+    def __init__(self, security_manager):
+        self.security_manager = security_manager
 
     @memoized_property
     def subject_builder(self):

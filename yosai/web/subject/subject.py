@@ -230,7 +230,7 @@ class WebDelegatingSubject(DelegatingSubject,
             self.owner.session_stopped()
 
         def __repr__(self):
-            return "StoppingAwareProxiedSession()"
+            return "Web - StoppingAwareProxiedSession()"
 
 
 class WebYosai(Yosai):
@@ -241,7 +241,7 @@ class WebYosai(Yosai):
     response objects and functionality to manage cookies.
     """
 
-    def __init__(self, security_manager=None):
+    def __init__(self, security_manager):
         super().__init__(security_manager)
 
     @memoized_property
