@@ -29,6 +29,7 @@ from yosai.core import (
 
 from yosai.web import (
     DefaultWebSessionContext,
+    WebProxiedSession,
     web_subject_abcs,
 )
 
@@ -125,6 +126,11 @@ class WebSubjectBuilder(SubjectBuilder):
                    "available to this builder.")
             raise IllegalStateException(msg)
 
+        # The Subject was just created, but before returning it a Session needs
+        # to be initialized for it: Web Subjects must have a session ready to manage
+        # CSRF tokens and flash messages.  This is new to Yosai.
+        subject.get_session(True)
+
         return subject
 
 
@@ -202,10 +208,29 @@ class WebDelegatingSubject(DelegatingSubject,
         """
         super().get_session(create)
 
-        if create:
-            self.session.new_csrf_token()
-
         return self.session
+
+    # inner class:
+    class StoppingAwareProxiedSession(WebProxiedSession):
+
+        def __init__(self, target_session, owning_subject):
+            """
+            :type target_session:  session_abcs.Session
+            :type owning_subject:  subject_abcs.Subject
+            """
+            super().__init__(target_session)
+            self.owner = owning_subject
+
+        def stop(self, identifiers):
+            """
+            :type identifiers:  subject_abcs.IdentifierCollection
+            :raises InvalidSessionException:
+            """
+            super().stop(identifiers)
+            self.owner.session_stopped()
+
+        def __repr__(self):
+            return "StoppingAwareProxiedSession()"
 
 
 class WebYosai(Yosai):

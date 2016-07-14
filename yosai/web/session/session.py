@@ -31,6 +31,7 @@ from yosai.core import (
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
+    ProxiedSession,
     SimpleIdentifierCollection,
     SimpleSession,
     session_abcs,
@@ -45,6 +46,32 @@ from yosai.web import (
 logger = logging.getLogger(__name__)
 
 
+class WebProxiedSession(ProxiedSession):
+    def __init__(self, target_session):
+        super().__init__(target_session)
+
+    def new_csrf_token(self):
+        """
+        :rtype: str
+        :returns: a CSRF token
+        """
+        return self._delegate.new_csrf_token()
+
+    def get_csrf_token(self):
+        return self._delegate.get_csrf_token()
+
+    def flash(self, msg, queue='default', allow_duplicate=False):
+        return self._delegate.flash(msg, queue, allow_duplicate)
+
+    # new to yosai
+    def peek_flash(self, queue='default'):
+        return self._delegate.peek_flash(queue)
+
+    # new to yosai
+    def pop_flash(self, queue='default'):
+        return self._delegate.pop_flash(queue)
+
+
 # new to yosai:
 class WebDelegatingSession(DelegatingSession):
 
@@ -57,14 +84,7 @@ class WebDelegatingSession(DelegatingSession):
         :rtype: str
         :returns: a CSRF token
         """
-
-        try:
-            csrf_token = binascii.hexlify(os.urandom(20)).decode('utf-8')
-            self.set_internal_attribute('csrf_token', csrf_token)
-        except AttributeError:
-            raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
-
-        return csrf_token
+        return self.session_manager.new_csrf_token(self.session_key)
 
     # new to yosai
     def get_csrf_token(self):
@@ -95,10 +115,11 @@ class WebDelegatingSession(DelegatingSession):
 
 class WebSimpleSession(SimpleSession):
 
-    def __init__(self, host=None):
+    def __init__(self, csrf_token, host=None):
         super().__init__(host=host)
         self.set_internal_attribute('flash_messages',
                                     collections.defaultdict(list))
+        self.set_internal_attribute('csrf_token', csrf_token)
 
     @classmethod
     def serialization_schema(cls):
@@ -143,6 +164,35 @@ class WebSimpleSession(SimpleSession):
                     logger.warning(msg)
 
                 return data
+
+        class SerializationSchema(Schema):
+            _session_id = fields.Str(allow_none=True)
+            _start_timestamp = fields.DateTime(allow_none=True)  # iso is default
+            _stop_timestamp = fields.DateTime(allow_none=True)  # iso is default
+            _last_access_time = fields.DateTime(allow_none=True)  # iso is default
+            _idle_timeout = fields.TimeDelta(allow_none=True)
+            _absolute_timeout = fields.TimeDelta(allow_none=True)
+            _is_expired = fields.Boolean(allow_none=True)
+            _host = fields.Str(allow_none=True)
+
+            # NOTE:  After you've defined your SimpleSessionAttributesSchema,
+            #        the Raw() fields assignment below should be replaced by
+            #        the Schema line that follows it
+            _internal_attributes = fields.Nested(InternalSessionAttributesSchema,
+                                                 allow_none=True)
+
+            _attributes = fields.Nested(cls.AttributesSchema,
+                                        allow_null=True)
+
+            @post_load
+            def make_simple_session(self, data):
+                mycls = SimpleSession
+                instance = mycls.__new__(mycls)
+                instance.__dict__.update(data)
+
+                return instance
+
+        return SerializationSchema
 
 
 class DefaultWebSessionContext(DefaultSessionContext,
@@ -328,8 +378,9 @@ class WebSessionHandler(DefaultNativeSessionHandler):
 class WebSessionFactory(session_abcs.SessionFactory):
 
     @staticmethod
-    def create_session(session_context=None):
-        return WebSimpleSession(host=getattr(session_context, 'host', None))
+    def create_session(csrf_token, session_context):
+        return WebSimpleSession(csrf_token,
+                                host=getattr(session_context, 'host', None))
 
 
 class DefaultWebSessionManager(DefaultNativeSessionManager):
@@ -367,6 +418,44 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
                                     web_registry=web_registry)
         return WebDelegatingSession(self, session_key)
 
+    def new_csrf_token(self, session_key):
+        """
+        :rtype: str
+        :returns: a CSRF token
+        """
+        try:
+            csrf_token = self._generate_csrf_token()
+
+            session = self._lookup_required_session(session_key)
+            session.set_internal_attribute('csrf_token', csrf_token)
+            self.session_handler.on_change(session)
+
+        except AttributeError:
+            raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
+
+        return csrf_token
+
+    def _generate_csrf_token(self):
+        return binascii.hexlify(os.urandom(20)).decode('utf-8')
+
+    # overridden to support csrf_token
+    def _create_session(self, session_context):
+        csrf_token = self._generate_csrf_token()
+        session = self.session_factory.create_session(csrf_token, session_context)
+
+        msg = "Creating session. "
+        logger.debug(msg)
+
+        msg = ("Creating new EIS record for new session instance [{0}]".
+               format(session))
+        logger.debug(msg)
+
+        sessionid = self.session_handler.create_session(session)
+        if not sessionid:  # new to yosai
+            msg = 'Failed to obtain a sessionid while creating session.'
+            raise SessionCreationException(msg)
+
+        return session
 
 class WebSessionKey(DefaultSessionKey):
     """

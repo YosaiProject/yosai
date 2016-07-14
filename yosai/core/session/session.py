@@ -468,7 +468,7 @@ class ProxiedSession(session_abcs.Session):
         self._delegate.remove_attributes(keys)  # you could validate here
 
     def __repr__(self):
-        return "ProxiedSession(session_id={0}, attributes={1})".format(
+        return "{0}(session_id={0}, attributes={1})".format(self.__class__.__name__,
             self.session_id, self.attribute_keys)
 
 # removed ImmutableProxiedSession because it can't be sent over the eventbus

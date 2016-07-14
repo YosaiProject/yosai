@@ -108,4 +108,4 @@ class WebRegistry(metaclass=ABCMeta):
         pass
 
     def __repr__(self):
-        return "{0}(request={1})".format(self.__class__.__name__, id(self._request))
+        return self.__class__.__name__
