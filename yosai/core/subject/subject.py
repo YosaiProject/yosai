@@ -37,6 +37,7 @@ from yosai.core import (
     ThreadStateManager,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
+    YosaiContextException,
     # UnsupportedOperationException,
     mgt_abcs,
     session_abcs,
