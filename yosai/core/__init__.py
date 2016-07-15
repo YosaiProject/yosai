@@ -109,6 +109,7 @@ from .exceptions import (
     UnrecognizedIdentifierException,
     UnsupportedOperationException,
     UnsupportedTokenException,
+    YosaiContextException,
     YosaiException,
 )
 

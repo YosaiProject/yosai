@@ -21,6 +21,10 @@ class YosaiException(Exception):
     pass
 
 
+class YosaiContextException(YosaiException):
+    pass
+
+
 class FileNotFoundException(YosaiException):
     pass
 

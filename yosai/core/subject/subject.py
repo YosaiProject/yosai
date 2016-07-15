@@ -1194,10 +1194,12 @@ class Yosai:
 
     @staticmethod
     @contextmanager
-    def context(subject):
+    def context(yosai, subject):
+        global_yosai_context.stack.append(yosai)  # how to weakref? TBD
         global_subject_context.stack.append(subject)  # how to weakref? TBD
         yield Yosai.get_current_subject()
         global_subject_context.stack.remove(subject)
+        global_yosai_context.stack.remove(yosai)
 
     @staticmethod
     def get_current_subject():
@@ -1207,6 +1209,14 @@ class Yosai:
             msg = 'A subject instance does not exist in the global context.'
             raise SubjectContextException(msg)
 
+    @staticmethod
+    def get_current_yosai():
+        try:
+            return global_yosai_context.stack[-1]
+        except IndexError:
+            msg = 'A yosai instance does not exist in the global context.'
+            raise YosaiContextException(msg)
 
 # Set Global State Manager
+global_yosai_context = ThreadStateManager()
 global_subject_context = ThreadStateManager()
