@@ -85,7 +85,7 @@ class WebRegistry(metaclass=ABCMeta):
     def webregistry_callback(self, request, response):
         while self.cookies['set_cookie']:
             key, value = self.cookies['set_cookie'].popitem()
-            self._set_cookie(response, key, value)
+            self._set_cookie(response, key, value['value'])
 
         while self.cookies['delete_cookie']:
             key = self.cookies['delete_cookie'].pop()

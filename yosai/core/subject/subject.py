@@ -1195,20 +1195,27 @@ class Yosai:
 
     @staticmethod
     @contextmanager
-    def context(yosai, subject):
+    def context(yosai):
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
-        global_subject_context.stack.append(subject)  # how to weakref? TBD
-        yield Yosai.get_current_subject()
-        global_subject_context.stack.remove(subject)
-        global_yosai_context.stack.remove(yosai)
+        yield
+        global_yosai_context.stack.pop()
+        try:
+            global_subject_context.stack.pop()
+        except IndexError:
+            logger.debug('Could not pop a subject from the context stack.')
 
     @staticmethod
     def get_current_subject():
         try:
             return global_subject_context.stack[-1]
         except IndexError:
-            msg = 'A subject instance does not exist in the global context.'
-            raise SubjectContextException(msg)
+            msg = 'A subject instance does not exist in the global context.  Creating one.'
+            logger.debug(msg)
+
+            subject = Yosai.get_current_yosai().get_subject()
+            global_subject_context.stack.append(subject)
+
+            return global_subject_context.stack[-1]
 
     @staticmethod
     def get_current_yosai():
@@ -1218,6 +1225,6 @@ class Yosai:
             msg = 'A yosai instance does not exist in the global context.'
             raise YosaiContextException(msg)
 
-# Set Global State Manager
+# Set Global State Managers
 global_yosai_context = ThreadStateManager()
 global_subject_context = ThreadStateManager()

@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 import logging
+from contextlib import contextmanager
 
 from yosai.core import (
     DefaultSubjectContext,
@@ -24,6 +25,10 @@ from yosai.core import (
     IllegalStateException,
     Yosai,
     SubjectBuilder,
+    ThreadStateManager,
+    YosaiContextException,
+    global_yosai_context,
+    global_subject_context,
     memoized_property,
 )
 
@@ -129,7 +134,8 @@ class WebSubjectBuilder(SubjectBuilder):
         # The Subject was just created, but before returning it a Session needs
         # to be initialized for it: Web Subjects must have a session ready to manage
         # CSRF tokens and flash messages.  This is new to Yosai.
-        subject.get_session(True)
+        if not subject.session:
+            subject.get_session(True)
 
         return subject
 
@@ -206,8 +212,11 @@ class WebDelegatingSubject(DelegatingSubject,
 
         A CSRF Token is generated for each new session (and at successful login).
         """
+        print('-----> WebSubject.get_session')
         super().get_session(create)
-
+        if self.session:
+            print('.....-----> WebSubject.get_session.touch')
+            self.session.touch()  # this is used to reset the idle timer (new to yosai)
         return self.session
 
     # inner class:
@@ -251,7 +260,7 @@ class WebYosai(Yosai):
         return self._subject_builder
 
     # overridden:
-    def get_subject(self, web_registry):
+    def get_subject(self):
         """
         Returns the currently accessible Subject available to the calling code
         depending on runtime environment.
@@ -266,4 +275,29 @@ class WebYosai(Yosai):
                                         application configuration because a Subject
                                         should *always* be available to the caller)
         """
+        web_registry = WebYosai.get_current_webregistry()
         return self.subject_builder.build_subject(web_registry=web_registry)
+
+    @staticmethod
+    @contextmanager
+    def context(yosai, webregistry):
+        global_yosai_context.stack.append(yosai)  # how to weakref? TBD
+        global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
+        yield
+
+        try:
+            global_subject_context.stack.pop()
+        except IndexError:
+            logger.debug('Could not pop a subject from the context stack.')
+        global_yosai_context.stack.pop()
+        global_webregistry_context.stack.pop()
+
+    @staticmethod
+    def get_current_webregistry():
+        try:
+            return global_webregistry_context.stack[-1]
+        except IndexError:
+            msg = 'A yosai instance does not exist in the global context.'
+            raise YosaiContextException(msg)
+
+global_webregistry_context = ThreadStateManager()

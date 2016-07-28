@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import traceback
 import collections
 import logging
 import pytz
@@ -246,6 +247,12 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         return sessionid
 
     def read(self, sessionid):
+
+        with open('/home/dowwie/MyProjects/yosai/traceback.txt', 'a') as myfile:
+            myline = '-'*100 + '\n'
+            myfile.write(myline)
+            traceback.print_stack(file=myfile)
+
         session = self._get_cached_session(sessionid)
 
         # for write-through caching:
@@ -1106,13 +1113,11 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
 
     def __init__(self,
                  session_event_handler,
-                 auto_touch=True,
                  session_store=CachingSessionStore(),
                  delete_invalid_sessions=True):
         self.delete_invalid_sessions = delete_invalid_sessions
         self._session_store = session_store
         self.session_event_handler = session_event_handler
-        self.auto_touch = auto_touch
         self._cache_handler = None  # setter injected
 
     @property
@@ -1210,14 +1215,8 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
 
         session = self._retrieve_session(session_key)
 
-        # first check whether valid and THEN touch it
         if (session is not None):
             self.validate(session, session_key)
-
-            # won't be called unless the session is valid (due exceptions):
-            if self.auto_touch:  # new to yosai
-                session.touch()
-                self.on_change(session)
 
         return session
 
@@ -1337,7 +1336,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
             self.after_stopped(session)
 
     def on_change(self, session, update_identifiers_map=False):
-        if self.auto_touch and not session.is_stopped:  # new to yosai
+        if not session.is_stopped:
             session.touch()
 
         self.session_store.update(session, update_identifiers_map)
@@ -1366,18 +1365,13 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     something else must call the touch() method to ensure the session
     validation logic functions correctly.
 
-    Shiro does not enable auto-touch within the DefaultNativeSessionManager. It is not
-     yet clear why Shiro doesn't.  Until the reason why is revealed, Yosai
-     includes a new auto_touch feature to enable/disable auto-touching.
-
     """
 
     def __init__(self, session_factory=SimpleSessionFactory()):
         self.session_factory = session_factory
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
-            DefaultNativeSessionHandler(session_event_handler=self.session_event_handler,
-                                        auto_touch=True)
+            DefaultNativeSessionHandler(session_event_handler=self.session_event_handler)
         self._event_bus = None
 
     @property
