@@ -997,22 +997,22 @@ class DefaultSubjectStore:
         # performs merge logic, only updating the Subject's session if it
         # does not match the current state.  This process can be refactored
         # and made more efficient by consolidating both requests and updates (TBD)
-        self.merge_identifiers(subject)
-        self.merge_authentication_state(subject)
 
-    # was mergePrincipals:
-    def merge_identifiers(self, subject):
+        # unlike shiro, yosai merges identifiers and authentication state at once
+        self.merge_identity(subject)
+
+    # yosai consolidates merge_principals and merge_authentication_state
+    def merge_identity(self, subject):
         """
-        Merges the Subject's identifying attributes with those that are
-        saved in the Subject's session.  This method only updates the Subject's
-        session when the session's identifier are different than those of the
-        Subject instance.
+        Merges the Subject's identifying attributes (principals) and authc status
+        into the Subject's session
 
-        :param subject: the Subject whose identifying attributes will
-                        potentially merge with those in the Subject's session
         :type subject:  subject_abcs.Subject
         """
+        session = subject.get_session(False)
+
         current_identifiers = None
+
         if subject.is_run_as:
             # avoid the other steps of attribute access when referencing by
             # property by referencing the underlying attribute directly:
@@ -1023,15 +1023,21 @@ class DefaultSubjectStore:
             # decorated attribute access method:
             current_identifiers = subject.identifiers
 
-        session = subject.get_session(False)
+        if not session:
+            to_set = []
 
-        if (not session):
-            if (current_identifiers):
-                session = subject.get_session(True)
-                session.set_internal_attribute(self.dsc_isk, current_identifiers)
-            # otherwise no session and no identifier - nothing to save
+            if current_identifiers or subject.authenticated:
+                session = subject.get_session()
+
+                to_set.append([self.dsc_isk, current_identifiers])
+                to_set.append([self.dsc_ask, True])
+
+                session.set_internal_attributes(to_set)
+
         else:
-            existing_identifiers = session.get_internal_attribute(self.dsc_isk)
+            internal_attributes = session.get_internal_attributes()
+
+            existing_identifiers = internal_attributes.get(self.dsc_isk)
 
             if (not current_identifiers):
                 if (existing_identifiers):
@@ -1042,19 +1048,7 @@ class DefaultSubjectStore:
                     session.set_internal_attribute(self.dsc_isk, current_identifiers)
                 # otherwise they're the same - no need to update the session
 
-    def merge_authentication_state(self, subject):
-        """
-        :type subject:  subject_abcs.Subject
-        """
-        session = subject.get_session(False)
-
-        if (not session):
-            if (subject.authenticated):
-                session = subject.get_session()
-                session.set_internal_attribute(self.dsc_ask, True)
-            # otherwise no session and not authenticated - nothing to save
-        else:
-            existing_authc = session.get_internal_attribute(self.dsc_ask)
+            existing_authc = internal_attributes.get(self.dsc_ask)
 
             if (subject.authenticated):
                 if (existing_authc is None):  # either doesnt exist or set None

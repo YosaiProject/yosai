@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import traceback
 import collections
 import logging
 import pytz
@@ -247,12 +246,6 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         return sessionid
 
     def read(self, sessionid):
-
-        with open('/home/dowwie/MyProjects/yosai/traceback.txt', 'a') as myfile:
-            myline = '-'*100 + '\n'
-            myfile.write(myline)
-            traceback.print_stack(file=myfile)
-
         session = self._get_cached_session(sessionid)
 
         # for write-through caching:
@@ -433,11 +426,20 @@ class ProxiedSession(session_abcs.Session):
     def get_internal_attribute(self, key):
         return self._delegate.get_internal_attribute(key)
 
+    def get_internal_attributes(self):
+        return self._delegate.get_internal_attributes()
+
     def set_internal_attribute(self, key, value):
         self._delegate.set_internal_attribute(key, value)
 
+    def set_internal_attributes(self, key_values):
+        self._delegate.set_internal_attributes(key_values)
+
     def remove_internal_attribute(self, key):
         self._delegate.remove_internal_attribute(key)
+
+    def remove_internal_attributes(self, to_remove):
+        self._delegate.remove_internal_attributes(to_remove)
 
     def get_attribute(self, key):
         return self._delegate.get_attribute(key)
@@ -476,7 +478,8 @@ class ProxiedSession(session_abcs.Session):
 
     def __repr__(self):
         return "{0}(session_id={0}, attributes={1})".format(self.__class__.__name__,
-            self.session_id, self.attribute_keys)
+                                                            self.session_id,
+                                                            self.attribute_keys)
 
 # removed ImmutableProxiedSession because it can't be sent over the eventbus
 
@@ -743,11 +746,26 @@ class SimpleSession(session_abcs.ValidatingSession,
         else:
             self.internal_attributes[key] = value
 
+    def set_internal_attributes(self, key_values):
+        to_remove = []
+
+        for key, value in key_values:
+            if not value:
+                to_remove.append(key)
+            else:
+                self.internal_attributes[key] = value
+
+        if to_remove:
+            self.remove_internal_attributes(to_remove)
+
     def remove_internal_attribute(self, key):
         if (not self.internal_attributes):
             return None
         else:
             return self.internal_attributes.pop(key, None)
+
+    def remove_internal_attributes(self, to_remove):
+        return [self.remove_internal_attribute(key) for key in to_remove]
 
     def get_attribute(self, key):
         return self.attributes.get(key)
@@ -971,17 +989,24 @@ class DelegatingSession(session_abcs.Session):
         return self.session_manager.get_internal_attribute(self.session_key,
                                                            attribute_key)
 
+    def get_internal_attributes(self):
+        return self.session_manager.get_internal_attributes(self.session_key)
+
     def set_internal_attribute(self, attribute_key, value=None):
-        if (value is None):
-            self.remove_internal_attribute(attribute_key)
-        else:
-            self.session_manager.set_internal_attribute(self.session_key,
-                                                        attribute_key,
-                                                        value)
+        self.session_manager.set_internal_attribute(self.session_key,
+                                                    attribute_key,
+                                                    value)
+
+    def set_internal_attributes(self, key_values):
+        self.session_manager.set_internal_attributes(self.session_key, key_values)
 
     def remove_internal_attribute(self, attribute_key):
         return self.session_manager.remove_internal_attribute(self.session_key,
                                                               attribute_key)
+
+    def remove_internal_attributes(self, to_remove):
+        return self.session_manager.remove_internal_attributes(self.session_key,
+                                                               to_remove)
 
     @property
     def attribute_keys(self):
@@ -1016,8 +1041,8 @@ class DelegatingSession(session_abcs.Session):
 
     def remove_attributes(self, attribute_keys):
         if attribute_keys:
-            return self.session_manager.remove_attribute(self.session_key,
-                                                         attribute_keys)
+            return self.session_manager.remove_attributes(self.session_key,
+                                                          attribute_keys)
 
     def __repr__(self):
         return "DelegatingSession(session_id: {0})".format(self.session_id)
@@ -1568,22 +1593,36 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         return self._lookup_required_session(session_key).\
             get_internal_attribute(attribute_key)
 
-    def set_internal_attribute(self, session_key, attribute_key, value=None):
-        if (value is None):
-            self.remove_internal_attribute(session_key, attribute_key)
-        else:
-            session = self._lookup_required_session(session_key)
-            session.set_internal_attribute(attribute_key, value)
+    def get_internal_attributes(self, session_key):
+        return self._lookup_required_session(session_key).internal_attributes
 
-            # if it's an internal attribute that is set, map the cached session
-            # to the user id
-            self.session_handler.on_change(session, update_identifiers_map=True)
+    def set_internal_attribute(self, session_key, attribute_key, value=None):
+        session = self._lookup_required_session(session_key)
+        session.set_internal_attribute(attribute_key, value)
+
+        # if it's an internal attribute that is set, map the cached session
+        # to the user id
+        self.session_handler.on_change(session, update_identifiers_map=True)
+
+    def set_internal_attributes(self, session_key, key_values):
+        session = self._lookup_required_session(session_key)
+        session.set_internal_attributes(key_values)
+        self.session_handler.on_change(session, update_identifiers_map=True)
 
     def remove_internal_attribute(self, session_key, attribute_key):
         # unless orphaned session/useridentifier map cache entries become an issue.. TBD
         session = self._lookup_required_session(session_key)
         removed = session.remove_internal_attribute(attribute_key)
-        if (removed is not None):
+
+        if removed:
+            self.session_handler.on_change(session)
+        return removed
+
+    def remove_internal_attributes(self, session_key, to_remove):
+        session = self._lookup_required_session(session_key)
+        removed = session.remove_internal_attributes(to_remove)
+
+        if removed:
             self.session_handler.on_change(session)
         return removed
 
@@ -1691,9 +1730,7 @@ class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
         self._session_storage_enabled = sse
 
     def is_session_storage_enabled(self, subject=None):
-        if (not subject):
+        try:
+            return subject.get_session(False) is not None
+        except AttributeError:
             return self._session_storage_enabled
-        else:
-            return ((subject is not None and
-                     subject.get_session(False) is not None) or
-                    bool(self._session_storage_enabled))

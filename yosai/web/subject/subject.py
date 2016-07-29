@@ -16,6 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import inspect
+import traceback
 import logging
 from contextlib import contextmanager
 
@@ -131,12 +133,6 @@ class WebSubjectBuilder(SubjectBuilder):
                    "available to this builder.")
             raise IllegalStateException(msg)
 
-        # The Subject was just created, but before returning it a Session needs
-        # to be initialized for it: Web Subjects must have a session ready to manage
-        # CSRF tokens and flash messages.  This is new to Yosai.
-        if not subject.session:
-            subject.get_session(True)
-
         return subject
 
 
@@ -211,11 +207,19 @@ class WebDelegatingSubject(DelegatingSubject,
         :type create:  bool
 
         A CSRF Token is generated for each new session (and at successful login).
+
+        with open('/home/dowwie/MyProjects/yosai/traceback.txt', 'a') as myfile:
+            myline = '-'*100 + '\n'
+            myfile.write(myline)
+            traceback.print_stack(file=myfile)
         """
-        print('-----> WebSubject.get_session')
+
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        print('get_session called by:', calframe[1][3])
+
         super().get_session(create)
-        if self.session:
-            print('.....-----> WebSubject.get_session.touch')
+        if self.session and not create:  # touching a new session is redundant
             self.session.touch()  # this is used to reset the idle timer (new to yosai)
         return self.session
 
