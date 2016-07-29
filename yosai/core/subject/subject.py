@@ -1035,31 +1035,39 @@ class DefaultSubjectStore:
                 session.set_internal_attributes(to_set)
 
         else:
+            to_remove = []
+            to_set = []
             internal_attributes = session.get_internal_attributes()
 
             existing_identifiers = internal_attributes.get(self.dsc_isk)
 
             if (not current_identifiers):
                 if (existing_identifiers):
-                    session.remove_internal_attribute(self.dsc_isk)
+                    to_remove.append(self.dsc_isk)
                 # otherwise both are null or empty - no need to update session
             else:
                 if not (current_identifiers == existing_identifiers):
-                    session.set_internal_attribute(self.dsc_isk, current_identifiers)
+                    to_set.append([self.dsc_isk, current_identifiers])
                 # otherwise they're the same - no need to update the session
 
             existing_authc = internal_attributes.get(self.dsc_ask)
 
             if (subject.authenticated):
                 if (existing_authc is None):  # either doesnt exist or set None
-                    session.set_internal_attribute(self.dsc_ask, True)
+                    to_set.append([self.dsc_ask, True])
                 # otherwise authc state matches - no need to update the session
             else:
                 if (existing_authc is not None):
                     # existing doesn't match the current state - remove it:
-                    session.remove_internal_attribute(self.dsc_ask)
+                    to_remove.append(self.dsc_ask)
                 # otherwise not in the session and not authenticated and
                 # no need to update the session
+
+            if to_set:
+                session.set_internal_attributes(to_set)
+
+            if to_remove:
+                session.remove_internal_attributes(to_remove)
 
     def remove_from_session(self, subject):
         """
