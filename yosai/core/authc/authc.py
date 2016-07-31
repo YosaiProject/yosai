@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 import logging
+import copy
 
 from marshmallow import Schema, fields, post_load
 
@@ -307,7 +308,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     def notify_success(self, account):
         try:
             self.event_bus.publish('AUTHENTICATION.SUCCEEDED',
-                                   identifiers=account.account_id)
+                                   identifiers=copy.copy(account.account_id))
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)

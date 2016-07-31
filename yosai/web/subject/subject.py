@@ -16,8 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import inspect
-import traceback
+import pdb
 import logging
 from contextlib import contextmanager
 
@@ -194,11 +193,7 @@ class WebDelegatingSubject(DelegatingSubject,
     # overridden
     def create_session_context(self):
         wsc = DefaultWebSessionContext(web_registry=self.web_registry)
-
-        host = self.host
-        if host:
-            wsc.host = host  # parent class puts it into the context map
-
+        wsc.host = self.host
         return wsc
 
     # this override is new to yosai, to support CSRF token synchronization:
@@ -207,17 +202,7 @@ class WebDelegatingSubject(DelegatingSubject,
         :type create:  bool
 
         A CSRF Token is generated for each new session (and at successful login).
-
-        with open('/home/dowwie/MyProjects/yosai/traceback.txt', 'a') as myfile:
-            myline = '-'*100 + '\n'
-            myfile.write(myline)
-            traceback.print_stack(file=myfile)
         """
-
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        print('get_session called by:', calframe[1][3])
-
         super().get_session(create)
         if self.session and not create:  # touching a new session is redundant
             self.session.touch()  # this is used to reset the idle timer (new to yosai)
@@ -243,7 +228,7 @@ class WebDelegatingSubject(DelegatingSubject,
             self.owner.session_stopped()
 
         def __repr__(self):
-            return "Web - StoppingAwareProxiedSession()"
+            return "WebStoppingAwareProxiedSession()"
 
 
 class WebYosai(Yosai):
@@ -264,7 +249,7 @@ class WebYosai(Yosai):
         return self._subject_builder
 
     # overridden:
-    def get_subject(self):
+    def _get_subject(self):
         """
         Returns the currently accessible Subject available to the calling code
         depending on runtime environment.

@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import base64
 import logging
 
@@ -24,6 +25,7 @@ from yosai.core import (
     DefaultSubjectFactory,
     MisconfiguredException,
     NativeSecurityManager,
+    global_subject_context,
 )
 
 from yosai.web import (
@@ -51,6 +53,7 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
     def create_subject(self, subject_context=None):
 
         if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
+            print('\n\n************************* create_subject got the wrong subject_context\n')
             return super().create_subject(subject_context=subject_context)
 
         security_manager = subject_context.resolve_security_manager()
@@ -138,19 +141,10 @@ class WebSecurityManager(NativeSecurityManager):
     # yosai omits session_mode logic, and so doesn't need create_session_manager
 
     # overridden:
-    # DG:  it's not clear to me why this method exists, as it doesn't seem to be
-    # called (TBD)
     def create_session_context(self, subject_context):
-        session_context = super().create_session_context(subject_context)
-        try:  # will only succeed with WebSubjectContext instances
-            web_session_context = DefaultWebSessionContext(session_context)
-
-            web_registry = subject_context.resolve_web_registry()
-            web_session_context.web_registry = web_registry
-
-            session_context = web_session_context
-        except AttributeError:
-            pass
+        web_registry = subject_context.resolve_web_registry()
+        session_context = DefaultWebSessionContext(web_registry)
+        session_context.host = self.host
 
         return session_context
 

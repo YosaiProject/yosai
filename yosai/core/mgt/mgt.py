@@ -16,6 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import inspect
+import pdb
 import logging
 import copy
 
@@ -54,6 +56,7 @@ from yosai.core import(
     authz_abcs,
     event_abcs,
     cache_abcs,
+    global_subject_context,
 )
 
 logger = logging.getLogger(__name__)
@@ -718,7 +721,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     * ===================================================================== *
     """
     def start(self, session_context):
-        return self.session_manager.start(session_context)
+        test = self.session_manager.start(session_context)
+        return test
 
     def get_session(self, session_key):
         return self.session_manager.get_session(session_key)
@@ -924,7 +928,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :returns: a Subject instance reflecting the data in the specified
                   SubjectContext data map
         """
-        return self.subject_factory.create_subject(subject_context)
+        subject = self.subject_factory.create_subject(subject_context)
+        return subject
 
     def save(self, subject):
         """

@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import collections
 import logging
 import pytz
@@ -741,22 +742,11 @@ class SimpleSession(session_abcs.ValidatingSession,
         return self.internal_attributes.get(key)
 
     def set_internal_attribute(self, key, value=None):
-        if (not value):
-            self.remove_internal_attribute(key)
-        else:
-            self.internal_attributes[key] = value
+        self.internal_attributes[key] = value
 
     def set_internal_attributes(self, key_values):
-        to_remove = []
-
         for key, value in key_values:
-            if not value:
-                to_remove.append(key)
-            else:
-                self.internal_attributes[key] = value
-
-        if to_remove:
-            self.remove_internal_attributes(to_remove)
+            self.internal_attributes[key] = value
 
     def remove_internal_attribute(self, key):
         if (not self.internal_attributes):
@@ -824,14 +814,15 @@ class SimpleSession(session_abcs.ValidatingSession,
         return False
 
     def __repr__(self):
-        return ("SimpleSession(session_id: {0}, start_timestamp: {1}, "
+        return (self.__class__.__name__ + "(session_id: {0}, start_timestamp: {1}, "
                 "stop_timestamp: {2}, last_access_time: {3},"
                 "idle_timeout: {4}, absolute_timeout: {5}, is_expired: {6},"
-                "host: {7}, attributes:{8})".
+                "host: {7}, attributes:{8}, internal_attributes: {9})".
                 format(self.session_id, self.start_timestamp,
                        self.stop_timestamp, self.last_access_time,
                        self.idle_timeout, self.absolute_timeout,
-                       self.is_expired, self.host, self._attributes))
+                       self.is_expired, self.host, self._attributes,
+                       self._internal_attributes))
 
     # the developer using Yosai must define the attribute schema:
     class AttributesSchema(Schema):
@@ -910,6 +901,9 @@ class SimpleSessionFactory(session_abcs.SessionFactory):
     @staticmethod
     def create_session(session_context=None):
         return SimpleSession(host=getattr(session_context, 'host', None))
+
+    def __repr__(self):
+        return self.__class__.__name__
 
 
 class DelegatingSession(session_abcs.Session):
@@ -993,11 +987,13 @@ class DelegatingSession(session_abcs.Session):
         return self.session_manager.get_internal_attributes(self.session_key)
 
     def set_internal_attribute(self, attribute_key, value=None):
+        # unlike shiro, yosai doesn't support removing keys when value is None
         self.session_manager.set_internal_attribute(self.session_key,
                                                     attribute_key,
                                                     value)
 
     def set_internal_attributes(self, key_values):
+        # unlike shiro, yosai doesn't support removing keys when value is None
         self.session_manager.set_internal_attributes(self.session_key, key_values)
 
     def remove_internal_attribute(self, attribute_key):
@@ -1045,7 +1041,8 @@ class DelegatingSession(session_abcs.Session):
                                                           attribute_keys)
 
     def __repr__(self):
-        return "DelegatingSession(session_id: {0})".format(self.session_id)
+        return "{0}(session_id: {1})".format(self.__class__.__name__,
+                                             self.session_id)
 
 
 class DefaultSessionKey(session_abcs.SessionKey,
@@ -1392,8 +1389,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     """
 
-    def __init__(self, session_factory=SimpleSessionFactory()):
-        self.session_factory = session_factory
+    def __init__(self):
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
             DefaultNativeSessionHandler(session_event_handler=self.session_event_handler)
@@ -1481,7 +1477,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     # consolidated with do_create_session:
     def _create_session(self, session_context):
-        session = self.session_factory.create_session(session_context)
+        session = SimpleSessionFactory.create_session(session_context)
+        print('\n#!#!#! core.session._create_session created:', str(session))
 
         msg = "Creating session. "
         logger.debug(msg)
@@ -1711,6 +1708,11 @@ class DefaultSessionContext(MapContext, session_abcs.SessionContext):
     def session_id(self, sessionid):
         # cannot set a session_id == None
         self.none_safe_put('session_id', sessionid)
+
+    def __repr__(self):
+        return "{0}(session_id={1}, host={2})".format(self.__class__.__name__,
+                                                      self.session_id,
+                                                      self.host)
 
 
 class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):

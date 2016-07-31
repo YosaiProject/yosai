@@ -15,7 +15,16 @@ software distributed under the License is distributed on an
 KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
+
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        print('called by:', calframe[1][3])
+
 """
+import copy
+import inspect
+import pdb
+
 import collections
 import logging
 from contextlib import contextmanager
@@ -25,7 +34,6 @@ from yosai.core import (
     DefaultSessionContext,
     DefaultSessionStorageEvaluator,
     DisabledSessionException,
-    # ExecutionException,
     IdentifiersNotSetException,
     InvalidArgumentException,
     IllegalStateException,
@@ -33,12 +41,10 @@ from yosai.core import (
     ProxiedSession,
     SecurityManagerNotSetException,
     SessionException,
-    SubjectContextException,
     ThreadStateManager,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
     YosaiContextException,
-    # UnsupportedOperationException,
     mgt_abcs,
     session_abcs,
     subject_abcs,
@@ -162,6 +168,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             # account.account_id is a SimpleIdentifierCollection:
             try:
                 identifiers = self.account.account_id
+                print('\n------> ', self.__class__.__name__, '.account_id identifiers: ', identifiers, '\n')
             except AttributeError:
                 pass
 
@@ -198,7 +205,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 session = self.subject.get_session(False)
             except AttributeError:
                 pass
-        return self.session
+        return session
 
     # yosai.core.renamed so to match property accessor with mutator:
     @property
@@ -301,6 +308,9 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 pass
 
         return host
+
+    def __repr__(self):
+        return "{0}(subject={1})".format(self.__class__.__name__, self.subject)
 
 
 class DelegatingSubject(subject_abcs.Subject):
@@ -521,7 +531,6 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: a frozenset of tuple(s), containing the roleid and a Boolean
                   indicating whether the user is a member of the Role
         """
-
         if self.has_identifiers:
             return self.security_manager.has_role(self.identifiers,
                                                   roleid_s)
@@ -649,9 +658,9 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         :type create:  bool
         """
-        msg = ("DelegatingSubject attempting to get session; create = " + str(create) +
+        msg = ("{0} attempting to get session; create = " + str(create) +
                "; \'session is None\' = " + str(self.session is None) +
-               "; \'session has id\' = " +
+               "; \'session has id\' = ".format(self.__class__.__name__) +
                str(self.session is not None and bool(self.session.session_id)))
         logger.debug(msg)
 
@@ -676,8 +685,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def create_session_context(self):
         session_context = DefaultSessionContext()
-        if (self.host):
-            session_context.host = self.host
+        session_context.host = self.host
         return session_context
 
     def clear_run_as_identities_internal(self):
@@ -980,6 +988,7 @@ class DefaultSubjectStore:
                    "expected to be initialized on every request or "
                    "invocation.".format(subject))
             logger.debug(msg)
+
         return subject
 
     def save_to_session(self, subject):
@@ -1009,7 +1018,6 @@ class DefaultSubjectStore:
 
         :type subject:  subject_abcs.Subject
         """
-        session = subject.get_session(False)
 
         current_identifiers = None
 
@@ -1023,6 +1031,8 @@ class DefaultSubjectStore:
             # decorated attribute access method:
             current_identifiers = subject.identifiers
 
+        session = subject.get_session(False)
+
         if not session:
             to_set = []
 
@@ -1032,9 +1042,16 @@ class DefaultSubjectStore:
                 to_set.append([self.dsc_isk, current_identifiers])
                 to_set.append([self.dsc_ask, True])
 
+                msg = ('merge_identity _DID NOT_ find a session for current subject '
+                       'and so created a new one (session_id: {0}). Now merging '
+                       'internal attributes: {1}'.format(session.session_id, to_set))
+                logger.debug(msg)
                 session.set_internal_attributes(to_set)
 
         else:
+            msg = 'merge_identity _DID_ find a session for current subject.'
+            logger.debug(msg)
+
             to_remove = []
             to_set = []
             internal_attributes = session.get_internal_attributes()
@@ -1064,9 +1081,11 @@ class DefaultSubjectStore:
                 # no need to update the session
 
             if to_set:
+                print('\n\n -=-=-=-=-=- setting internal attributes: ', to_set)
                 session.set_internal_attributes(to_set)
 
             if to_remove:
+                print('\n\n -=-=-=-=-=- removing internal attributes: ', to_remove)
                 session.remove_internal_attributes(to_remove)
 
     def remove_from_session(self, subject):
@@ -1164,7 +1183,7 @@ class Yosai:
                                                security_manager=self.security_manager)
         return self._subject_builder
 
-    def get_subject(self):
+    def _get_subject(self):
         """
         Returns the currently accessible Subject available to the calling code
         depending on runtime environment.
@@ -1176,7 +1195,9 @@ class Yosai:
                                         application configuration because a Subject
                                         should *always* be available to the caller)
         """
-        return self.subject_builder.build_subject()
+        subject = self.subject_builder.build_subject()
+        global_subject_context.stack.append(subject)
+        return subject
 
     @property
     def security_manager(self):
@@ -1199,7 +1220,7 @@ class Yosai:
     @contextmanager
     def context(yosai):
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
-        yield
+        yield yosai
         global_yosai_context.stack.pop()
         try:
             global_subject_context.stack.pop()
@@ -1209,15 +1230,17 @@ class Yosai:
     @staticmethod
     def get_current_subject():
         try:
-            return global_subject_context.stack[-1]
+            subject = global_subject_context.stack[-1]
+            msg = 'A subject instance DOES exist in the global context.  Returning it.'
+            return subject
         except IndexError:
-            msg = 'A subject instance does not exist in the global context.  Creating one.'
+            msg = 'A subject instance _DOES NOT_ exist in the global context.  Creating one.'
             logger.debug(msg)
 
-            subject = Yosai.get_current_yosai().get_subject()
+            yosai = Yosai.get_current_yosai()
+            subject = yosai._get_subject()
             global_subject_context.stack.append(subject)
-
-            return global_subject_context.stack[-1]
+            return subject
 
     @staticmethod
     def get_current_yosai():

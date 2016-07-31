@@ -32,6 +32,7 @@ from yosai.core import (
     DefaultSessionStorageEvaluator,
     DelegatingSession,
     ProxiedSession,
+    SessionCreationException,
     SimpleIdentifierCollection,
     SimpleSession,
     session_abcs,
@@ -186,7 +187,7 @@ class WebSimpleSession(SimpleSession):
 
             @post_load
             def make_simple_session(self, data):
-                mycls = SimpleSession
+                mycls = WebSimpleSession
                 instance = mycls.__new__(mycls)
                 instance.__dict__.update(data)
 
@@ -386,7 +387,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     Web-application capable SessionManager implementation
     """
     def __init__(self):
-        super().__init__(session_factory=WebSessionFactory())
+        super().__init__()
         self.session_handler = \
             WebSessionHandler(session_event_handler=self.session_event_handler)
 
@@ -400,19 +401,13 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
             1) passing it session and session_context
             2) passing it session and session_key
         """
-        try:
-            web_registry = context.web_registry
-        except AttributeError:
-            return super().create_exposed_session(session, context=context)
-        except SyntaxError:  # implies session_context is None
-            try:
-                web_registry = key.web_registry
-            except AttributeError:
-                return super().create_exposed_session(session, key=key)
+        if key:
+            return WebDelegatingSession(self, key)
 
-        # otherwise, assume we are dealing with a Web-enabled request
+        web_registry = context.web_registry
         session_key = WebSessionKey(session_id=session.session_id,
                                     web_registry=web_registry)
+
         return WebDelegatingSession(self, session_key)
 
     def new_csrf_token(self, session_key):
@@ -438,7 +433,8 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     # overridden to support csrf_token
     def _create_session(self, session_context):
         csrf_token = self._generate_csrf_token()
-        session = self.session_factory.create_session(csrf_token, session_context)
+
+        session = WebSessionFactory.create_session(csrf_token, session_context)
 
         msg = "Creating session. "
         logger.debug(msg)
