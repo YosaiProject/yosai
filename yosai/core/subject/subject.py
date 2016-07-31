@@ -15,16 +15,7 @@ software distributed under the License is distributed on an
 KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
-
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        print('called by:', calframe[1][3])
-
 """
-import copy
-import inspect
-import pdb
-
 import collections
 import logging
 from contextlib import contextmanager
@@ -168,7 +159,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             # account.account_id is a SimpleIdentifierCollection:
             try:
                 identifiers = self.account.account_id
-                print('\n------> ', self.__class__.__name__, '.account_id identifiers: ', identifiers, '\n')
             except AttributeError:
                 pass
 
@@ -1079,11 +1069,9 @@ class DefaultSubjectStore:
                 # no need to update the session
 
             if to_set:
-                print('\n\n -=-=-=-=-=- setting internal attributes: ', to_set)
                 session.set_internal_attributes(to_set)
 
             if to_remove:
-                print('\n\n -=-=-=-=-=- removing internal attributes: ', to_remove)
                 session.remove_internal_attributes(to_remove)
 
     def remove_from_session(self, subject):

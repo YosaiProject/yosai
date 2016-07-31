@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
 import collections
 import logging
 import pytz
@@ -1478,7 +1477,6 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     # consolidated with do_create_session:
     def _create_session(self, session_context):
         session = SimpleSessionFactory.create_session(session_context)
-        print('\n#!#!#! core.session._create_session created:', str(session))
 
         msg = "Creating session. "
         logger.debug(msg)
