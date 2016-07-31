@@ -181,8 +181,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
         # otherwise, use the session key as the identifier:
         if not identifiers:
             try:
-                identifiers = session.get_internal_attribute(
-                    self.get_key('identifiers_session_key'))
+                identifiers = session.get_internal_attribute('identifiers_session_key')
             except AttributeError:
                 identifiers = None
         return identifiers
@@ -250,8 +249,7 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             #  fall back to a session check:
 
             try:
-                authc = session.get_internal_attribute(
-                    self.get_key('authenticated_session_key'))
+                authc = session.get_internal_attribute('authenticated_session_key')
             except AttributeError:
                 authc = None
 

@@ -129,21 +129,21 @@ class WebSimpleSession(SimpleSession):
             identifiers_session_key = fields.Nested(
                 SimpleIdentifierCollection.serialization_schema(),
                 attribute='identifiers_session_key',
-                allow_none=False)
+                allow_none=True)
 
             authenticated_session_key = fields.Boolean(
                 attribute='authenticated_session_key',
-                allow_none=False)
+                allow_none=True)
 
             run_as_identifiers_session_key = fields.Nested(
                 SimpleIdentifierCollection.serialization_schema(),
                 attribute='run_as_identifiers_session_key',
                 many=True,
-                allow_none=False)
+                allow_none=True)
 
-            csrf_token = fields.Str(attribute='csrf_token', allow_none=False)
+            csrf_token = fields.Str(attribute='csrf_token', allow_none=True)
 
-            flash_messages = fields.Dict(attribute='flash_messages', allow_none=False)  # a Dict of Lists
+            flash_messages = fields.Dict(attribute='flash_messages', allow_none=True)  # a Dict of Lists
 
             @post_load
             def make_internal_attributes(self, data):

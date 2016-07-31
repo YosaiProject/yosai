@@ -148,9 +148,9 @@ class WebDelegatingSubject(DelegatingSubject,
     the WebRegistry object is saved so to facilitate subject-specific processing
     in the context of a web request.
     """
-    def __init__(self, identifiers, authenticated,
-                 host, session, web_registry, security_manager,
-                 session_creation_enabled=True):
+    def __init__(self, identifiers=None, authenticated=None,
+                 host=None, session=None, session_creation_enabled=True,
+                 security_manager=None, web_registry=None):
 
         super().__init__(identifiers=identifiers,
                          authenticated=authenticated,
