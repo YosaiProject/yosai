@@ -16,10 +16,12 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import functools
 import logging
 from contextlib import contextmanager
 
 from yosai.core import (
+    AuthorizationException,
     DefaultSubjectContext,
     DelegatingSubject,
     IllegalStateException,
@@ -287,5 +289,187 @@ class WebYosai(Yosai):
         except IndexError:
             msg = 'A yosai instance does not exist in the global context.'
             raise YosaiContextException(msg)
+
+    @staticmethod
+    def requires_authentication(fn):
+        """
+        Requires that the calling Subject be authenticated before allowing access.
+        """
+
+        @functools.wraps(fn)
+        def wrap(*args, **kwargs):
+            subject = Yosai.get_current_subject()
+
+            if not subject.authenticated:
+                msg = "The current Subject is not authenticated.  ACCESS DENIED."
+                raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+
+            return fn(*args, **kwargs)
+        return wrap
+
+    @staticmethod
+    def requires_user(fn):
+        """
+        Requires that the calling Subject be *either* authenticated *or* remembered
+        via RememberMe services before allowing access.
+
+        This method essentially ensures that subject.identifiers IS NOT None
+        """
+        @functools.wraps(fn)
+        def wrap(*args, **kwargs):
+
+            subject = Yosai.get_current_subject()
+
+            if subject.identifiers is None:
+                msg = ("Attempting to perform a user-only operation.  The "
+                       "current Subject is NOT a user (they haven't been "
+                       "authenticated or remembered from a previous login). "
+                       "ACCESS DENIED.")
+                print('\n\n', msg)
+                raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+
+            return fn(*args, **kwargs)
+        return wrap
+
+    @staticmethod
+    def requires_guest(fn):
+        """
+        Requires that the calling Subject be NOT (yet) recognized in the system as
+        a user -- the Subject is not yet authenticated nor remembered through
+        RememberMe services.
+
+        This method essentially ensures that subject.identifiers IS None
+        """
+        @functools.wraps(fn)
+        def wrap(*args, **kwargs):
+
+            subject = Yosai.get_current_subject()
+
+            if subject.identifiers is not None:
+                msg = ("Attempting to perform a guest-only operation.  The "
+                       "current Subject is NOT a guest (they have either been "
+                       "authenticated or remembered from a previous login). "
+                       "ACCESS DENIED.")
+                raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+
+            return fn(*args, **kwargs)
+        return wrap
+
+    @staticmethod
+    def requires_permission(permission_s, logical_operator=all):
+        """
+        Requires that the calling Subject be authorized to the extent that is
+        required to satisfy the permission_s specified and the logical operation
+        upon them.
+
+        :param permission_s:   the permission(s) required
+        :type permission_s:  a List of Strings or List of Permission instances
+
+        :param logical_operator:  indicates whether all or at least one permission
+                                  is true (and, any)
+        :type: and OR all (from python standard library)
+
+        Elaborate Example:
+            requires_permission(
+                permission_s=['domain1:action1,action2', 'domain2:action1'],
+                logical_operator=any)
+
+        Basic Example:
+            requires_permission(['domain1:action1,action2'])
+        """
+        def outer_wrap(fn):
+            @functools.wraps(fn)
+            def inner_wrap(*args, **kwargs):
+
+                subject = Yosai.get_current_subject()
+                try:
+                    subject.check_permission(permission_s, logical_operator)
+                except AuthorizationException:
+                    raise WebYosai.get_current_webregistry().raise_forbidden()
+
+                return fn(*args, **kwargs)
+            return inner_wrap
+        return outer_wrap
+
+    @staticmethod
+    def requires_dynamic_permission(permission_s, logical_operator=all):
+        """
+        This method requires that the calling Subject be authorized to the extent
+        that is required to satisfy the dynamic permission_s specified and the logical
+        operation upon them.  Unlike ``requires_permission``, which uses statically
+        defined permissions, this function derives a permission from arguments
+        specified at declaration.
+
+        Dynamic permissioning requires that the dynamic arguments be keyword
+        arguments of the decorated method.
+
+        :param permission_s:   the permission(s) required
+        :type permission_s:  a List of Strings or List of Permission instances
+
+        :param logical_operator:  indicates whether all or at least one permission
+                                  is true (and, any)
+        :type: and OR all (from python standard library)
+
+        Elaborate Example:
+            requires_permission(
+                permission_s=['{kwarg1.domainid}:action1,action2',
+                               '{kwarg2.domainid}:action1'],
+                logical_operator=any)
+
+        Basic Example:
+            requires_permission(['{kwarg.domainid}:action1,action2'])
+        """
+        def outer_wrap(fn):
+            @functools.wraps(fn)
+            def inner_wrap(*args, **kwargs):
+                newperms = [perm.format(**kwargs) for perm in permission_s]
+
+                subject = Yosai.get_current_subject()
+
+                try:
+                    subject.check_permission(newperms, logical_operator)
+                except AuthorizationException:
+                    raise WebYosai.get_current_webregistry().raise_forbidden()
+
+                return fn(*args, **kwargs)
+            return inner_wrap
+        return outer_wrap
+
+    @staticmethod
+    def requires_role(roleid_s, logical_operator=all):
+        """
+        Requires that the calling Subject be authorized to the extent that is
+        required to satisfy the roleid_s specified and the logical operation
+        upon them.
+
+        :param roleid_s:   a collection of the role(s) required, specified by
+                           identifiers (such as a role name)
+        :type roleid_s:  a List of Strings
+
+        :param logical_operator:  indicates whether all or at least one permission
+                                  is true (and, any)
+        :type: and OR all (from python standard library)
+
+        Elaborate Example:
+            requires_role(roleid_s=['sysadmin', 'developer'], logical_operator=any)
+
+        Basic Example:
+            requires_role('physician')
+        """
+        def outer_wrap(fn):
+            @functools.wraps(fn)
+            def inner_wrap(*args, **kwargs):
+
+                subject = Yosai.get_current_subject()
+
+                try:
+                    subject.check_role(roleid_s, logical_operator)
+                except AuthorizationException:
+                    raise WebYosai.get_current_webregistry().raise_forbidden()
+
+                return fn(*args, **kwargs)
+            return inner_wrap
+        return outer_wrap
+
 
 global_webregistry_context = ThreadStateManager()

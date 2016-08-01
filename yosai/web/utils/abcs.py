@@ -91,6 +91,31 @@ class WebRegistry(metaclass=ABCMeta):
             key = self.cookies['delete_cookie'].pop()
             self._delete_cookie(response, key)
 
+    @property
+    @abstractmethod
+    def resource_params(self):
+        """
+        Obtains the resource-specific parameters of the HTTP request, returning
+        a dict that will be used to bind parameter values to dynamic permissions.
+
+        :rtype: dict
+        """
+        pass
+
+    @abstractmethod
+    def raise_forbidden(self, msg=None):
+        """
+        This method is called to raise HTTP Error Code 403 (Forbidden).
+        """
+        pass
+
+    @abstractmethod
+    def raise_unauthorized(self, msg=None):
+        """
+        This method is called to raise HTTP Error Code 401 (Unauthorized).
+        """
+        pass
+
     @abstractmethod
     def _get_cookie(self, cookie_name, secret):
         pass
