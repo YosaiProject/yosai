@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import pdb
 import functools
 import logging
 from contextlib import contextmanager
@@ -24,6 +25,7 @@ from yosai.core import (
     AuthorizationException,
     DefaultSubjectContext,
     DelegatingSubject,
+    IdentifiersNotSetException,
     IllegalStateException,
     Yosai,
     SubjectBuilder,
@@ -325,9 +327,7 @@ class WebYosai(Yosai):
                        "current Subject is NOT a user (they haven't been "
                        "authenticated or remembered from a previous login). "
                        "ACCESS DENIED.")
-                print('\n\n', msg)
                 raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
-
             return fn(*args, **kwargs)
         return wrap
 
@@ -384,8 +384,17 @@ class WebYosai(Yosai):
                 subject = Yosai.get_current_subject()
                 try:
                     subject.check_permission(permission_s, logical_operator)
+
+                except IdentifiersNotSetException:
+                    msg = ("Attempting to perform a user-only operation.  The "
+                           "current Subject is NOT a user (they haven't been "
+                           "authenticated or remembered from a previous login). "
+                           "ACCESS DENIED.")
+                    raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+
                 except AuthorizationException:
-                    raise WebYosai.get_current_webregistry().raise_forbidden()
+                    msg = "Access Denied.  Insufficient Permissions."
+                    raise WebYosai.get_current_webregistry().raise_forbidden(msg)
 
                 return fn(*args, **kwargs)
             return inner_wrap
@@ -422,14 +431,26 @@ class WebYosai(Yosai):
         def outer_wrap(fn):
             @functools.wraps(fn)
             def inner_wrap(*args, **kwargs):
-                newperms = [perm.format(**kwargs) for perm in permission_s]
+
+                params = WebYosai.get_current_webregistry().resource_params
+                pdb.set_trace()
+                newperms = [perm.format(**params) for perm in permission_s]
 
                 subject = Yosai.get_current_subject()
 
                 try:
                     subject.check_permission(newperms, logical_operator)
+
+                except IdentifiersNotSetException:
+                    msg = ("Attempting to perform a user-only operation.  The "
+                           "current Subject is NOT a user (they haven't been "
+                           "authenticated or remembered from a previous login). "
+                           "ACCESS DENIED.")
+                    raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+
                 except AuthorizationException:
-                    raise WebYosai.get_current_webregistry().raise_forbidden()
+                    msg = "Access Denied.  Insufficient Permissions."
+                    raise WebYosai.get_current_webregistry().raise_forbidden(msg)
 
                 return fn(*args, **kwargs)
             return inner_wrap
@@ -464,8 +485,17 @@ class WebYosai(Yosai):
 
                 try:
                     subject.check_role(roleid_s, logical_operator)
+
+                except IdentifiersNotSetException:
+                    msg = ("Attempting to perform a user-only operation.  The "
+                           "current Subject is NOT a user (they haven't been "
+                           "authenticated or remembered from a previous login). "
+                           "ACCESS DENIED.")
+                    raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+
                 except AuthorizationException:
-                    raise WebYosai.get_current_webregistry().raise_forbidden()
+                    msg = "Access Denied.  Insufficient Role Membership."
+                    raise WebYosai.get_current_webregistry().raise_forbidden(msg)
 
                 return fn(*args, **kwargs)
             return inner_wrap

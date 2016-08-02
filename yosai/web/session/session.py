@@ -92,6 +92,7 @@ class WebDelegatingSession(DelegatingSession):
         token = self.get_internal_attribute('csrf_token')
         if token is None:
             return self.new_csrf_token()
+        return token
 
     # new to yosai
     # flash_messages is a dict of lists
