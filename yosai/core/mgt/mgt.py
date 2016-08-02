@@ -907,11 +907,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def before_logout(self, subject):
         self.remember_me_logout(subject)
 
-    def copy(self, subject_context):
-        return DefaultSubjectContext(security_utils=self.security_utils,
-                                     security_manager=self,
-                                     context=subject_context)
-
     def do_create_subject(self, subject_context):
         """
         This method creates a ``Subject`` instance by delegating to the internal

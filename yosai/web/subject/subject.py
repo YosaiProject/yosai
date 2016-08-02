@@ -52,13 +52,11 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
     facilitating cookie and remote-host management
     """
 
-    WEB_REGISTRY = "DefaultWebSubjectContext.WEB_REGISTRY"
-
-    def __init__(self, security_utils, security_manager, web_registry, context={}):
+    def __init__(self, security_utils, security_manager, web_registry):
         """
         :subject_context:  WebSubjectContext
         """
-        super().__init__(security_utils, security_manager, context=context)
+        super().__init__(security_utils, security_manager)
 
         self.web_registry = web_registry
 
@@ -68,14 +66,6 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
 
         if not host:
             return self.resolve_web_registry().remote_host
-
-    @property
-    def web_registry(self):
-        return self.get(self.__class__.WEB_REGISTRY)
-
-    @web_registry.setter
-    def web_registry(self, webregistry):
-        self.put(self.__class__.WEB_REGISTRY, webregistry)
 
     def resolve_web_registry(self):
         registry = self.web_registry

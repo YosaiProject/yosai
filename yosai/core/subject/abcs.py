@@ -198,25 +198,6 @@ class SubjectContext(metaclass=ABCMeta):
     instead will use a SubjectBuilder (which internally uses a SubjectContext)
     to build Subject instances.
     """
-    @property
-    @abstractmethod
-    def security_manager(self):
-        """
-        Returns the SecurityManager instance that to be used to back the
-        constructed Subject instance or None if one has not yet been provided
-        to this context
-        """
-        pass
-
-    @security_manager.setter
-    @abstractmethod
-    def security_manager(self, securitymanager):
-        """
-        Sets the SecurityManager instance to be used to back the constructed
-        Subject instance (typically used to support DelegatingSubject implementations)
-        """
-        pass
-
     @abstractmethod
     def resolve_security_manager(self):
         """
@@ -225,178 +206,16 @@ class SubjectContext(metaclass=ABCMeta):
         """
         pass
 
-    @property
-    @abstractmethod
-    def session_id(self):
-        """
-        Returns the session id of the session to be associated with the
-        constructed Subject instance
-        """
-        pass
-
-    @session_id.setter
-    @abstractmethod
-    def session_id(self, sessionid):
-        """
-        Sets the session id of the session to be associated with the
-        constructed Subject instance
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def subject(self):
-        """
-        Returns any existing Subject that may be in use at the time that the
-        new Subject instance is being created.
-
-        This is typically used in the case where the existing Subject instance
-        returned by this accessor is unauthenticated and a new Subject instance
-        is created to reflect successful authentication-- you want to return most
-        of the state of the previous Subject instance when creating the
-        newly authenticated instance.
-        """
-        pass
-
-    @subject.setter
-    @abstractmethod
-    def subject(self, subject):
-        """
-        Sets the existing Subject that may be in use at the time that the new
-        Subject instance is being created.
-
-        This is typically used in the case where the existing Subject instance
-        returned by this method is unauthenticated and a new Subject instance is
-        being created to reflect a successful authentication -- you want to return
-        most of the state of the previous {@code Subject} instance when creating
-        the newly authenticated instance.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def identifiers(self):
-        """
-        Returns the identifiers (aka principals) that the constructed Subject
-        identity reflects.
-        """
-        pass
-
-    @identifiers.setter
-    @abstractmethod
-    def identifiers(self, identifiers):
-        """
-        Sets the identifiers (aka principals) that the constructed Subject
-        identity reflects.
-        """
-        pass
-
     @abstractmethod
     def resolve_identifiers(self):
-        pass
-
-    @property
-    @abstractmethod
-    def session(self):
-        """
-        Returns the Session to use when building the Subject instance.  Note
-        that it is more common to reference a session_id to acquire a desired
-        session rather than it is to reference a Session returned by this
-        property.
-        """
-        pass
-
-    @session.setter
-    @abstractmethod
-    def session(self, session):
-        """
-        Sets the Session to use when building the Subject instance.  Note that
-        it is more common to specify a session_id to automatically resolve the
-        desired session rather than it is to construct a Session to call this
-        method.
-        """
         pass
 
     @abstractmethod
     def resolve_session(self):
         pass
 
-    @property
-    @abstractmethod
-    def authenticated(self):
-        """
-        Returns True if the constructed Subject is considered authenticated, False
-        otherwise.  Be careful setting this value to True -- you should know what
-        you are doing and have good reason to ignore Yosai's default
-        authentication state mechanisms.
-        """
-        pass
-
-    @authenticated.setter
-    @abstractmethod
-    def authenticated(self, authc):
-        """
-        Sets whether the constructed Subject instance is authenticated.  Be careful
-        when specifying True - you should know what you are doing and have good
-        reason to ignore Yosai's default authentication state mechanisms.
-        """
-        pass
-
     @abstractmethod
     def resolve_authenticated(self):
-        pass
-
-    @property
-    @abstractmethod
-    def session_creation_enabled(self):
-        """
-        Returns True if the constructed Subject allows creation of a session,
-        False otherwise.  Yosai's configuration defaults to True as most
-        applications find value in Sessions.
-        """
-        pass
-
-    @session_creation_enabled.setter
-    @abstractmethod
-    def session_creation_enabled(self, enabled):
-        """
-        Sets whether the constructed Subject instance is allowed to create a
-        Session
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def account(self):
-        pass
-
-    @account.setter
-    @abstractmethod
-    def account(self, account):
-        pass
-
-    @property
-    @abstractmethod
-    def authentication_token(self):
-        pass
-
-    @authentication_token.setter
-    @abstractmethod
-    def authentication_token(self, authc_token):
-        pass
-
-    @property
-    @abstractmethod
-    def host(self):
-        """
-        Returns the hostname or IP that reflects the constructed Subject's
-        originating location.
-        """
-        pass
-
-    @host.setter
-    @abstractmethod
-    def host(self, host):
         pass
 
     @abstractmethod

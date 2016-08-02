@@ -22,7 +22,6 @@ import logging
 from contextlib import contextmanager
 
 from yosai.core import (
-    MapContext,
     DefaultSessionContext,
     DefaultSessionStorageEvaluator,
     DisabledSessionException,
@@ -46,7 +45,7 @@ from yosai.core import (
 logger = logging.getLogger(__name__)
 
 
-class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
+class DefaultSubjectContext(subject_abcs.SubjectContext):
     """
     A SubjectContext assists a SecurityManager and SubjectFactory with the
     configuration of new Subject instances.  It employs a number of heuristics
@@ -64,47 +63,23 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self, security_utils, security_manager, context={}):
-        """
-        :param context: context's schema of reserved attributes must be named
-                        according to the property names below
-        :type context: dict
-        """
-        super().__init__(context)
-
-        self.security_utils = security_utils
+    def __init__(self, security_utils, security_manager):
+        self.account = None  # yosai.core.renamed AuthenticationInfo to Account
+        self.authentication_token = None
+        self.authenticated = None
+        self.identifiers = None
+        self.host = None
         self.security_manager = security_manager
-
-        # to set reserved attributes correctly (using the property setters),
-        # context must be set accordingly:
-        for key, value in self.context.items():
-            if hasattr(self, key):
-                setattr(self, key, value)  # uses the property setters
-                self.context.pop(key)
-
-    # new to yosai.core.is this helper method:
-    def get_key(self, key):
-        """
-        :type key: string
-        """
-        return "{0}.{1}".format(self.__class__.__name__, key)
-
-    @property
-    def security_manager(self):
-        return self.get(self.get_key('SECURITY_MANAGER'))
-
-    @security_manager.setter
-    def security_manager(self, securitymanager):
-        """
-        :type securitymanager:  mgt_abcs.SecurityManager
-        """
-        self.none_safe_put(self.get_key('SECURITY_MANAGER'), securitymanager)
+        self.security_utils = security_utils
+        self.session = None
+        self.session_id = None
+        self.session_creation_enabled = True
+        self.subject = None
 
     def resolve_security_manager(self):
         security_manager = self.security_manager
         if (security_manager is None):
-
-            msg = ("No SecurityManager available in subject context map.  " +
+            msg = ("No SecurityManager available in subject context.  " +
                    "Falling back to Yosai.security_manager for" +
                    " lookup.")
             logger.debug(msg)
@@ -119,39 +94,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 logger.debug(msg, exc_info=True)
 
         return security_manager
-
-    @property
-    def session_id(self):
-        return self.get(self.get_key('SESSION_ID'))
-
-    @session_id.setter
-    def session_id(self, session_id):
-        """
-        :type session_id:  string
-        """
-        self.none_safe_put(self.get_key('SESSION_ID'), session_id)
-
-    @property
-    def subject(self):
-        return self.get(self.get_key('SUBJECT'))
-
-    @subject.setter
-    def subject(self, subject):
-        """
-        :type subject:  subject_abcs.Subject
-        """
-        self.none_safe_put(self.get_key('SUBJECT'), subject)
-
-    @property
-    def identifiers(self):
-        return self.get(self.get_key('IDENTIFIERS'))
-
-    @identifiers.setter
-    def identifiers(self, identifiers):
-        """
-        :type identifier_s: subject_abcs.IdentifierCollection
-        """
-        self.none_safe_put(self.get_key('IDENTIFIERS'), identifiers)
 
     def resolve_identifiers(self, session):
         identifiers = self.identifiers
@@ -177,17 +119,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 identifiers = None
         return identifiers
 
-    @property
-    def session(self):
-        return self.get(self.get_key('SESSION'))
-
-    @session.setter
-    def session(self, session):
-        """
-        :type session:  session_abcs.Session
-        """
-        self.none_safe_put(self.get_key('SESSION'), session)
-
     def resolve_session(self):
         session = self.session
         if session is None:
@@ -196,35 +127,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
             except AttributeError:
                 pass
         return session
-
-    # yosai.core.renamed so to match property accessor with mutator:
-    @property
-    def session_creation_enabled(self):
-        val = self.get(self.get_key('SESSION_CREATION_ENABLED'))
-        return (val is None or val)
-
-    @session_creation_enabled.setter
-    def session_creation_enabled(self, enabled):
-        """
-        :type enabled:  bool
-        """
-        self.none_safe_put(
-            self.get_key('SESSION_CREATION_ENABLED'), enabled)
-
-    # yosai.core.renamed from is_authenticated:
-    @property
-    def authenticated(self):
-        """
-        :returns: Boolean
-        """
-        return self.get(self.get_key('AUTHENTICATED'))
-
-    @authenticated.setter
-    def authenticated(self, authc):
-        """
-        :type authc:  bool
-        """
-        self.put(self.get_key('AUTHENTICATED'), authc)
 
     def resolve_authenticated(self, session):
         authc = self.authenticated
@@ -245,40 +147,6 @@ class DefaultSubjectContext(MapContext, subject_abcs.SubjectContext):
                 authc = None
 
         return bool(authc)
-
-    # yosai.core.renamed AuthenticationInfo to Account:
-    @property
-    def account(self):
-        return self.get(self.get_key('ACCOUNT'))
-
-    @account.setter
-    def account(self, account):
-        """
-        :type account:  account_abcs.Account
-        """
-        self.none_safe_put(self.get_key('ACCOUNT'), account)
-
-    @property
-    def authentication_token(self):
-        return self.get(self.get_key('AUTHENTICATION_TOKEN'))
-
-    @authentication_token.setter
-    def authentication_token(self, token):
-        """
-        :type token:  authc_abcs.AuthenticationToken
-        """
-        self.none_safe_put(self.get_key('AUTHENTICATION_TOKEN'), token)
-
-    @property
-    def host(self):
-        return self.get(self.get_key('HOST'))
-
-    @host.setter
-    def host(self, host):
-        """
-        :type host: string
-        """
-        self.put(self.get_key('HOST'), host)
 
     def resolve_host(self, session):
         host = self.host

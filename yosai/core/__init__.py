@@ -180,11 +180,6 @@ from yosai.core.session.session_gen import(
 )
 
 
-from yosai.core.context.context import (
-    MapContext,
-)
-
-
 from yosai.core.subject.identifier import (
     SimpleIdentifierCollection,
 )

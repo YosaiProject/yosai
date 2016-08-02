@@ -131,15 +131,6 @@ class WebSecurityManager(NativeSecurityManager):
         evaluator = self.subject_store.session_storage_evaluator
         evaluator.session_manager = sessionmanager
 
-    # overidden parent method
-    def copy(self, subject_context):
-        if isinstance(subject_context, web_subject_abcs.WebSubjectContext):
-            return DefaultWebSubjectContext(subject_context)
-
-        return super().copy(subject_context)
-
-    # yosai omits session_mode logic, and so doesn't need create_session_manager
-
     # overridden:
     def create_session_context(self, subject_context):
         web_registry = subject_context.resolve_web_registry()

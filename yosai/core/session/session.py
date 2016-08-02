@@ -25,7 +25,6 @@ from abc import abstractmethod
 from marshmallow import Schema, fields, post_load
 
 from yosai.core import (
-    MapContext,
     ExpiredSessionException,
     InvalidArgumentException,
     IllegalStateException,
@@ -1674,39 +1673,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         return removed
 
 
-class DefaultSessionContext(MapContext, session_abcs.SessionContext):
-    """
-    This implementation refactors shiro's version quite a bit:
-        - Accessor/mutator methods are omitted
-            - getTypedValue isn't pythonic
-            - attribute access is much more straightforward in python
-        - key names aren't following the CLASSNAME.KEY convention
-    """
-    def __init__(self, context_map={}):
-        """
-        :type context_map: dict
-        """
-        super().__init__(context_map)
-
-    # properties are used to enforce the interface:
-
-    @property
-    def host(self):
-        return self.get('host')
-
-    @host.setter
-    def host(self, host):
-        self.put('host', host)
-
-    @property
-    def session_id(self):
-        return self.get('session_id')
-
-    @session_id.setter
-    def session_id(self, sessionid):
-        # cannot set a session_id == None
-        self.none_safe_put('session_id', sessionid)
-
+class DefaultSessionContext(session_abcs.SessionContext):
     def __repr__(self):
         return "{0}(session_id={1}, host={2})".format(self.__class__.__name__,
                                                       self.session_id,
