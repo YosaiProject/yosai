@@ -282,6 +282,21 @@ class WildcardPermission(serialize_abcs.Serializable):
 
         return SerializationSchema
 
+    # asphalt:
+    def marshal(self):
+        parts = {part: list(items) for part, items in self.parts.items()}
+        return {
+            'parts': parts
+        }
+
+    @classmethod
+    def unmarshal(cls, state):
+        parts = {part: frozenset(items) for part, items in state['parts'].items()}
+        mycls = WildcardPermission
+        instance = mycls.__new__(mycls)
+        instance.parts = parts
+        return instance
+
 
 class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
 
@@ -543,6 +558,20 @@ class DefaultPermission(WildcardPermission):
                 return data
 
         return SerializationSchema
+
+        # asphalt:
+        def marshal(self):
+            parts = {part: list(items) for part, items in self.parts.items()}
+            return {
+                'parts': parts
+            }
+
+        @classmethod
+        def unmarshal(cls, state):
+            parts = {part: frozenset(items) for part, items in state['parts'].items()}
+            instance = cls.__new__(cls)
+            instance.parts = parts
+            return instance
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
