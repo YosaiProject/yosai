@@ -357,6 +357,13 @@ class Credential(serialize_abcs.Serializable):
 
         return SerializationSchema
 
+    # asphalt:
+    def __getstate__(self):
+        return {'credential': self.credential}
+
+    def __setstate__(self, state):
+        self.credential = state['credential']
+
 
 class CredentialResolver(authc_abcs.CredentialResolver):
 

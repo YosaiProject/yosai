@@ -174,3 +174,16 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                 return instance
 
         return SerializationSchema
+
+    # asphalt:
+    def __getstate__(self):
+        return {
+            'source_identifiers': [[key, value] for key, value in
+                                   self.source_identifiers.items()],
+            '_primary_identifier': self._primary_identifier
+        }
+
+    def __setstate__(self, state):
+        self.source_identifiers =\
+            collections.OrderedDict(state['source_identifiers'])
+        self._primary_identifier = state['_primary_identifier']

@@ -19,17 +19,15 @@ class DefaultSessionSettings:
         timeout_config = session_config.get('session_timeout', None)
         validation_config = session_config.get('session_validation', None)
 
-        abstimeout = timeout_config.get('absolute_timeout', 1800)  # def:30min
-        self.absolute_timeout = datetime.timedelta(seconds=abstimeout)
-
-        idletimeout = timeout_config.get('idle_timeout', 450)  # def:15min
-        self.idle_timeout = datetime.timedelta(seconds=idletimeout)
+        # convert to milliseconds:
+        self.absolute_timeout = timeout_config.get('absolute_timeout', 1800)*1000  # def:30min
+        self.idle_timeout = timeout_config.get('idle_timeout', 450)*1000  # def:15min
 
         self.validation_scheduler_enable =\
             validation_config.get('scheduler_enabled', True)
 
-        interval = validation_config.get('time_interval', 3600)  # def:1hr
-        self.validation_time_interval = datetime.timedelta(seconds=interval)
+        self.interval = validation_config.get('time_interval', 3600)  # def:1hr
+        self.validation_time_interval = datetime.timedelta(seconds=self.interval)
 
     def __repr__(self):
         return ("SessionSettings(absolute_timeout={0}, idle_timeout={1}, "

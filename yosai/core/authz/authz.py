@@ -283,19 +283,15 @@ class WildcardPermission(serialize_abcs.Serializable):
         return SerializationSchema
 
     # asphalt:
-    def marshal(self):
+    def __getstate__(self):
         parts = {part: list(items) for part, items in self.parts.items()}
         return {
             'parts': parts
         }
 
-    @classmethod
-    def unmarshal(cls, state):
+    def __setstate__(self, state):
         parts = {part: frozenset(items) for part, items in state['parts'].items()}
-        mycls = WildcardPermission
-        instance = mycls.__new__(mycls)
-        instance.parts = parts
-        return instance
+        self.parts = parts
 
 
 class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
@@ -487,7 +483,7 @@ class DefaultPermission(WildcardPermission):
         return permission
 
     # overrides WildcardPermission.set_parts:
-    def set_parts(self, domain, action, target):
+    def set_parts(self, domain=None, action=None, target=None):
         """
         Shiro uses method overloading to determine as to whether to call
         either this set_parts or that of the parent WildcardPermission.  The
@@ -560,18 +556,15 @@ class DefaultPermission(WildcardPermission):
         return SerializationSchema
 
         # asphalt:
-        def marshal(self):
+        def __getstate__(self):
             parts = {part: list(items) for part, items in self.parts.items()}
             return {
                 'parts': parts
             }
 
-        @classmethod
-        def unmarshal(cls, state):
+        def __setstate__(self, state):
             parts = {part: frozenset(items) for part, items in state['parts'].items()}
-            instance = cls.__new__(cls)
-            instance.parts = parts
-            return instance
+            self.set_parts(**parts)
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
@@ -1131,6 +1124,16 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
                 return instance
 
         return SerializationSchema
+
+    # asphalt:
+    def __getstate__(self):
+        return {'_roles': list(self._roles),
+                '_permissions': {key: list(val) for key, val in self._permissions.items()}
+                }
+
+    def __setstate__(self, state):
+        self._roles = set(state['_roles'])
+        self._permissions = {key: set(val) for key, val in self._permissions.items()}
 
 
 class SimpleRole(serialize_abcs.Serializable):

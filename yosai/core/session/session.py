@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import time
 import collections
 import logging
 import pytz
@@ -496,14 +497,14 @@ class SimpleSession(session_abcs.ValidatingSession,
         self._session_id = None
 
         self._stop_timestamp = None
-        self._start_timestamp = datetime.datetime.now(pytz.utc)
+        self._start_timestamp = round(time.time() * 1000)  # milliseconds
 
         self._last_access_time = self._start_timestamp
 
         # yosai.core.renames global_session_timeout to idle_timeout and added
         # the absolute_timeout feature
-        self._absolute_timeout = session_settings.absolute_timeout  # timedelta
-        self._idle_timeout = session_settings.idle_timeout  # timedelta
+        self._absolute_timeout = session_settings.absolute_timeout
+        self._idle_timeout = session_settings.idle_timeout
 
         self._host = host
 
@@ -583,7 +584,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     def last_access_time(self, last_access_time):
         """
         :param  last_access_time: time that the Session was last used, in utc
-        :type last_access_time: datetime
+        :type last_access_time: unix epoch expressed in milli
         """
         self._last_access_time = last_access_time
 
@@ -604,7 +605,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     def start_timestamp(self, start_ts):
         """
         :param  start_ts: the time that the Session is started, in utc
-        :type start_ts: datetime
+        :type start_ts: unix epoch expressed in milli
         """
         self._start_timestamp = start_ts
 
@@ -618,7 +619,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     def stop_timestamp(self, stop_ts):
         """
         :param  stop_ts: the time that the Session is stopped, in utc
-        :type stop_ts: datetime
+        :type stop_ts: unix epoch expressed in mill
         """
         self._stop_timestamp = stop_ts
 
@@ -635,11 +636,10 @@ class SimpleSession(session_abcs.ValidatingSession,
         return None
 
     def touch(self):
-        self.last_access_time = datetime.datetime.now(pytz.utc)
+        self.last_access_time = round(time.time() * 1000)  # milliseconds
 
     def stop(self):
-        if (not self.stop_timestamp):
-            self.stop_timestamp = datetime.datetime.now(pytz.utc)
+        self.stop_timestamp = round(time.time() * 1000)  # milliseconds
 
     def expire(self):
         self.stop()
@@ -657,7 +657,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         if (self.is_expired):
             return True
 
-        if (self.absolute_timeout or self.idle_timeout):
+        try:
             if (not self.last_access_time):
                 msg = ("session.last_access_time for session with id [" +
                        str(self.session_id) + "] is null. This value must be"
@@ -675,20 +675,19 @@ class SimpleSession(session_abcs.ValidatingSession,
              be inactive before expiring.  If the session was last accessed
              before this time, it is expired.
             """
-            current_time = datetime.datetime.now(pytz.utc)
+            current_time = round(time.time() * 1000)  # milliseconds
 
             # Check 1:  Absolute Timeout
-            if self.absolute_expiration:
-                if (current_time > self.absolute_expiration):
-                    return True
+            abs_expir = self.start_timestamp + self.absolute_timeout
+            if current_time > abs_expir:
+                return True
 
             # Check 2:  Inactivity Timeout
-            if self.idle_expiration:
-                if (current_time > self.idle_expiration):
-                    return True
+            idle_expir = self.last_access_time + self.idle_timeout
+            if current_time > idle_expir:
+                return True
 
-        else:
-
+        except AttributeError:
             msg2 = ("Timeouts not set for session with id [" +
                     str(self.session_id) + "]. Session is not considered "
                     "expired.")
@@ -866,11 +865,11 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         class SerializationSchema(Schema):
             _session_id = fields.Str(allow_none=True)
-            _start_timestamp = fields.DateTime(allow_none=True)  # iso is default
-            _stop_timestamp = fields.DateTime(allow_none=True)  # iso is default
-            _last_access_time = fields.DateTime(allow_none=True)  # iso is default
-            _idle_timeout = fields.TimeDelta(allow_none=True)
-            _absolute_timeout = fields.TimeDelta(allow_none=True)
+            _start_timestamp = fields.Integer(allow_none=True)  # iso is default
+            _stop_timestamp = fields.Integer(allow_none=True)  # iso is default
+            _last_access_time = fields.Integer(allow_none=True)  # iso is default
+            _idle_timeout = fields.Integer(allow_none=True)
+            _absolute_timeout = fields.Integer(allow_none=True)
             _is_expired = fields.Boolean(allow_none=True)
             _host = fields.Str(allow_none=True)
 
