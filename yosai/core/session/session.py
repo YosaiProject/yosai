@@ -623,18 +623,6 @@ class SimpleSession(session_abcs.ValidatingSession,
         """
         self._stop_timestamp = stop_ts
 
-    @property
-    def absolute_expiration(self):
-        if self.absolute_timeout:
-            return self.start_timestamp + self.absolute_timeout
-        return None
-
-    @property
-    def idle_expiration(self):
-        if self.idle_timeout:
-            return self.last_access_time + self.idle_timeout
-        return None
-
     def touch(self):
         self.last_access_time = round(time.time() * 1000)  # milliseconds
 
@@ -709,19 +697,17 @@ class SimpleSession(session_abcs.ValidatingSession,
             self.expire()
 
             # throw an exception explaining details of why it expired:
-            lastaccesstime = self.last_access_time.isoformat()
-
-            idle_timeout = self.idle_timeout.seconds
+            idle_timeout = datetime.datetime.fromtimestamp(self.idle_timeout/1000).seconds
             idle_timeout_min = str(idle_timeout // 60)
 
-            absolute_timeout = self.absolute_timeout.seconds
+            absolute_timeout = datetime.datetime.fromtimestamp(self.absolute_timeout/1000).seconds
             absolute_timeout_min = str(absolute_timeout // 60)
 
             currenttime = datetime.datetime.now(pytz.utc).isoformat()
             session_id = str(self.session_id)
 
             msg2 = ("Session with id [" + session_id + "] has expired. "
-                    "Last access time: " + lastaccesstime +
+                    "Last access time: " + self.lastaccesstime +
                     ".  Current time: " + currenttime +
                     ".  Session idle timeout is set to " + str(idle_timeout) +
                     " seconds (" + idle_timeout_min + " minutes) and "
@@ -1679,7 +1665,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         return removed
 
 
-class DefaultSessionContext(session_abcs.SessionContext):
+class DefaultSessionContext:
     def __repr__(self):
         return "{0}(session_id={1}, host={2})".format(self.__class__.__name__,
                                                       self.session_id,

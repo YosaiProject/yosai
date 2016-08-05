@@ -232,8 +232,8 @@ class WebYosai(Yosai):
     response objects and functionality to manage cookies.
     """
 
-    def __init__(self, security_manager):
-        super().__init__(security_manager)
+    def __init__(self, env_var=None, file_path=None):
+        super().__init__(env_var=env_var, file_path=file_path)
 
     @memoized_property
     def subject_builder(self):

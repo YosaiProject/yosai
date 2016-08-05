@@ -53,7 +53,7 @@ class SecurityManagerSettings:
         """
         realms = []
 
-        for realm, account_store in self.attributes['realms'].items():
+        for realm, account_store in attributes['realms'].items():
             realm_cls = maybe_resolve(realm)
             account_store_cls = maybe_resolve(account_store)
             realms.append([realm_cls, account_store_cls])
@@ -61,5 +61,5 @@ class SecurityManagerSettings:
         return realms
 
     def __repr__(self):
-        return ("SecurityManagerSettings(security_manager={0}, attributes={1})"".
-                format(self.security_manager, self.attributes))
+        return "SecurityManagerSettings(security_manager={0}, attributes={1})".\
+            format(self.security_manager, self.attributes)

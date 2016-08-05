@@ -36,12 +36,11 @@ from yosai.core import (
     SessionEventHandler,
     SimpleIdentifierCollection,
     SimpleSession,
-    session_abcs,
+    SimpleSessionFactory,
 )
 
 from yosai.web import (
     CSRFTokenException,
-    web_session_abcs,
     web_subject_abcs,
 )
 
@@ -170,11 +169,11 @@ class WebSimpleSession(SimpleSession):
 
         class SerializationSchema(Schema):
             _session_id = fields.Str(allow_none=True)
-            _start_timestamp = fields.DateTime(allow_none=True)  # iso is default
-            _stop_timestamp = fields.DateTime(allow_none=True)  # iso is default
-            _last_access_time = fields.DateTime(allow_none=True)  # iso is default
-            _idle_timeout = fields.TimeDelta(allow_none=True)
-            _absolute_timeout = fields.TimeDelta(allow_none=True)
+            _start_timestamp = fields.Integer(allow_none=True)  # iso is default
+            _stop_timestamp = fields.Integer(allow_none=True)  # iso is default
+            _last_access_time = fields.Integer(allow_none=True)  # iso is default
+            _idle_timeout = fields.Integer(allow_none=True)
+            _absolute_timeout = fields.Integer(allow_none=True)
             _is_expired = fields.Boolean(allow_none=True)
             _host = fields.Str(allow_none=True)
 
@@ -198,8 +197,7 @@ class WebSimpleSession(SimpleSession):
         return SerializationSchema
 
 
-class DefaultWebSessionContext(DefaultSessionContext,
-                               web_session_abcs.WebSessionContext):
+class DefaultWebSessionContext(DefaultSessionContext):
 
     def __init__(self, web_registry):
         self.web_registry = web_registry
@@ -365,7 +363,7 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         del web_registry.session_id
 
 
-class WebSessionFactory(session_abcs.SessionFactory):
+class WebSessionFactory(SimpleSessionFactory):
 
     def __init__(self, settings):
         super().__init__(settings)
@@ -383,9 +381,9 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     """
     def __init__(self, settings):
         self.session_factory = WebSessionFactory(settings)
+        self._session_event_handler = SessionEventHandler()
         self.session_handler = \
             WebSessionHandler(session_event_handler=self.session_event_handler)
-        self._session_event_handler = SessionEventHandler()
         self._event_bus = None
 
     # yosai omits get_referenced_session_id method

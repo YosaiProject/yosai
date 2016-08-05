@@ -93,8 +93,8 @@ class LazySettings:
             msg = ("Requested settings, but none can be obtained for the envvar."
                    "Since no config filepath can be obtained, a default config "
                    "will be used.")
-            logger.warning(msg)
-            settings_file = "yosai_settings.yaml"
+            logger.error(msg)
+            raise FileNotFoundException(msg)
 
         self._wrapped = Settings(settings_file)
 

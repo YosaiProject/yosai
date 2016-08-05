@@ -31,8 +31,9 @@ from yosai.core import (
     InvalidArgumentException,
     LazySettings,
     ProxiedSession,
+    SecurityManagerInitException,
     SecurityManagerNotSetException,
-    SecurityManagerBuilder,
+    SecurityManagerSettings,
     SessionException,
     ThreadStateManager,
     UnauthenticatedException,
@@ -517,10 +518,10 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         :type create:  bool
         """
-        msg = ("{0} attempting to get session; create = " + str(create) +
-               "; \'session is None\' = " + str(self.session is None) +
-               "; \'session has id\' = ".format(self.__class__.__name__) +
-               str(self.session is not None and bool(self.session.session_id)))
+        msg = ("{0} attempting to get session; create = {1}; \'session is None\' ="
+               "{2} ; \'session has id\' = {3}".
+               format(self.__class__.__name__, create, (self.session is None), str(
+                      self.session is not None and bool(self.session.session_id))))
         logger.debug(msg)
 
         if (not self.session and create):
@@ -1031,9 +1032,9 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own security_utils module so as to avoid circular importing:
 class Yosai:
 
-    def __init__(self, env_var="YOSAI_CORE_SETTINGS", file_path=None):
+    def __init__(self, env_var=None, file_path=None):
         # you can configure LazySettings in one of two ways: env or file_path
-        settings = LazySettings(env_var=env_var, filepath=file_path)
+        settings = LazySettings(env_var=env_var, file_path=file_path)
         self.security_manager = self.generate_security_manager(settings)
 
     def generate_security_manager(self, settings):
@@ -1309,6 +1310,44 @@ class Yosai:
             return inner_wrap
         return outer_wrap
 
+
+# new to yosai
+class SecurityManagerBuilder:
+
+    def init_realms(self, settings, realms):
+        try:
+            return tuple(realm(settings, account_store=account_store())
+                         for realm, account_store in realms)
+        except (AttributeError, TypeError):
+            msg = 'Failed to initialize realms during SecurityManager Setup'
+            raise SecurityManagerInitException(msg)
+
+    def init_cache_handler(self, cache_handler):
+        try:
+            return cache_handler()
+        except TypeError:
+            return None
+
+    def init_sac(self, sac):
+        try:
+            # register the session attributes class with the serializer
+            return sac
+        except (AttributeError, TypeError):
+            msg = ('Failed to initialize session_attributes_schema '
+                   'during SecurityManager Setup.')
+            raise SecurityManagerInitException(msg)
+
+    def create_manager(self, settings):
+        mgr_settings = SecurityManagerSettings(settings)
+        attributes = mgr_settings.attributes
+
+        realms = self.init_realms(settings, attributes['realms'])
+        cache_handler = self.init_cache_handler(attributes['cache_handler'])
+        sac = self.init_sac(attributes['session_attributes_schema'])
+        return mgr_settings.security_manager(settings,
+                                             realms=realms,
+                                             cache_handler=cache_handler,
+                                             session_attributes_schema=sac)
 
 # Set Global State Managers
 global_yosai_context = ThreadStateManager()

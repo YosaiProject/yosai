@@ -34,6 +34,3 @@ class DefaultSessionSettings:
                     self.idle_timeout,
                     self.validation_scheduler_enable,
                     self.validation_time_interval))
-
-# initalize module-level settings:
-session_settings = DefaultSessionSettings()
