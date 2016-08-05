@@ -48,7 +48,6 @@ from yosai.core import(
     SerializationManager,
     SimpleRole,
     event_bus,
-    mgt_settings,
     mgt_abcs,
     authc_abcs,
     authz_abcs,
@@ -108,7 +107,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
             DEFAULT_CIPHER_KEY = "cghiiLzTI6CUFCO5Hhh-5RVKzHTQFZM2QSZxxgaC6Wo="
     """
 
-    def __init__(self):
+    def __init__(self, default_cipher_key):
 
         # new to yosai.core.
         self.serialization_manager = SerializationManager()
@@ -118,14 +117,28 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!i!!!!!!!!
         # !!!
-        # !!!                    HEY  YOU!
+        #
+        #
+        #      888
+        #      888
+        #      888
+        #  .d88888    8888b.  88888b.     .d88b.      .d88b.   888 888b
+        # d88" 888        "88 b888 "88b   d88P"88b    d8P  Y8  b888P"``
+        # 888  888    .d88888 8888  888   888  888    8888888  8888
+        # Y88b 888    888  88 8888  888   Y88b 888    Y8b.     888
+        #  "Y88888    "Y88888 8888  888   "Y888888    "Y8888   888
+        #                                     8888
+        #                                     .Y8b
+        #                                  "Y88P"
+        #
+        #                        HEY  YOU!
         # !!! Generate your own cipher key using the instructions above and
-        # !!! update your yosai.core.settings file to include it.  The code below
+        # !!! update your yosai settings file to include it.  The code below
         # !!! references this key.  Yosai does not include a default key.
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         # as default, the encryption key == decryption key:
-        default_key = mgt_settings.default_cipher_key
+        default_key = default_cipher_key
 
         self.set_cipher_key(encrypt_key=default_key, decrypt_key=default_key)
 
@@ -386,12 +399,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                             cache_abcs.CacheHandlerAware):
 
     def __init__(self,
+                 settings,
                  realms=None,
                  event_bus=event_bus,
                  cache_handler=None,
                  authenticator=DefaultAuthenticator(),
                  authorizer=ModularRealmAuthorizer(),
-                 session_manager=DefaultNativeSessionManager(),
+                 session_manager=None,
                  session_attributes_schema=None,
                  remember_me_manager=None,
                  subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
@@ -411,7 +425,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.permission_resolver = permission_resolver
         self.role_resolver = role_resolver
         self.subject_store = subject_store
-        self.session_manager = session_manager
+
+        if session_manager:
+            self.session_manager = session_manager
+        else:
+            self.session_manager = DefaultNativeSessionManager(settings)
+
         self.realms = realms
         self.authenticator = authenticator
         self.authorizer = authorizer

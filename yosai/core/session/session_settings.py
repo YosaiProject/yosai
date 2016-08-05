@@ -1,7 +1,3 @@
-from yosai.core import (
-    settings,
-)
-
 import datetime
 
 
@@ -11,7 +7,7 @@ class DefaultSessionSettings:
     It obtains the session configuration from Yosai's global settings
     and default values if there aren't any.
     """
-    def __init__(self):
+    def __init__(self, settings):
 
         # omitted millisecond conversions
 

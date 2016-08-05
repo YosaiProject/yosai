@@ -92,6 +92,8 @@ class WebSecurityManager(NativeSecurityManager):
     """
 
     def __init__(self,
+                 settings,
+                 default_cipher_key,
                  realms=None,
                  cache_handler=None,
                  session_attributes_schema=None):
@@ -99,12 +101,13 @@ class WebSecurityManager(NativeSecurityManager):
         :type realms: tuple
         :type session_attributes_schema: marshmallow.Schema
         """
-        super().__init__(realms=realms,
+        super().__init__(settings=settings,
+                         realms=realms,
                          cache_handler=cache_handler,
                          session_attributes_schema=session_attributes_schema,
-                         session_manager=DefaultWebSessionManager(),
+                         session_manager=DefaultWebSessionManager(settings),
                          subject_factory=DefaultWebSubjectFactory(),
-                         remember_me_manager=CookieRememberMeManager())
+                         remember_me_manager=CookieRememberMeManager(default_cipher_key))
 
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
 

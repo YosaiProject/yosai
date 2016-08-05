@@ -29,6 +29,7 @@ from yosai.core import (
     InvalidArgumentException,
     IllegalStateException,
     InvalidArgumentException,
+    LazySettings,
     ProxiedSession,
     SecurityManagerNotSetException,
     SessionException,
@@ -1029,8 +1030,13 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own security_utils module so as to avoid circular importing:
 class Yosai:
 
-    def __init__(self, security_manager):
-        self.security_manager = security_manager
+    def __init__(self, env_var="YOSAI_CORE_SETTINGS"):
+        self.settings = LazySettings(env_var)
+        self.security_manager = self.generate_security_manager()
+
+    def generate_security_manager(self):
+        # don't forget to pass default_cipher_key into the WebSecurityManager 
+        self.SecurityManagerSettings().security_manager
 
     @memoized_property
     def subject_builder(self):

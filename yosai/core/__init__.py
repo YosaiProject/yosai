@@ -163,6 +163,7 @@ from yosai.core.concurrency.concurrency import (
 from yosai.core.utils.utils import (
     OrderedSet,
     ThreadStateManager,
+    maybe_resolve,
     memoized_property,
     unix_epoch_time,
 )
@@ -170,7 +171,6 @@ from yosai.core.utils.utils import (
 
 from yosai.core.session.session_settings import (
     DefaultSessionSettings,
-    session_settings,
 )
 
 
@@ -273,7 +273,6 @@ from yosai.core.realm.realm import (
 
 from yosai.core.mgt.mgt_settings import(
     DefaultMGTSettings,
-    mgt_settings,
 )
 
 

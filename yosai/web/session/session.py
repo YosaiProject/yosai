@@ -33,6 +33,7 @@ from yosai.core import (
     DelegatingSession,
     ProxiedSession,
     SessionCreationException,
+    SessionEventHandler,
     SimpleIdentifierCollection,
     SimpleSession,
     session_abcs,
@@ -117,8 +118,8 @@ class WebDelegatingSession(DelegatingSession):
 
 class WebSimpleSession(SimpleSession):
 
-    def __init__(self, csrf_token, host=None):
-        super().__init__(host=host)
+    def __init__(self, csrf_token, absolute_timeout, idle_timeout, host=None):
+        super().__init__(absolute_timeout, idle_timeout, host=host)
         self.set_internal_attribute('flash_messages',
                                     collections.defaultdict(list))
         self.set_internal_attribute('csrf_token', csrf_token)
@@ -203,7 +204,7 @@ class DefaultWebSessionContext(DefaultSessionContext,
     def __init__(self, web_registry):
         self.web_registry = web_registry
 
-    
+
 class WebCachingSessionStore(CachingSessionStore):
 
     def __init__(self):
@@ -366,9 +367,13 @@ class WebSessionHandler(DefaultNativeSessionHandler):
 
 class WebSessionFactory(session_abcs.SessionFactory):
 
-    @staticmethod
-    def create_session(csrf_token, session_context):
+    def __init__(self, settings):
+        super().__init__(settings)
+
+    def create_session(self, csrf_token, session_context):
         return WebSimpleSession(csrf_token,
+                                self.absolute_timeout,
+                                self.idle_timeout,
                                 host=getattr(session_context, 'host', None))
 
 
@@ -376,10 +381,12 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     """
     Web-application capable SessionManager implementation
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, settings):
+        self.session_factory = WebSessionFactory(settings)
         self.session_handler = \
             WebSessionHandler(session_event_handler=self.session_event_handler)
+        self._session_event_handler = SessionEventHandler()
+        self._event_bus = None
 
     # yosai omits get_referenced_session_id method
 
@@ -424,7 +431,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     def _create_session(self, session_context):
         csrf_token = self._generate_csrf_token()
 
-        session = WebSessionFactory.create_session(csrf_token, session_context)
+        session = self.session_factory.create_session(csrf_token, session_context)
 
         msg = "Creating session. "
         logger.debug(msg)

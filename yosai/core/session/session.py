@@ -26,6 +26,7 @@ from abc import abstractmethod
 from marshmallow import Schema, fields, post_load
 
 from yosai.core import (
+    DefaultSessionSettings,
     ExpiredSessionException,
     InvalidArgumentException,
     IllegalStateException,
@@ -37,7 +38,6 @@ from yosai.core import (
     SessionEventException,
     StoppedSessionException,
     UnknownSessionException,
-    session_settings,
     cache_abcs,
     event_abcs,
     serialize_abcs,
@@ -490,7 +490,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     #    - the manually-managed class version control process (too policy-reliant)
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
-    def __init__(self, host=None):
+    def __init__(self, absolute_timeout, idle_timeout, host=None):
         self._attributes = {}
         self._internal_attributes = {}
         self._is_expired = None
@@ -503,8 +503,8 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         # yosai.core.renames global_session_timeout to idle_timeout and added
         # the absolute_timeout feature
-        self._absolute_timeout = session_settings.absolute_timeout
-        self._idle_timeout = session_settings.idle_timeout
+        self._absolute_timeout = absolute_timeout
+        self._idle_timeout = idle_timeout
 
         self._host = host
 
@@ -895,9 +895,15 @@ class SimpleSession(session_abcs.ValidatingSession,
 
 class SimpleSessionFactory(session_abcs.SessionFactory):
 
-    @staticmethod
-    def create_session(session_context=None):
-        return SimpleSession(host=getattr(session_context, 'host', None))
+    def __init__(self, settings):
+        session_settings = DefaultSessionSettings(settings)
+        self.absolute_timeout = session_settings.absolute_timeout
+        self.idle_timeout = session_settings.idle_timeout
+
+    def create_session(self, session_context=None):
+        return SimpleSession(self.absolute_timeout,
+                             self.idle_timeout,
+                             host=getattr(session_context, 'host', None))
 
     def __repr__(self):
         return self.__class__.__name__
@@ -1386,7 +1392,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     """
 
-    def __init__(self):
+    def __init__(self, settings):
+        self.session_factory = SimpleSessionFactory(settings)
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
             DefaultNativeSessionHandler(session_event_handler=self.session_event_handler)
@@ -1474,7 +1481,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     # consolidated with do_create_session:
     def _create_session(self, session_context):
-        session = SimpleSessionFactory.create_session(session_context)
+        session = self.session_factory.create_session(session_context)
 
         msg = "Creating session. "
         logger.debug(msg)

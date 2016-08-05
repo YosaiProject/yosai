@@ -36,7 +36,6 @@ from yosai.core import (
     MisconfiguredException,
 )
 
-ENV_VAR = "YOSAI_CORE_SETTINGS"
 empty = object()
 logger = logging.getLogger(__name__)
 
@@ -119,6 +118,3 @@ class Settings:
             self.__dict__ = tempdict
         except (TypeError, ValueError):
             raise MisconfiguredException('Settings failed to load attrs')
-
-
-settings = LazySettings(ENV_VAR)
