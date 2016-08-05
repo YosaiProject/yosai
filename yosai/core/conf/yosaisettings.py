@@ -47,9 +47,10 @@ class LazySettings:
     specified in default settings.
     """
 
-    def __init__(self, env_var):
+    def __init__(self, env_var=None, file_path=None):
         self._wrapped = empty
         self.__dict__["env_var"] = env_var
+        self.__dict__["file_path"] = file_path
 
     def __getattr__(self, name):
         if self._wrapped is empty:
@@ -83,7 +84,11 @@ class LazySettings:
         configuration process.
         """
         envvar = self.__dict__['env_var']
-        settings_file = os.environ.get(envvar)
+        if envvar:
+            settings_file = os.environ.get(envvar)
+        else:
+            settings_file = self.__dict__['file_path']
+
         if not settings_file:
             msg = ("Requested settings, but none can be obtained for the envvar."
                    "Since no config filepath can be obtained, a default config "
