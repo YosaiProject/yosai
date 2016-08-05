@@ -24,7 +24,6 @@ from yosai.core import (
     DefaultSubjectFactory,
     MisconfiguredException,
     NativeSecurityManager,
-    global_subject_context,
 )
 
 from yosai.web import (
@@ -93,7 +92,6 @@ class WebSecurityManager(NativeSecurityManager):
 
     def __init__(self,
                  settings,
-                 default_cipher_key,
                  realms=None,
                  cache_handler=None,
                  session_attributes_schema=None):
@@ -101,13 +99,14 @@ class WebSecurityManager(NativeSecurityManager):
         :type realms: tuple
         :type session_attributes_schema: marshmallow.Schema
         """
+
         super().__init__(settings=settings,
                          realms=realms,
                          cache_handler=cache_handler,
                          session_attributes_schema=session_attributes_schema,
                          session_manager=DefaultWebSessionManager(settings),
                          subject_factory=DefaultWebSubjectFactory(),
-                         remember_me_manager=CookieRememberMeManager(default_cipher_key))
+                         remember_me_manager=CookieRememberMeManager(settings))
 
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
 
@@ -175,6 +174,8 @@ class CookieRememberMeManager(AbstractRememberMeManager):
     Remembers a Subject's identity by saving the Subject's identifiers to a Cookie
     for later retrieval.  The Cookie is accessed through the WebRegistry api.
     """
+    def __init__(self, settings):
+        super().__init__(settings)
 
     def remember_serialized_identity(self, subject, serialized):
         """

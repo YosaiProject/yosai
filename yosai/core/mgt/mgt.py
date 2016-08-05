@@ -42,8 +42,11 @@ from yosai.core import(
     MisconfiguredException,
     ModularRealmAuthorizer,
     PermissionResolver,
+    RememberMeSettings,
     RoleResolver,
     SaveSubjectException,
+    SecurityManagerInitException,
+    SecurityManagerSettings,
     SimpleSession,
     SerializationManager,
     SimpleRole,
@@ -53,7 +56,6 @@ from yosai.core import(
     authz_abcs,
     event_abcs,
     cache_abcs,
-    global_subject_context,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,7 +109,9 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
             DEFAULT_CIPHER_KEY = "cghiiLzTI6CUFCO5Hhh-5RVKzHTQFZM2QSZxxgaC6Wo="
     """
 
-    def __init__(self, default_cipher_key):
+    def __init__(self, settings):
+
+        default_cipher_key = RememberMeSettings(settings).default_cipher_key
 
         # new to yosai.core.
         self.serialization_manager = SerializationManager()
@@ -1170,3 +1174,42 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                        "get_remembered_identifiers().")
                 logger.warning(msg, exc_info=True)
         return None
+
+
+# new to yosai
+class SecurityManagerBuilder:
+
+    def init_realms(self, settings, realms):
+        try:
+            return (realm(settings, account_store=account_store)
+                    for realm, account_store in realms)
+        except (AttributeError, TypeError):
+            msg = 'Failed to initialize realms during SecurityManager Setup'
+            raise SecurityManagerInitException(msg)
+
+    def init_cache_handler(self, cache_handler):
+        try:
+            return cache_handler()
+        except TypeError:
+            return None
+
+    def init_sac(self, sac):
+        try:
+            return sac()
+        except (AttributeError, TypeError):
+            msg = ('Failed to initialize session_attributes_schema '
+                   'during SecurityManager Setup.')
+            raise SecurityManagerInitException(msg)
+
+    def create_manager(self, settings):
+        mgr_settings = SecurityManagerSettings(settings)
+        attributes = mgr_settings.attributes
+
+        realms = self.init_realms(settings, attributes['realms'])
+        cache_handler = self.init_cache_handler(attributes['cache_handler'])
+        sac = self.init_sac(self.attributes['session_attributes_schema'])
+
+        return mgr_settings.security_manager(settings,
+                                             realms=realms,
+                                             cache_handler=cache_handler,
+                                             session_attributes_schema=sac)

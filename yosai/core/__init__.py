@@ -89,6 +89,7 @@ from .exceptions import (
     RealmAttributesException,
     SaveSubjectException,
     SecurityManagerException,
+    SecurityManagerInitException,
     SecurityManagerNotSetException,
     SerializationException,
     SessionCacheException,
@@ -127,7 +128,6 @@ from yosai.core.cache import abcs as cache_abcs
 
 
 from yosai.core.conf.yosaisettings import (
-    settings,
     LazySettings,
     Settings,
 )
@@ -234,7 +234,10 @@ from yosai.core.authc.strategy import (
 from yosai.core.authc.context import (
     AuthenticationSettings,
     CryptContextFactory,
-    authc_settings,
+)
+
+from yosai.core.authc.authc_settings import (
+    AuthenticationSettings,
 )
 
 from yosai.core.authc.authc import (
@@ -272,11 +275,13 @@ from yosai.core.realm.realm import (
 
 
 from yosai.core.mgt.mgt_settings import(
-    DefaultMGTSettings,
+    RememberMeSettings,
+    SecurityManagerSettings,
 )
 
 
 from yosai.core.mgt.mgt import (
     AbstractRememberMeManager,
     NativeSecurityManager,
+    SecurityManagerBuilder,
 )

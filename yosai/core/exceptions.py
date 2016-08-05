@@ -302,6 +302,10 @@ class SecurityManagerException(YosaiException):
     pass
 
 
+class SecurityManagerInitException(SecurityManagerException):
+    pass
+
+
 class SaveSubjectException(SecurityManagerException):
     pass
 

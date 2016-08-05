@@ -9,14 +9,16 @@ AUTHC_CONFIG:
             min_rounds: 1000
             salt_size: 16
 
-MGT_CONFIG:
+REMEMBER_ME_CONFIG:
     default_cipher_key: you need to update this using the fernet keygen
-    realm:
-        account_store_realm: yosai.core.AccountStoreRealm
-            account_store: yosai_alchemystore.AlchemyAccountStore
-    cache_handler: yosai_dpcache.cache.DPCacheHandler
+
+SECURITY_MANAGER_CONFIG:
     security_manager: yosai.web.WebSecurityManager
-    session_attributes_schema: {}
+    attributes:
+        realms:
+            yosai.core.AccountStoreRealm: yosai_alchemystore.AlchemyAccountStore
+        cache_handler: yosai_dpcache.cache.DPCacheHandler
+        session_attributes_schema: {}
 
 SESSION_CONFIG:
     session_timeout:

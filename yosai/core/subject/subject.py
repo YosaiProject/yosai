@@ -32,6 +32,7 @@ from yosai.core import (
     LazySettings,
     ProxiedSession,
     SecurityManagerNotSetException,
+    SecurityManagerBuilder,
     SessionException,
     ThreadStateManager,
     UnauthenticatedException,
@@ -1030,13 +1031,15 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own security_utils module so as to avoid circular importing:
 class Yosai:
 
-    def __init__(self, env_var="YOSAI_CORE_SETTINGS"):
-        self.settings = LazySettings(env_var)
-        self.security_manager = self.generate_security_manager()
+    def __init__(self, env_var="YOSAI_CORE_SETTINGS", file_path=None):
+        # you can configure LazySettings in one of two ways: env or file_path
+        settings = LazySettings(env_var=env_var, filepath=file_path)
+        self.security_manager = self.generate_security_manager(settings)
 
-    def generate_security_manager(self):
-        # don't forget to pass default_cipher_key into the WebSecurityManager 
-        self.SecurityManagerSettings().security_manager
+    def generate_security_manager(self, settings):
+        # don't forget to pass default_cipher_key into the WebSecurityManager
+        mgr_builder = SecurityManagerBuilder()
+        return mgr_builder.create_manager(settings)
 
     @memoized_property
     def subject_builder(self):

@@ -27,18 +27,17 @@ from yosai.core import (
     PasswordVerifierInvalidAccountException,
     PasswordVerifierInvalidTokenException,
     authc_abcs,
-    authc_settings,
 )
 
 logger = logging.getLogger(__name__)
 
+
 class DefaultPasswordService:
 
-    def __init__(self):
+    def __init__(self, settings):
         # using default algorithm when generating crypt context:
-        self.crypt_context = CryptContextFactory(authc_settings).\
+        self.crypt_context = CryptContextFactory(settings).\
             create_crypt_context()
-        # self.private_salt = bytearray(authc_settings.private_salt, 'utf-8')
 
         # in Yosai, hash formatting is taken care of by passlib
 
@@ -66,8 +65,8 @@ class DefaultPasswordService:
 class PasswordVerifier(authc_abcs.CredentialsVerifier):
     """ DG:  Dramatic changes made here while adapting to passlib and python"""
 
-    def __init__(self):
-        self.password_service = DefaultPasswordService()
+    def __init__(self, settings):
+        self.password_service = DefaultPasswordService(settings)
 
     def credentials_match(self, authc_token, account):
         self.ensure_password_service()

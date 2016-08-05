@@ -57,7 +57,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             - as of shiro v2 alpha rev1693638, shiro doesn't (yet)
     """
 
-    def __init__(self, name='AccountStoreRealm_' + str(uuid4()), account_store=None):
+    def __init__(self,
+                 settings,
+                 name='AccountStoreRealm_' + str(uuid4()),
+                 account_store=None,
+                 ):
         """
         :type name:  str
         """
@@ -72,7 +76,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._authz_info_resolver = None
 
         # yosai.core.renamed credentials_matcher:
-        self._credentials_verifier = PasswordVerifier()  # 80/20 rule: passwords
+        self._credentials_verifier = PasswordVerifier(settings)  # 80/20 rule: passwords
 
         self._permission_verifier = IndexedPermissionVerifier()
         self._role_verifier = SimpleRoleVerifier()
