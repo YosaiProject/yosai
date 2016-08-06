@@ -17,7 +17,6 @@ specific language governing permissions and limitations
 under the License.
 """
 import functools
-import collections
 import logging
 from contextlib import contextmanager
 
@@ -28,7 +27,6 @@ from yosai.core import (
     IdentifiersNotSetException,
     InvalidArgumentException,
     IllegalStateException,
-    InvalidArgumentException,
     LazySettings,
     ProxiedSession,
     SecurityManagerInitException,
@@ -673,10 +671,11 @@ class DelegatingSubject(subject_abcs.Subject):
             raise InvalidArgumentException(msg)
 
         stack = self.get_run_as_identifiers_stack()
-        if (not stack):
-            stack = collections.deque()
 
-        stack.appendleft(identifiers)
+        if (not stack):
+            stack = []
+
+        stack.append(identifiers)
         session = self.get_session()
         session.set_internal_attribute(self.run_as_identifiers_session_key, stack)
 
@@ -688,7 +687,7 @@ class DelegatingSubject(subject_abcs.Subject):
         stack = self.get_run_as_identifiers_stack()
 
         if (stack):
-            popped = stack.popleft()
+            popped = stack.pop()
             if (stack):
                 # persist the changed stack to the session
                 session = self.get_session()

@@ -890,14 +890,7 @@ class SimpleSession(session_abcs.ValidatingSession,
             '_absolute_timeout': self._absolute_timeout,
             '_is_expired': self._is_expired,
             '_host': self._host,
-            '_internal_attributes': {
-                'run_as_identifiers_session_key':
-                    list(self._internal_attributes['run_as_identifiers_session_key']),
-                'identifiers_session_key':
-                    self._internal_attributes['identifiers_session_key'],
-                'authenticated_session_key':
-                    self._internal_attributes['authenticated_session_key']
-            },
+            '_internal_attributes': self._internal_attributes,
             '_attributes': self._attributes
         }
 
@@ -910,11 +903,8 @@ class SimpleSession(session_abcs.ValidatingSession,
         self._absolute_timeout = state['_absolute_timeout']
         self._is_expired = state['_is_expired']
         self._host = state['_host']
-        self._attributes = state['_attributes']
-
         self._internal_attributes = state['_internal_attributes']
-        self._internal_attributes['run_as_identifiers_session_key'] = \
-            collections.deque(state['_internal_attributes']['run_as_identifiers_session_key'])
+        self._attributes = state['_attributes']
 
 
 class SimpleSessionFactory(session_abcs.SessionFactory):
