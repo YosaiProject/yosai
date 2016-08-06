@@ -16,18 +16,21 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import time
 from yosai.core import (
+    memoized_property,
     serialize_abcs,
     InvalidSerializationFormatException,
-    SerializationException,
 )
-
 import msgpack
-import datetime
 import rapidjson
-import pkg_resources
 import copy
 from marshmallow import fields, missing
+from yosai.core.serialize.serializers import (
+    cbor,
+    #msgpack,
+    #json,
+)
 
 
 class SerializationManager:
@@ -51,77 +54,32 @@ class SerializationManager:
             msg = ('Could not locate serialization format: ', format)
             raise InvalidSerializationFormatException(msg)
 
+    # to avoid import conflicts, wait until the last possible moment to register
+    # the serializables:
+    @memoized_property
+    def new_serializer(self):
+        self._new_serializer = cbor.CBORSerializer
+        self.register_serializables()
+        return self._new_serializer
+
+    def register_serializables(self):
+        for serializable in serialize_abcs.Serializable.get_subclasses():
+            self.new_serializer.register_custom_type(serializable)
+
     def serialize(self, obj):
         """
         :type obj: a Serializable object or a list of Serializable objects
         :returns: an encoded, serialized object
         """
-        try:
-            dist_version = pkg_resources.get_distribution('yosai').version
+        # this isn't doing much at the moment but is where validation will happen
+        to_serialize = {'serialized_record_dt': round(time.time() * 1000),
+                        'serializable': obj}
 
-        except pkg_resources.DistributionNotFound:
-            dist_version = 'N/A'
-
-        try:
-            newdict = {}
-            now = datetime.datetime.utcnow().isoformat()
-            serialization_attrs = {'serialized_dist_version': dist_version,
-                                   'serialized_record_dt': now}
-            newdict.update(serialization_attrs)
-            newdict.update(obj.serialize())
-            newdict['serialized_cls'] = obj.__class__.__name__
-            newobj = newdict
-
-        except AttributeError:
-            try:
-                # assume that its an iterable of Serializables
-                newobj = []
-                for element in obj:
-                    mydict = copy.copy(newdict)
-                    mydict['serialized_cls'] = element.__class__.__name__
-                    mydict.update(element.serialize())
-                    newobj.append(mydict)
-
-                # at this point, newobj is either a list of dicts or a dict
-
-            except AttributeError:
-                msg = 'Only serialize Serializable objects or list of Serializables'
-                raise SerializationException(msg)
-
-        return self.serializer.serialize(newobj)
+        return self.serializer.serialize(to_serialize)
 
     def deserialize(self, message):
-        # NOTE:  unpacked is expected to be a dict or list of dicts
-
-        try:
-            unpacked = self.serializer.deserialize(message)
-
-            if not unpacked:
-                return None
-
-            yosai = __import__('yosai.core')
-            try:
-                cls = getattr(yosai.core, unpacked['serialized_cls'], None)
-                if cls is None:
-                    cls = getattr(yosai.web, unpacked['serialized_cls'])
-
-                return cls.deserialize(unpacked)  # only serializables wont raise
-            except (AttributeError, TypeError):
-                # assume that its a list of Serializables
-                newlist = []
-                for element in unpacked:
-                    cls = getattr(yosai.core, element['serialized_cls'], None)
-                    if cls is None:
-                        cls = getattr(yosai.web, unpacked['serialized_cls'])
-                    newlist.append(cls.deserialize(element))
-                return newlist
-
-        except AttributeError:
-            if message is None:  # a cache returns None when cache entry expires
-                return None
-
-            msg = 'Only de-serialize Serializable objects or list of Serializables'
-            raise SerializationException(msg)
+        # this isn't doing much at the moment but is where validation will happen
+        return self.serializer.deserialize(message)
 
 
 class JSONSerializer(serialize_abcs.Serializer):
@@ -152,6 +110,7 @@ class MSGPackSerializer(serialize_abcs.Serializer):
             return None
 
 
+# remove this class once serialization refactored:
 class CollectionDict(fields.Dict):
 
     def __init__(self, child, *args, **kwargs):

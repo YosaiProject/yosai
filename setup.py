@@ -35,6 +35,7 @@ install_requires = [
     'marshmallow',
     'cryptography',
     'msgpack-python',
+    'cbor2',
     'python-rapidjson',
 ]
 
