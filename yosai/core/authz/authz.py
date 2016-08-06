@@ -1200,6 +1200,12 @@ class SimpleRole(serialize_abcs.Serializable):
 
         return SerializationSchema
 
+    def __getstate__(self):
+        return {'identifier': self.identifier}
+
+    def __setstate__(self, state):
+        self.identifier = state['identifier']
+
 
 class AllPermission:
 

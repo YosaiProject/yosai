@@ -196,6 +196,49 @@ class WebSimpleSession(SimpleSession):
 
         return SerializationSchema
 
+    def __getstate__(self):
+        return {
+            '_session_id': self._session_id,
+            '_start_timestamp': self._start_timestamp,
+            '_stop_timestamp': self._stop_timestamp,
+            '_last_access_time': self._last_access_time,
+            '_idle_timeout': self._idle_timeout,
+            '_absolute_timeout': self._absolute_timeout,
+            '_is_expired': self._is_expired,
+            '_host': self._host,
+            '_internal_attributes': {
+                'run_as_identifiers_session_key':
+                    list(self._internal_attributes['run_as_identifiers_session_key']),
+                'identifiers_session_key':
+                    self._internal_attributes['identifiers_session_key'],
+                'authenticated_session_key':
+                    self._internal_attributes['authenticated_session_key'],
+                'csrf_token': self._internal_attributes['csrf_token'],
+                'flash_messages': dict(self._internal_attributes['flash_messages'])
+            },
+            '_attributes': self._attributes
+        }
+
+    def __setstate__(self, state):
+        self._session_id = state['_session_id']
+        self._start_timestamp = state['_start_timestamp']
+        self._stop_timestamp = state['_stop_timestamp']
+        self._last_access_time = state['_last_access_time']
+        self._idle_timeout = state['_idle_timeout']
+        self._absolute_timeout = state['_absolute_timeout']
+        self._is_expired = state['_is_expired']
+        self._host = state['_host']
+        self._attributes = state['_attributes']
+
+        self._internal_attributes = state['_internal_attributes']
+
+        self._internal_attributes['run_as_identifiers_session_key'] = \
+            collections.deque(state['_internal_attributes']['run_as_identifiers_session_key'])
+
+        self._internal_attributes['flash_messages'] = collections.defaultdict(list)
+        self._internal_attributes['flash_messages'].\
+            update(state['_internal_attributes']['flash_messages'])
+
 
 class DefaultWebSessionContext(DefaultSessionContext):
 
@@ -487,3 +530,5 @@ class WebSessionKey(DefaultSessionKey):
                 return instance
 
         return SerializationSchema
+
+    # getstate and setstate are inherited
