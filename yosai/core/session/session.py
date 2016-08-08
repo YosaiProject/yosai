@@ -706,9 +706,9 @@ class SimpleSession(session_abcs.ValidatingSession,
             msg2 = ("Session with id [" + session_id + "] has expired. "
                     "Last access time: " + str(self.last_access_time) +
                     ".  Current time: " + currenttime +
-                    ".  Session idle timeout is set to " + str(self.idle_timeout) +
+                    ".  Session idle timeout is set to " + str(self.idle_timeout/1000) +
                     " seconds (" + str(idle_timeout_min) + " minutes) and "
-                    " absolute timeout is set to " + str(self.absolute_timeout) +
+                    " absolute timeout is set to " + str(self.absolute_timeout/1000) +
                     " seconds (" + str(absolute_timeout_min) + "minutes)")
 
             logger.debug(msg2)
