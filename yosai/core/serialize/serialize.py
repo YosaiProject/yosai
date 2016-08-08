@@ -68,6 +68,4 @@ class SerializationManager:
         except Exception as exc:
             if message is None:
                 return None
-            else:
-                print('\n\n*******************>>>', str(message))
             raise exc
