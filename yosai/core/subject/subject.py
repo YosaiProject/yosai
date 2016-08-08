@@ -32,6 +32,7 @@ from yosai.core import (
     SecurityManagerInitException,
     SecurityManagerNotSetException,
     SecurityManagerSettings,
+    SerializationManager,
     SessionException,
     ThreadStateManager,
     UnauthenticatedException,
@@ -1343,10 +1344,15 @@ class SecurityManagerBuilder:
         realms = self.init_realms(settings, attributes['realms'])
         cache_handler = self.init_cache_handler(attributes['cache_handler'])
         sac = self.init_sac(attributes['session_attributes_schema'])
-        return mgr_settings.security_manager(settings,
-                                             realms=realms,
-                                             cache_handler=cache_handler,
-                                             session_attributes_schema=sac)
+        manager = mgr_settings.security_manager(settings,
+                                                realms=realms,
+                                                cache_handler=cache_handler,
+                                                session_attributes_schema=sac)
+
+        # wait until the last moment so as to register all serializables:
+        serialization_manager = SerializationManager()
+        manager.serialization_manager = serialization_manager
+        return manager
 
 # Set Global State Managers
 global_yosai_context = ThreadStateManager()

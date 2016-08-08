@@ -20,6 +20,7 @@ import time
 from yosai.core import (
     memoized_property,
     serialize_abcs,
+    SerializationException,
     InvalidSerializationFormatException,
 )
 import msgpack
@@ -54,32 +55,57 @@ class SerializationManager:
             msg = ('Could not locate serialization format: ', format)
             raise InvalidSerializationFormatException(msg)
 
-    # to avoid import conflicts, wait until the last possible moment to register
-    # the serializables:
-    @memoized_property
-    def new_serializer(self):
-        self._new_serializer = cbor.CBORSerializer
+        self._serializer = cbor.CBORSerializer()
         self.register_serializables()
-        return self._new_serializer
 
     def register_serializables(self):
-        for serializable in serialize_abcs.Serializable.get_subclasses():
-            self.new_serializer.register_custom_type(serializable)
+        def all_subclasses(cls):
+            return cls.__subclasses__() + [g for s in cls.__subclasses__()
+                                           for g in all_subclasses(s)]
+
+        for serializable in all_subclasses(serialize_abcs.Serializable):
+            self._serializer.register_custom_type(serializable)
+
+    def new_serialize(self, obj):
+        """
+        :type obj: a Serializable object or a list of Serializable objects
+        :returns: an encoded, serialized object
+        """
+        # this isn't doing much at the moment but is where validation will happen
+        return self._serializer.serialize(obj)
+
+    def new_deserialize(self, message):
+        # this isn't doing much at the moment but is where validation will happen
+        return self._serializer.deserialize(message)
 
     def serialize(self, obj):
         """
         :type obj: a Serializable object or a list of Serializable objects
         :returns: an encoded, serialized object
         """
-        # this isn't doing much at the moment but is where validation will happen
-        to_serialize = {'serialized_record_dt': round(time.time() * 1000),
-                        'serializable': obj}
+        newdict = {}
+        now = round(time.time() * 1000),
+        serialization_attrs = {'serialized_record_dt': now}
+        newdict.update(serialization_attrs)
+        newdict.update(obj.serialize())
+        newdict['serialized_cls'] = obj.__class__.__name__
+        newobj = newdict
 
-        return self.serializer.serialize(to_serialize)
+        return self.serializer.serialize(newobj)
 
     def deserialize(self, message):
-        # this isn't doing much at the moment but is where validation will happen
-        return self.serializer.deserialize(message)
+        unpacked = self.serializer.deserialize(message)
+
+        if not unpacked:
+            return None
+
+        yosai = __import__('yosai.core')
+        try:
+            cls = getattr(yosai.core, unpacked['serialized_cls'])
+            return cls.deserialize(unpacked)
+        except (AttributeError, TypeError):
+            cls = getattr(yosai.web, unpacked['serialized_cls'])
+            return cls.deserialize(unpacked)
 
 
 class JSONSerializer(serialize_abcs.Serializer):

@@ -112,7 +112,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         default_cipher_key = RememberMeSettings(settings).default_cipher_key
 
         # new to yosai.core.
-        self.serialization_manager = SerializationManager()
+        self.serialization_manager = None  # it will be injected
 
         self.encryption_cipher_key = None
         self.decryption_cipher_key = None
@@ -497,6 +497,17 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             msg = ('Incorrect argument.  If you want to disable caching, '
                    'configure a disabled cachemanager instance')
             raise InvalidArgumentException(msg)
+
+    @property
+    def serialization_manager(self):
+        return self._serialization_manager
+
+    @serialization_manager.setter
+    def serialization_manager(self, sm):
+        self.cache_handler.serialization_manager = sm
+        self.apply_cache_handler(self.realms)
+        self.apply_cache_handler(self.session_manager)
+        self.remember_me_manager.serialization_manager = sm
 
     #  property required by EventBusAware interface:
     @property

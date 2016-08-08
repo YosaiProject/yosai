@@ -61,13 +61,6 @@ class Serializable(metaclass=ABCMeta):
         return (isinstance(other, self.__class__) and
                 self.__dict__ == other.__dict__)
 
-    @classmethod
-    def get_subclasses(cls):
-        import yosai.web # needed to get Serializable subclasses
-        for subclass in cls.__subclasses__():
-            yield from subclass.get_subclasses()
-            yield subclass
-
 
 class Serializer(metaclass=ABCMeta):
 
