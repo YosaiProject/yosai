@@ -131,10 +131,8 @@ class WildcardPermission(serialize_abcs.Serializable):
     WILDCARD_TOKEN = '*'
     PART_DIVIDER_TOKEN = ':'
     SUBPART_DIVIDER_TOKEN = ','
-    DEFAULT_CASE_SENSITIVE = False
 
-    def __init__(self, wildcard_string=None,
-                 case_sensitive=DEFAULT_CASE_SENSITIVE):
+    def __init__(self, wildcard_string=None, case_sensitive=False):
         """
         :type wildcard_string:  String
         :case_sensitive:  Boolean
@@ -144,7 +142,7 @@ class WildcardPermission(serialize_abcs.Serializable):
         if wildcard_string:
             self.setparts(wildcard_string, case_sensitive)
 
-    def setparts(self, wildcard_string, case_sensitive=DEFAULT_CASE_SENSITIVE):
+    def setparts(self, wildcard_string, case_sensitive=False):
         """
         :type wildcard_string:  str
         :case_sensitive:  bool
@@ -248,12 +246,14 @@ class WildcardPermission(serialize_abcs.Serializable):
     def __getstate__(self):
         parts = {part: list(items) for part, items in self.parts.items()}
         return {
-            'parts': parts
+            'parts': parts,
+            'case_sensitive': self.case_sensitive
         }
 
     def __setstate__(self, state):
         parts = {part: frozenset(items) for part, items in state['parts'].items()}
         self.parts = parts
+        self.case_sensitive = state['case_sensitive']
 
 
 class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
@@ -488,12 +488,16 @@ class DefaultPermission(WildcardPermission):
     def __getstate__(self):
         parts = {part: list(items) for part, items in self.parts.items()}
         return {
-            'parts': parts
+            'parts': parts,
+            'case_sensitive': self.case_sensitive
         }
 
     def __setstate__(self, state):
-        parts = {part: frozenset(items) for part, items in state['parts'].items()}
-        self.set_parts(**parts)
+        self.parts = {part: frozenset(items) for part, items in state['parts'].items()}
+        self._domain = self.parts.get('domain')
+        self._action = self.parts.get('action')
+        self._target = self.parts.get('target')
+        self.case_sensitive = state['case_sensitive']
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
