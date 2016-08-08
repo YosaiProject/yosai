@@ -1350,7 +1350,7 @@ class SecurityManagerBuilder:
                                                 session_attributes_schema=sac)
 
         # wait until the last moment so as to register all serializables:
-        serialization_manager = SerializationManager()
+        serialization_manager = SerializationManager(attributes['serializer'])
         manager.serialization_manager = serialization_manager
         return manager
 

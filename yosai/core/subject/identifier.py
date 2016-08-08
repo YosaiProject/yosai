@@ -16,10 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import copy
 import collections
 import logging
-from marshmallow import Schema, fields, post_load, pre_dump, pre_load
 
 from yosai.core import (
     InvalidArgumentException,
@@ -139,43 +137,6 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         return "SimpleIdentifierCollection({0}, primary_identifier={1})".format(
                 self.source_identifiers, self.primary_identifier)
 
-    @classmethod
-    def serialization_schema(cls):
-
-        """
-        Note about serialization
-        -------------------------
-        The following Schema was implemented using the fields.Dict() as its
-        default, for flexibility. Since a developer (YOU) *should* know the
-        realms that will be used by your application, consider updating this
-        Schema, changing from a Dict() field to a concrete Schema implementation
-        consisting of the actual realms(sources) used.
-        """
-        class SerializationSchema(Schema):
-            source_identifiers = fields.List(fields.List(fields.String()), allow_none=True)
-            _primary_identifier = fields.String(allow_none=True)
-
-            @pre_dump
-            def convert_source_identifiers(self, sic):
-                mysic = copy.copy(sic)
-                new_si = list([key, value] for key, value in
-                              mysic.source_identifiers.items())
-                mysic.source_identifiers = new_si
-                mysic._primary_identifier = sic._primary_identifier
-                return mysic
-
-            @post_load
-            def make_authz_info(self, data):
-                mycls = SimpleIdentifierCollection
-                instance = mycls.__new__(mycls)
-                new_si = data['source_identifiers']
-                data['source_identifiers'] = collections.OrderedDict(new_si)
-                instance.__dict__.update(data)
-                return instance
-
-        return SerializationSchema
-
-    # asphalt:
     def __getstate__(self):
         return {
             'source_identifiers': [[key, value] for key, value in

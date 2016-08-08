@@ -15,6 +15,7 @@ REMEMBER_ME_CONFIG:
 SECURITY_MANAGER_CONFIG:
     security_manager: yosai.web.WebSecurityManager
     attributes:
+        serializer: cbor
         realms:
             yosai.core.AccountStoreRealm: yosai_alchemystore.AlchemyAccountStore
         cache_handler: yosai_dpcache.cache.DPCacheHandler

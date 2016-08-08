@@ -1,13 +1,11 @@
 
 # copied from asphalt-serialization
 
-from yosai.core import serialize_abcs
+from yosai.core import serialize_abcs, resolve_reference
 from collections import OrderedDict
 from json.decoder import JSONDecoder
 from json.encoder import JSONEncoder
 from typing import Dict, Any, Callable, Optional
-
-from asphalt.core.util import resolve_reference
 
 from yosai.core.serialize.marshalling import default_marshaller, default_unmarshaller
 

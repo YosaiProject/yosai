@@ -418,7 +418,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  role_resolver=RoleResolver(SimpleRole)):
         """
         :type realms: tuple
-        :type session_attributes_schema: marshmallow.Schema
+        :type session_attributes_schema: serialize_abcs.Serializable class
         """
         self._event_bus = event_bus
         self._cache_handler = cache_handler

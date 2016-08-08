@@ -49,14 +49,6 @@ class Account(metaclass=ABCMeta):
     Yosai's default implementations of this interface only ever print account
     attributes.
 
-    Serialization Specifications
-    ----------------------------
-    Requires two (marshmallow) Schemas:
-        1) the default SerializationSchema
-        2) AccountCredentialsSchema:
-            - its @post_load make_object method should return a newly populated dict
-        3) AccountAttributesSchema:
-            - its @post_load make_object method should return a newly populated dict
     """
 
     @property
@@ -109,7 +101,7 @@ class Account(metaclass=ABCMeta):
         :returns: the Account's attributes accessible to the application
 
         Requires a corresponding AccountAttributesSchema class that defines its
-        (marshmallow) serialization schema.
+        serialization schema.
         """
         pass
 

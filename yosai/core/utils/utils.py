@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+from importlib import import_module
 import inspect
 import sys
 import collections
@@ -173,3 +174,32 @@ def maybe_resolve(value, package=None):
             found = getattr(found, n)  # pragma: no cover
 
     return found
+
+
+# from asphalt:
+def resolve_reference(ref):
+    """
+    Return the object pointed to by ``ref``.
+    If ``ref`` is not a string or does not contain ``:``, it is returned as is.
+    References must be in the form  <modulename>:<varname> where <modulename> is the fully
+    qualified module name and varname is the path to the variable inside that module.
+    For example, "concurrent.futures:Future" would give you the
+    :class:`~concurrent.futures.Future` class.
+    :raises LookupError: if the reference could not be resolved
+    """
+    if not isinstance(ref, str) or ':' not in ref:
+        return ref
+
+    modulename, rest = ref.split(':', 1)
+    try:
+        obj = import_module(modulename)
+    except ImportError as e:
+        raise LookupError(
+            'error resolving reference {}: could not import module'.format(ref)) from e
+
+    try:
+        for name in rest.split('.'):
+            obj = getattr(obj, name)
+        return obj
+    except AttributeError:
+        raise LookupError('error resolving reference {}: error looking up object'.format(ref))

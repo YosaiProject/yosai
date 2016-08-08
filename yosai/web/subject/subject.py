@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import pdb
 import functools
 import logging
 from contextlib import contextmanager
@@ -423,7 +422,6 @@ class WebYosai(Yosai):
             def inner_wrap(*args, **kwargs):
 
                 params = WebYosai.get_current_webregistry().resource_params
-                pdb.set_trace()
                 newperms = [perm.format(**params) for perm in permission_s]
 
                 subject = Yosai.get_current_subject()

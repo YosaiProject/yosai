@@ -23,8 +23,6 @@ import pytz
 import datetime
 from abc import abstractmethod
 
-from marshmallow import Schema, fields, post_load
-
 from yosai.core import (
     DefaultSessionSettings,
     ExpiredSessionException,
@@ -699,22 +697,19 @@ class SimpleSession(session_abcs.ValidatingSession,
             self.expire()
 
             # throw an exception explaining details of why it expired:
-            idle_timeout = datetime.datetime.fromtimestamp(self.idle_timeout/1000).seconds
-            idle_timeout_min = str(idle_timeout // 60)
-
-            absolute_timeout = datetime.datetime.fromtimestamp(self.absolute_timeout/1000).seconds
-            absolute_timeout_min = str(absolute_timeout // 60)
+            idle_timeout_min = self.idle_timeout / 1000 // 60
+            absolute_timeout_min = self.absolute_timeout / 1000 // 60
 
             currenttime = datetime.datetime.now(pytz.utc).isoformat()
             session_id = str(self.session_id)
 
             msg2 = ("Session with id [" + session_id + "] has expired. "
-                    "Last access time: " + self.lastaccesstime +
+                    "Last access time: " + str(self.last_access_time) +
                     ".  Current time: " + currenttime +
-                    ".  Session idle timeout is set to " + str(idle_timeout) +
-                    " seconds (" + idle_timeout_min + " minutes) and "
-                    " absolute timeout is set to " + str(absolute_timeout) +
-                    " seconds (" + absolute_timeout_min + "minutes)")
+                    ".  Session idle timeout is set to " + str(self.idle_timeout) +
+                    " seconds (" + str(idle_timeout_min) + " minutes) and "
+                    " absolute timeout is set to " + str(self.absolute_timeout) +
+                    " seconds (" + str(absolute_timeout_min) + "minutes)")
 
             logger.debug(msg2)
 
@@ -809,76 +804,13 @@ class SimpleSession(session_abcs.ValidatingSession,
                        self.is_expired, self.host, self._attributes,
                        self._internal_attributes))
 
-    # the developer using Yosai must define the attribute schema:
-    class AttributesSchema(Schema):
+    # developers who use Yosai must define the attribute schema for serialization
+    class AttributesSchema(serialize_abcs.Serializable):
         pass
 
     @classmethod
     def set_attributes_schema(cls, schema):
         cls.AttributesSchema = schema
-
-    @classmethod
-    def serialization_schema(cls):
-
-        class InternalSessionAttributesSchema(Schema):
-            identifiers_session_key = fields.Nested(
-                SimpleIdentifierCollection.serialization_schema(),
-                attribute='identifiers_session_key',
-                allow_none=False)
-
-            authenticated_session_key = fields.Boolean(
-                attribute='authenticated_session_key',
-                allow_none=False)
-
-            run_as_identifiers_session_key = fields.Nested(
-                SimpleIdentifierCollection.serialization_schema(),
-                attribute='run_as_identifiers_session_key',
-                many=True,
-                allow_none=False)
-
-            @post_load
-            def make_internal_attributes(self, data):
-                try:
-                    raisk = 'run_as_identifiers_session_key'
-                    runas = data.get(raisk)
-                    if runas:
-                        que = collections.deque(runas)
-                        data[raisk] = que
-                except TypeError:
-                    msg = ("Session de-serialization note: "
-                           "run_as_identifiers_session_key attribute N/A.")
-                    logger.warning(msg)
-
-                return data
-
-        class SerializationSchema(Schema):
-            _session_id = fields.Str(allow_none=True)
-            _start_timestamp = fields.Integer(allow_none=True)  # iso is default
-            _stop_timestamp = fields.Integer(allow_none=True)  # iso is default
-            _last_access_time = fields.Integer(allow_none=True)  # iso is default
-            _idle_timeout = fields.Integer(allow_none=True)
-            _absolute_timeout = fields.Integer(allow_none=True)
-            _is_expired = fields.Boolean(allow_none=True)
-            _host = fields.Str(allow_none=True)
-
-            # NOTE:  After you've defined your SimpleSessionAttributesSchema,
-            #        the Raw() fields assignment below should be replaced by
-            #        the Schema line that follows it
-            _internal_attributes = fields.Nested(InternalSessionAttributesSchema,
-                                                 allow_none=True)
-
-            _attributes = fields.Nested(cls.AttributesSchema,
-                                        allow_null=True)
-
-            @post_load
-            def make_simple_session(self, data):
-                mycls = SimpleSession
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-
-                return instance
-
-        return SerializationSchema
 
     def __getstate__(self):
         return {
@@ -1084,20 +1016,6 @@ class DefaultSessionKey(session_abcs.SessionKey,
 
     def __repr__(self):
         return "SessionKey(session_id={0})".format(self.session_id)
-
-    @classmethod
-    def serialization_schema(cls):
-        class SerializationSchema(Schema):
-            _session_id = fields.Str(allow_none=True)
-
-            @post_load
-            def make_default_session_key(self, data):
-                mycls = DefaultSessionKey
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-                return instance
-
-        return SerializationSchema
 
     def __getstate__(self):
         return {'_session_id': self._session_id}

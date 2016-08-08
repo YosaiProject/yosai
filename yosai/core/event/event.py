@@ -174,7 +174,7 @@ class EventLogger(event_abcs.EventBusAware):
 
     def log_authc_succeeded(self, identifiers=None):
         topic = 'AUTHENTICATION.SUCCEEDED'
-        serialized = identifiers.serialize()
+        serialized = identifiers.__getstate__()
         logger.info(topic, extra={'identifiers': serialized})
 
     def log_authc_failed(self, username=None):
@@ -189,7 +189,7 @@ class EventLogger(event_abcs.EventBusAware):
         topic = 'SESSION.STOP'
         try:
             # a session of a user who hasn't authenticated won't have idents
-            idents = items.identifiers.serialize()
+            idents = items.identifiers.__getstate__()
         except AttributeError:
             idents = None
         session_id = items.session_key.session_id
@@ -200,7 +200,7 @@ class EventLogger(event_abcs.EventBusAware):
         topic = 'SESSION.EXPIRE'
         try:
             # a session of a user who hasn't authenticated won't have idents
-            idents = items.identifiers.serialize()
+            idents = items.identifiers.__getstate__()
         except AttributeError:
             idents = None
         session_id = items.session_key.session_id
@@ -212,12 +212,12 @@ class EventLogger(event_abcs.EventBusAware):
 
         try:
             # Permission objects are serializable
-            new_items = [item.serialize() for item in items]
+            new_items = [item.__getstate__() for item in items]
         except:
             # presumably a set of roleid strings
             new_items = list(items)
 
-        identifiers = identifiers.serialize()
+        identifiers = identifiers.__getstate__()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': new_items,
                                   'logical_operator': logical_operator.__name__})
@@ -227,12 +227,12 @@ class EventLogger(event_abcs.EventBusAware):
 
         try:
             # Permission objects are serializable
-            new_items = [item.serialize() for item in items]
+            new_items = [item.__getstate__() for item in items]
         except:
             # presumably a set of roleid strings
             new_items = list(items)
 
-        identifiers = identifiers.serialize()
+        identifiers = identifiers.__getstate__()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': new_items,
                                   'logical_operator': logical_operator.__name__})
@@ -241,12 +241,12 @@ class EventLogger(event_abcs.EventBusAware):
         topic = 'AUTHORIZATION.RESULTS'
         try:
             # Permission objects are serializable
-            new_items = [(item.serialize(), check) for (item, check) in items]
+            new_items = [(item.__getstate__(), check) for (item, check) in items]
         except AttributeError:
             # presumably roleid strings
             new_items = items
 
-        identifiers = identifiers.serialize()
+        identifiers = identifiers.__getstate__()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': new_items})
 

@@ -17,9 +17,6 @@ specific language governing permissions and limitations
 under the License.
 """
 import logging
-import copy
-
-from marshmallow import Schema, fields, post_load
 
 from yosai.core import (
     AuthenticationException,
@@ -308,7 +305,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     def notify_success(self, account):
         try:
             self.event_bus.publish('AUTHENTICATION.SUCCEEDED',
-                                   identifiers=copy.copy(account.account_id))
+                                   identifiers=account.account_id)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)
@@ -342,22 +339,6 @@ class Credential(serialize_abcs.Serializable):
     def __bool__(self):
         return bool(self.credential)
 
-    @classmethod
-    def serialization_schema(cls):
-
-        class SerializationSchema(Schema):
-            credential = fields.String()
-
-            @post_load
-            def make_credential(self, data):
-                mycls = Credential
-                instance = mycls.__new__(mycls)
-                instance.credential = bytes(data['credential'], 'utf-8')
-                return instance
-
-        return SerializationSchema
-
-    # asphalt:
     def __getstate__(self):
         return {'credential': self.credential}
 

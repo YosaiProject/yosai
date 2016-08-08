@@ -131,6 +131,7 @@ from yosai.core.utils.utils import (
     ThreadStateManager,
     maybe_resolve,
     memoized_property,
+    resolve_reference,
     unix_epoch_time,
 )
 
@@ -163,11 +164,9 @@ from yosai.core.logging.slogging import (
 
 
 from yosai.core.serialize.serialize import (
-    CollectionDict,
-    JSONSerializer,
-    MSGPackSerializer,
     SerializationManager,
 )
+
 
 from yosai.core.account.account import (
     Account,

@@ -21,7 +21,6 @@ import logging
 
 from yosai.core import (
     AuthorizationEventException,
-    CollectionDict,
     InvalidArgumentException,
     IllegalStateException,
     PermissionIndexingException,
@@ -34,7 +33,6 @@ from yosai.core import (
 )
 
 import collections
-from marshmallow import Schema, fields, post_load, post_dump
 
 logger = logging.getLogger(__name__)
 
@@ -247,42 +245,6 @@ class WildcardPermission(serialize_abcs.Serializable):
 
         return False
 
-    @classmethod
-    def serialization_schema(cls):
-        """
-        :returns:  marshmallow.Schema
-        """
-        class WildcardPartsSchema(Schema):
-                domain = fields.List(fields.Str, allow_none=True)
-                action = fields.List(fields.Str, allow_none=True)
-                target = fields.List(fields.Str, allow_none=True)
-
-        class SerializationSchema(Schema):
-            parts = fields.Nested(WildcardPartsSchema)
-
-            @post_load
-            def make_wildcard_permission(self, data):
-                mycls = WildcardPermission
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-
-                # have to convert to set from post_load due to the
-                # WildcardPartsSchema
-                for key, val in instance.parts.items():
-                    instance.parts[key] = frozenset(val)
-                return instance
-
-            # prior to serializing, convert a dict of sets to a dict of lists
-            # because sets cannot be serialized
-            @post_dump
-            def convert_sets(self, data):
-                for attribute, value in data['parts'].items():
-                    data['parts'][attribute] = list(value)
-                return data
-
-        return SerializationSchema
-
-    # asphalt:
     def __getstate__(self):
         parts = {part: list(items) for part, items in self.parts.items()}
         return {
@@ -523,48 +485,15 @@ class DefaultPermission(WildcardPermission):
 
     # removed getDomain
 
-    @classmethod
-    def serialization_schema(cls):
-        class PermissionPartsSchema(Schema):
-                domain = fields.List(fields.Str, allow_none=True)
-                action = fields.List(fields.Str, allow_none=True)
-                target = fields.List(fields.Str, allow_none=True)
+    def __getstate__(self):
+        parts = {part: list(items) for part, items in self.parts.items()}
+        return {
+            'parts': parts
+        }
 
-        class SerializationSchema(Schema):
-            parts = fields.Nested(PermissionPartsSchema)
-
-            @post_load
-            def make_default_permission(self, data):
-                mycls = DefaultPermission
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-
-                # have to convert to set from post_load due to the
-                # WildcardPartsSchema
-                for key, val in instance.parts.items():
-                    instance.parts[key] = frozenset(val)
-                return instance
-
-            # prior to serializing, convert a dict of sets to a dict of lists
-            # because sets cannot be serialized
-            @post_dump
-            def convert_sets(self, data):
-                for attribute, value in data['parts'].items():
-                    data['parts'][attribute] = list(value)
-                return data
-
-        return SerializationSchema
-
-        # asphalt:
-        def __getstate__(self):
-            parts = {part: list(items) for part, items in self.parts.items()}
-            return {
-                'parts': parts
-            }
-
-        def __setstate__(self, state):
-            parts = {part: frozenset(items) for part, items in state['parts'].items()}
-            self.set_parts(**parts)
+    def __setstate__(self, state):
+        parts = {part: frozenset(items) for part, items in state['parts'].items()}
+        self.set_parts(**parts)
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer,
@@ -582,7 +511,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         self._realms = None
         self._event_bus = None
-        self.serialization_manager = SerializationManager(format='json')
         # yosai omits resolver setting, leaving it to securitymanager instead
         # by default, yosai.core.does not support role -> permission resolution
 
@@ -1106,26 +1034,6 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
         return ("IndexedAuthorizationInfo(permissions={0}, roles={1})".
                 format(perms, self.roles))
 
-    @classmethod
-    def serialization_schema(cls):
-
-        class SerializationSchema(Schema):
-            _roles = fields.Nested(SimpleRole.serialization_schema(), many=True,
-                                   allow_none=True)
-            _permissions = CollectionDict(fields.Nested(
-                DefaultPermission.serialization_schema()), allow_none=True)
-
-            @post_load
-            def make_authz_info(self, data):
-                mycls = IndexedAuthorizationInfo
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-                instance._roles = set(instance._roles)
-                return instance
-
-        return SerializationSchema
-
-    # asphalt:
     def __getstate__(self):
         return {'_roles': list(self._roles),
                 '_permissions': {key: list(val) for key, val in self._permissions.items()}
@@ -1133,7 +1041,7 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
 
     def __setstate__(self, state):
         self._roles = set(state['_roles'])
-        self._permissions = {key: set(val) for key, val in self._permissions.items()}
+        self._permissions = {key: set(val) for key, val in state['_permissions'].items()}
 
 
 class SimpleRole(serialize_abcs.Serializable):
@@ -1184,21 +1092,6 @@ class SimpleRole(serialize_abcs.Serializable):
 
     def __repr__(self):
         return "SimpleRole(identifier={0})".format(self.identifier)
-
-    @classmethod
-    def serialization_schema(cls):
-
-        class SerializationSchema(Schema):
-            identifier = fields.Str(allow_none=True)
-
-            @post_load
-            def make_authz_info(self, data):
-                mycls = SimpleRole
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-                return instance
-
-        return SerializationSchema
 
     def __getstate__(self):
         return {'identifier': self.identifier}

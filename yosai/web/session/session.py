@@ -21,8 +21,6 @@ import binascii
 import os
 import collections
 
-from marshmallow import Schema, fields, post_load
-
 from yosai.core import (
     CachingSessionStore,
     DefaultNativeSessionHandler,
@@ -123,80 +121,19 @@ class WebSimpleSession(SimpleSession):
                                     collections.defaultdict(list))
         self.set_internal_attribute('csrf_token', csrf_token)
 
-    @classmethod
-    def serialization_schema(cls):
-
-        class InternalSessionAttributesSchema(Schema):
-            identifiers_session_key = fields.Nested(
-                SimpleIdentifierCollection.serialization_schema(),
-                attribute='identifiers_session_key',
-                allow_none=True)
-
-            authenticated_session_key = fields.Boolean(
-                attribute='authenticated_session_key',
-                allow_none=True)
-
-            run_as_identifiers_session_key = fields.Nested(
-                SimpleIdentifierCollection.serialization_schema(),
-                attribute='run_as_identifiers_session_key',
-                many=True,
-                allow_none=True)
-
-            csrf_token = fields.Str(attribute='csrf_token', allow_none=True)
-
-            flash_messages = fields.Dict(attribute='flash_messages', allow_none=True)  # a Dict of Lists
-
-            @post_load
-            def make_internal_attributes(self, data):
-                try:
-                    raisk = 'run_as_identifiers_session_key'
-                    runas = data.get(raisk)
-                    if runas:
-                        que = collections.deque(runas)
-                        data[raisk] = que
-
-                    flash_messages = data.get('flash_messages')
-                    if flash_messages:
-                        newdict = collections.defaultdict(list, data['flash_messages'])
-                        data['flash_messages'] = newdict
-
-                except TypeError:
-                    msg = ("Session de-serialization note: "
-                           " Internal attribute N/A.")
-                    logger.warning(msg)
-
-                return data
-
-        class SerializationSchema(Schema):
-            _session_id = fields.Str(allow_none=True)
-            _start_timestamp = fields.Integer(allow_none=True)  # iso is default
-            _stop_timestamp = fields.Integer(allow_none=True)  # iso is default
-            _last_access_time = fields.Integer(allow_none=True)  # iso is default
-            _idle_timeout = fields.Integer(allow_none=True)
-            _absolute_timeout = fields.Integer(allow_none=True)
-            _is_expired = fields.Boolean(allow_none=True)
-            _host = fields.Str(allow_none=True)
-
-            # NOTE:  After you've defined your SimpleSessionAttributesSchema,
-            #        the Raw() fields assignment below should be replaced by
-            #        the Schema line that follows it
-            _internal_attributes = fields.Nested(InternalSessionAttributesSchema,
-                                                 allow_none=True)
-
-            _attributes = fields.Nested(cls.AttributesSchema,
-                                        allow_null=True)
-
-            @post_load
-            def make_simple_session(self, data):
-                mycls = WebSimpleSession
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-
-                return instance
-
-        return SerializationSchema
-
-    # inherit __getstate__
+    def __getstate__(self):
+        return {
+            '_session_id': self._session_id,
+            '_start_timestamp': self._start_timestamp,
+            '_stop_timestamp': self._stop_timestamp,
+            '_last_access_time': self._last_access_time,
+            '_idle_timeout': self._idle_timeout,
+            '_absolute_timeout': self._absolute_timeout,
+            '_is_expired': self._is_expired,
+            '_host': self._host,
+            '_internal_attributes': self._internal_attributes,
+            '_attributes': self._attributes
+        }
 
     def __setstate__(self, state):
         self._session_id = state['_session_id']
@@ -492,18 +429,8 @@ class WebSessionKey(DefaultSessionKey):
         return "WebSessionKey(session_id={0}, web_registry={1})".\
             format(self._session_id, self.web_registry)
 
-    @classmethod
-    def serialization_schema(cls):
-        class SerializationSchema(Schema):
-            _session_id = fields.Str(allow_none=True)
+    def __getstate__(self):
+        return {'_session_id': self._session_id}
 
-            @post_load
-            def make_default_session_key(self, data):
-                mycls = WebSessionKey
-                instance = mycls.__new__(mycls)
-                instance.__dict__.update(data)
-                return instance
-
-        return SerializationSchema
-
-    # getstate and setstate are inherited
+    def __setstate__(self, state):
+        self._session_id = state['_session_id']

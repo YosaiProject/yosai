@@ -23,8 +23,6 @@ from yosai.core import (
     authc_abcs,
 )
 
-from marshmallow import Schema, fields, post_load
-
 
 class DefaultCompositeAccountId(authc_abcs.CompositeAccountId):
     # TO-DO:  this class can easily be converted to something more pythonic..
@@ -97,7 +95,7 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
         return self._realm_attrs.keys()
 
     def append_realm_account(self, realm_name, account):
-        
+
         self._account_id.set_realm_account_id(realm_name, account.account_id)
 
         realm_attributes = getattr(account, 'attributes', None)
@@ -120,14 +118,3 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
 
     def get_realm_attributes(self, realm_name):
         return self._realm_attrs.get(realm_name, dict())  # DG: no frozen dict
-
-    @classmethod
-    def serialization_schema(cls):
-        class SerializationSchema(Schema):
-            pass  # TBD
-
-            @post_load
-            def make_dc_accountid(self):
-                pass  # TBD
-
-        return SerializationSchema

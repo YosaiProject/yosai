@@ -25,11 +25,13 @@ class SecurityManagerSettings:
         self.attributes = self.resolve_attributes(manager_config.get('attributes'))
 
     def resolve_attributes(self, attributes):
+        serializer = attributes.get('serializer', 'cbor')
         realms = self.resolve_realms(attributes)
         cache_handler = self.resolve_cache_handler(attributes)
         session_attributes_schema = self.resolve_session_attributes_schema(attributes)
 
-        return {'realms': realms,
+        return {'serializer': serializer,
+                'realms': realms,
                 'cache_handler': cache_handler,
                 'session_attributes_schema': session_attributes_schema
                 }

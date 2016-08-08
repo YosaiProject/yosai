@@ -18,41 +18,9 @@ under the License.
 """
 
 from abc import ABCMeta, abstractmethod
-from yosai.core import DeserializationException
 
 
 class Serializable(metaclass=ABCMeta):
-
-    @classmethod
-    @abstractmethod
-    def serialization_schema(cls):
-        """
-        Each serializable class must define its respective Schema (marshmallow)
-        and its @post_load 'make_object' method.
-
-        :returns: a SerializationSchema class
-        """
-        pass
-
-    def serialize(self):
-        """
-        :returns: a dict
-        """
-        schema = self.serialization_schema()()
-        return schema.dump(self).data
-
-    @classmethod
-    def deserialize(cls, data):
-        """
-        :returns: a deserialized object
-        """
-        schema = cls.serialization_schema()()
-        result = schema.load(data=data)
-        if result.errors:
-            msg = 'Failed to de-serialize:  data={0}, errors={1}'.\
-                  format(result.data, result.errors)
-            raise DeserializationException(msg)
-        return result.data
 
     def __eq__(self, other):
         if self is other:

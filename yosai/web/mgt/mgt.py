@@ -97,7 +97,7 @@ class WebSecurityManager(NativeSecurityManager):
                  session_attributes_schema=None):
         """
         :type realms: tuple
-        :type session_attributes_schema: marshmallow.Schema
+        :type session_attributes_schema:  serialize_abcs.Serializable 
         """
 
         super().__init__(settings=settings,
