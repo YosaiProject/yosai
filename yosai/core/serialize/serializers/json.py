@@ -1,7 +1,7 @@
 
 # copied from asphalt-serialization
 
-from yosai.core import serialize_abcs, resolve_reference
+from yosai.core import serialize_abcs, resolve_reference, qualified_name
 from collections import OrderedDict
 from json.decoder import JSONDecoder
 from json.encoder import JSONEncoder
@@ -63,8 +63,7 @@ class JSONSerializer(serialize_abcs.CustomizableSerializer):
             self, cls: type, marshaller: Optional[Callable[[Any], Any]] = default_marshaller,
             unmarshaller: Optional[Callable[[Any, Any], Any]] = default_unmarshaller, *,
             typename: str = None) -> None:
-        typename = typename or cls.__name__
-
+        typename = typename or qualified_name(cls)
         if marshaller:
             self._marshallers[cls] = typename, marshaller
             self.encoder_options['default'] = self._default_encoder

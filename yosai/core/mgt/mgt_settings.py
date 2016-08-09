@@ -1,3 +1,4 @@
+
 from yosai.core import (
     maybe_resolve,
 )
@@ -7,7 +8,7 @@ class RememberMeSettings:
 
     def __init__(self, settings):
         rmm_config = settings.REMEMBER_ME_CONFIG
-        self.default_cipher_key = rmm_config.get('default_cipher_key')
+        self.default_cipher_key = rmm_config.get('default_cipher_key').encode()
 
 
 class SecurityManagerSettings:

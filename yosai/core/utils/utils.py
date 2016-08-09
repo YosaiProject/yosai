@@ -203,3 +203,16 @@ def resolve_reference(ref):
         return obj
     except AttributeError:
         raise LookupError('error resolving reference {}: error looking up object'.format(ref))
+
+
+def qualified_name(obj):
+    """Return the qualified name (e.g. package.module.Type) for the given object."""
+    try:
+        module = obj.__module__
+        qualname = obj.__qualname__
+    except AttributeError:
+        type_ = type(obj)
+        module = type_.__module__
+        qualname = type_.__qualname__
+
+    return qualname if module in ('typing', 'builtins') else '{}.{}'.format(module, qualname)

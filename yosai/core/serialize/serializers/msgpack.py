@@ -3,7 +3,7 @@
 
 from typing import Dict, Any, Callable, Optional
 
-from yosai.core import serialize_abcs
+from yosai.core import serialize_abcs, qualified_name
 from msgpack import packb, unpackb, ExtType
 
 from yosai.core.serialize.marshalling import default_marshaller, default_unmarshaller
@@ -58,7 +58,7 @@ class MsgpackSerializer(serialize_abcs.CustomizableSerializer):
             self, cls: type, marshaller: Optional[Callable[[Any], Any]] = default_marshaller,
             unmarshaller: Optional[Callable[[Any, Any], Any]] = default_unmarshaller, *,
             typename: str = None) -> None:
-        typename = (typename or cls.__class__.__name__).encode('utf-8')
+        typename = (typename or qualified_name(cls)).encode('utf-8')
 
         if marshaller:
             self._marshallers[cls] = typename, marshaller

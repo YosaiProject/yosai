@@ -72,7 +72,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
                 # obtains the first identifier added via authentication:
                 identifiers = self.source_identifiers.values()
                 primary_identifier = next(iter(identifiers))
-            except (AttributeError, TypeError):
+            except (AttributeError, TypeError, StopIteration):
                 msg = "Failed to obtain primary identifier"
                 logger.warning(msg)
                 return None

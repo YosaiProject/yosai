@@ -131,6 +131,7 @@ from yosai.core.utils.utils import (
     ThreadStateManager,
     maybe_resolve,
     memoized_property,
+    qualified_name,
     resolve_reference,
     unix_epoch_time,
 )

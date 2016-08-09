@@ -97,7 +97,7 @@ class WebSecurityManager(NativeSecurityManager):
                  session_attributes_schema=None):
         """
         :type realms: tuple
-        :type session_attributes_schema:  serialize_abcs.Serializable 
+        :type session_attributes_schema:  serialize_abcs.Serializable
         """
 
         super().__init__(settings=settings,
@@ -177,7 +177,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
     def __init__(self, settings):
         super().__init__(settings)
 
-    def remember_serialized_identity(self, subject, serialized):
+    def remember_encrypted_identity(self, subject, encrypted):
         """
         Base64-encodes the specified serialized byte array and sets that
         base64-encoded String as the cookie value.
@@ -190,19 +190,19 @@ class CookieRememberMeManager(AbstractRememberMeManager):
 
         :param subject: the Subject for which the identity is being serialized
 
-        :param serialized: the serialized bytes to be persisted
+        :param serialized: the serialized bytes to persist
         :type serialized: bytearray
         """
         try:
             # base 64 encode it and store as a cookie:
-            subject.web_registry.remember_me = base64.b64encode(serialized)
+            encoded = base64.b64encode(encrypted).decode('utf-8')
+            subject.web_registry.remember_me = encoded
         except AttributeError:
             msg = ("Subject argument is not an HTTP-aware instance.  This "
                    "is required to obtain a web registry in order to"
                    "set the RememberMe cookie. Returning immediately "
                    "and ignoring RememberMe operation.")
             logger.debug(msg)
-            return
 
     def is_identity_removed(self, subject_context):
         try:
@@ -211,20 +211,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         except AttributeError:
             return False
 
-    def ensure_padding(self, base64):
-        """
-        Sometimes a user agent will send the rememberMe cookie value without
-        padding, most likely because `=` is a separator in the cookie header.
-
-        :param base64: the base64 encoded String that may need to be padded
-        :returns: the base64 String, padded if necessary
-        """
-
-        pad = b'=' * (((~len(base64)) + 1) & 3)
-        base64 = base64 + pad
-        return base64
-
-    def get_remembered_serialized_identity(self, subject_context):
+    def get_remembered_encrypted_identity(self, subject_context):
         """
         Returns a previously serialized identity byte array or None if the byte
         array could not be acquired.
@@ -242,8 +229,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
                                 ``SubjectBuilder`` implementation, that is being
                                 used to construct a ``Subject`` instance
 
-        :returns: a previously serialized identity bytearray or None if the byte
-                  array could not be acquired
+        :returns: an encrypted, serialized identifier collection
         """
         if (self.is_identity_removed(subject_context)):
             if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
@@ -255,7 +241,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
 
             return None
 
-        base64_rememberme = self.subject_context.web_registry.remember_me
+        remember_me = subject_context.web_registry.remember_me
 
         # TBD:
         # Browsers do not always remove cookies immediately
@@ -263,18 +249,13 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         # if (web_wsgi_abcs.Cookie.DELETED_COOKIE_VALUE.equals(base64)):
         #     return None
 
-        if base64_rememberme:
-            base64 = self.ensure_padding(base64_rememberme)
+        if remember_me:
 
-            logger.debug("Acquired Base64 encoded identity [" + base64 + "]")
+            logger.debug("Acquired encoded identity [" + str(remember_me) + "]")
 
-            decoded = base64.b64decode(base64)
+            encrypted = base64.b64decode(remember_me)
 
-            logger.debug("Base64 decoded byte array length: {0} bytes".format(
-                         len(decoded) if decoded else 0))
-
-            return decoded
-
+            return encrypted
         else:
             # no cookie set - new site visitor?
             return None

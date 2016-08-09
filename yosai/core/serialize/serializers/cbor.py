@@ -5,7 +5,7 @@ from typing import Dict, Any, Callable, Optional
 
 import cbor2
 
-from yosai.core import serialize_abcs
+from yosai.core import serialize_abcs, qualified_name
 
 from yosai.core.serialize.marshalling import default_marshaller, default_unmarshaller
 
@@ -80,7 +80,8 @@ class CBORSerializer(serialize_abcs.CustomizableSerializer):
             self, cls: type, marshaller: Optional[Callable[[Any], Any]] = default_marshaller,
             unmarshaller: Optional[Callable[[Any, Any], Any]] = default_unmarshaller, *,
             typename: str = None) -> None:
-        typename = typename or cls.__name__
+
+        typename = typename or qualified_name(cls)
 
         if marshaller:
             self.marshallers[cls] = typename, marshaller

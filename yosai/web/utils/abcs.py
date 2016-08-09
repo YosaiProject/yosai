@@ -1,3 +1,6 @@
+import pdb
+
+
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -36,8 +39,7 @@ class WebRegistry(metaclass=ABCMeta):
         self.secret = secret
         self.cookies = {'set_cookie': {}, 'delete_cookie': set()}
         self._session_creation_enabled = True
-        self.set_cookie_attributes = {}  # TBD
-
+        self.set_cookie_attributes = {}  # cookie properties
         self.register_response_callback()
 
     @property
@@ -83,13 +85,13 @@ class WebRegistry(metaclass=ABCMeta):
         self._session_creation_enabled = None
 
     def webregistry_callback(self, request, response):
-        while self.cookies['set_cookie']:
-            key, value = self.cookies['set_cookie'].popitem()
-            self._set_cookie(response, key, value['value'])
-
         while self.cookies['delete_cookie']:
             key = self.cookies['delete_cookie'].pop()
             self._delete_cookie(response, key)
+
+        while self.cookies['set_cookie']:
+            key, value = self.cookies['set_cookie'].popitem()
+            self._set_cookie(response, key, value['value'])
 
     @property
     @abstractmethod
@@ -133,4 +135,5 @@ class WebRegistry(metaclass=ABCMeta):
         pass
 
     def __repr__(self):
-        return self.__class__.__name__
+        return "{0}(session_id={1}, remember_me={2})".format(
+            self.__class__.__name__, self.session_id, self.remember_me)
