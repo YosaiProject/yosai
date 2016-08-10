@@ -1,0 +1,49 @@
+
+# def test_web_proxied_session_new_csrf_token
+# def test_web_proxied_session_get_csrf_token
+# def test_web_proxied_session_flash
+# def test_web_proxied_session_peek_flash
+# def test_web_proxied_session_pop_flash
+
+# def test_web_delegating_session_new_csrf_token
+# def test_web_delegating_session_get_csrf_token_no_token
+# def test_web_delegating_session_get_csrf_token_with_token
+# def test_web_delegating_session_flash_allow_duplicate
+# def test_web_delegating_session_flash_notallow_msg_in_flash_messages
+# def test_web_delegating_session_flash_notallow_msg_notin_flash_messages
+# def test_web_delegating_session_peek_flash
+# def test_web_delegating_session_pop_flash
+
+# def test_web_simple_session_getstate
+# def test_web_simple_session_setstate
+
+# def test_web_caching_session_store_cache_identifiers_to_key_map
+# def test_web_caching_session_store_cache_identifiers_to_key_map_raises
+
+# def test_web_sse_is_session_storage_enabled_true
+# def test_web_sse_is_session_storage_enabled_state_false
+# def test_web_sse_is_session_storage_enabled_not_websubject_false
+# def test_web_sse_is_session_storage_enabled_nostate_webregistry_false
+
+# def test_web_session_handler_on_start_sice_true
+# def test_web_session_handler_on_start_sice_false
+# def test_web_session_handler_on_stop
+# def test_web_session_handler_on_expiration
+# def test_web_session_handler_on_invalidation
+
+# def test_web_session_factory_create_session
+
+# def test_web_session_mgr_create_exposed_session_with_key
+# def test_web_session_mgr_create_exposed_session_wo_key
+# def test_web_session_mgr_new_csrf_token
+# def test_web_session_mgr_new_csrf_token_raises
+# def test_web_session_mgr_generate_csrf_token
+# def test_web_session_mgr_create_session
+# def test_web_session_mgr_create_session_raises
+
+# def test_web_session_key_session_id
+# def test_web_session_key_session_id_using_webregistry
+# def test_web_session_key_resolve_session_id
+# def test_web_session_key_resolve_session_id_using_webregistry
+# def test_web_session_getstate
+# def test_web_session_setstate

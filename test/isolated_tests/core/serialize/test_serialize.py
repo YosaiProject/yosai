@@ -15,10 +15,6 @@ from yosai.core import (
     SerializationManager,
 )
 
-from ..matcher import (
-    DictMatcher,
-)
-
 # ----------------------------------------------------------------------------
 # SerializationManager Tests
 # ----------------------------------------------------------------------------

@@ -10,6 +10,13 @@
     automatically generated using yaml settings are as expected.
     """
 
+
+#def test_cookie_secret_settings
+    """
+    confirm that the signed cookie secret settings are available from WebYosai
+    """
+
+
 #def test_web_context
     """
     When entering a new WebYosai context, a yosai instance is pushed onto a yosai_context

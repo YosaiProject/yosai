@@ -66,6 +66,7 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
 
         if not host:
             return self.resolve_web_registry().remote_host
+        return host
 
     def resolve_web_registry(self):
         registry = self.web_registry
@@ -268,7 +269,7 @@ class WebYosai(Yosai):
     @contextmanager
     def context(yosai, webregistry):
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
-        webregistry.secret = yosai.signed_cookie_secret  # inject the secret
+        webregistry.secret = yosai.signed_cookie_secret  # configuration
         global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
         yield
 

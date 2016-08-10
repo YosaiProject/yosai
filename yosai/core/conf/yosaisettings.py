@@ -49,6 +49,8 @@ class LazySettings:
 
     def __init__(self, env_var=None, file_path=None):
         self._wrapped = empty
+        if not env_var and not file_path:
+            raise TypeError('Must specifify either an env_var or file_path.')
         self.__dict__["env_var"] = env_var
         self.__dict__["file_path"] = file_path
 
