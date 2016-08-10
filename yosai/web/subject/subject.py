@@ -29,7 +29,6 @@ from yosai.core import (
     Yosai,
     SubjectBuilder,
     ThreadStateManager,
-    WebRegistrySettings,
     YosaiContextException,
     global_yosai_context,
     global_subject_context,
@@ -39,6 +38,7 @@ from yosai.core import (
 from yosai.web import (
     DefaultWebSessionContext,
     WebProxiedSession,
+    WebRegistrySettings,
     web_subject_abcs,
 )
 

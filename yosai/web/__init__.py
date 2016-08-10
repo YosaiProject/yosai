@@ -34,6 +34,11 @@ from .exceptions import (
 )
 
 
+from yosai.web.registry.registry_settings import (
+    WebRegistrySettings,
+)
+
+
 from yosai.web.session.session import (
     DefaultWebSessionContext,
     DefaultWebSessionStorageEvaluator,
@@ -59,8 +64,4 @@ from yosai.web.mgt.mgt import (
     DefaultWebSubjectFactory,
     WebSecurityManager,
     CookieRememberMeManager,
-)
-
-from yosai.web.registry.registry_settings import (
-    WebRegistrySettings,
 )
