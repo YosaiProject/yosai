@@ -1,6 +1,3 @@
-import pdb
-
-
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -34,9 +31,9 @@ class WebRegistry(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def __init__(self, request, secret):
+    def __init__(self, request):
         self.request = request
-        self.secret = secret
+        self.secret = None  # it is injected by the SecurityManager
         self.cookies = {'set_cookie': {}, 'delete_cookie': set()}
         self._session_creation_enabled = True
         self.set_cookie_attributes = {}  # cookie properties

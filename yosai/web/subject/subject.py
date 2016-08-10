@@ -29,6 +29,7 @@ from yosai.core import (
     Yosai,
     SubjectBuilder,
     ThreadStateManager,
+    WebRegistrySettings,
     YosaiContextException,
     global_yosai_context,
     global_subject_context,
@@ -234,6 +235,10 @@ class WebYosai(Yosai):
     def __init__(self, env_var=None, file_path=None):
         super().__init__(env_var=env_var, file_path=file_path)
 
+        # web_registry objects are injected with secret as context is set:
+        registry_settings = WebRegistrySettings(self.settings)
+        self.signed_cookie_secret = registry_settings.signed_cookie_secret
+
     @memoized_property
     def subject_builder(self):
         self._subject_builder = WebSubjectBuilder(security_utils=self,
@@ -263,6 +268,7 @@ class WebYosai(Yosai):
     @contextmanager
     def context(yosai, webregistry):
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
+        webregistry.secret = yosai.signed_cookie_secret  # inject the secret
         global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
         yield
 
@@ -289,7 +295,7 @@ class WebYosai(Yosai):
 
         @functools.wraps(fn)
         def wrap(*args, **kwargs):
-            subject = Yosai.get_current_subject()
+            subject = WebYosai.get_current_subject()
 
             if not subject.authenticated:
                 msg = "The current Subject is not authenticated.  ACCESS DENIED."
@@ -309,7 +315,7 @@ class WebYosai(Yosai):
         @functools.wraps(fn)
         def wrap(*args, **kwargs):
 
-            subject = Yosai.get_current_subject()
+            subject = WebYosai.get_current_subject()
 
             if subject.identifiers is None:
                 msg = ("Attempting to perform a user-only operation.  The "
@@ -332,7 +338,7 @@ class WebYosai(Yosai):
         @functools.wraps(fn)
         def wrap(*args, **kwargs):
 
-            subject = Yosai.get_current_subject()
+            subject = WebYosai.get_current_subject()
 
             if subject.identifiers is not None:
                 msg = ("Attempting to perform a guest-only operation.  The "
@@ -370,7 +376,7 @@ class WebYosai(Yosai):
             @functools.wraps(fn)
             def inner_wrap(*args, **kwargs):
 
-                subject = Yosai.get_current_subject()
+                subject = WebYosai.get_current_subject()
                 try:
                     subject.check_permission(permission_s, logical_operator)
 
@@ -424,7 +430,7 @@ class WebYosai(Yosai):
                 params = WebYosai.get_current_webregistry().resource_params
                 newperms = [perm.format(**params) for perm in permission_s]
 
-                subject = Yosai.get_current_subject()
+                subject = WebYosai.get_current_subject()
 
                 try:
                     subject.check_permission(newperms, logical_operator)
@@ -469,7 +475,7 @@ class WebYosai(Yosai):
             @functools.wraps(fn)
             def inner_wrap(*args, **kwargs):
 
-                subject = Yosai.get_current_subject()
+                subject = WebYosai.get_current_subject()
 
                 try:
                     subject.check_role(roleid_s, logical_operator)

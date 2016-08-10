@@ -24,9 +24,8 @@ __email__ = 'dkcdkg@gmail.com'
 __status__ = 'Development'
 
 
-from yosai.web.mgt import abcs as web_mgt_abcs
 from yosai.web.subject import abcs as web_subject_abcs
-from yosai.web.utils import abcs as web_abcs  # since it is the primary api
+from yosai.web.registry import abcs as web_abcs  # since it is the primary api
 
 from .exceptions import (
     CookieException,
@@ -60,4 +59,8 @@ from yosai.web.mgt.mgt import (
     DefaultWebSubjectFactory,
     WebSecurityManager,
     CookieRememberMeManager,
+)
+
+from yosai.web.registry.registry_settings import (
+    WebRegistrySettings,
 )

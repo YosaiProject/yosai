@@ -28,3 +28,6 @@ SESSION_CONFIG:
     session_validation:
         scheduler_enabled: false
         time_interval: 3600
+
+WEB_REGISTRY:
+    signed_cookie_secret:  changeme

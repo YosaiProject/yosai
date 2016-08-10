@@ -1034,8 +1034,8 @@ class Yosai:
 
     def __init__(self, env_var=None, file_path=None):
         # you can configure LazySettings in one of two ways: env or file_path
-        settings = LazySettings(env_var=env_var, file_path=file_path)
-        self.security_manager = self.generate_security_manager(settings)
+        self.settings = LazySettings(env_var=env_var, file_path=file_path)
+        self.security_manager = self.generate_security_manager(self.settings)
 
     def generate_security_manager(self, settings):
         # don't forget to pass default_cipher_key into the WebSecurityManager

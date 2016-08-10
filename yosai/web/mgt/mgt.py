@@ -74,7 +74,6 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
                                     web_registry=web_registry)
 
 
-
 class WebSecurityManager(NativeSecurityManager):
     """
     This is the default ``WebSecurityManager`` implementation used in web-based
@@ -207,7 +206,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
     def is_identity_removed(self, subject_context):
         try:
             registry = subject_context.resolve_web_registry()
-            return registry.remember_me is None
+            return not registry.remember_me
         except AttributeError:
             return False
 
