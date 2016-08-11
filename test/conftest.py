@@ -1,5 +1,5 @@
+import os
 import pytest
-from marshmallow import Schema, fields
 
 from yosai.core import (
     AccountStoreRealm,
@@ -54,7 +54,9 @@ def session(request):
 
 @pytest.fixture(scope='session')
 def yosai():
-    return Yosai()
+    current_filepath = os.path.dirname(__file__)
+    settings_file = current_filepath + '/yosai_api/yosai_settings.yaml'
+    return Yosai(file_path=settings_file)
 
 
 @pytest.fixture(scope='session')
@@ -145,8 +147,9 @@ def configured_securityutils(native_security_manager, yosai):
 def native_security_manager(account_store_realm, cache_handler,
                             yosai):
 
-    class AttributesSchema(Schema):
-        name = fields.String()
+    class AttributesSchema:
+        def __init__(self):
+            self.name = 'Jeffrey Lebowski'
 
     nsm = NativeSecurityManager(realms=(account_store_realm,),
                                 session_attributes_schema=AttributesSchema)
@@ -161,21 +164,24 @@ def native_security_manager(account_store_realm, cache_handler,
 # Web Fixtures
 # -----------------------------------------------------------------------------
 
+@pytest.fixture(scope='function')
+def web_yosai():
+    current_filepath = os.path.dirname(__file__)
+    settings_file = current_filepath + '/yosai_api/yosai_settings.yaml'
+    return WebYosai(file_path=settings_file)
+
+
 @pytest.fixture(scope='session')
 def mock_web_registry():
     return MockWebRegistry()
 
 
 @pytest.fixture(scope='session')
-def web_yosai():
-    return WebYosai()
-
-
-@pytest.fixture(scope='session')
 def web_security_manager(account_store_realm, cache_handler):
 
-    class AttributesSchema(Schema):
-        name = fields.String()
+    class AttributesSchema:
+        def __init__(self):
+            self.name = 'Jeffrey Lebowski'
 
     wsm = WebSecurityManager(realms=(account_store_realm,),
                              session_attributes_schema=AttributesSchema)

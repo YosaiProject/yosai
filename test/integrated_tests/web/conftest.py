@@ -1,18 +1,11 @@
 import pytest
-import os
 from unittest import mock
 from pyramid.request import Request
 from pyramid_yosai import PyramidWebRegistry
+
 from yosai.web import (
     WebYosai,
 )
-
-
-@pytest.fixture(scope='function')
-def web_yosai():
-    current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_api/yosai_settings.yaml'
-    return WebYosai(file_path=settings_file)
 
 
 @pytest.fixture(scope='function')
@@ -28,3 +21,9 @@ def mock_web_registry():
 @pytest.fixture(scope='function')
 def web_registry(mock_request):
     return PyramidWebRegistry(mock_request)
+
+
+@pytest.fixture(scope='session')
+def new_web_subject(web_yosai, web_registry):
+    with WebYosai.context(web_yosai, web_registry):
+        return WebYosai.get_current_subject()
