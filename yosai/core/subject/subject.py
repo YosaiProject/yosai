@@ -1097,6 +1097,7 @@ class Yosai:
         try:
             subject = global_subject_context.stack[-1]
             msg = 'A subject instance DOES exist in the global context.  Returning it.'
+            logger.debug(msg)
             return subject
         except IndexError:
             msg = 'A subject instance _DOES NOT_ exist in the global context.  Creating one.'
@@ -1309,6 +1310,9 @@ class Yosai:
                 return fn(*args, **kwargs)
             return inner_wrap
         return outer_wrap
+
+    def __eq__(self, other):
+        return self._security_manager == other._security_manager
 
 
 # new to yosai
