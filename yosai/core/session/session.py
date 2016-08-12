@@ -95,13 +95,6 @@ class AbstractSessionStore(session_abcs.SessionStore):
                    "is None. Please verify the implementation.")
             raise IllegalStateException(msg)
 
-    def assign_session_id(self, session, session_id):
-        if session is None or session_id is None:
-            msg = ("session and sessionid parameters must be passed in "
-                   "order to assign session_id")
-            raise InvalidArgumentException(msg)
-        session.session_id = session_id
-
     def read(self, session_id):
         session = self._do_read(session_id)
         if session is None:
@@ -168,7 +161,7 @@ class MemorySessionStore(AbstractSessionStore):
 
     def _do_create(self, session):
         sessionid = self.generate_session_id()
-        self.assign_session_id(session, sessionid)
+        session.session_id = sessionid
         self.store_session(sessionid, session)
         return sessionid
 
@@ -234,12 +227,17 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     def cache_handler(self, cachehandler):
         self._cache_handler = cachehandler
 
+    def _do_create(self, session):
+        sessionid = self.generate_session_id()
+        session.session_id = sessionid
+        return sessionid
+
     def create(self, session):
         """
         caches the session and caches an entry to associate the cached session
         with the subject
         """
-        sessionid = super().create(session)
+        sessionid = super().create(session)  # calls _do_create and verify
         self._cache(session, sessionid)
         self._cache_identifiers_to_key_map(session, sessionid)
         return sessionid
@@ -337,11 +335,6 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
         except AttributeError:
             msg = "Cannot uncache without a cache_handler."
             raise SessionCacheException(msg)
-
-    def _do_create(self, session):
-        sessionid = self.generate_session_id()
-        self.assign_session_id(session, sessionid)  # this updates session
-        return sessionid
 
     # intended for write-through caching:
     def _do_read(self, session_id):

@@ -1,4 +1,3 @@
-import pdb
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -21,6 +20,7 @@ import logging
 import binascii
 import os
 import collections
+import copy
 
 from yosai.core import (
     CachingSessionStore,
@@ -33,9 +33,9 @@ from yosai.core import (
     ProxiedSession,
     SessionCreationException,
     SessionEventHandler,
-    SimpleIdentifierCollection,
     SimpleSession,
     SimpleSessionFactory,
+    session_abcs,
 )
 
 from yosai.web import (
@@ -360,15 +360,18 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
 
     # new to yosai (fixation countermeasure)
     def recreate_session_id(self, session_key):
-        session = self.session_handler.do_get_session(session_key)
-        new_session_id = self.session_handler.create_session(session)
+        old_session = self.session_handler.do_get_session(session_key)
+        new_session = copy.copy(old_session)
+        self.session_handler.delete(old_session)
+
+        new_session_id = self.session_handler.create_session(new_session)
 
         if not new_session_id:
             msg = 'Failed to re-create a sessionid for:' + str(session_key)
             raise SessionCreationException(msg)
 
         self.session_handler.on_recreate_session_id(new_session_id, session_key)
-        self.session_handler.on_change(session)
+
         logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
                      format(session_key.session_id, new_session_id))
 
