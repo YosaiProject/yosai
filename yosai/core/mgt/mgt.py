@@ -484,7 +484,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     @property
     def serialization_manager(self):
-        return None 
+        return None
 
     @serialization_manager.setter
     def serialization_manager(self, sm):
@@ -1136,7 +1136,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             # pattern has been replaced by the event bus interaction and
             # logout results in session expire event transmission, which is tracked
             # by the authenticator
-
         try:
             self.delete(subject)
         except Exception:

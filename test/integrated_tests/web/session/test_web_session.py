@@ -27,16 +27,39 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
             assert (mock_web_registry.current_session_id is None and
                     mock_web_registry.session_id_history[0][0] == 'SET')
 
-#def test_absolute_timeout
+
+def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
+                          valid_username_password_token):
     """
     A session that absolute timeouts will raise an exception at validation and
     the sessionmanager deletes the expired session from cache.
     """
+    monkeypatch.setattr(web_yosai.security_manager.session_manager.session_factory,
+                        'absolute_timeout', 1000)  # milliseconds
 
-#def test_stopped_session
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+        subject.login(valid_username_password_token)
+        sleep(2)
+        try:
+            subject = WebYosai.get_current_subject()
+        except ExpiredSessionException:
+            assert (mock_web_registry.current_session_id is None and
+                    mock_web_registry.session_id_history[0][0] == 'SET')
+
+
+def test_stopped_session (web_yosai, mock_web_registry, monkeypatch,
+                          valid_username_password_token):
     """
     When a user logs out, the user's session is stopped.
     """
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+        subject.login(valid_username_password_token)
+        subject.logout()
+        assert (mock_web_registry.current_session_id is None and
+                mock_web_registry.session_id_history[1][0] == 'DELETE')
+
 
 #def test_websimplesession_serialization
     """

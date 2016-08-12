@@ -1,3 +1,4 @@
+import pdb
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -731,7 +732,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         if (not self.internal_attributes):
             return None
         else:
-            return self.internal_attributes.__dict__.pop(key, None)
+            return self.internal_attributes.pop(key, None)
 
     def remove_internal_attributes(self, to_remove):
         return [self.remove_internal_attribute(key) for key in to_remove]
@@ -1224,7 +1225,8 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         """
         pass
 
-    def on_stop(self, session):
+    def on_stop(self, session, session_key):
+        # session_key is used by the child class
         try:
             session.last_access_time = session.stop_timestamp
         except AttributeError:
@@ -1395,7 +1397,7 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
             logger.debug(msg)
 
             session.stop()
-            self.session_handler.on_stop(session)
+            self.session_handler.on_stop(session, session_key)
 
             idents = session.get_internal_attribute('identifiers_session_key')
 
