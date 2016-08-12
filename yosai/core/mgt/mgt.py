@@ -544,6 +544,14 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             raise InvalidArgumentException(msg)
 
     @property
+    def session_attributes_schema(self):
+        return SimpleSession.AttributesSchema
+
+    @session_attributes_schema.setter
+    def session_attributes_schema(self, schema):
+        SimpleSession.set_attributes_schema(schema)
+
+    @property
     def session_manager(self):
         return self._session_manager
 

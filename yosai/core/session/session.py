@@ -725,20 +725,19 @@ class SimpleSession(session_abcs.ValidatingSession,
         self.internal_attributes[key] = value
 
     def set_internal_attributes(self, key_values):
-        for key, value in key_values:
-            self.internal_attributes[key] = value
+        self.internal_attributes.update(key_values)
 
     def remove_internal_attribute(self, key):
         if (not self.internal_attributes):
             return None
         else:
-            return self.internal_attributes.pop(key, None)
+            return self.internal_attributes.__dict__.pop(key, None)
 
     def remove_internal_attributes(self, to_remove):
         return [self.remove_internal_attribute(key) for key in to_remove]
 
     def get_attribute(self, key):
-        return self.attributes.get(key)
+        return self.attributes.__dict__.get(key)
 
     # new to yosai
     def get_attributes(self, keys):
@@ -748,10 +747,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a dict containing the attributes requested, if they exist
         """
-        return {key: self.attributes.get(key) for key in keys if key in self.attributes}
+        return {key: self.attributes.key for key in keys if key in self.attributes.__dict__}
 
     def set_attribute(self, key, value):
-        self.attributes[key] = value
+        self.attributes.key = value
 
     # new to yosai is the bulk setting/getting/removing
     def set_attributes(self, attributes):
@@ -759,10 +758,10 @@ class SimpleSession(session_abcs.ValidatingSession,
         :param attributes: the attributes to add to the session
         :type attributes: dict
         """
-        self.attributes.update(attributes)
+        self.attributes.__dict__.update(attributes)
 
     def remove_attribute(self, key):
-        return self.attributes.pop(key, None)
+        return self.attributes.__dict__.pop(key, None)
 
     # new to yosai
     def remove_attributes(self, keys):
@@ -772,10 +771,7 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a list of popped attribute values
         """
-        return [self.attributes.pop(key, None) for key in keys]
-
-    # deleted on_equals as it is unecessary in python
-    # deleted hashcode method as python's __hash__ may be fine -- TBD!
+        return [self.attributes.__dict__.pop(key, None) for key in keys]
 
     # omitting the bit-flagging methods:
     #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
@@ -788,9 +784,6 @@ class SimpleSession(session_abcs.ValidatingSession,
                     self._idle_timeout == other._idle_timeout and
                     self._absolute_timeout == other._absolute_timeout and
                     self._start_timestamp == other._start_timestamp)
-                    # self._is_expired == other._is_expired and
-                    #self._last_access_time == other._last_access_time)
-
         return False
 
     def __repr__(self):
@@ -810,7 +803,9 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     @classmethod
     def set_attributes_schema(cls, schema):
-        # the schema is a class
+        """
+        :type schema: type 
+        """
         cls.AttributesSchema = type('AttributesSchema',
                                     (serialize_abcs.Serializable,),
                                     dict(schema.__dict__))
