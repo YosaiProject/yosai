@@ -1,23 +1,10 @@
-import pdb
-
-from yosai.core.subject.subject import global_subject_context, global_yosai_context
-from yosai.web.subject.subject import global_webregistry_context
-
-from yosai.core import (
-    AuthorizationException,
-    IdentifiersNotSetException,
-)
-
 from yosai.web import (
-    WebDelegatingSubject,
     WebYosai,
 )
 from yosai_alchemystore import AlchemyAccountStore
 from yosai_dpcache.cache import DPCacheHandler
 
 import os
-import pytest
-from unittest import mock
 
 
 def test_create_yosai_instance(monkeypatch, web_yosai):
@@ -27,14 +14,14 @@ def test_create_yosai_instance(monkeypatch, web_yosai):
     web_yosai is configured using the file_path approach
     """
     current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_settings.yaml'
+    settings_file = current_filepath + '/../../../yosai_settings.yaml'
     monkeypatch.setenv('TEST_ENV_VAR', settings_file)
     first_yosai = WebYosai(env_var='TEST_ENV_VAR')
 
     assert first_yosai._security_manager and web_yosai._security_manager
 
 
-def test_security_manager_configuration(web_yosai):
+def test_webyosai_security_manager_configuration(web_yosai):
     """
     Assert that upon creation of a new WebYosai instance that the managers
     automatically generated using yaml settings are as expected.

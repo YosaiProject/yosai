@@ -34,6 +34,7 @@ from yosai.core import (
     SecurityManagerSettings,
     SerializationManager,
     SessionException,
+    SimpleSession,
     ThreadStateManager,
     UnauthenticatedException,
     UnavailableSecurityManagerException,
@@ -1032,15 +1033,16 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own security_utils module so as to avoid circular importing:
 class Yosai:
 
-    def __init__(self, env_var=None, file_path=None):
+    def __init__(self, env_var=None, file_path=None, session_attributes_schema=None):
         # you can configure LazySettings in one of two ways: env or file_path
         self.settings = LazySettings(env_var=env_var, file_path=file_path)
-        self.security_manager = self.generate_security_manager(self.settings)
+        self.security_manager = \
+            self.generate_security_manager(self.settings, session_attributes_schema)
 
-    def generate_security_manager(self, settings):
+    def generate_security_manager(self, settings, session_attributes_schema):
         # don't forget to pass default_cipher_key into the WebSecurityManager
         mgr_builder = SecurityManagerBuilder()
-        return mgr_builder.create_manager(settings)
+        return mgr_builder.create_manager(settings, session_attributes_schema)
 
     @memoized_property
     def subject_builder(self):
@@ -1333,25 +1335,31 @@ class SecurityManagerBuilder:
             return None
 
     def init_sac(self, sac):
-        try:
+        if sac:
             # register the session attributes class with the serializer
-            return sac
-        except (AttributeError, TypeError):
-            msg = ('Failed to initialize session_attributes_schema '
-                   'during SecurityManager Setup.')
-            raise SecurityManagerInitException(msg)
+            SimpleSession.set_attributes_schema(sac)
 
-    def create_manager(self, settings):
+    def create_manager(self, settings, session_attributes_schema):
+        """
+        Order of execution matters.  The sac must be set before the cache_handler is
+        instantiated so that the cache_handler's serialization manager instance
+        registers the sac.
+        """
         mgr_settings = SecurityManagerSettings(settings)
         attributes = mgr_settings.attributes
 
         realms = self.init_realms(settings, attributes['realms'])
+
+        if session_attributes_schema:
+            self.init_sac(session_attributes_schema)
+        else:
+            self.init_sac(attributes['session_attributes_schema'])
+
         cache_handler = self.init_cache_handler(attributes['cache_handler'])
-        sac = self.init_sac(attributes['session_attributes_schema'])
+
         manager = mgr_settings.security_manager(settings,
                                                 realms=realms,
-                                                cache_handler=cache_handler,
-                                                session_attributes_schema=sac)
+                                                cache_handler=cache_handler)
 
         # wait until the last moment so as to register all serializables:
         serialization_manager = SerializationManager(attributes['serializer'])

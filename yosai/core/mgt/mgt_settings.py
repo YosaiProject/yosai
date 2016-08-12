@@ -1,4 +1,3 @@
-
 from yosai.core import (
     maybe_resolve,
 )

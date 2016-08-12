@@ -1561,3 +1561,11 @@ def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
     with csu:
         result = csu.subject
         assert result == 'subject'
+
+def test_security_manager_builder_init_realms_succeeds
+def test_security_manager_builder_init_realms_raises
+def test_security_manager_builder_init_cache_handler_succeeds
+def test_security_manager_builder_init_cache_handler_fails
+def test_security_manager_builder_init_sac_succeeds
+def test_security_manager_builder_init_sac_raises
+def test_security_manager_builder_create_manager

@@ -799,12 +799,16 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     # developers who use Yosai must define the attribute schema for serialization
     class AttributesSchema(serialize_abcs.Serializable):
-        pass
+        def __init__(self):
+            self.placeholder = None
+
+        def __repr__(self):
+            return "AttributesSchema Not Set."
 
     @classmethod
     def set_attributes_schema(cls, schema):
         """
-        :type schema: type 
+        :type schema: type
         """
         cls.AttributesSchema = type('AttributesSchema',
                                     (serialize_abcs.Serializable,),

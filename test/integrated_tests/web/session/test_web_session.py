@@ -1,9 +1,27 @@
+import pdb
+from time import sleep
 
-#def test_idle_timeout
+from yosai.web import (
+    WebYosai
+)
+
+
+def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
+                      valid_username_password_token):
     """
     A session that idle timeouts will raise an exception at validation and the
     sessionmanager deletes the expired session from cache.
     """
+    pdb.set_trace()
+    monkeypatch.setattr(web_yosai.security_manager.session_manager.session_factory,
+                        'idle_timeout', 1000)  # milliseconds
+
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+        subject.login(valid_username_password_token)
+        sleep(2)
+        subject = WebYosai.get_current_subject()
+        print(mock_web_registry)
 
 
 #def test_absolute_timeout
@@ -23,7 +41,7 @@
     Serialiers
     """
 
-#def test_session_attribute_state
+#def test_session_attributes(web_yosai)
     """
     Developer-defined session attribute schema is to serialize correctly
     """

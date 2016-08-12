@@ -423,8 +423,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.subject_factory = subject_factory
 
         if session_attributes_schema:
-            SimpleSession.set_attributes_schema(session_attributes_schema)
+            self.session_attributes_schema = session_attributes_schema
 
+        self._serialization_manager = None
         # the security_utils attribute is set by Yosai
 
     """
@@ -483,7 +484,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     @property
     def serialization_manager(self):
-        return self._serialization_manager
+        return None 
 
     @serialization_manager.setter
     def serialization_manager(self, sm):

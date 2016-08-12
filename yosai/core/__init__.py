@@ -39,6 +39,7 @@ from .exceptions import (
     AuthorizationEventException,
     AuthzInfoNotFoundException,
     CacheException,
+    CacheInitializationException,
     ConcurrentAccessException,
     CredentialsNotFoundException,
     CredentialsException,

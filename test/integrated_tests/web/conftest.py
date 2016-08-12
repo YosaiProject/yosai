@@ -9,18 +9,18 @@ from yosai.web import (
 
 
 @pytest.fixture(scope='function')
+def pyramid_request():
+    return Request()
+
+
+@pytest.fixture(scope='function')
 def mock_request():
     return mock.create_autospec(Request)
 
 
 @pytest.fixture(scope='function')
-def mock_web_registry():
-    return mock.create_autospec(PyramidWebRegistry)
-
-
-@pytest.fixture(scope='function')
-def web_registry(mock_request):
-    return PyramidWebRegistry(mock_request)
+def pyramid_web_registry(pyramid_request):
+    return PyramidWebRegistry(pyramid_request)
 
 
 @pytest.fixture(scope='function')

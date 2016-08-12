@@ -19,7 +19,7 @@ SECURITY_MANAGER_CONFIG:
         realms:
             yosai.core.AccountStoreRealm: yosai_alchemystore.AlchemyAccountStore
         cache_handler: yosai_dpcache.cache.DPCacheHandler
-        session_attributes_schema: yosai.core.SimpleSession.AttributesSchema
+        session_attributes_schema: null 
 
 SESSION_CONFIG:
     session_timeout:

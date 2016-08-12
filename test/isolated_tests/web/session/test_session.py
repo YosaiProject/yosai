@@ -45,5 +45,5 @@
 # def test_web_session_key_session_id_using_webregistry
 # def test_web_session_key_resolve_session_id
 # def test_web_session_key_resolve_session_id_using_webregistry
-# def test_web_session_getstate
-# def test_web_session_setstate
+# def test_web_session_key_getstate
+# def test_web_session_key_setstate

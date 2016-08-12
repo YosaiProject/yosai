@@ -232,6 +232,9 @@ class CacheException(YosaiException):
     pass
 
 
+class CacheInitializationException(CacheException):
+    pass
+
 # ---------------------------------------------------------------------------
 # ----  EventBus Exceptions
 # ---------------------------------------------------------------------------
