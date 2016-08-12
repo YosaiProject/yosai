@@ -55,7 +55,7 @@ def session(request):
 @pytest.fixture(scope='session')
 def yosai():
     current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_api/yosai_settings.yaml'
+    settings_file = current_filepath + '/yosai_settings.yaml'
     return Yosai(file_path=settings_file)
 
 
@@ -167,7 +167,7 @@ def native_security_manager(account_store_realm, cache_handler,
 @pytest.fixture(scope='function')
 def web_yosai():
     current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_api/yosai_settings.yaml'
+    settings_file = current_filepath + '/yosai_settings.yaml'
     return WebYosai(file_path=settings_file)
 
 

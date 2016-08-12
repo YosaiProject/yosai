@@ -489,7 +489,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
     def __init__(self, absolute_timeout, idle_timeout, host=None):
-        self._attributes = {}
+        self._attributes = self.AttributesSchema()
         self._internal_attributes = {'run_as_identifiers_session_key': None,
                                      'authenticated_session_key': None,
                                      'identifiers_session_key': None}
@@ -810,7 +810,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     @classmethod
     def set_attributes_schema(cls, schema):
-        cls.AttributesSchema = schema
+        # the schema is a class
+        cls.AttributesSchema = type('AttributesSchema',
+                                    (serialize_abcs.Serializable,),
+                                    dict(schema.__dict__))
 
     def __getstate__(self):
         return {

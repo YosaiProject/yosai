@@ -23,7 +23,7 @@ def web_registry(mock_request):
     return PyramidWebRegistry(mock_request)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def new_web_subject(web_yosai, web_registry):
     with WebYosai.context(web_yosai, web_registry):
         return WebYosai.get_current_subject()

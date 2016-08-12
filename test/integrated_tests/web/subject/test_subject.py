@@ -23,6 +23,7 @@ def test_authenticated_subject_session_attribute_logout(
 
     new_web_subject.login(valid_username_password_token)
     session = new_web_subject.get_session()
+    
     session.set_attribute('name', 'nametest')
     session.set_attribute('unknown', 'unknown')
     assert (session.get_attribute('name') == 'nametest' and

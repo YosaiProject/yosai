@@ -4,10 +4,6 @@ from yosai.core import (
     SimpleIdentifierCollection,
 )
 
-from yosai.web import (
-    WebYosai,
-)
-
 from yosai_alchemystore.models.models import (
     UserModel,
     CredentialModel,
@@ -29,16 +25,6 @@ import datetime
 import pytest
 
 load_logconfig()
-
-
-@pytest.fixture(scope='session')
-def new_subject():
-    return Yosai.get_current_subject()
-
-
-@pytest.fixture(scope='session')
-def new_web_subject():
-    return WebYosai.get_current_subject()
 
 
 @pytest.fixture(scope='session')
