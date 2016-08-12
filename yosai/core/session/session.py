@@ -71,15 +71,15 @@ class AbstractSessionStore(session_abcs.SessionStore):
 
     def __init__(self):
         # shiro defaults to UUID where as yosai.core.uses well hashed urandom:
-        self.session_id_generator = RandomSessionIDGenerator()
+        self.session_id_generator = RandomSessionIDGenerator
 
-    def generate_session_id(self, session):
+    def generate_session_id(self):
         """
         :param session: the new session instance for which an ID will be
                         generated and then assigned
         """
         try:
-            return self.session_id_generator.generate_id(session)
+            return self.session_id_generator.generate_id()
         except AttributeError:
             msg = "session_id_generator attribute has not been configured"
             raise IllegalStateException(msg)
@@ -167,7 +167,7 @@ class MemorySessionStore(AbstractSessionStore):
         return self.sessions.setdefault(session_id, session)
 
     def _do_create(self, session):
-        sessionid = self.generate_session_id(session)
+        sessionid = self.generate_session_id()
         self.assign_session_id(session, sessionid)
         self.store_session(sessionid, session)
         return sessionid
@@ -339,8 +339,8 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
             raise SessionCacheException(msg)
 
     def _do_create(self, session):
-        sessionid = self.generate_session_id(session)
-        self.assign_session_id(session, sessionid)
+        sessionid = self.generate_session_id()
+        self.assign_session_id(session, sessionid)  # this updates session
         return sessionid
 
     # intended for write-through caching:

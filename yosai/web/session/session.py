@@ -71,6 +71,10 @@ class WebProxiedSession(ProxiedSession):
     def pop_flash(self, queue='default'):
         return self._delegate.pop_flash(queue)
 
+    # new to yosai
+    def recreate_session_id(self):
+        self._delegate.recreate_session_id()
+
 
 # new to yosai:
 class WebDelegatingSession(DelegatingSession):
@@ -84,7 +88,7 @@ class WebDelegatingSession(DelegatingSession):
         :rtype: str
         :returns: a CSRF token
         """
-        return self.session_manager.new_csrf_token(self.session_key)
+        return self.session_manager.new_csrf_token(self.session_key)  # BUG TBD
 
     # new to yosai
     def get_csrf_token(self):
@@ -112,6 +116,9 @@ class WebDelegatingSession(DelegatingSession):
         message = flash_messages.pop(queue)
         self.set_internal_attribute('flash_messages', flash_messages)
         return message
+
+    def recreate_session_id(self):
+        self.session_manager.recreate_session_id(self.session_key)
 
 
 class WebSimpleSession(SimpleSession):
@@ -283,6 +290,13 @@ class WebSessionHandler(DefaultNativeSessionHandler):
                    "new session with id: " + str(session_id))
             logger.debug(msg)
 
+    # new to yosai:
+    def on_recreate_session_id(self, new_session_id, session_key):
+        web_registry = session_key.web_registry
+
+        if self.is_session_id_cookie_enabled:
+            web_registry.session_id = new_session_id
+
     # overridden
     def on_stop(self, session, session_key):
         super().on_stop(session, session_key)
@@ -343,6 +357,20 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         self._event_bus = None
 
     # yosai omits get_referenced_session_id method
+
+    # new to yosai (fixation countermeasure)
+    def recreate_session_id(self, session_key):
+        session = self.session_handler.do_get_session(session_key)
+        new_session_id = self.session_handler.create_session(session)
+
+        if not new_session_id:
+            msg = 'Failed to re-create a sessionid for:' + str(session_key)
+            raise SessionCreationException(msg)
+
+        self.session_handler.on_recreate_session_id(new_session_id, session_key)
+        self.session_handler.on_change(session)
+        logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
+                     format(session_key.session_id, new_session_id))
 
     # overidden
     def create_exposed_session(self, session, key=None, context=None):

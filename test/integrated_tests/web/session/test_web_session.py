@@ -48,8 +48,8 @@ def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
                     mock_web_registry.session_id_history[0][0] == 'SET')
 
 
-def test_stopped_session (web_yosai, mock_web_registry, monkeypatch,
-                          valid_username_password_token):
+def test_stopped_session(web_yosai, mock_web_registry, monkeypatch,
+                         valid_username_password_token):
     """
     When a user logs out, the user's session is stopped.
     """
@@ -60,6 +60,22 @@ def test_stopped_session (web_yosai, mock_web_registry, monkeypatch,
         assert (mock_web_registry.current_session_id is None and
                 mock_web_registry.session_id_history[1][0] == 'DELETE')
 
+
+def test_new_session_at_login(web_yosai, mock_web_registry, monkeypatch,
+                              valid_username_password_token):
+    """
+    At login, an anonymous session is deleted from cache and a new session is created.
+    """
+
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+
+        print('\n\n---o> session_id:', subject.get_session().session_id)
+        subject.login(valid_username_password_token)
+        print('\n\n====o> session_id:', subject.get_session().session_id)
+        print(mock_web_registry)
+        assert (mock_web_registry.current_session_id is not None and
+                mock_web_registry.session_id_history[1][0] == 'DELETE')
 
 #def test_websimplesession_serialization
     """
@@ -86,9 +102,4 @@ def test_stopped_session (web_yosai, mock_web_registry, monkeypatch,
     """
     Every web request should be associated with a session.  Consequently, an
     anonymous web request gets a new session associated with it.
-    """
-
-#def test_new_session_at_login
-    """
-    At login, an anonymous session is deleted from cache and a new session is created.
     """
