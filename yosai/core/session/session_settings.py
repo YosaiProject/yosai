@@ -17,7 +17,7 @@ class DefaultSessionSettings:
 
         # convert to milliseconds:
         self.absolute_timeout = timeout_config.get('absolute_timeout', 1800)*1000  # def:30min
-        self.idle_timeout = timeout_config.get('idle_timeout', 450)*1000  # def:15min
+        self.idle_timeout = timeout_config.get('idle_timeout', 900)*1000  # def:15min
 
         self.validation_scheduler_enable =\
             validation_config.get('scheduler_enabled', True)

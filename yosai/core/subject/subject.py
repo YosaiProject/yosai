@@ -1098,8 +1098,10 @@ class Yosai:
     def get_current_subject():
         try:
             subject = global_subject_context.stack[-1]
-            msg = 'A subject instance DOES exist in the global context.  Returning it.'
+            msg = ('A subject instance DOES exist in the global context. '
+                   'Touching and then returning it.')
             logger.debug(msg)
+            subject.get_session().touch()
             return subject
         except IndexError:
             msg = 'A subject instance _DOES NOT_ exist in the global context.  Creating one.'

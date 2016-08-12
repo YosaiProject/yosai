@@ -1,6 +1,8 @@
 import pdb
 from time import sleep
-
+from yosai.core import (
+    ExpiredSessionException
+)
 from yosai.web import (
     WebYosai
 )
@@ -12,7 +14,6 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
     A session that idle timeouts will raise an exception at validation and the
     sessionmanager deletes the expired session from cache.
     """
-    pdb.set_trace()
     monkeypatch.setattr(web_yosai.security_manager.session_manager.session_factory,
                         'idle_timeout', 1000)  # milliseconds
 
@@ -20,9 +21,11 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
         subject = WebYosai.get_current_subject()
         subject.login(valid_username_password_token)
         sleep(2)
-        subject = WebYosai.get_current_subject()
-        print(mock_web_registry)
-
+        try:
+            subject = WebYosai.get_current_subject()
+        except ExpiredSessionException:
+            assert (mock_web_registry.current_session_id is None and
+                    mock_web_registry.session_id_history[0][0] == 'SET')
 
 #def test_absolute_timeout
     """
