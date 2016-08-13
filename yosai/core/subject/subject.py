@@ -1324,15 +1324,15 @@ class SecurityManagerBuilder:
 
     def init_realms(self, settings, realms):
         try:
-            return tuple(realm(settings, account_store=account_store())
+            return tuple(realm(settings, account_store=account_store(settings=settings))
                          for realm, account_store in realms)
         except (AttributeError, TypeError):
             msg = 'Failed to initialize realms during SecurityManager Setup'
             raise SecurityManagerInitException(msg)
 
-    def init_cache_handler(self, cache_handler):
+    def init_cache_handler(self, settings, cache_handler):
         try:
-            return cache_handler()
+            return cache_handler(settings=settings)
         except TypeError:
             return None
 
@@ -1357,7 +1357,8 @@ class SecurityManagerBuilder:
         else:
             self.init_sac(attributes['session_attributes_schema'])
 
-        cache_handler = self.init_cache_handler(attributes['cache_handler'])
+        cache_handler = self.init_cache_handler(settings,
+                                                attributes['cache_handler'])
 
         manager = mgr_settings.security_manager(settings,
                                                 realms=realms,
