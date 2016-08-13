@@ -72,8 +72,8 @@ class WebProxiedSession(ProxiedSession):
         return self._delegate.pop_flash(queue)
 
     # new to yosai
-    def recreate_session_id(self):
-        self._delegate.recreate_session_id()
+    def recreate_session(self):
+        self._delegate.recreate_session()
 
 
 # new to yosai:
@@ -117,8 +117,8 @@ class WebDelegatingSession(DelegatingSession):
         self.set_internal_attribute('flash_messages', flash_messages)
         return message
 
-    def recreate_session_id(self):
-        self.session_manager.recreate_session_id(self.session_key)
+    def recreate_session(self):
+        self.session_manager.recreate_session(self.session_key)
 
 
 class WebSimpleSession(SimpleSession):
@@ -291,7 +291,7 @@ class WebSessionHandler(DefaultNativeSessionHandler):
             logger.debug(msg)
 
     # new to yosai:
-    def on_recreate_session_id(self, new_session_id, session_key):
+    def on_recreate_session(self, new_session_id, session_key):
         web_registry = session_key.web_registry
 
         if self.is_session_id_cookie_enabled:
@@ -359,7 +359,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     # yosai omits get_referenced_session_id method
 
     # new to yosai (fixation countermeasure)
-    def recreate_session_id(self, session_key):
+    def recreate_session(self, session_key):
         old_session = self.session_handler.do_get_session(session_key)
         new_session = copy.copy(old_session)
         self.session_handler.delete(old_session)
@@ -370,10 +370,12 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
             msg = 'Failed to re-create a sessionid for:' + str(session_key)
             raise SessionCreationException(msg)
 
-        self.session_handler.on_recreate_session_id(new_session_id, session_key)
+        self.session_handler.on_recreate_session(new_session_id, session_key)
 
         logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
                      format(session_key.session_id, new_session_id))
+
+        return new_session
 
     # overidden
     def create_exposed_session(self, session, key=None, context=None):

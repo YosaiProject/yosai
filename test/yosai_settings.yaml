@@ -54,3 +54,13 @@ CACHE_HANDLER:
         credentials_ttl: 300
         authz_info_ttl: 1800
         session_absolute_ttl: 1800
+
+ALCHEMY_STORE:
+    engine_config:
+        dialect: sqlite
+        path: ////home/dowwie/MyProjects/monster_rx/monster_rx/yosai_accounts.db
+        userid:
+        password:
+        hostname:
+        port:
+        db:

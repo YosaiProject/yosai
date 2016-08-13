@@ -168,7 +168,7 @@ class WebSecurityManager(NativeSecurityManager):
 
         # Generating a new session_id at successful login is a recommended
         # countermeasure to a session fixation:
-        subject.session.recreate_session_id()
+        subject.session = subject.session.recreate_session()
 
         super().remember_me_successful_login(authc_token, account, subject)
 
