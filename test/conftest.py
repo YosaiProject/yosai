@@ -120,8 +120,8 @@ def username_password_token():
 
 
 @pytest.fixture(scope='function')
-def cache_handler():
-    return DPCacheHandler()
+def cache_handler(settings):
+    return DPCacheHandler(settings)
 
 
 @pytest.fixture(scope='function')

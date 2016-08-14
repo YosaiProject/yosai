@@ -57,8 +57,11 @@ def test_stopped_session(web_yosai, mock_web_registry, monkeypatch,
         subject = WebYosai.get_current_subject()
         subject.login(valid_username_password_token)
         subject.logout()
+        print('\n\n', mock_web_registry, '\n\n')
         assert (mock_web_registry.current_session_id is None and
-                mock_web_registry.session_id_history[1][0] == 'DELETE')
+                mock_web_registry.session_id_history[0][0] == 'SET' and
+                mock_web_registry.session_id_history[1][0] == 'SET' and
+                mock_web_registry.session_id_history[2][0] == 'DELETE')
 
 
 def test_new_session_at_login(web_yosai, mock_web_registry, monkeypatch,
@@ -69,13 +72,11 @@ def test_new_session_at_login(web_yosai, mock_web_registry, monkeypatch,
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
+        old_session_id = subject.get_session().session_id
 
-        print('\n\n---o> session_id:', subject.get_session().session_id)
         subject.login(valid_username_password_token)
-        print('\n\n====o> session_id:', subject.get_session().session_id)
-        print(mock_web_registry)
-        assert (mock_web_registry.current_session_id is not None and
-                mock_web_registry.session_id_history[1][0] == 'DELETE')
+        new_session_id = subject.get_session().session_id
+        assert old_session_id != new_session_id
 
 #def test_websimplesession_serialization
     """

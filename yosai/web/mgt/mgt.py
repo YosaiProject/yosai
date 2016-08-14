@@ -276,5 +276,4 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         :param subject_context: the contextual data, usually provided by a
                                 ``SubjectBuilder`` implementation
         """
-
         del subject.web_registry.remember_me  # no use of subject data (TBD)

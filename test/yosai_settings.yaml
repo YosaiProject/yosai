@@ -58,7 +58,8 @@ CACHE_HANDLER:
 ALCHEMY_STORE:
     engine_config:
         dialect: sqlite
-        path: ////home/dowwie/MyProjects/monster_rx/monster_rx/yosai_accounts.db
+        # path: ////home/dowwie/MyProjects/monster_rx/monster_rx/yosai_accounts.db
+        path: ////home/dowwie/MyProjects/tests/yosai_accounts.db
         userid:
         password:
         hostname:

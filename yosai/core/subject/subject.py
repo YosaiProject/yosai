@@ -1349,7 +1349,6 @@ class SecurityManagerBuilder:
         """
         mgr_settings = SecurityManagerSettings(settings)
         attributes = mgr_settings.attributes
-
         realms = self.init_realms(settings, attributes['realms'])
 
         if session_attributes_schema:

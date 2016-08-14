@@ -73,7 +73,7 @@ class WebProxiedSession(ProxiedSession):
 
     # new to yosai
     def recreate_session(self):
-        self._delegate.recreate_session()
+        return self._delegate.recreate_session()
 
 
 # new to yosai:
@@ -118,7 +118,7 @@ class WebDelegatingSession(DelegatingSession):
         return message
 
     def recreate_session(self):
-        self.session_manager.recreate_session(self.session_key)
+        return self.session_manager.recreate_session(self.session_key)
 
 
 class WebSimpleSession(SimpleSession):
@@ -305,7 +305,6 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         logger.debug(msg)
 
         web_registry = session_key.web_registry
-
         del web_registry.session_id
 
     # overridden
@@ -375,7 +374,9 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
                      format(session_key.session_id, new_session_id))
 
-        return new_session
+        new_session_key = WebSessionKey(session_id=new_session_id,
+                                        web_registry=session_key.web_registry)
+        return self.create_exposed_session(new_session, key=new_session_key)
 
     # overidden
     def create_exposed_session(self, session, key=None, context=None):

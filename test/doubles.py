@@ -15,8 +15,8 @@ class MockWebRegistry:
 
     @remember_me.setter
     def remember_me(self, rememberme):
+        self.remember_me_history.append(('SET', self.current_remember_me))
         self.current_remember_me = rememberme
-        self.remember_me_history.append(('SET', rememberme))
 
     @remember_me.deleter
     def remember_me(self):
