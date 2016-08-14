@@ -74,12 +74,6 @@ def test_new_session_at_login(web_yosai, mock_web_registry, valid_username_passw
         new_session_id = subject.get_session().session_id
         assert old_session_id != new_session_id
 
-#def test_websimplesession_serialization
-    """
-    Verify that a WebSimpleSession serializes correctly, across all supported
-    Serialiers
-    """
-
 
 def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
                             valid_username_password_token):
@@ -100,20 +94,69 @@ def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
         subject.login(valid_username_password_token)
 
         new_session = subject.get_session()
+        new_session.set_attribute('attribute4', 'value4')
 
         assert (new_session.get_attribute('attribute1') == value1['attribute1'] and
-                new_session.get_attributes(values.keys()) == values)
+                new_session.get_attributes(values.keys()) == values and
+                new_session.get_attribute('attribute4') == 'value4')
 
 
-#def csrf_token_management
+def test_csrf_token_management(web_yosai, mock_web_registry, monkeypatch,
+                               valid_username_password_token):
     """
     CSRF Token generation and retrieval from session state
     """
 
-#def flash_messages_management
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+
+        old_session = subject.get_session()
+        old_token = old_session.get_csrf_token()
+
+        subject.login(valid_username_password_token)
+
+        new_session = subject.get_session()
+        new_token = new_session.new_csrf_token()
+
+        assert new_token != old_token
+
+
+def test_flash_messages_management(web_yosai, mock_web_registry, monkeypatch,
+                                   valid_username_password_token):
     """
     flash messages saving and retrieval from session state
     """
+
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+
+        old_session = subject.get_session()
+
+        msg = 'Flash Message One, Default Queue'
+        msg2 = 'Flash Message Two, Default Queue'
+        old_session.flash(msg)
+        old_session.flash(msg2)
+
+        msg3 = 'Flash Message Two'
+        old_session.flash(msg3, queue='queue2')
+
+        default_queue_flash_peek = old_session.peek_flash()
+        default_queue_flash_pop = old_session.pop_flash()
+        subject.login(valid_username_password_token)
+
+        new_session = subject.get_session()
+        default_queue_flash_peek_new = new_session.peek_flash()
+        default_queue_flash_pop_new = new_session.pop_flash()
+        queue2_flash_peek_new = new_session.peek_flash('queue2')
+        queue2_flash_pop_new = new_session.pop_flash('queue2')
+
+    assert (default_queue_flash_peek == [msg, msg2]
+            and default_queue_flash_pop == [msg, msg2]
+            and default_queue_flash_peek_new == []
+            and default_queue_flash_pop_new is None
+            and queue2_flash_peek_new == [msg3]
+            and queue2_flash_pop_new == [msg3])
+
 
 #def test_anonymous_session_generation
     """

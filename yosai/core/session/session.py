@@ -519,14 +519,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     @property
     def attribute_keys(self):
-        if (self.attributes is None):
-            return None
         return self.attributes.__dict__.keys()
 
     @property
     def internal_attributes(self):
-        if not hasattr(self, '_internal_attributes'):
-            self._internal_attributes = {}
         return self._internal_attributes
 
     @property

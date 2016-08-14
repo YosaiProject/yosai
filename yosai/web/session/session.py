@@ -1,3 +1,4 @@
+import pdb
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -112,8 +113,11 @@ class WebDelegatingSession(DelegatingSession):
 
     # new to yosai
     def pop_flash(self, queue='default'):
+        """
+        :rtype: list
+        """
         flash_messages = self.get_internal_attribute('flash_messages')
-        message = flash_messages.pop(queue)
+        message = flash_messages.pop(queue, None)
         self.set_internal_attribute('flash_messages', flash_messages)
         return message
 
@@ -139,7 +143,7 @@ class WebSimpleSession(SimpleSession):
             '_absolute_timeout': self._absolute_timeout,
             '_is_expired': self._is_expired,
             '_host': self._host,
-            '_internal_attributes': self._internal_attributes,
+            '_internal_attributes': dict(self._internal_attributes),
             '_attributes': self._attributes
         }
 
@@ -155,9 +159,9 @@ class WebSimpleSession(SimpleSession):
         self._attributes = state['_attributes']
         self._internal_attributes = state['_internal_attributes']
 
-        self._internal_attributes['flash_messages'] = collections.defaultdict(list)
-        self._internal_attributes['flash_messages'].\
-            update(state['_internal_attributes']['flash_messages'])
+        flash_messages = collections.defaultdict(list)
+        flash_messages.update(state['_internal_attributes']['flash_messages'])
+        self._internal_attributes['flash_messages'] = flash_messages
 
 
 class DefaultWebSessionContext(DefaultSessionContext):
