@@ -521,7 +521,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     def attribute_keys(self):
         if (self.attributes is None):
             return None
-        return set(self.attributes)  # a set of keys
+        return self.attributes.__dict__.keys()
 
     @property
     def internal_attributes(self):
@@ -730,7 +730,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         return [self.remove_internal_attribute(key) for key in to_remove]
 
     def get_attribute(self, key):
-        return self.attributes.__dict__.get(key)
+        return getattr(self.attributes, key)
 
     # new to yosai
     def get_attributes(self, keys):
@@ -740,10 +740,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a dict containing the attributes requested, if they exist
         """
-        return {key: self.attributes.key for key in keys if key in self.attributes.__dict__}
+        return {key: getattr(self.attributes, key) for key in keys}
 
     def set_attribute(self, key, value):
-        self.attributes.key = value
+        setattr(self.attributes, key, value)
 
     # new to yosai is the bulk setting/getting/removing
     def set_attributes(self, attributes):
@@ -792,20 +792,18 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     # developers who use Yosai must define the attribute schema for serialization
     class AttributesSchema(serialize_abcs.Serializable):
-        def __init__(self):
-            self.placeholder = None
 
         def __repr__(self):
-            return "AttributesSchema Not Set."
+            return ("AttributesSchema Not Set.  Only supported primitives will serialize."
+                    " Attributes: " + str(self.__dict__))
 
     @classmethod
     def set_attributes_schema(cls, schema):
         """
         :type schema: type
         """
-        cls.AttributesSchema = type('AttributesSchema',
-                                    (serialize_abcs.Serializable,),
-                                    dict(schema.__dict__))
+        schema.__name__ = 'AttributesSchema'
+        cls.AttributesSchema = schema
 
     def __getstate__(self):
         return {

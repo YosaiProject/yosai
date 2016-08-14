@@ -18,7 +18,6 @@ under the License.
 """
 from yosai.core import (
     serialize_abcs,
-    SerializationException,
 )
 
 from yosai.core.serialize.serializers import (
@@ -49,6 +48,10 @@ class SerializationManager:
         def all_subclasses(cls):
             return cls.__subclasses__() + [g for s in cls.__subclasses__()
                                            for g in all_subclasses(s)]
+
+        # manual registration required because it isn't a Serializable subclass:
+        from yosai.core import SimpleSession
+        self.serializer.register_custom_type(SimpleSession.AttributesSchema)
 
         for serializable in all_subclasses(serialize_abcs.Serializable):
             self.serializer.register_custom_type(serializable)

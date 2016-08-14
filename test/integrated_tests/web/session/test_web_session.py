@@ -48,8 +48,7 @@ def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
                     mock_web_registry.session_id_history[0][0] == 'SET')
 
 
-def test_stopped_session(web_yosai, mock_web_registry, monkeypatch,
-                         valid_username_password_token):
+def test_stopped_session(web_yosai, mock_web_registry, valid_username_password_token):
     """
     When a user logs out, the user's session is stopped.
     """
@@ -57,19 +56,16 @@ def test_stopped_session(web_yosai, mock_web_registry, monkeypatch,
         subject = WebYosai.get_current_subject()
         subject.login(valid_username_password_token)
         subject.logout()
-        print('\n\n', mock_web_registry, '\n\n')
         assert (mock_web_registry.current_session_id is None and
                 mock_web_registry.session_id_history[0][0] == 'SET' and
                 mock_web_registry.session_id_history[1][0] == 'SET' and
                 mock_web_registry.session_id_history[2][0] == 'DELETE')
 
 
-def test_new_session_at_login(web_yosai, mock_web_registry, monkeypatch,
-                              valid_username_password_token):
+def test_new_session_at_login(web_yosai, mock_web_registry, valid_username_password_token):
     """
     At login, an anonymous session is deleted from cache and a new session is created.
     """
-
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
         old_session_id = subject.get_session().session_id
@@ -84,10 +80,30 @@ def test_new_session_at_login(web_yosai, mock_web_registry, monkeypatch,
     Serialiers
     """
 
-#def test_session_attributes(web_yosai)
+
+def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
+                            valid_username_password_token):
     """
     Developer-defined session attribute schema is to serialize correctly
     """
+
+    value1 = {'attribute1': 'value1'}
+    values = {'attribute2': 'value2', 'attribute3': 'value3'}
+
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+
+        old_session = subject.get_session()
+        old_session.set_attribute('attribute1', value1['attribute1'])
+        old_session.set_attributes(values)
+
+        subject.login(valid_username_password_token)
+
+        new_session = subject.get_session()
+
+        assert (new_session.get_attribute('attribute1') == value1['attribute1'] and
+                new_session.get_attributes(values.keys()) == values)
+
 
 #def csrf_token_management
     """

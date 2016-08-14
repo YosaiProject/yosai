@@ -180,13 +180,6 @@ def attributes_schema():
             self.name = 'Jeffrey Lebowski'
             self.hobby = 'Bowling'
 
-        def __setstate__(self, state):
-            self.name = state['name']
-            self.hobby = state['hobby']
-
-        def __getstate__(self):
-            return {'name': self.name, 'hobby': self.hobby}
-
         def __repr__(self):
             return "CustomSchema"
 
