@@ -33,3 +33,43 @@ def test_webyosai_security_manager_configuration(web_yosai):
     assert isinstance(web_yosai.security_manager.session_manager.session_handler.cache_handler,
                       DPCacheHandler)
     assert web_yosai.signed_cookie_secret == 'changeme'
+
+
+def test_webyosai_requires_authentication(
+        web_yosai, mock_web_registry, monkeypatch, valid_username_password_token):
+
+    # yeah, its a dumb example but I chose the big lebowski cuz I love the movie
+    @WebYosai.requires_authentication
+    def transport_ransom(the_ringer, destination):
+        return 'transported'
+
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+        subject.login(valid_username_password_token)
+        result = transport_ransom('the_ringer', 'the_nihilists')
+        assert result == 'transported'
+
+        subject.logout()
+
+        with pytest.raises(???):
+            transport_ransom('the_ringer', 'the_nihilists')
+
+
+    """
+    A session that absolute timeouts will raise an exception at validation and
+    the sessionmanager deletes the expired session from cache.
+    """
+
+
+# def test_webyosai_requires_user
+
+# def test_webyosai_requires_guest
+
+# def test_webyosai_requires_permission
+    # perm3 = permission_resolver('leatherduffelbag:transport:theringer')
+    # perm4 = permission_resolver('leatherduffelbag:access:theringer')
+
+
+# def test_webyosai_requires_dynamic_permission
+
+# def tests_webyosai_requires_role

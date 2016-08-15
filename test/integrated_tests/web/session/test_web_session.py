@@ -1,4 +1,3 @@
-import pdb
 from time import sleep
 from yosai.core import (
     ExpiredSessionException
@@ -156,10 +155,3 @@ def test_flash_messages_management(web_yosai, mock_web_registry, monkeypatch,
             and default_queue_flash_pop_new is None
             and queue2_flash_peek_new == [msg3]
             and queue2_flash_pop_new == [msg3])
-
-
-#def test_anonymous_session_generation
-    """
-    Every web request should be associated with a session.  Consequently, an
-    anonymous web request gets a new session associated with it.
-    """

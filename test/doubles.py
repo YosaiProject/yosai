@@ -8,6 +8,7 @@ class MockWebRegistry:
 
         self.session_id_history = []
         self.remember_me_history = []
+        self.raised_exceptions = []
 
     @property
     def remember_me(self):
@@ -60,6 +61,12 @@ class MockWebRegistry:
     @session_creation_enabled.deleter
     def session_creation_enabled(self):
         pass
+
+    def raise_unauthorized(self, msg):
+        self.raised_exceptions.append(('unauthorized', msg))
+
+    def raise_forbidden(self, msg):
+        self.raised_exceptions.append(('forbidden', msg))
 
     def __repr__(self):
         return ("MockWebRegistry(current_session_id={0}, session_id_history={1},"
