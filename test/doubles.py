@@ -1,4 +1,8 @@
 
+class MockException(Exception):
+    pass
+
+
 class MockWebRegistry:
 
     def __init__(self):
@@ -8,7 +12,8 @@ class MockWebRegistry:
 
         self.session_id_history = []
         self.remember_me_history = []
-        self.raised_exceptions = []
+        self.mock_exception = MockException
+        self.resource_params = {}
 
     @property
     def remember_me(self):
@@ -16,8 +21,8 @@ class MockWebRegistry:
 
     @remember_me.setter
     def remember_me(self, rememberme):
-        self.remember_me_history.append(('SET', self.current_remember_me))
         self.current_remember_me = rememberme
+        self.remember_me_history.append(('SET', self.current_remember_me))
 
     @remember_me.deleter
     def remember_me(self):
@@ -63,10 +68,10 @@ class MockWebRegistry:
         pass
 
     def raise_unauthorized(self, msg):
-        self.raised_exceptions.append(('unauthorized', msg))
+        raise MockException(msg)
 
     def raise_forbidden(self, msg):
-        self.raised_exceptions.append(('forbidden', msg))
+        raise MockException(msg)
 
     def __repr__(self):
         return ("MockWebRegistry(current_session_id={0}, session_id_history={1},"

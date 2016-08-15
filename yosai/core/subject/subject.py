@@ -1103,6 +1103,7 @@ class Yosai:
             logger.debug(msg)
             subject.get_session().touch()
             return subject
+
         except IndexError:
             msg = 'A subject instance _DOES NOT_ exist in the global context.  Creating one.'
             logger.debug(msg)

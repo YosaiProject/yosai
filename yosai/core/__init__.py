@@ -27,6 +27,7 @@ __status__ = 'Development'
 import threading
 
 from .exceptions import (
+    AbsoluteExpiredSessionException,
     AbstractMethodException,
     AccountException,
     AccountStoreRealmAuthenticationException,
@@ -62,6 +63,7 @@ from .exceptions import (
     HostUnauthorizedException,
     IdentifierMismatchException,
     IdentifiersNotSetException,
+    IdleExpiredSessionException,
     InvalidArgumentException,
     IllegalStateException,
     IncorrectCredentialsException,

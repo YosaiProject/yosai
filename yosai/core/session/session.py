@@ -24,13 +24,14 @@ import datetime
 from abc import abstractmethod
 
 from yosai.core import (
+    AbsoluteExpiredSessionException,
     DefaultSessionSettings,
     ExpiredSessionException,
+    IdleExpiredSessionException,
     InvalidArgumentException,
     IllegalStateException,
     InvalidSessionException,
     RandomSessionIDGenerator,
-    SimpleIdentifierCollection,
     SessionCacheException,
     SessionCreationException,
     SessionEventException,
@@ -626,6 +627,26 @@ class SimpleSession(session_abcs.ValidatingSession,
     def is_valid(self):
         return (not self.is_stopped and not self.is_expired)
 
+    @property
+    def is_absolute_timed_out(self):
+        current_time = round(time.time() * 1000)  # milliseconds
+        abs_expir = self.start_timestamp + self.absolute_timeout
+
+        if current_time > abs_expir:
+            return True
+
+        return False
+
+    @property
+    def is_idle_timed_out(self):
+        current_time = round(time.time() * 1000)  # milliseconds
+
+        idle_expir = self.last_access_time + self.idle_timeout
+        if current_time > idle_expir:
+            return True
+
+        return False
+
     def is_timed_out(self):
         """
         determines whether a Session has been inactive/idle for too long a time
@@ -652,16 +673,10 @@ class SimpleSession(session_abcs.ValidatingSession,
              be inactive before expiring.  If the session was last accessed
              before this time, it is expired.
             """
-            current_time = round(time.time() * 1000)  # milliseconds
-
-            # Check 1:  Absolute Timeout
-            abs_expir = self.start_timestamp + self.absolute_timeout
-            if current_time > abs_expir:
+            if self.is_absolute_timed_out:
                 return True
 
-            # Check 2:  Inactivity Timeout
-            idle_expir = self.last_access_time + self.idle_timeout
-            if current_time > idle_expir:
+            if self.is_idle_timed_out:
                 return True
 
         except AttributeError:
@@ -702,7 +717,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
             logger.debug(msg2)
 
-            raise ExpiredSessionException(msg2)
+            if self.is_absolute_timed_out:
+                raise AbsoluteExpiredSessionException(msg2)
+
+            raise IdleExpiredSessionException(msg2)
 
     def get_internal_attribute(self, key):
         if (not self.internal_attributes):

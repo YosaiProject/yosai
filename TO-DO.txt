@@ -23,6 +23,11 @@ refactoring shiro thread-based concurrency to an appropriate concurrency
 
 add the "fingerprint" attribute wherever the host attribute is currently captured
 
+RememberMe cookies:
+    - require an expiration date on the cookie itself
+    - require tracking in a persistent datastore (nonce id , expiration date)
+      so that absolute timeout checking can be performed
+
 ---------------------------------------------------------------------
 add excessive-login-attempts logic:
     - login attempt time interval
@@ -52,12 +57,6 @@ add excessive-login-attempts logic:
     exception.
 
 ---------------------------------------------------------------------
-
-create a ContextFactory to replace the piecemeal xxxSettings classes that
-interface with yosai settings
-
-porting functionality provided by servlet web-filter facility to pythonic decorators
-to be used by web frameworks
 
 tighten up who sets the resolver objects and where
  - there seems to be overlap between ModularRealmAuthorizer and DefaultSecurityManager
@@ -93,24 +92,9 @@ PEP8 standardized imports:
     Second group:  third party libs
     Third group: modules from yosai
 
-implement deserialization validation
-
-implement init_yosai from within SecurityUtils
-
 synchronize imperative and declarative authz examples:
 https://yosaiproject.github.io/yosai/authorization/#access-control-levels-and-styles
 
 RunAs ought to emit an event, to help audit administrative work
 
 Document RunAs
-
-Revise examples in documentation so to make it more clear that yosai is instantiated
-once per application
-
-Investigate using the Hypothesis testing library in addition to pytest
-
-Way too much interaction with cache at login -- need to optimize cache i/o.
-
-yosai default config settings:  point to /config within package
-
-support session-based flash messaging (see pyramid session docs)

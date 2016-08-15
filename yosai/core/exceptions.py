@@ -365,6 +365,14 @@ class ExpiredSessionException(StoppedSessionException):
     pass
 
 
+class IdleExpiredSessionException(ExpiredSessionException):
+    pass
+
+
+class AbsoluteExpiredSessionException(ExpiredSessionException):
+    pass
+
+
 class UnknownSessionException(InvalidSessionException):
     pass
 

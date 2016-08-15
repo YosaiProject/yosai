@@ -60,8 +60,7 @@ def test_webyosai_requires_authentication(
 
 
 def test_webyosai_requires_user(
-        web_yosai, mock_web_registry, valid_username_password_token,
-        remembered_valid_username_password_token):
+        web_yosai, mock_web_registry, valid_username_password_token):
     """
     confirm user approved and denied
     """

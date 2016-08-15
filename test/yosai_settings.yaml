@@ -10,7 +10,7 @@ AUTHC_CONFIG:
             salt_size: 16
 
 REMEMBER_ME_CONFIG:
-    default_cipher_key: you need to update this using the fernet keygen
+    default_cipher_key: IhrcHID_KHvawLR9TDwZ0LNjVl5B_6N7N6JSQoGHsZ8= 
 
 SECURITY_MANAGER_CONFIG:
     security_manager: yosai.web.WebSecurityManager

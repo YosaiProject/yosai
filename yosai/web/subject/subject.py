@@ -21,9 +21,11 @@ import logging
 from contextlib import contextmanager
 
 from yosai.core import (
+    AbsoluteExpiredSessionException,
     AuthorizationException,
     DefaultSubjectContext,
     DelegatingSubject,
+    IdleExpiredSessionException,
     IdentifiersNotSetException,
     IllegalStateException,
     Yosai,
@@ -289,6 +291,40 @@ class WebYosai(Yosai):
         except IndexError:
             msg = 'A yosai instance does not exist in the global context.'
             raise YosaiContextException(msg)
+
+    @staticmethod
+    def get_current_subject():
+        try:
+            subject = global_subject_context.stack[-1]
+            msg = ('A subject instance DOES exist in the global context. '
+                   'Touching and then returning it.')
+            logger.debug(msg)
+            subject.get_session().touch()
+            return subject
+
+        except IndexError:
+            msg = 'A subject instance _DOES NOT_ exist in the global context.  Creating one.'
+            logger.debug(msg)
+
+            subject = Yosai.get_current_yosai()._get_subject()
+            global_subject_context.stack.append(subject)
+            return subject
+
+        except IdleExpiredSessionException:
+            if WebYosai.get_current_webregistry().remember_me:
+                msg = ('A remembered subject from the global context has an '
+                       'idle-expired session.  Re-creating a new subject '
+                       'instance/session for it.')
+                logger.debug(msg)
+                global_subject_context.stack.pop()
+                subject = Yosai.get_current_yosai()._get_subject()
+                global_subject_context.stack.append(subject)
+                return subject
+
+        # this isn't a water-tight solution for RememberMe scenarios
+        # because absolute_timeout resets with new sessions -- TBD
+        except AbsoluteExpiredSessionException:
+                raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
 
     @staticmethod
     def requires_authentication(fn):
