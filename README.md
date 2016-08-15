@@ -134,6 +134,11 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
+The next release for Yosai, v0.2, is imminent.  Testing is well under way.
+Following testing, documentation and the project web site will be updated.
+Version 0.2 features complete support for web application integration.  
+The first web integration is with the Pyramid web framework.
+
 yosai.core coverage stats (ao 12/22/2015):
 
 |Name                                    | Stmts |Miss  | Cover |
