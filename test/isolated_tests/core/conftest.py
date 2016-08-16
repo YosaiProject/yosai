@@ -157,8 +157,8 @@ def mock_thread_context():
 
 
 @pytest.fixture(scope='function')
-def mock_subject_builder(mock_security_manager, configured_securityutils):
-    csu = configured_securityutils
+def mock_subject_builder(mock_security_manager, yosai):
+    csu = yosai
     return MockSubjectBuilder(security_utils=csu, 
                               security_manager=mock_security_manager)
 

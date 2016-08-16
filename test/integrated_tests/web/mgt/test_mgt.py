@@ -42,8 +42,16 @@ def test_remember_me_with_expired_session(
         assert old_session_id != new_session_id
 
 
-#def test_forget_remembered_identity
+def test_forget_remembered_identity(
+        web_yosai, mock_web_registry, remembered_valid_username_password_token,
+        monkeypatch):
     """
     Logout and ensure that the identity is forgotten through removal of the
     remember_me cookie.
     """
+    with WebYosai.context(web_yosai, mock_web_registry):
+        subject = WebYosai.get_current_subject()
+        subject.login(remembered_valid_username_password_token)
+        assert mock_web_registry.current_remember_me is not None
+        subject.logout()
+        assert mock_web_registry.current_remember_me is None

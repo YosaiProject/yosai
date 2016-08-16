@@ -22,7 +22,7 @@ def config():
 
 @pytest.fixture(scope='function')
 def settings_file():
-    return os.environ.get('YOSAI_CORE_SETTINGS')
+    return os.environ.get('YOSAI_SETTINGS')
 
 
 @pytest.fixture(scope='function')
@@ -37,4 +37,4 @@ def empty_settings():
 
 @pytest.fixture(scope='function')
 def lazy_settings():
-    return LazySettings('YOSAI_CORE_SETTINGS')
+    return LazySettings('YOSAI_SETTINGS')

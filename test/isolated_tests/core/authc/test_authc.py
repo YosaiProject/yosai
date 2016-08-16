@@ -348,7 +348,7 @@ def test_da_notify_falure_raises(default_authenticator, monkeypatch):
 # -----------------------------------------------------------------------------
 
 def test_requires_authentication_succeeds(
-        monkeypatch, mock_subject, mock_secutil, configured_securityutils):
+        monkeypatch, mock_subject, mock_secutil, yosai):
     """
     unit tested:  requires_authentication
 
@@ -356,7 +356,7 @@ def test_requires_authentication_succeeds(
     a decorated method that requires authentication succeds to authenticate and
     then is called
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_authentication
     def do_something():
@@ -370,7 +370,7 @@ def test_requires_authentication_succeeds(
 
 
 def test_requires_authentication_raises(monkeypatch, mock_subject, yosai,
-                                        configured_securityutils):
+                                        yosai):
 
     """
     unit tested:  requires_authentication
@@ -379,7 +379,7 @@ def test_requires_authentication_raises(monkeypatch, mock_subject, yosai,
     a decorated method that requires authentication rails to authenticate and
     raises
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_authentication
     def do_something():
@@ -391,7 +391,7 @@ def test_requires_authentication_raises(monkeypatch, mock_subject, yosai,
 
 
 def test_requires_user_succeeds(monkeypatch, mock_subject,
-                                configured_securityutils):
+                                yosai):
     """
     unit tested:  requires_user
 
@@ -399,7 +399,7 @@ def test_requires_user_succeeds(monkeypatch, mock_subject,
     a decorated method that requires a 'User-Subject' succeeds to obtain
     a User status and then is called
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_user
     def do_something():
@@ -413,7 +413,7 @@ def test_requires_user_succeeds(monkeypatch, mock_subject,
 
 
 def test_requires_user_raises(monkeypatch, mock_subject,
-                              configured_securityutils):
+                              yosai):
     """
     unit tested:  requires_user
 
@@ -421,7 +421,7 @@ def test_requires_user_raises(monkeypatch, mock_subject,
     a decorated method that requires a 'User-Subject' fails to obtain
     a User status and raises
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_user
     def do_something():
@@ -433,7 +433,7 @@ def test_requires_user_raises(monkeypatch, mock_subject,
 
 
 def test_requires_guest_succeeds(monkeypatch, mock_subject,
-                                 configured_securityutils):
+                                 yosai):
     """
     unit tested:
 
@@ -441,7 +441,7 @@ def test_requires_guest_succeeds(monkeypatch, mock_subject,
     a decorated method that requires a 'Guest-Subject' status succeeds in
     finding one
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_guest
     def do_something():
@@ -454,7 +454,7 @@ def test_requires_guest_succeeds(monkeypatch, mock_subject,
         assert result == "something was done"
 
 
-def test_requires_guest_raises(monkeypatch, mock_subject, configured_securityutils):
+def test_requires_guest_raises(monkeypatch, mock_subject, yosai):
     """
     unit tested:
 
@@ -462,7 +462,7 @@ def test_requires_guest_raises(monkeypatch, mock_subject, configured_securityuti
     a decorated method that requires a 'Guest-Subject' status fails to find
     one, raising
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_guest
     def do_something():

@@ -78,7 +78,7 @@ def test_dsc_resolve_security_manager_exists(default_subject_context):
 
 
 def test_dsc_resolve_security_manager_none(
-        default_subject_context, monkeypatch, caplog, configured_securityutils):
+        default_subject_context, monkeypatch, caplog, yosai):
     """
     unit tested:  resolve_security_manager
 
@@ -87,7 +87,7 @@ def test_dsc_resolve_security_manager_none(
     Yosai
     """
     dsc = default_subject_context
-    csu = configured_securityutils
+    csu = yosai
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
 
     with csu:
@@ -98,7 +98,7 @@ def test_dsc_resolve_security_manager_none(
                 result == 'mysecuritymanager')
 
 def test_dsc_resolve_security_manager_none_raises(
-        default_subject_context, monkeypatch, caplog, configured_securityutils):
+        default_subject_context, monkeypatch, caplog, yosai):
     """
     unit tested:  resolve_security_manager
 
@@ -107,7 +107,7 @@ def test_dsc_resolve_security_manager_none_raises(
     """
 
     dsc = default_subject_context
-    csu = configured_securityutils
+    csu = yosai
     monkeypatch.setitem(dsc.context, dsc.get_key('SECURITY_MANAGER'), None)
 
     with csu:
@@ -1425,7 +1425,7 @@ def test_dss_delete(default_subject_store):
 # SubjectBuilder
 # ------------------------------------------------------------------------------
 
-def test_sb_init_verify_argument_context(subject_builder_context, configured_securityutils):
+def test_sb_init_verify_argument_context(subject_builder_context, yosai):
     """
     unit tested:  __init__ and context_attribute
 
@@ -1434,7 +1434,7 @@ def test_sb_init_verify_argument_context(subject_builder_context, configured_sec
     arguments aren't used by init
     """
     sbc = subject_builder_context
-    csu = configured_securityutils
+    csu = yosai
     mycontext = DefaultSubjectContext(security_utils=csu,
                                       context=sbc)
     sb = SubjectBuilder(security_utils=csu, subject_context=mycontext, **sbc)
@@ -1443,7 +1443,7 @@ def test_sb_init_verify_argument_context(subject_builder_context, configured_sec
 
 
 def test_sb_init_verify_generated_context(
-        subject_builder_context, configured_securityutils):
+        subject_builder_context, yosai):
     """
     unit tested:  __init__
 
@@ -1451,7 +1451,7 @@ def test_sb_init_verify_generated_context(
     confirm that the subject context created by init reflects the arguments
     passed to the builder
     """
-    csu = configured_securityutils
+    csu = yosai
     sbc = subject_builder_context
     sb = SubjectBuilder(security_utils=csu, **sbc)
     sb.resolve_subject_context()
@@ -1460,7 +1460,7 @@ def test_sb_init_verify_generated_context(
 
 
 def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager,
-                          configured_securityutils):
+                          yosai):
     """
     unit tested:  build_subject
 
@@ -1468,7 +1468,7 @@ def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager,
     build_subject defers to the security_manager's create_subject
     """
     sb = subject_builder
-    csu = configured_securityutils
+    csu = yosai
 
     monkeypatch.setattr(sb, 'security_manager', mock_security_manager)
     monkeypatch.setattr(sb.security_manager, 'create_subject',
@@ -1529,7 +1529,7 @@ def test_dsf_create_subject(
 # ------------------------------------------------------------------------------
 
 def test_su_get_subject_notinthreadlocal(
-        mock_subject_builder, monkeypatch, configured_securityutils):
+        mock_subject_builder, monkeypatch, yosai):
     """
     unit tested:  subject
 
@@ -1539,7 +1539,7 @@ def test_su_get_subject_notinthreadlocal(
         - the newly created subject is bound to the Yosai instance
     - the subject is returned
     """
-    csu = configured_securityutils
+    csu = yosai
     msb = mock_subject_builder
 
     with csu:
@@ -1549,14 +1549,14 @@ def test_su_get_subject_notinthreadlocal(
 
 
 def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
-                                      configured_securityutils):
+                                      yosai):
     """
     unit tested:  get_subject
 
     test case:
     when a subject is bound to a Yosai, it is returned
     """
-    csu = configured_securityutils
+    csu = yosai
     monkeypatch.setattr(csu, '_subject', 'subject', raising=False)
     with csu:
         result = csu.subject

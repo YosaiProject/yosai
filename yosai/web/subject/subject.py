@@ -21,11 +21,10 @@ import logging
 from contextlib import contextmanager
 
 from yosai.core import (
-    AbsoluteExpiredSessionException,
     AuthorizationException,
     DefaultSubjectContext,
     DelegatingSubject,
-    IdleExpiredSessionException,
+    ExpiredSessionException,
     IdentifiersNotSetException,
     IllegalStateException,
     Yosai,
@@ -310,7 +309,8 @@ class WebYosai(Yosai):
             global_subject_context.stack.append(subject)
             return subject
 
-        except IdleExpiredSessionException:
+        except ExpiredSessionException:
+            # absolute timeout of remember_me cookies is TBD (idle expired rolls)
             if WebYosai.get_current_webregistry().remember_me:
                 msg = ('A remembered subject from the global context has an '
                        'idle-expired session.  Re-creating a new subject '
@@ -321,10 +321,7 @@ class WebYosai(Yosai):
                 global_subject_context.stack.append(subject)
                 return subject
 
-        # this isn't a water-tight solution for RememberMe scenarios
-        # because absolute_timeout resets with new sessions -- TBD
-        except AbsoluteExpiredSessionException:
-                raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+            raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
 
     @staticmethod
     def requires_authentication(fn):

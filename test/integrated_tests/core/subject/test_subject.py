@@ -316,7 +316,7 @@ def test_absolute_expired_session(
 
 
 def test_requires_permission_succeeds(
-        configured_securityutils, authz_info, new_subject, 
+        yosai, authz_info, new_subject, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -326,7 +326,7 @@ def test_requires_permission_succeeds(
         nonlocal status 
         status = True
 
-    yosai = configured_securityutils
+    yosai = yosai
 
     with yosai:
         new_subject.login(valid_username_password_token)
@@ -336,7 +336,7 @@ def test_requires_permission_succeeds(
 
 
 def test_requires_permission_fails(
-        configured_securityutils, authz_info, 
+        yosai, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -346,7 +346,7 @@ def test_requires_permission_fails(
         nonlocal status 
         status = True
 
-    yosai = configured_securityutils
+    yosai = yosai
 
     with yosai:
         new_subject = yosai.subject
@@ -360,7 +360,7 @@ def test_requires_permission_fails(
             raise Exception('failed to raise')
 
 def test_requires_dynamic_permission_succeeds(
-        configured_securityutils, authz_info, 
+        yosai, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     class BankCheck:
@@ -374,7 +374,7 @@ def test_requires_dynamic_permission_succeeds(
         nonlocal status 
         status = True
 
-    yosai = configured_securityutils
+    yosai = yosai
 
     with yosai:
         new_subject = yosai.subject
@@ -385,7 +385,7 @@ def test_requires_dynamic_permission_succeeds(
 
 
 def test_requires_dynamic_permission_fails(
-        configured_securityutils, authz_info, 
+        yosai, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     class BankCheck:
@@ -399,7 +399,7 @@ def test_requires_dynamic_permission_fails(
         nonlocal status 
         status = True
 
-    yosai = configured_securityutils
+    yosai = yosai
 
     with yosai:
         new_subject = yosai.subject
@@ -414,7 +414,7 @@ def test_requires_dynamic_permission_fails(
 
 
 def test_requires_role_succeeds(
-        configured_securityutils, authz_info, 
+        yosai, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -424,7 +424,7 @@ def test_requires_role_succeeds(
         nonlocal status 
         status = True
 
-    yosai = configured_securityutils
+    yosai = yosai
 
     with yosai:
         new_subject = yosai.subject
@@ -435,7 +435,7 @@ def test_requires_role_succeeds(
 
 
 def test_requires_role_fails(
-        configured_securityutils, authz_info, 
+        yosai, authz_info, 
         valid_username_password_token, thedude_credentials):
 
     status = None
@@ -445,7 +445,7 @@ def test_requires_role_fails(
         nonlocal status 
         status = True
 
-    yosai = configured_securityutils
+    yosai = yosai
 
     with yosai:
         new_subject = yosai.subject

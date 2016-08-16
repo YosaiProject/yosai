@@ -445,7 +445,7 @@ def test_nsm_create_subject_context(
 
 
 def test_nsm_create_subject_wo_context(
-        native_security_manager, configured_securityutils):
+        native_security_manager, yosai):
     """
     unit tested:  create_subject
 
@@ -455,7 +455,7 @@ def test_nsm_create_subject_wo_context(
     saved and then returned.
     """
     nsm = native_security_manager
-    csu = configured_securityutils
+    csu = yosai
 
     testcontext = DefaultSubjectContext(security_utils=csu)
     testcontext.authenticated = True
@@ -485,7 +485,7 @@ def test_nsm_create_subject_wo_context(
                         assert result == 'subject'
 
 def test_nsm_create_subject_w_context(native_security_manager,
-                                      configured_securityutils):
+                                      yosai):
     """
     unit tested:  create_subject
 
@@ -493,7 +493,7 @@ def test_nsm_create_subject_w_context(native_security_manager,
     context is passed as an argument, and so it is used
     """
     nsm = native_security_manager
-    csu = configured_securityutils
+    csu = yosai
 
     testcontext = DefaultSubjectContext(security_utils=csu)
     testcontext.authenticated = True
@@ -782,14 +782,14 @@ def test_nsm_before_logout(native_security_manager):
         nsm_rml.assert_called_once_with('subject')
 
 
-def test_nsm_copy(native_security_manager, configured_securityutils):
+def test_nsm_copy(native_security_manager, yosai):
     """
     unit tested:  copy
 
     test case:
     returns a new DefaultSubjectContext
     """
-    csu = configured_securityutils
+    csu = yosai
     nsm = native_security_manager
 
     result = nsm.copy({'subject_context': 'subject_context'})

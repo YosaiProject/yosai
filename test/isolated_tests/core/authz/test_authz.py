@@ -843,7 +843,7 @@ def test_srv_has_role(simple_role_verifier, indexed_authz_info):
 # -----------------------------------------------------------------------------
 
 def test_requires_permission_succeeds(monkeypatch, mock_subject, 
-                                      configured_securityutils):
+                                      yosai):
     """
     unit tested:  requires_permission
 
@@ -852,7 +852,7 @@ def test_requires_permission_succeeds(monkeypatch, mock_subject,
     - calls subject.check_permission, which does not raise any exception
     - failing to raise any exception, the decorated method is finally called
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_permission('domain1:action1')
     def do_something():
@@ -866,7 +866,7 @@ def test_requires_permission_succeeds(monkeypatch, mock_subject,
 
 
 def test_requires_permission_raises(monkeypatch, mock_subject, 
-                                    configured_securityutils):
+                                    yosai):
     """
     unit tested:  requires_permission
 
@@ -874,7 +874,7 @@ def test_requires_permission_raises(monkeypatch, mock_subject,
     - obtains current executing subject
     - calls subject.check_permission, which raises an exception
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_permission('domain1:action1')
     def do_something():
@@ -887,7 +887,7 @@ def test_requires_permission_raises(monkeypatch, mock_subject,
                 do_something()
 
 
-def test_requires_role_succeeds(monkeypatch, mock_subject, configured_securityutils):
+def test_requires_role_succeeds(monkeypatch, mock_subject, yosai):
     """
     unit tested:  requires_role
 
@@ -896,7 +896,7 @@ def test_requires_role_succeeds(monkeypatch, mock_subject, configured_securityut
     - calls subject.check_role, which does not raise any exception
     - failing to raise any exception, the decorated method is finally called
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_role('role1')
     def do_something():
@@ -909,7 +909,7 @@ def test_requires_role_succeeds(monkeypatch, mock_subject, configured_securityut
         assert result == "something was done"
 
 
-def test_requires_role_raises(monkeypatch, mock_subject, configured_securityutils):
+def test_requires_role_raises(monkeypatch, mock_subject, yosai):
     """
     unit tested:  requires_role
 
@@ -917,7 +917,7 @@ def test_requires_role_raises(monkeypatch, mock_subject, configured_securityutil
     - obtains current executing subject
     - calls subject.check_role, which raises an exception
     """
-    csu = configured_securityutils
+    csu = yosai
 
     @requires_role('role1')
     def do_something():

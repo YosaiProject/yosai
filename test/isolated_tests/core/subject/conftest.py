@@ -27,9 +27,9 @@ def subject_context():
 
 
 @pytest.fixture(scope='function')
-def default_subject_context(configured_securityutils, subject_context, 
+def default_subject_context(yosai, subject_context, 
                             full_mock_account, mock_session):
-    csu = configured_securityutils
+    csu = yosai
     context = {value: 'value_'+value for key, value in subject_context.items()}
     context["DefaultSubjectContext.ACCOUNT"] = full_mock_account
     context["DefaultSubjectContext.AUTHENTICATED"] = False
@@ -78,8 +78,8 @@ def subject_builder_context(
                 attribute2='attribute2')
 
 @pytest.fixture(scope='function')
-def subject_builder(subject_builder_context, configured_securityutils):
-    return SubjectBuilder(security_utils=configured_securityutils,
+def subject_builder(subject_builder_context, yosai):
+    return SubjectBuilder(security_utils=yosai,
                           **subject_builder_context)
 
 @pytest.fixture(scope='function')

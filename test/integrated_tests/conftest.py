@@ -4,24 +4,6 @@ from yosai.core import (
     SimpleIdentifierCollection,
 )
 
-from yosai_alchemystore.models.models import (
-    UserModel,
-    CredentialModel,
-)
-
-
-from yosai_alchemystore.models.models import (
-    ActionModel,
-    DomainModel,
-    PermissionModel,
-    ResourceModel,
-    RoleModel,
-    UserModel
-)
-
-
-from passlib.context import CryptContext
-import datetime
 import pytest
 
 load_logconfig()
@@ -43,40 +25,6 @@ def jackie_identifier():
 def walter_identifier():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                       identifier='walter')
-
-
-@pytest.fixture(scope='function')
-def thedude(cache_handler, request, thedude_identifier, session):
-    thedude = UserModel(first_name='Jeffrey',
-                        last_name='Lebowski',
-                        identifier='thedude')
-    session = session()
-    session.add(thedude)
-    session.commit()
-
-    return thedude
-
-
-@pytest.fixture(scope='function')
-def jackie(cache_handler, request, jackie_identifier, session):
-    jackie = UserModel(first_name='Jackie',
-                       last_name='Treehorn',
-                       identifier='jackie')
-    session = session()
-    session.add(jackie)
-    session.commit()
-    return jackie
-
-
-@pytest.fixture(scope='function')
-def walter(cache_handler, request, walter_identifier, session):
-    walter = UserModel(first_name='Walter',
-                       last_name='Sobchak',
-                       identifier='walter')
-    session = session()
-    session.add(walter)
-    session.commit()
-    return walter
 
 
 @pytest.fixture(scope='function')  # because successful login clears password
@@ -148,54 +96,6 @@ def invalid_username_password_token():
 
 
 @pytest.fixture(scope='function')
-def thedude_credentials(request, thedude, clear_cached_credentials, session):
-    password = "letsgobowling"
-    cc = CryptContext(["bcrypt_sha256"])
-    credentials = cc.encrypt(password)
-    thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
-    credential = CredentialModel(user_id=thedude.pk_id,
-                                 credential=credentials,
-                                 expiration_dt=thirty_from_now)
-    session = session()
-    session.add(credential)
-    session.commit()
-
-    return credentials
-
-
-@pytest.fixture(scope='function')
-def jackie_credentials(request, jackie, clear_jackie_cached_credentials, session):
-    password = "business"
-    cc = CryptContext(["bcrypt_sha256"])
-    credentials = cc.encrypt(password)
-    thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
-    credential = CredentialModel(user_id=jackie.pk_id,
-                                 credential=credentials,
-                                 expiration_dt=thirty_from_now)
-    session = session()
-    session.add(credential)
-    session.commit()
-
-    return credentials
-
-
-@pytest.fixture(scope='function')
-def walter_credentials(request, walter, clear_walter_cached_credentials, session):
-    password = "vietnam"
-    cc = CryptContext(["bcrypt_sha256"])
-    credentials = cc.encrypt(password)
-    thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
-    credential = CredentialModel(user_id=walter.pk_id,
-                                 credential=credentials,
-                                 expiration_dt=thirty_from_now)
-    session = session()
-    session.add(credential)
-    session.commit()
-
-    return credentials
-
-
-@pytest.fixture(scope='function')
 def clear_cached_authz_info(cache_handler, request):
     def remove_authz_info():
         nonlocal cache_handler
@@ -223,97 +123,6 @@ def clear_walter_cached_authz_info(cache_handler, request):
                              identifier='walter')
 
     request.addfinalizer(remove_walter_authz_info)
-
-
-@pytest.fixture(scope='function')
-def authz_info(request, cache_handler, thedude, jackie, walter,
-               clear_cached_authz_info, clear_jackie_cached_authz_info,
-               clear_walter_cached_authz_info, session):
-
-    domains = [DomainModel(name='money'),
-               DomainModel(name='leatherduffelbag')]
-
-    actions = [ActionModel(name='write'),
-               ActionModel(name='deposit'),
-               ActionModel(name='transport'),
-               ActionModel(name='access'),
-               ActionModel(name='withdrawal'),
-               ActionModel(name='bowl'),
-               ActionModel(name='run')]
-
-    resources = [ResourceModel(name='theringer'),
-                 ResourceModel(name='ransom'),
-                 ResourceModel(name='bankcheck_19911109069'),
-                 ResourceModel(name='bowlingball')]
-
-    roles = [RoleModel(title='courier'),
-             RoleModel(title='tenant'),
-             RoleModel(title='landlord'),
-             RoleModel(title='gangster'),
-             RoleModel(title='bankcustomer'),
-             RoleModel(title='bowler')]
-
-    session = session()
-    session.add_all(roles + domains + actions + resources)
-
-    domains = dict((domain.name, domain) for domain in session.query(DomainModel).all())
-    actions = dict((action.name, action) for action in session.query(ActionModel).all())
-    resources = dict((resource.name, resource) for resource in session.query(ResourceModel).all())
-    roles = dict((role.title, role) for role in session.query(RoleModel).all())
-
-    perm1 = PermissionModel(domain=domains['money'],
-                            action=actions['write'],
-                            resource=resources['bankcheck_19911109069'])
-
-    perm2 = PermissionModel(domain=domains['money'],
-                            action=actions['deposit'])
-
-    perm3 = PermissionModel(domain=domains['money'],
-                            action=actions['access'],
-                            resource=resources['ransom'])
-
-    perm4 = PermissionModel(domain=domains['leatherduffelbag'],
-                            action=actions['transport'],
-                            resource=resources['theringer'])
-
-    perm5 = PermissionModel(domain=domains['leatherduffelbag'],
-                            action=actions['access'],
-                            resource=resources['theringer'])
-
-    perm6 = PermissionModel(domain=domains['money'],
-                            action=actions['withdrawal'])
-
-    perm7 = PermissionModel(action=actions['bowl'])
-
-    perm8 = PermissionModel(action=actions['run'])  # I dont know!?
-
-    session.add_all([perm1, perm2, perm3, perm4, perm5, perm6, perm7, perm8])
-
-    bankcustomer = roles['bankcustomer']
-    courier = roles['courier']
-    tenant = roles['tenant']
-    landlord = roles['landlord']
-    gangster = roles['gangster']
-    bowler = roles['bowler']
-
-    bankcustomer.permissions.extend([perm1, perm2])
-    courier.permissions.extend([perm4, perm7])
-    tenant.permissions.extend([perm1, perm7])
-    gangster.permissions.extend([perm3, perm4, perm5, perm7])
-    landlord.permissions.extend([perm6, perm7])
-    bowler.permissions.append(perm8)
-
-    userquery = session.query(UserModel)
-    thedude = userquery.filter(UserModel.identifier == 'thedude').scalar()
-    thedude.roles.extend([bankcustomer, courier, tenant, bowler])
-
-    jackie = userquery.filter(UserModel.identifier == 'jackie').scalar()
-    jackie.roles.extend([bankcustomer, gangster])
-
-    walter = userquery.filter(UserModel.identifier == 'walter').scalar()
-    walter.roles.extend([bowler, courier])
-
-    session.commit()
 
 
 @pytest.fixture(scope='function')

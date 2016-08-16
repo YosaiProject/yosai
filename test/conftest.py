@@ -1,4 +1,3 @@
-import os
 import pytest
 
 from yosai.core import (
@@ -27,8 +26,6 @@ from yosai.web import (
 from yosai_dpcache.cache import DPCacheHandler
 from yosai_alchemystore import (
     AlchemyAccountStore,
-    Base,
-    init_engine,
     init_session,
 )
 
@@ -43,29 +40,14 @@ from .doubles import (
 
 @pytest.fixture(scope='function')
 def settings():
-    current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_settings.yaml'
-    return LazySettings(file_path=settings_file)
+    return LazySettings(env_var='YOSAI_SETTINGS')
 
 
 @pytest.fixture(scope='function')
-def session(request):
-    engine = init_engine()
-    Base.metadata.create_all(engine)
-
-    def drop_all():
-        Base.metadata.drop_all(engine)
-
-    request.addfinalizer(drop_all)
-
-    return init_session(engine=engine)
-
-
-@pytest.fixture(scope='function')
-def yosai():
-    current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_settings.yaml'
-    return Yosai(file_path=settings_file)
+def session(cache_handler, request, settings):
+    session_maker = init_session(settings=settings)
+    session = session_maker()
+    return session
 
 
 @pytest.fixture(scope='function')
@@ -121,19 +103,21 @@ def username_password_token():
 
 @pytest.fixture(scope='function')
 def cache_handler(settings):
-    return DPCacheHandler(settings)
+    return DPCacheHandler(settings=settings)
 
 
 @pytest.fixture(scope='function')
-def alchemy_store(session):
-    return AlchemyAccountStore(session=session)
+def alchemy_store(settings, session):
+    return AlchemyAccountStore(settings=settings)
 
 
 @pytest.fixture(scope='function')
 def account_store_realm(cache_handler, alchemy_store, permission_resolver,
-                        role_resolver, authz_info_resolver, credential_resolver):
+                        role_resolver, authz_info_resolver, credential_resolver,
+                        settings):
 
-    asr = AccountStoreRealm(name='AccountStoreRealm',
+    asr = AccountStoreRealm(settings,
+                            name='AccountStoreRealm',
                             account_store=alchemy_store)
 
     asr.cache_handler = cache_handler
@@ -144,12 +128,6 @@ def account_store_realm(cache_handler, alchemy_store, permission_resolver,
     asr.role_resolver = role_resolver
 
     return asr
-
-
-@pytest.fixture(scope='function')
-def configured_securityutils(native_security_manager, yosai):
-    yosai.security_manager = native_security_manager
-    return yosai
 
 
 @pytest.fixture(scope='function')
@@ -169,10 +147,6 @@ def native_security_manager(account_store_realm, cache_handler,
     return nsm
 
 
-# -----------------------------------------------------------------------------
-# Web Fixtures
-# -----------------------------------------------------------------------------
-
 @pytest.fixture(scope='function')
 def attributes_schema():
     class AttributesSchema:
@@ -187,10 +161,13 @@ def attributes_schema():
 
 
 @pytest.fixture(scope='function')
-def web_yosai(attributes_schema):
-    current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/yosai_settings.yaml'
-    return WebYosai(file_path=settings_file,
+def yosai():
+    return Yosai(env_var='YOSAI_SETTINGS')
+
+
+@pytest.fixture(scope='function')
+def web_yosai(attributes_schema, account_store_realm):
+    return WebYosai(env_var='YOSAI_SETTINGS',
                     session_attributes_schema=attributes_schema)
 
 
@@ -210,9 +187,3 @@ def web_security_manager(account_store_realm, cache_handler, settings,
     wsm.event_bus = event_bus
 
     return wsm
-
-
-@pytest.fixture(scope='function')
-def configured_web_securityutils(web_security_manager, web_yosai):
-    yosai.security_manager = web_security_manager
-    return yosai

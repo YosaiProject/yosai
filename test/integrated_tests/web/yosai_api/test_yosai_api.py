@@ -8,18 +8,18 @@ import os
 import pytest
 
 
-def test_create_yosai_instance(monkeypatch, web_yosai):
+def test_create_yosai_instance():
     """
     Create a new WebYosai instance from env_var settings and from file_path
     settings.  This subsequently creates a configured WebSecurityManager.
     web_yosai is configured using the file_path approach
     """
-    current_filepath = os.path.dirname(__file__)
-    settings_file = current_filepath + '/../../../yosai_settings.yaml'
-    monkeypatch.setenv('TEST_ENV_VAR', settings_file)
-    first_yosai = WebYosai(env_var='TEST_ENV_VAR')
+    first_yosai = WebYosai(env_var='YOSAI_SETTINGS')
 
-    assert first_yosai._security_manager and web_yosai._security_manager
+    file_path = os.environ.get('YOSAI_SETTINGS')
+    second_yosai = WebYosai(file_path=file_path)
+
+    assert first_yosai._security_manager and second_yosai._security_manager
 
 
 def test_webyosai_security_manager_configuration(web_yosai):
