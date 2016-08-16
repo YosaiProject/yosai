@@ -22,7 +22,7 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
         sleep(2)
         try:
             subject = WebYosai.get_current_subject()
-        except ExpiredSessionException:
+        except mock_web_registry.mock_exception:
             assert (mock_web_registry.current_session_id is None and
                     mock_web_registry.session_id_history[0][0] == 'SET')
 
@@ -42,7 +42,7 @@ def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
         sleep(2)
         try:
             subject = WebYosai.get_current_subject()
-        except ExpiredSessionException:
+        except mock_web_registry.mock_exception:
             assert (mock_web_registry.current_session_id is None and
                     mock_web_registry.session_id_history[0][0] == 'SET')
 
