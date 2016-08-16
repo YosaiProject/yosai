@@ -1,7 +1,6 @@
 from time import sleep
-from yosai.core import (
-    ExpiredSessionException
-)
+import pdb
+
 from yosai.web import (
     WebYosai
 )
@@ -87,6 +86,7 @@ def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
         subject = WebYosai.get_current_subject()
 
         old_session = subject.get_session()
+        
         old_session.set_attribute('attribute1', value1['attribute1'])
         old_session.set_attributes(values)
 

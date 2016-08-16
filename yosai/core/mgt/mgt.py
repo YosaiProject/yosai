@@ -385,13 +385,14 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def __init__(self,
                  settings,
+                 attributes_schema,
                  realms=None,
                  event_bus=event_bus,
                  cache_handler=None,
                  authenticator=DefaultAuthenticator(),
                  authorizer=ModularRealmAuthorizer(),
+                 serialization_manager=None,
                  session_manager=None,
-                 session_attributes_schema=None,
                  remember_me_manager=None,
                  subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
                  subject_factory=DefaultSubjectFactory(),  # unlike shiro, yosai defaults
@@ -414,7 +415,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if session_manager:
             self.session_manager = session_manager
         else:
-            self.session_manager = DefaultNativeSessionManager(settings)
+            self.session_manager = DefaultNativeSessionManager(attributes_schema,
+                                                               settings)
 
         self.realms = realms
         self.authenticator = authenticator
@@ -422,10 +424,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.remember_me_manager = remember_me_manager
         self.subject_factory = subject_factory
 
-        if session_attributes_schema:
-            self.session_attributes_schema = session_attributes_schema
-
-        self._serialization_manager = None
+        self.serialization_manager = serialization_manager
         # the security_utils attribute is set by Yosai
 
     """
@@ -484,7 +483,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     @property
     def serialization_manager(self):
-        return None
+        return self._serialization_manager
 
     @serialization_manager.setter
     def serialization_manager(self, sm):
@@ -492,6 +491,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.apply_cache_handler(self.realms)
         self.apply_cache_handler(self.session_manager)
         self.remember_me_manager.serialization_manager = sm
+        self._serialization_manager = sm
 
     #  property required by EventBusAware interface:
     @property

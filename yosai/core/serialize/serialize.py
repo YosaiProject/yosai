@@ -1,5 +1,3 @@
-import pdb
-
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -18,10 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-from yosai.core import (
-    SessionAttributesSchema,
-    serialize_abcs,
-)
+
+from yosai.core import serialize_abcs
 
 from yosai.core.serialize.serializers import (
     json,
@@ -38,7 +34,7 @@ class SerializationManager:
 
     TO-DO:  configure serialization scheme from yosai.core.settings json
     """
-    def __init__(self, serializer_scheme='cbor', session_attributes_schema=None):
+    def __init__(self, session_attributes_schema, serializer_scheme='cbor'):
         # add encoders here:
         self.serializers = {'cbor': cbor.CBORSerializer,
                             'msgpack': msgpack.MsgpackSerializer,
@@ -48,16 +44,14 @@ class SerializationManager:
         self.register_serializables(session_attributes_schema)
 
     def register_serializables(self, session_attributes_schema):
+
         def all_subclasses(cls):
             return cls.__subclasses__() + [g for s in cls.__subclasses__()
                                            for g in all_subclasses(s)]
 
         # manual registration required because it isn't a Serializable subclass:
         if session_attributes_schema:
-            sac = session_attributes_schema
-            self.serializer.register_custom_type(SessionAttributesSchema,
-                                                 sac.marshal,
-                                                 sac.unmarshal)
+            self.serializer.register_custom_type(session_attributes_schema)
 
         for serializable in all_subclasses(serialize_abcs.Serializable):
             self.serializer.register_custom_type(serializable)

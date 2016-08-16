@@ -91,19 +91,21 @@ class WebSecurityManager(NativeSecurityManager):
 
     def __init__(self,
                  settings,
+                 attributes_schema,
                  realms=None,
                  cache_handler=None,
-                 session_attributes_schema=None):
+                 serialization_manager=None):
         """
         :type realms: tuple
         :type session_attributes_schema:  serialize_abcs.Serializable
         """
 
-        super().__init__(settings=settings,
+        super().__init__(settings,
+                         attributes_schema,
                          realms=realms,
                          cache_handler=cache_handler,
-                         session_attributes_schema=session_attributes_schema,
-                         session_manager=DefaultWebSessionManager(settings),
+                         serialization_manager=serialization_manager,
+                         session_manager=DefaultWebSessionManager(attributes_schema, settings),
                          subject_factory=DefaultWebSubjectFactory(),
                          remember_me_manager=CookieRememberMeManager(settings))
 

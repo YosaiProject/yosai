@@ -476,7 +476,7 @@ class ProxiedSession(session_abcs.Session):
 # removed ImmutableProxiedSession because it can't be sent over the eventbus
 
 
-class SessionAttributesSchema(serialize_abcs.Serializable):
+class SessionAttributesSchema:
     def __repr__(self):
         return "SessionAttributesSchema({0})".format(self.__dict__)
 
@@ -488,8 +488,8 @@ class SimpleSession(session_abcs.ValidatingSession,
     #    - the manually-managed class version control process (too policy-reliant)
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
-    def __init__(self, absolute_timeout, idle_timeout, host=None):
-        self._attributes = SessionAttributesSchema()
+    def __init__(self, absolute_timeout, idle_timeout, attributes_schema, host=None):
+        self._attributes = attributes_schema()
         self._internal_attributes = {'run_as_identifiers_session_key': None,
                                      'authenticated_session_key': None,
                                      'identifiers_session_key': None}
@@ -839,14 +839,16 @@ class SimpleSession(session_abcs.ValidatingSession,
 
 class SimpleSessionFactory(session_abcs.SessionFactory):
 
-    def __init__(self, settings):
+    def __init__(self, attributes_schema, settings):
         session_settings = DefaultSessionSettings(settings)
         self.absolute_timeout = session_settings.absolute_timeout
         self.idle_timeout = session_settings.idle_timeout
+        self.attributes_schema = attributes_schema
 
     def create_session(self, session_context=None):
         return SimpleSession(self.absolute_timeout,
                              self.idle_timeout,
+                             self.attributes_schema,
                              host=getattr(session_context, 'host', None))
 
     def __repr__(self):
@@ -1329,8 +1331,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     """
 
-    def __init__(self, settings):
-        self.session_factory = SimpleSessionFactory(settings)
+    def __init__(self, attributes_schema, settings):
+        self.session_factory = SimpleSessionFactory(attributes_schema, settings)
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
             DefaultNativeSessionHandler(session_event_handler=self.session_event_handler)

@@ -153,12 +153,18 @@ def attributes_schema():
 
         def __init__(self):
             self.attribute1 = 'attribute1'
+            self.attribute2 = None
+            self.attribute3 = None
 
         def marshal(self):
-            return {'attribute1': self.attribute1}
+            return {'attribute1': self.attribute1,
+                    'attribute2': self.attribute2,
+                    'attribute3': self.attribute3}
 
         def unmarshal(self, state):
             self.attribute1 = state['attribute1']
+            self.attribute2 = state['attribute2']
+            self.attribute3 = state['attribute3']
 
     return SessionAttributesSchema
 

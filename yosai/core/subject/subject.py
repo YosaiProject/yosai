@@ -16,7 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-import copy
 import functools
 import logging
 from contextlib import contextmanager
@@ -1332,10 +1331,9 @@ class SecurityManagerBuilder:
             msg = 'Failed to initialize realms during SecurityManager Setup'
             raise SecurityManagerInitException(msg)
 
-    def init_cache_handler(self, settings, cache_handler, serialization_manager):
+    def init_cache_handler(self, settings, cache_handler):
         try:
-            return cache_handler(settings=settings,
-                                 serialization_manager=serialization_manager)
+            return cache_handler(settings=settings)
         except TypeError:
             return None
 
@@ -1355,18 +1353,18 @@ class SecurityManagerBuilder:
             sac = attributes['session_attributes_schema']
 
         serialization_manager = \
-            SerializationManager(attributes['serializer'],
-                                 session_attributes_schema=sac)
+            SerializationManager(sac, serializer_scheme=attributes['serializer'])
 
+        # the cache_handler doesn't initialize a cache_realm until it gets
+        # a serialization manager, which is assigned within the SecurityManager
         cache_handler = self.init_cache_handler(settings,
-                                                attributes['cache_handler'],
-                                                serialization_manager)
+                                                attributes['cache_handler'])
 
         manager = mgr_settings.security_manager(settings,
+                                                sac,
                                                 realms=realms,
-                                                cache_handler=cache_handler)
-        manager.serialization_manager = serialization_manager
-
+                                                cache_handler=cache_handler,
+                                                serialization_manager=serialization_manager)
         return manager
 
 # Set Global State Managers
