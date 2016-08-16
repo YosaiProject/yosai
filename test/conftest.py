@@ -149,15 +149,18 @@ def native_security_manager(account_store_realm, cache_handler,
 
 @pytest.fixture(scope='function')
 def attributes_schema():
-    class AttributesSchema:
+    class SessionAttributesSchema:
+
         def __init__(self):
-            self.name = 'Jeffrey Lebowski'
-            self.hobby = 'Bowling'
+            self.attribute1 = 'attribute1'
 
-        def __repr__(self):
-            return "CustomSchema"
+        def marshal(self):
+            return {'attribute1': self.attribute1}
 
-    return AttributesSchema
+        def unmarshal(self, state):
+            self.attribute1 = state['attribute1']
+
+    return SessionAttributesSchema
 
 
 @pytest.fixture(scope='function')

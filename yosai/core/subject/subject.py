@@ -16,6 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+import copy
 import functools
 import logging
 from contextlib import contextmanager
@@ -296,7 +297,7 @@ class DelegatingSubject(subject_abcs.Subject):
         if (not run_as_identifiers):
             return self._identifiers
         else:
-            return run_as_identifiers[0]
+            return run_as_identifiers[-1]
 
     @identifiers.setter
     def identifiers(self, identifiers):
@@ -1331,16 +1332,12 @@ class SecurityManagerBuilder:
             msg = 'Failed to initialize realms during SecurityManager Setup'
             raise SecurityManagerInitException(msg)
 
-    def init_cache_handler(self, settings, cache_handler):
+    def init_cache_handler(self, settings, cache_handler, serialization_manager):
         try:
-            return cache_handler(settings=settings)
+            return cache_handler(settings=settings,
+                                 serialization_manager=serialization_manager)
         except TypeError:
             return None
-
-    def init_sac(self, sac):
-        if sac:
-            # register the session attributes class with the serializer
-            SimpleSession.set_attributes_schema(sac)
 
     def create_manager(self, settings, session_attributes_schema):
         """
@@ -1353,20 +1350,23 @@ class SecurityManagerBuilder:
         realms = self.init_realms(settings, attributes['realms'])
 
         if session_attributes_schema:
-            self.init_sac(session_attributes_schema)
+            sac = session_attributes_schema
         else:
-            self.init_sac(attributes['session_attributes_schema'])
+            sac = attributes['session_attributes_schema']
+
+        serialization_manager = \
+            SerializationManager(attributes['serializer'],
+                                 session_attributes_schema=sac)
 
         cache_handler = self.init_cache_handler(settings,
-                                                attributes['cache_handler'])
+                                                attributes['cache_handler'],
+                                                serialization_manager)
 
         manager = mgr_settings.security_manager(settings,
                                                 realms=realms,
                                                 cache_handler=cache_handler)
-
-        # wait until the last moment so as to register all serializables:
-        serialization_manager = SerializationManager(attributes['serializer'])
         manager.serialization_manager = serialization_manager
+
         return manager
 
 # Set Global State Managers

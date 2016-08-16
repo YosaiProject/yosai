@@ -475,6 +475,12 @@ class ProxiedSession(session_abcs.Session):
 
 # removed ImmutableProxiedSession because it can't be sent over the eventbus
 
+
+class SessionAttributesSchema(serialize_abcs.Serializable):
+    def __repr__(self):
+        return "SessionAttributesSchema({0})".format(self.__dict__)
+
+
 class SimpleSession(session_abcs.ValidatingSession,
                     serialize_abcs.Serializable):
 
@@ -483,7 +489,7 @@ class SimpleSession(session_abcs.ValidatingSession,
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
     def __init__(self, absolute_timeout, idle_timeout, host=None):
-        self._attributes = self.AttributesSchema()
+        self._attributes = SessionAttributesSchema()
         self._internal_attributes = {'run_as_identifiers_session_key': None,
                                      'authenticated_session_key': None,
                                      'identifiers_session_key': None}
@@ -803,21 +809,6 @@ class SimpleSession(session_abcs.ValidatingSession,
                        self.idle_timeout, self.absolute_timeout,
                        self.is_expired, self.host, self._attributes,
                        self._internal_attributes))
-
-    # developers who use Yosai must define the attribute schema for serialization
-    class AttributesSchema(serialize_abcs.Serializable):
-
-        def __repr__(self):
-            return ("AttributesSchema Not Set.  Only supported primitives will serialize."
-                    " Attributes: " + str(self.__dict__))
-
-    @classmethod
-    def set_attributes_schema(cls, schema):
-        """
-        :type schema: type
-        """
-        schema.__name__ = 'AttributesSchema'
-        cls.AttributesSchema = schema
 
     def __getstate__(self):
         return {

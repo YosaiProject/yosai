@@ -167,11 +167,6 @@ from yosai.core.logging.slogging import (
 )
 
 
-from yosai.core.serialize.serialize import (
-    SerializationManager,
-)
-
-
 from yosai.core.account.account import (
     Account,
 )
@@ -214,9 +209,16 @@ from yosai.core.session.session import (
     # SessionTokenGenerator,
     # ScheduledSessionValidator,
     DefaultNativeSessionHandler,
+    SessionAttributesSchema,
     SimpleSession,
     SimpleSessionFactory,
 )
+
+
+from yosai.core.serialize.serialize import (
+    SerializationManager,
+)
+
 
 
 thread_local = threading.local()  # use only one global instance

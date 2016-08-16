@@ -126,7 +126,7 @@ def clear_walter_cached_authz_info(cache_handler, request):
 
 
 @pytest.fixture(scope='function')
-def thedude_testpermissions(authz_info, permission_resolver):
+def thedude_testpermissions(permission_resolver):
     perm1 = permission_resolver('money:write:bankcheck_19911109069')
     perm2 = permission_resolver('money:withdrawal')
     perm3 = permission_resolver('leatherduffelbag:transport:theringer')
@@ -141,7 +141,7 @@ def thedude_testpermissions(authz_info, permission_resolver):
 
 
 @pytest.fixture(scope='function')
-def thedude_testroles(authz_info):
+def thedude_testroles():
     roles = {'bankcustomer', 'courier', 'gangster'}
 
     expected_results = frozenset([('bankcustomer', True),
@@ -152,7 +152,7 @@ def thedude_testroles(authz_info):
 
 
 @pytest.fixture(scope='function')
-def jackie_testpermissions(authz_info, permission_resolver):
+def jackie_testpermissions(permission_resolver):
 
     perm1 = permission_resolver('money:access:ransom')
     perm2 = permission_resolver('leatherduffelbag:access:theringer')
@@ -167,7 +167,7 @@ def jackie_testpermissions(authz_info, permission_resolver):
 
 
 @pytest.fixture(scope='function')
-def walter_testpermissions(authz_info, permission_resolver):
+def walter_testpermissions(permission_resolver):
 
     perm1 = permission_resolver('leatherduffelbag:transport:theringer')
     perm2 = permission_resolver('leatherduffelbag:access:theringer')
