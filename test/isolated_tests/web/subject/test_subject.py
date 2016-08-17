@@ -8,68 +8,73 @@ from yosai.core import (
     IdentifiersNotSetException,
 )
 
+from yosai.web import (
+    WebYosai,
+    WebDelegatingSubject,
+)
+
 
 # def test_web_subject_context_resolve_host_super
-    """
-    super resolves a host from session
-    """
+"""
+super resolves a host from session
+"""
 
 # def test_web_subject_context_resolve_host_webregistry
-    """
-    - super fails to resolve a host from session
-    - resolve_web_registry().remote_host is returned
-    """
+"""
+- super fails to resolve a host from session
+- resolve_web_registry().remote_host is returned
+"""
 
 # def test_web_subject_context_resolve_webregistry
-    """
-    returns self.web_registry
-    """
+"""
+returns self.web_registry
+"""
 
 # def test_web_subject_context_resolve_webregistry_no_registry_raises
-    """
-    - no self.web_registry exists
-    - no subject.web_registry attribute
-    - None is returned
-    """
+"""
+- no self.web_registry exists
+- no subject.web_registry attribute
+- None is returned
+"""
 
 # def test_web_subject_context_resolve_webregistry_no_reg_returns_subject_wr
-    """
-    - no self.web_registry exists
-    - returns subject.web_registry attribute
-    """
+"""
+- no self.web_registry exists
+- returns subject.web_registry attribute
+"""
 
 # def test_web_subject_builder_create_subject_context
 
 # def test_web_subject_builder_build_subject_raises
-    """
-    when the subject created by the security manager isn't a WebSubject, an
-    exception raises
-    """
+"""
+when the subject created by the security manager isn't a WebSubject, an
+exception raises
+"""
 
 # def test_web_subject_builder_build_subject_returns
 
 # def test_web_delegating_subject_create_session_context
 
 # def test_web_delegating_subject_get_session_not_create
-    """
-    when create=False, the session is touched
-    """
+"""
+when create=False, the session is touched
+"""
 # def test_web_delegating_subject_get_session_create
-    """
-    when create=True, the session is not touched -- verify this
-    """
+"""
+when create=True, the session is not touched -- verify this
+"""
 
 # def test_web_delegating_subject_proxied_session_stop
-    """
-    calls super's stop and owner.session_stopped()
-    """
+"""
+calls super's stop and owner.session_stopped()
+"""
 
 # def test_web_yosai_init_using_env_var
 # def test_web_yosai_init_using_file_path
 # def test_web_yosai_init_using_neither_arg_raises
-    """
-    A TypeError is raised when WebYosai is initialized without any arguments
-    """
+"""
+A TypeError is raised when WebYosai is initialized without any arguments
+"""
 
 # def test_web_yosai_signed_cookie_secret_exists
 
@@ -79,7 +84,7 @@ from yosai.core import (
 # def test_web_yosai_get_current_webregistry_raises
 
 
-def test_web_context(web_yosai, web_registry):
+def test_web_context(web_yosai, mock_web_registry):
     """
     When entering a new WebYosai context, a yosai instance is pushed onto a yosai_context
     stack and a web_registry is pushed onto a yosai_webregistry_context stack.
@@ -98,10 +103,10 @@ def test_web_context(web_yosai, web_registry):
             global_yosai_context.stack == [] and
             global_webregistry_context.stack == [])
 
-    with WebYosai.context(web_yosai, web_registry):
+    with WebYosai.context(web_yosai, mock_web_registry):
         assert (global_subject_context.stack == [] and
                 global_yosai_context.stack == [web_yosai] and
-                global_webregistry_context.stack == [web_registry])
+                global_webregistry_context.stack == [mock_web_registry])
 
     # this tests context exit
     assert (global_subject_context.stack == [] and

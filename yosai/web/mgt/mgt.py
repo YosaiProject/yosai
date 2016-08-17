@@ -84,7 +84,7 @@ class WebSecurityManager(NativeSecurityManager):
     - yosai uses the native web session manager as default, unlike Shiro,
       which uses the middleware version instead
 
-    - the security_utils attribute is set by WebYosai when the
+    - the yosai attribute is set by WebYosai when the
       SecurityManager is passed to the WebYosai
 
     """
@@ -112,12 +112,12 @@ class WebSecurityManager(NativeSecurityManager):
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
 
     def create_subject_context(self, subject):
-        if not hasattr(self, 'security_utils'):
-            msg = "WebSecurityManager has no security_utils attribute set."
+        if not hasattr(self, 'yosai'):
+            msg = "WebSecurityManager has no yosai attribute set."
             raise MisconfiguredException(msg)
 
         web_registry = subject.web_registry
-        return DefaultWebSubjectContext(self.security_utils, self, web_registry)
+        return DefaultWebSubjectContext(self.yosai, self, web_registry)
 
     @property
     def session_manager(self):

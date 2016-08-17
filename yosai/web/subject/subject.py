@@ -53,11 +53,11 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
     facilitating cookie and remote-host management
     """
 
-    def __init__(self, security_utils, security_manager, web_registry):
+    def __init__(self, yosai, security_manager, web_registry):
         """
         :subject_context:  WebSubjectContext
         """
-        super().__init__(security_utils, security_manager)
+        super().__init__(yosai, security_manager)
 
         self.web_registry = web_registry
 
@@ -92,19 +92,19 @@ class WebSubjectBuilder(SubjectBuilder):
     request/response objects,  is retained for use by internal Yosai components.
     """
 
-    def __init__(self, security_utils, security_manager=None):
+    def __init__(self, yosai, security_manager=None):
         """
         Constructs a new ``WebSubjectBuilder`` instance using the ``SecurityManager``
         obtained by calling ``Yosai.security_manager``.  If you want
         to specify your own SecurityManager instance, pass it as an argument.
 
         """
-        self.security_utils = security_utils
+        self.yosai = yosai
         self.security_manager = security_manager
 
     # overridden
     def create_subject_context(self, web_registry):
-        subject_context = DefaultWebSubjectContext(security_utils=self.security_utils,
+        subject_context = DefaultWebSubjectContext(yosai=self.yosai,
                                                    security_manager=self.security_manager,
                                                    web_registry=web_registry)
         return subject_context
@@ -245,7 +245,7 @@ class WebYosai(Yosai):
 
     @memoized_property
     def subject_builder(self):
-        self._subject_builder = WebSubjectBuilder(security_utils=self,
+        self._subject_builder = WebSubjectBuilder(yosai=self,
                                                   security_manager=self.security_manager)
         return self._subject_builder
 

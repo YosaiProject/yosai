@@ -693,7 +693,7 @@ class SubjectStore(metaclass=ABCMeta):
     --------
     Note that this component is used by SecurityManager implementations to
     manage Subject state persistence.  It does *not* make Subject instances
-    accessible to the application (e.g. via security_utils.subject).
+    accessible to the application (e.g. via yosai.subject).
     """
     @abstractmethod
     def save(self, subject):

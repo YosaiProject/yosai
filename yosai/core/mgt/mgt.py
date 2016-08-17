@@ -425,7 +425,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.subject_factory = subject_factory
 
         self.serialization_manager = serialization_manager
-        # the security_utils attribute is set by Yosai
+        # the yosai attribute is set by Yosai
 
     """
     * ===================================================================== *
@@ -757,10 +757,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     # existing_subject is used by WebSecurityManager:
     def create_subject_context(self, existing_subject):
-        if not hasattr(self, 'security_utils'):
+        if not hasattr(self, 'yosai'):
             msg = "SecurityManager has no Yosai attribute set."
             raise MisconfiguredException(msg)
-        return DefaultSubjectContext(self.security_utils, self)
+        return DefaultSubjectContext(self.yosai, self)
 
     def create_subject(self,
                        authc_token=None,

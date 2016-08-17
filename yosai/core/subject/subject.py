@@ -66,14 +66,14 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
                   the MapContext.  Exceptions will raise further down the
                   call stack should a mapping be incorrect.
     """
-    def __init__(self, security_utils, security_manager):
+    def __init__(self, yosai, security_manager):
         self.account = None  # yosai.core.renamed AuthenticationInfo to Account
         self.authentication_token = None
         self.authenticated = None
         self.identifiers = None
         self.host = None
         self.security_manager = security_manager
-        self.security_utils = security_utils
+        self.yosai = yosai
         self.session = None
         self.session_id = None
         self.session_creation_enabled = True
@@ -88,7 +88,7 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
             logger.debug(msg)
 
             try:
-                security_manager = self.security_utils.security_manager
+                security_manager = self.yosai.security_manager
             except UnavailableSecurityManagerException:
 
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
@@ -983,18 +983,18 @@ class SubjectBuilder:
 
     In future releases, this class may be refactored or removed entirely.  TBD
     """
-    def __init__(self, security_utils, security_manager):
+    def __init__(self, yosai, security_manager):
         """
         :type subject_context:  DefaultSubjectContext
         """
-        self.security_utils = security_utils
+        self.yosai = yosai
         self.security_manager = security_manager
 
     # yosai omits context_attributes
 
     # refactored resolve_subject_context:
     def create_subject_context(self):
-        return DefaultSubjectContext(security_utils=self.security_utils,
+        return DefaultSubjectContext(yosai=self.yosai,
                                      security_manager=self.security_manager)
 
     def build_subject(self):
@@ -1030,7 +1030,7 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
                                  security_manager=security_manager)
 
 
-# moved from its own security_utils module so as to avoid circular importing:
+# moved from its own yosai module so as to avoid circular importing:
 class Yosai:
 
     def __init__(self, env_var=None, file_path=None, session_attributes_schema=None):
@@ -1046,7 +1046,7 @@ class Yosai:
 
     @memoized_property
     def subject_builder(self):
-        self._subject_builder = SubjectBuilder(security_utils=self,
+        self._subject_builder = SubjectBuilder(yosai=self,
                                                security_manager=self.security_manager)
         return self._subject_builder
 
@@ -1080,7 +1080,7 @@ class Yosai:
         :type security_manager:  mgt_abcs.SecurityManager
         """
         self._security_manager = security_manager
-        self._security_manager.security_utils = self
+        self._security_manager.yosai = self
         self.subject_builder.security_manager = security_manager
 
     @staticmethod
