@@ -209,7 +209,6 @@ from yosai.core.session.session import (
     # SessionTokenGenerator,
     # ScheduledSessionValidator,
     DefaultNativeSessionHandler,
-    SessionAttributesSchema,
     SimpleSession,
     SimpleSessionFactory,
 )

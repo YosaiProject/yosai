@@ -476,11 +476,6 @@ class ProxiedSession(session_abcs.Session):
 # removed ImmutableProxiedSession because it can't be sent over the eventbus
 
 
-class SessionAttributesSchema:
-    def __repr__(self):
-        return "SessionAttributesSchema({0})".format(self.__dict__)
-
-
 class SimpleSession(session_abcs.ValidatingSession,
                     serialize_abcs.Serializable):
 
@@ -750,7 +745,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         return [self.remove_internal_attribute(key) for key in to_remove]
 
     def get_attribute(self, key):
-        return getattr(self.attributes, key)
+        return getattr(self.attributes, key, None)
 
     # new to yosai
     def get_attributes(self, keys):
@@ -760,7 +755,7 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a dict containing the attributes requested, if they exist
         """
-        return {key: getattr(self.attributes, key) for key in keys}
+        return {key: getattr(self.attributes, key, None) for key in keys}
 
     def set_attribute(self, key, value):
         setattr(self.attributes, key, value)

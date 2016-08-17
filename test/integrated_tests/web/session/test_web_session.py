@@ -86,18 +86,17 @@ def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
         subject = WebYosai.get_current_subject()
 
         old_session = subject.get_session()
-        
+
         old_session.set_attribute('attribute1', value1['attribute1'])
         old_session.set_attributes(values)
 
         subject.login(valid_username_password_token)
-
         new_session = subject.get_session()
-        new_session.set_attribute('attribute4', 'value4')
+        new_session.set_attribute('attribute4', 'value4')  # not in serialization schema
 
         assert (new_session.get_attribute('attribute1') == value1['attribute1'] and
                 new_session.get_attributes(values.keys()) == values and
-                new_session.get_attribute('attribute4') == 'value4')
+                new_session.get_attribute('attribute4') is None)
 
 
 def test_csrf_token_management(web_yosai, mock_web_registry, monkeypatch,

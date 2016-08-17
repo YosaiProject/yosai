@@ -156,12 +156,12 @@ def attributes_schema():
             self.attribute2 = None
             self.attribute3 = None
 
-        def marshal(self):
+        def __getstate__(self):
             return {'attribute1': self.attribute1,
                     'attribute2': self.attribute2,
                     'attribute3': self.attribute3}
 
-        def unmarshal(self, state):
+        def __setstate__(self, state):
             self.attribute1 = state['attribute1']
             self.attribute2 = state['attribute2']
             self.attribute3 = state['attribute3']
