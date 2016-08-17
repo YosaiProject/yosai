@@ -5,83 +5,203 @@ from yosai.web.subject.subject import global_webregistry_context
 
 from yosai.core import (
     AuthorizationException,
+    DefaultSubjectContext,
+    DelegatingSubject,
     IdentifiersNotSetException,
+    IllegalStateException,
+    YosaiContextException,
 )
 
 from yosai.web import (
+    DefaultWebSessionContext,
+    DefaultWebSubjectContext,
     WebYosai,
     WebDelegatingSubject,
+    WebProxiedSession,
+    WebSubjectBuilder,
+    global_webregistry_context,
 )
 
 
-# def test_web_subject_context_resolve_host_super
-"""
-super resolves a host from session
-"""
+@mock.patch.object(DefaultSubjectContext, 'resolve_host', return_value='resolved_host')
+def test_web_subject_context_resolve_host_super(
+        super_resolve_host, web_subject_context):
+    """
+    super resolves a host from session
+    """
 
-# def test_web_subject_context_resolve_host_webregistry
-"""
-- super fails to resolve a host from session
-- resolve_web_registry().remote_host is returned
-"""
+    result = web_subject_context.resolve_host('session')
+    super_resolve_host.assert_called_once_with('session')
+    assert result == 'resolved_host'
 
-# def test_web_subject_context_resolve_webregistry
-"""
-returns self.web_registry
-"""
 
-# def test_web_subject_context_resolve_webregistry_no_registry_raises
-"""
-- no self.web_registry exists
-- no subject.web_registry attribute
-- None is returned
-"""
+@mock.patch.object(DefaultSubjectContext, 'resolve_host', return_value=None)
+def test_web_subject_context_resolve_host_webregistry(
+        super_resolve_host, web_subject_context, monkeypatch, mock_web_registry):
+    """
+    - super fails to resolve a host from session
+    - resolve_web_registry().remote_host is returned
+    """
+    monkeypatch.setattr(web_subject_context, 'resolve_web_registry',
+                        lambda: mock_web_registry)
+    result = web_subject_context.resolve_host('session')
+    super_resolve_host.assert_called_once_with('session')
+    assert result == '123.45.6789'
 
-# def test_web_subject_context_resolve_webregistry_no_reg_returns_subject_wr
-"""
-- no self.web_registry exists
-- returns subject.web_registry attribute
-"""
 
-# def test_web_subject_builder_create_subject_context
+def test_web_subject_context_resolve_webregistry(web_subject_context, monkeypatch):
+    """
+    returns self.web_registry
+    """
+    monkeypatch.setattr(web_subject_context, 'web_registry', 'webregistry')
+    result = web_subject_context.resolve_web_registry()
+    assert result == 'webregistry'
 
-# def test_web_subject_builder_build_subject_raises
-"""
-when the subject created by the security manager isn't a WebSubject, an
-exception raises
-"""
 
-# def test_web_subject_builder_build_subject_returns
+def test_web_subject_context_resolve_webregistry_no_registry_raises(
+        web_subject_context, monkeypatch, caplog):
+    """
+    - no self.web_registry exists
+    - no subject.web_registry attribute
+    - None is returned
+    """
+    monkeypatch.setattr(web_subject_context, 'web_registry', None)
+    monkeypatch.setattr(web_subject_context, 'subject', None)
+    result = web_subject_context.resolve_web_registry()
+    assert result is None and 'could not find a WebRegistry' in caplog.text
 
-# def test_web_delegating_subject_create_session_context
 
-# def test_web_delegating_subject_get_session_not_create
-"""
-when create=False, the session is touched
-"""
-# def test_web_delegating_subject_get_session_create
-"""
-when create=True, the session is not touched -- verify this
-"""
+def test_web_subject_context_resolve_webregistry_no_reg_returns_subject_wr(
+        web_subject_context, monkeypatch):
+    """
+    - no self.web_registry exists
+    - returns subject.web_registry attribute
+    """
+    mock_subject = mock.create_autospec(WebDelegatingSubject)
+    mock_subject.web_registry = 'mockwebregistry'
+    monkeypatch.setattr(web_subject_context, 'subject', mock_subject)
 
-# def test_web_delegating_subject_proxied_session_stop
-"""
-calls super's stop and owner.session_stopped()
-"""
+    monkeypatch.setattr(web_subject_context, 'web_registry', None)
 
-# def test_web_yosai_init_using_env_var
-# def test_web_yosai_init_using_file_path
-# def test_web_yosai_init_using_neither_arg_raises
-"""
-A TypeError is raised when WebYosai is initialized without any arguments
-"""
+    result = web_subject_context.resolve_web_registry()
+    assert result == 'mockwebregistry'
 
-# def test_web_yosai_signed_cookie_secret_exists
 
-# def test_web_yosai_get_subject_returns_subject
+def test_web_subject_builder_create_subject_context(
+        web_subject_builder, mock_web_registry):
 
-# def test_web_yosai_get_current_webregistry
-# def test_web_yosai_get_current_webregistry_raises
+    wsb = web_subject_builder
+    result = wsb.create_subject_context(mock_web_registry)
+    assert isinstance(result, DefaultWebSubjectContext)
+
+
+@mock.patch.object(WebSubjectBuilder, 'create_subject_context')
+def test_web_subject_builder_build_subject_raises(
+        mock_wsb_csb, web_subject_builder, monkeypatch):
+    """
+    when the subject created by the security manager isn't a WebSubject, an
+    exception raises
+    """
+    wsb = web_subject_builder
+    monkeypatch.setattr(wsb.security_manager, 'create_subject', lambda subject_context: 'subject')
+
+    with pytest.raises(IllegalStateException):
+        wsb.build_subject('web_registry')
+        mock_wsb_csb.assert_called_once_with('web_registry')
+
+
+@mock.patch.object(WebSubjectBuilder, 'create_subject_context')
+def test_web_subject_builder_build_subject_returns(
+        mock_wsb_csb, web_subject_builder, monkeypatch):
+    """
+    when the subject created by the security manager is a WebSubject, it is returned
+    """
+    wsb = web_subject_builder
+    monkeypatch.setattr(wsb.security_manager,
+                        'create_subject',
+                        lambda subject_context: 'subject')
+
+    with pytest.raises(IllegalStateException):
+        wsb.build_subject('web_registry')
+        mock_wsb_csb.assert_called_once_with('web_registry')
+
+
+def test_web_delegating_subject_create_session_context(
+        web_delegating_subject):
+    result = web_delegating_subject.create_session_context()
+    assert (result.host == web_delegating_subject.host and
+            isinstance(result, DefaultWebSessionContext))
+
+
+@mock.patch.object(DelegatingSubject, 'get_session')
+def test_web_delegating_subject_get_session_not_create(
+        mock_ds_gs, web_delegating_subject, mock_web_delegating_session):
+    """
+    when create=False, the session is touched
+    """
+    wds = web_delegating_subject
+    result = wds.get_session(False)
+    assert result == wds.session
+    mock_ds_gs.assert_called_once_with(False)
+    mock_web_delegating_session.touch.assert_called_once_with()
+
+
+@mock.patch.object(DelegatingSubject, 'get_session')
+def test_web_delegating_subject_get_session_create(
+        mock_ds_gs, web_delegating_subject, mock_web_delegating_session):
+    """
+    when create=True, the session is not touched -- verify this
+    """
+    wds = web_delegating_subject
+    result = wds.get_session()
+    assert result == wds.session
+    mock_ds_gs.assert_called_once_with(True)
+    assert not mock_web_delegating_session.touch.called
+
+
+@mock.patch.object(WebProxiedSession, 'stop')
+def test_web_delegating_subject_proxied_session_stop(
+        mock_wps_stop, web_stopping_aware_proxied_session, monkeypatch):
+    """
+    calls super's stop and owner.session_stopped()
+    """
+    wsaps = web_stopping_aware_proxied_session
+    monkeypatch.setattr(wsaps, 'owner', mock.create_autospec(WebDelegatingSubject))
+    wsaps.stop('identifiers')
+    mock_wps_stop.assert_called_once_with('identifiers')
+    wsaps.owner.session_stopped.assert_called_once_with()
+
+
+def test_web_yosai_get_subject_returns_subject(
+        web_yosai, monkeypatch, mock_web_registry):
+
+    @staticmethod
+    def mock_cwr():
+        return mock_web_registry
+
+    mock_sb = mock.create_autospec(WebSubjectBuilder)
+    monkeypatch.setattr(web_yosai, 'subject_builder', mock_sb)
+    monkeypatch.setattr(WebYosai, 'get_current_webregistry', mock_cwr)
+    web_yosai._get_subject()
+
+    mock_sb.build_subject.assert_called_once_with(web_registry=mock_web_registry)
+
+
+def test_web_yosai_get_current_webregistry(web_yosai, monkeypatch):
+    mock_stack = ['webregistry']
+    monkeypatch.setattr(global_webregistry_context, 'stack', mock_stack)
+
+    result = WebYosai.get_current_webregistry()
+
+    assert result == 'webregistry'
+
+
+def test_web_yosai_get_current_webregistry_raises(web_yosai, monkeypatch):
+    mock_stack = []
+    monkeypatch.setattr(global_webregistry_context, 'stack', mock_stack)
+
+    with pytest.raises(YosaiContextException):
+        WebYosai.get_current_webregistry()
 
 
 def test_web_context(web_yosai, mock_web_registry):

@@ -8,7 +8,7 @@ class MockWebRegistry:
     def __init__(self):
         self.current_session_id = None
         self.current_remember_me = None
-        self._remote_host = None
+        self._remote_host = '123.45.6789'
 
         self.session_id_history = []
         self.remember_me_history = []

@@ -58,6 +58,7 @@ from yosai.web.subject.subject import (
     DefaultWebSubjectContext,
     WebDelegatingSubject,
     WebYosai,
+    global_webregistry_context,
 )
 
 from yosai.web.mgt.mgt import (

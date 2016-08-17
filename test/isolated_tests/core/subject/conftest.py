@@ -37,12 +37,6 @@ def default_subject_context(yosai, subject_context,
 
 
 @pytest.fixture(scope='function')
-def simple_identifiers_collection():
-    return SimpleIdentifierCollection(source_name='realm1',
-                                      identifier='username')
-
-
-@pytest.fixture(scope='function')
 def sic_serialized():
     return {'source_identifiers': [['realm1', 'username']],
             '_primary_identifier': None}
