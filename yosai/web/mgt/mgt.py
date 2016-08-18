@@ -169,10 +169,9 @@ class WebSecurityManager(NativeSecurityManager):
 
     # new to yosai, overriding to support CSRF token synchronization
     def on_successful_login(self, authc_token, account, subject):
-        subject.session.new_csrf_token()
 
         # Generating a new session_id at successful login is a recommended
-        # countermeasure to a session fixation:
+        # countermeasure to a session fixation
         subject.session = subject.session.recreate_session()
 
         super().remember_me_successful_login(authc_token, account, subject)

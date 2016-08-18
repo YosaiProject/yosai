@@ -1,3 +1,4 @@
+import base64
 from unittest import mock
 import pytest
 
@@ -158,78 +159,150 @@ def test_web_security_manager_before_logout(
     mock_nsm_bl.assert_called_once_with('subject')
 
 
-#def test_web_security_manager_remove_identity_raise_passes
-"""
-an AttributeError indicates that a WebSubject wasn't passed, and so nothing
-happens
-"""
+def test_web_security_manager_remove_identity_raise_passes(
+        web_security_manager):
+    """
+    an AttributeError indicates that a WebSubject wasn't passed, and so nothing
+    happens
+    """
+    assert web_security_manager.remove_identity('subject') is None
 
-#def test_web_security_manager_remove_identity
-"""
-the subject's web_registry.remember_me cookie deleter is called
-"""
 
-#def test_web_security_manager_on_successful_login
-"""
-a new csrf token gets generated and then super's remember_me_successful_login
-is called
-"""
+def test_web_security_manager_remove_identity(
+        web_security_manager, mock_web_registry, monkeypatch):
+    """
+    the subject's web_registry.remember_me cookie deleter is called
+    """
+    wsm = web_security_manager
+    mock_subject = mock.MagicMock()
+    mock_subject.web_registry = mock_web_registry
+    wsm.remove_identity(mock_subject)
+    assert mock_web_registry.remember_me_history == [('DELETE', None)]
 
-#def test_cookie_rmm_remember_init
-"""
-calls super init
-"""
 
-#def test_cookie_rmm_remember_encrypted_identity
-"""
-subject's web_registry remember_me cookie is set to the encoded value
-"""
+@mock.patch.object(NativeSecurityManager, 'remember_me_successful_login')
+def test_web_security_manager_on_successful_login(
+        mock_nsm_rmsl, web_security_manager):
+    """
+    a new csrf token gets generated and then super's remember_me_successful_login
+    is called
+    """
+    wsm = web_security_manager
+    mock_subject = mock.MagicMock()
+    mock_subject.session.recreate_session.return_value = 'recreated'
+    wsm.on_successful_login('authc_token', 'account', mock_subject)
 
-#def test_cookie_rmm_remember_encrypted_identity_raises
-"""
-an AttributeError results simply in debug logging
-"""
+    mock_nsm_rmsl.assert_called_once_with('authc_token', 'account', mock_subject)
+    assert mock_subject.session == 'recreated'
 
-#def test_cookie_rmm_is_identityremoved_raises_returns_false
-"""
-An AttributeError results in returning False
-"""
 
-# def test_cookie_rmm_is_identityremoved
-"""
-The webregistry's remember_me cookie is resolved and returns a check whether
-remember_me is set
-"""
+def test_cookie_rmm_remember_encrypted_identity(
+        cookie_rmm, mock_web_delegating_subject):
+    """
+    subject's web_registry remember_me cookie is set to the encoded value
+    """
+    mwds = mock_web_delegating_subject
 
-# def test_get_remembered_encrypted_identity_removed_instance
-"""
-scenario:
-    - the subject_context already had its remember_me identity removed
-    - the subject_context isnt a WebSubjectContext
+    assert mwds.web_registry.current_remember_me is None
 
-None returned
-"""
+    cookie_rmm.remember_encrypted_identity(mwds, b'encrypted')
 
-# def test_get_remembered_encrypted_identity_removed_not_instance
-"""
-scenario:
-    - the subject_context already had its remember_me identity removed
-    - the subject_context isnt a WebSubjectContext
+    assert mwds.web_registry.current_remember_me is not None
 
-logger debug followed by None returned
-"""
 
-# def test_get_remembered_encrypted_identity_remember_me
-"""
-remember_me cookie exists, so it is b64 decoded and the encrypted val returned
-"""
+def test_cookie_rmm_remember_encrypted_identity_raises(
+        cookie_rmm, caplog):
+    """
+    an AttributeError results simply in debug logging
+    """
+    cookie_rmm.remember_encrypted_identity('subject', b'encrypted')
+    assert 'not an HTTP-aware' in caplog.text
 
-# def test_get_remembered_encrypted_identity_no_remember_me
-"""
-no remember_me cookie will return None
-"""
 
-#def test_forget_identity
-"""
-the subject's webregistry remember_me cookie deleter is called
-"""
+def test_cookie_rmm_is_identityremoved_raises_returns_false(
+        cookie_rmm):
+    """
+    An AttributeError results in returning False
+    """
+    assert cookie_rmm.is_identity_removed('subject_context') is False
+
+
+def test_cookie_rmm_is_identityremoved(
+        cookie_rmm, monkeypatch, mock_web_registry, web_subject_context):
+    """
+    The webregistry's remember_me cookie is resolved and returns a check whether
+    remember_me is set
+    """
+    monkeypatch.setattr(mock_web_registry, 'current_remember_me', 'remembered')
+    monkeypatch.setattr(web_subject_context, 'resolve_web_registry', lambda: mock_web_registry)
+    cookie_rmm.is_identity_removed(web_subject_context) is True
+
+
+def test_cookie_rmm_get_remembered_encrypted_identity_removed_instance(
+        cookie_rmm, caplog, monkeypatch, web_subject_context):
+    """
+    scenario:
+        - the subject_context already had its remember_me identity removed
+        - the subject_context isnt a WebSubjectContext
+
+    None returned
+    """
+    monkeypatch.setattr(cookie_rmm, 'is_identity_removed', lambda x: True)
+    result = cookie_rmm.get_remembered_encrypted_identity(web_subject_context)
+    assert 'not an HTTP' not in caplog.text and result is None
+
+
+def test_cookie_rmm_get_remembered_encrypted_identity_removed_not_instance(
+        cookie_rmm, caplog, monkeypatch):
+    """
+    scenario:
+        - the subject_context already had its remember_me identity removed
+        - the subject_context isnt a WebSubjectContext
+
+    logger debug followed by None returned
+    """
+    monkeypatch.setattr(cookie_rmm, 'is_identity_removed', lambda x: True)
+    result = cookie_rmm.get_remembered_encrypted_identity('subject_context')
+    assert 'not an HTTP' in caplog.text and result is None
+
+
+def test_cookie_rmm_get_remembered_encrypted_identity_remember_me(
+        cookie_rmm, monkeypatch, mock_web_registry, web_subject_context):
+    """
+    remember_me cookie exists, so it is b64 decoded and the encrypted val returned
+    """
+    encoded = base64.b64encode(b'remembered')
+
+    monkeypatch.setattr(mock_web_registry, 'current_remember_me', encoded)
+    monkeypatch.setattr(cookie_rmm, 'is_identity_removed', lambda x: False)
+    monkeypatch.setattr(web_subject_context, 'web_registry', mock_web_registry)
+
+    result = cookie_rmm.get_remembered_encrypted_identity(web_subject_context)
+
+    assert result == base64.b64decode(encoded)
+
+
+def test_cookie_rmm_get_remembered_encrypted_identity_no_remember_me(
+        cookie_rmm, monkeypatch, mock_web_registry, web_subject_context):
+    """
+    no remember_me cookie will return None
+    """
+
+    monkeypatch.setattr(mock_web_registry, 'current_remember_me', None)
+    monkeypatch.setattr(cookie_rmm, 'is_identity_removed', lambda x: False)
+    monkeypatch.setattr(web_subject_context, 'web_registry', mock_web_registry)
+
+    result = cookie_rmm.get_remembered_encrypted_identity(web_subject_context)
+
+    assert result is None
+
+
+def test_cookie_rmm_forget_identity(
+        cookie_rmm, mock_web_delegating_subject):
+    """
+    the subject's webregistry remember_me cookie deleter is called
+    """
+    cookie_rmm.forget_identity(mock_web_delegating_subject, 'sc')
+
+    assert (mock_web_delegating_subject.web_registry.remember_me_history ==
+            [('DELETE', None)])

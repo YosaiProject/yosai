@@ -6,6 +6,7 @@ from yosai.core import (
 )
 
 from yosai.web import (
+    CookieRememberMeManager,
     DefaultWebSubjectContext,
     DefaultWebSubjectFactory,
     WebDelegatingSession,
@@ -31,8 +32,10 @@ def mock_web_stopping_aware_proxied_session():
 
 
 @pytest.fixture(scope='function')
-def mock_web_delegating_subject():
-    return mock.create_autospec(WebDelegatingSubject)
+def mock_web_delegating_subject(mock_web_registry):
+    subject = mock.create_autospec(WebDelegatingSubject)
+    subject.web_registry = mock_web_registry
+    return subject
 
 
 @pytest.fixture(scope='function')
@@ -80,3 +83,8 @@ def web_subject_context(web_yosai, mock_web_registry):
 @pytest.fixture(scope='function')
 def web_subject_builder(web_yosai):
     return WebSubjectBuilder(web_yosai, web_yosai.security_manager)
+
+
+@pytest.fixture(scope='function')
+def cookie_rmm(settings):
+    return CookieRememberMeManager(settings)
