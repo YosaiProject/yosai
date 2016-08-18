@@ -384,6 +384,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                             cache_abcs.CacheHandlerAware):
 
     def __init__(self,
+                 yosai,
                  settings,
                  attributes_schema,
                  realms=None,
@@ -404,6 +405,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :type realms: tuple
         :type session_attributes_schema: serialize_abcs.Serializable class
         """
+        self.yosai = yosai
         self._event_bus = event_bus
         self._cache_handler = cache_handler
         self.authz_info_resolver = authz_info_resolver
@@ -424,7 +426,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.remember_me_manager = remember_me_manager
         self.subject_factory = subject_factory
 
-        self.serialization_manager = serialization_manager
+        if serialization_manager: 
+            self.serialization_manager = serialization_manager
         # the yosai attribute is set by Yosai
 
     """

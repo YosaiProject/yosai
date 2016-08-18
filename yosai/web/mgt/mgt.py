@@ -90,6 +90,7 @@ class WebSecurityManager(NativeSecurityManager):
     """
 
     def __init__(self,
+                 yosai,
                  settings,
                  attributes_schema,
                  realms=None,
@@ -100,7 +101,8 @@ class WebSecurityManager(NativeSecurityManager):
         :type session_attributes_schema:  serialize_abcs.Serializable
         """
 
-        super().__init__(settings,
+        super().__init__(yosai,
+                         settings,
                          attributes_schema,
                          realms=realms,
                          cache_handler=cache_handler,
@@ -112,6 +114,7 @@ class WebSecurityManager(NativeSecurityManager):
         self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
 
     def create_subject_context(self, subject):
+
         if not hasattr(self, 'yosai'):
             msg = "WebSecurityManager has no yosai attribute set."
             raise MisconfiguredException(msg)

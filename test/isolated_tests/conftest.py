@@ -7,10 +7,17 @@ from yosai.core import (
 
 from yosai.web import (
     DefaultWebSubjectContext,
+    DefaultWebSubjectFactory,
     WebDelegatingSession,
     WebDelegatingSubject,
+    WebSecurityManager,
     WebSubjectBuilder,
 )
+
+
+@pytest.fixture(scope='function')
+def web_subject_factory():
+    return DefaultWebSubjectFactory()
 
 
 @pytest.fixture(scope='function')
@@ -49,6 +56,18 @@ def web_delegating_subject(
                                 session=mock_web_delegating_session,
                                 security_manager=web_yosai.security_manager,
                                 web_registry=mock_web_registry)
+
+
+@pytest.fixture(scope='function')
+def web_security_manager(web_yosai, settings, attributes_schema,
+                         account_store_realm, cache_handler, serialization_manager):
+    realms = (account_store_realm,)
+    return WebSecurityManager(web_yosai,
+                              settings,
+                              attributes_schema,
+                              realms=realms,
+                              cache_handler=cache_handler,
+                              serialization_manager=serialization_manager)
 
 
 @pytest.fixture(scope='function')

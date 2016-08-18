@@ -1042,7 +1042,7 @@ class Yosai:
     def generate_security_manager(self, settings, session_attributes_schema):
         # don't forget to pass default_cipher_key into the WebSecurityManager
         mgr_builder = SecurityManagerBuilder()
-        return mgr_builder.create_manager(settings, session_attributes_schema)
+        return mgr_builder.create_manager(self, settings, session_attributes_schema)
 
     @memoized_property
     def subject_builder(self):
@@ -1080,7 +1080,6 @@ class Yosai:
         :type security_manager:  mgt_abcs.SecurityManager
         """
         self._security_manager = security_manager
-        self._security_manager.yosai = self
         self.subject_builder.security_manager = security_manager
 
     @staticmethod
@@ -1337,7 +1336,7 @@ class SecurityManagerBuilder:
         except TypeError:
             return None
 
-    def create_manager(self, settings, session_attributes_schema):
+    def create_manager(self, yosai, settings, session_attributes_schema):
         """
         Order of execution matters.  The sac must be set before the cache_handler is
         instantiated so that the cache_handler's serialization manager instance
@@ -1360,7 +1359,8 @@ class SecurityManagerBuilder:
         cache_handler = self.init_cache_handler(settings,
                                                 attributes['cache_handler'])
 
-        manager = mgr_settings.security_manager(settings,
+        manager = mgr_settings.security_manager(yosai,
+                                                settings,
                                                 sac,
                                                 realms=realms,
                                                 cache_handler=cache_handler,

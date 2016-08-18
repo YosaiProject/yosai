@@ -11,9 +11,10 @@ from yosai.core import (
     NativeSecurityManager,
     PermissionResolver,
     RoleResolver,
-    Yosai,
+    SerializationManager,
     SimpleRole,
     UsernamePasswordToken,
+    Yosai,
     event_bus,
 )
 
@@ -102,13 +103,18 @@ def username_password_token():
 
 
 @pytest.fixture(scope='function')
-def cache_handler(settings):
-    return DPCacheHandler(settings=settings)
+def alchemy_store(settings, session):
+    return AlchemyAccountStore(settings=settings)
 
 
 @pytest.fixture(scope='function')
-def alchemy_store(settings, session):
-    return AlchemyAccountStore(settings=settings)
+def serialization_manager(attributes_schema):
+    return SerializationManager(attributes_schema)
+
+
+@pytest.fixture(scope='function')
+def cache_handler(settings, serialization_manager):
+    return DPCacheHandler(settings=settings, serialization_manager=serialization_manager)
 
 
 @pytest.fixture(scope='function')
@@ -183,16 +189,3 @@ def web_yosai(attributes_schema, account_store_realm):
 @pytest.fixture(scope='function')
 def mock_web_registry():
     return MockWebRegistry()
-
-
-@pytest.fixture(scope='function')
-def web_security_manager(account_store_realm, cache_handler, settings,
-                         attributes_schema):
-
-    wsm = WebSecurityManager(settings,
-                             realms=(account_store_realm,),
-                             session_attributes_schema=attributes_schema)
-    wsm.cache_handler = cache_handler
-    wsm.event_bus = event_bus
-
-    return wsm
