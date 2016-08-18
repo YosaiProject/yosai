@@ -8,8 +8,11 @@ from yosai.core import (
 )
 
 from yosai.web import (
+    DefaultWebSessionContext,
     DefaultWebSubjectContext,
     WebDelegatingSubject,
+    WebSecurityManager,
+    WebSessionKey,
 )
 
 
@@ -95,27 +98,65 @@ def test_web_security_manager_session_manager_setter(
     mock_nsm_sm.return_value.__set__.assert_called_once_with(wsm, 'sessionmanager')
     assert mock_eval.session_manager == 'sessionmanager'
 
-#def test_web_security_manager_create_session_context
-"""
-creates and returns a DefaultWebSessionContext
-"""
 
-#def test_web_security_manager_get_session_key_raise_revert
-"""
-if resolve_web_registry raises an AttributeError, it means a WebSubjectContext
-wasn't passed, and consequently super's get_session_key is called with
-the subject_context
-"""
+@mock.patch.object(DefaultWebSessionContext, '__init__', return_value=None)
+def test_web_security_manager_create_session_context(
+        mock_dwsc_init, web_security_manager, web_subject_context, monkeypatch,
+        mock_web_registry):
+    """
+    creates and returns a DefaultWebSessionContext
+    """
+    wsm = web_security_manager
+    monkeypatch.setattr(web_subject_context,
+                        'resolve_web_registry',
+                        lambda: mock_web_registry)
+    result = wsm.create_session_context(web_subject_context)
+    mock_dwsc_init.assert_called_once_with(mock_web_registry)
+    assert result.host == getattr(wsm, 'host', None)
 
-#def test_web_security_manager_get_session_key
-"""
-creates and returns a WebSessionKey
-"""
 
-#def test_web_security_manager_before_logout
-"""
-super's before_logout is called and then remove_identity
-"""
+@mock.patch.object(NativeSecurityManager, 'get_session_key',
+                   return_value='native_session_key')
+def test_web_security_manager_get_session_key_raise_revert(
+        mock_nsm_gsk, web_security_manager):
+    """
+    if resolve_web_registry raises an AttributeError, it means a WebSubjectContext
+    wasn't passed, and consequently super's get_session_key is called with
+    the subject_context
+    """
+    wsm = web_security_manager
+    wsm.get_session_key('subjectcontext')
+    mock_nsm_gsk.assert_called_once_with('subjectcontext')
+
+
+@mock.patch.object(WebSessionKey, '__init__', return_value=None)
+def test_web_security_manager_get_session_key(
+        mock_wsk_init, web_security_manager, web_subject_context,
+        monkeypatch, mock_web_registry):
+    """
+    creates and returns a WebSessionKey
+    """
+    wsm = web_security_manager
+    monkeypatch.setattr(web_subject_context, 'resolve_web_registry', lambda: mock_web_registry)
+    monkeypatch.setattr(web_subject_context, 'session_id', 'sessionid1234')
+    result = wsm.get_session_key(web_subject_context)
+    mock_wsk_init.assert_called_once_with(session_id='sessionid1234',
+                                          web_registry=mock_web_registry)
+    assert isinstance(result, WebSessionKey)
+
+
+@mock.patch.object(NativeSecurityManager, 'before_logout')
+@mock.patch.object(WebSecurityManager, 'remove_identity')
+def test_web_security_manager_before_logout(
+        mock_wsm_ri, mock_nsm_bl, web_security_manager):
+    """
+    super's before_logout is called and then remove_identity
+    """
+    web_security_manager.before_logout('subject')
+
+    mock_wsm_ri.assert_called_once_with('subject')
+    mock_nsm_bl.assert_called_once_with('subject')
+
 
 #def test_web_security_manager_remove_identity_raise_passes
 """

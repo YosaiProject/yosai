@@ -141,7 +141,7 @@ class WebSecurityManager(NativeSecurityManager):
     def create_session_context(self, subject_context):
         web_registry = subject_context.resolve_web_registry()
         session_context = DefaultWebSessionContext(web_registry)
-        session_context.host = self.host
+        session_context.host = getattr(self, 'host', None)
 
         return session_context
 
