@@ -1,10 +1,4 @@
 
-# def test_web_proxied_session_new_csrf_token
-# def test_web_proxied_session_get_csrf_token
-# def test_web_proxied_session_flash
-# def test_web_proxied_session_peek_flash
-# def test_web_proxied_session_pop_flash
-
 # def test_web_delegating_session_new_csrf_token
 # def test_web_delegating_session_get_csrf_token_no_token
 # def test_web_delegating_session_get_csrf_token_with_token
@@ -13,6 +7,12 @@
 # def test_web_delegating_session_flash_notallow_msg_notin_flash_messages
 # def test_web_delegating_session_peek_flash
 # def test_web_delegating_session_pop_flash
+
+# def test_web_proxied_session_new_csrf_token
+# def test_web_proxied_session_get_csrf_token
+# def test_web_proxied_session_flash
+# def test_web_proxied_session_peek_flash
+# def test_web_proxied_session_pop_flash
 
 # def test_web_simple_session_getstate
 # def test_web_simple_session_setstate

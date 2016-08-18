@@ -2,16 +2,24 @@ import pytest
 from unittest import mock
 
 from yosai.core import (
+    SessionEventHandler,
     SimpleIdentifierCollection,
 )
 
 from yosai.web import (
     CookieRememberMeManager,
+    DefaultWebSessionStorageEvaluator,
     DefaultWebSubjectContext,
     DefaultWebSubjectFactory,
+    WebCachingSessionStore,
     WebDelegatingSession,
     WebDelegatingSubject,
+    WebProxiedSession,
     WebSecurityManager,
+    WebSessionFactory,
+    WebSessionHandler,
+    WebSessionKey,
+    WebSimpleSession,
     WebSubjectBuilder,
 )
 
@@ -88,3 +96,54 @@ def web_subject_builder(web_yosai):
 @pytest.fixture(scope='function')
 def cookie_rmm(settings):
     return CookieRememberMeManager(settings)
+
+
+@pytest.fixture(scope='function')
+def web_simple_session(attributes_schema):
+    return WebSimpleSession(csrf_token='csrftoken123',
+                            absolute_timeout=1800000,
+                            idle_timeout=600000,
+                            attributes_schema=attributes_schema,
+                            host='123.45.6789')
+
+
+@pytest.fixture(scope='function')
+def web_session_factory(attributes_schema, settings):
+    return WebSessionFactory(attributes_schema, settings)
+
+
+@pytest.fixture(scope='function')
+def web_session_handler():
+    mock_session_event_handler = mock.create_autospec(SessionEventHandler)
+    return WebSessionHandler(mock_session_event_handler, True)
+
+
+@pytest.fixture(scope='function')
+def web_session_manager(attributes_schema, settings):
+    return WebSessionFactory(attributes_schema, settings)
+
+
+@pytest.fixture(scope='function')
+def web_session_key(mock_web_registry):
+    return WebSessionKey(session_id='sessionid123',
+                         web_register=mock_web_registry)
+
+
+@pytest.fixture(scope='function')
+def web_delegating_session(web_session_manager, web_session_key):
+    return WebDelegatingSession(web_session_manager, web_session_key)
+
+
+@pytest.fixture(scope='function')
+def web_proxied_session(web_delegating_session):
+    return WebProxiedSession(web_delegating_session)
+
+
+@pytest.fixture(scope='function')
+def web_caching_session_store():
+    return WebCachingSessionStore()
+
+
+@pytest.fixture(scope='function')
+def web_session_storage_evaluator():
+    return DefaultWebSessionStorageEvaluator()

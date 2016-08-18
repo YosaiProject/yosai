@@ -1,4 +1,3 @@
-import pdb
 """
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -47,34 +46,258 @@ from yosai.web import (
 logger = logging.getLogger(__name__)
 
 
-class WebProxiedSession(ProxiedSession):
-    def __init__(self, target_session):
-        super().__init__(target_session)
+class WebSimpleSession(SimpleSession):
 
-    def new_csrf_token(self):
+    def __init__(self, csrf_token, absolute_timeout, idle_timeout,
+                 attributes_schema, host=None):
+        super().__init__(absolute_timeout, idle_timeout, attributes_schema, host=host)
+        self.set_internal_attribute('flash_messages',
+                                    collections.defaultdict(list))
+        self.set_internal_attribute('csrf_token', csrf_token)
+
+    def __getstate__(self):
+        return {
+            '_session_id': self._session_id,
+            '_start_timestamp': self._start_timestamp,
+            '_stop_timestamp': self._stop_timestamp,
+            '_last_access_time': self._last_access_time,
+            '_idle_timeout': self._idle_timeout,
+            '_absolute_timeout': self._absolute_timeout,
+            '_is_expired': self._is_expired,
+            '_host': self._host,
+            '_internal_attributes': dict(self._internal_attributes),
+            '_attributes': self._attributes
+        }
+
+    def __setstate__(self, state):
+        self._session_id = state['_session_id']
+        self._start_timestamp = state['_start_timestamp']
+        self._stop_timestamp = state['_stop_timestamp']
+        self._last_access_time = state['_last_access_time']
+        self._idle_timeout = state['_idle_timeout']
+        self._absolute_timeout = state['_absolute_timeout']
+        self._is_expired = state['_is_expired']
+        self._host = state['_host']
+        self._attributes = state['_attributes']
+        self._internal_attributes = state['_internal_attributes']
+
+        flash_messages = collections.defaultdict(list)
+        flash_messages.update(state['_internal_attributes']['flash_messages'])
+        self._internal_attributes['flash_messages'] = flash_messages
+
+
+class WebSessionFactory(SimpleSessionFactory):
+
+    def __init__(self, attributes_schema, settings):
+        super().__init__(attributes_schema, settings)
+
+    def create_session(self, csrf_token, session_context):
+        return WebSimpleSession(csrf_token,
+                                self.absolute_timeout,
+                                self.idle_timeout,
+                                self.attributes_schema,
+                                host=getattr(session_context, 'host', None))
+
+
+class WebSessionHandler(DefaultNativeSessionHandler):
+
+    def __init__(self, session_event_handler, delete_invalid_sessions=True):
+
+        super().__init__(session_event_handler=session_event_handler,
+                         session_store=WebCachingSessionStore(),
+                         delete_invalid_sessions=delete_invalid_sessions)
+
+        self.is_session_id_cookie_enabled = True
+
+    # overridden
+    def on_start(self, session, session_context):
+        """
+        Stores the Session's ID, usually as a Cookie, to associate with future
+        requests.
+
+        :param session: the session that was just ``createSession`` created
+        """
+        session_id = session.session_id
+        web_registry = session_context.web_registry
+
+        if self.is_session_id_cookie_enabled:
+            web_registry.session_id = session_id
+            logger.debug("Set SessionID cookie using id: " + str(session_id))
+
+        else:
+            msg = ("Session ID cookie is disabled.  No cookie has been set for "
+                   "new session with id: " + str(session_id))
+            logger.debug(msg)
+
+    # new to yosai:
+    def on_recreate_session(self, new_session_id, session_key):
+        web_registry = session_key.web_registry
+
+        if self.is_session_id_cookie_enabled:
+            web_registry.session_id = new_session_id
+
+    # overridden
+    def on_stop(self, session, session_key):
+        super().on_stop(session, session_key)
+        msg = ("Session has been stopped (subject logout or explicit stop)."
+               "  Removing session ID cookie.")
+        logger.debug(msg)
+
+        web_registry = session_key.web_registry
+        del web_registry.session_id
+
+    # overridden
+    def on_expiration(self, session, ese=None, session_key=None):
+        """
+        :type session: session_abcs.Session
+        :type ese: ExpiredSessionException
+        :type session_key:  session_abcs.SessionKey
+        """
+        super().on_expiration(session, ese, session_key)
+        self.on_invalidation(session_key)
+
+    # overridden
+    def on_invalidation(self, session_key, session=None, ise=None):
+        """
+        :type session_key:  session_abcs.SessionKey
+        :type session: session_abcs.Session
+        :type ese: InvalidSessionException
+        """
+        if session:
+            super().on_invalidation(session, ise, session_key)
+
+        web_registry = session_key.web_registry
+
+        del web_registry.session_id
+
+
+class DefaultWebSessionManager(DefaultNativeSessionManager):
+    """
+    Web-application capable SessionManager implementation
+    """
+    def __init__(self, attributes_schema, settings):
+
+        self.session_factory = WebSessionFactory(attributes_schema, settings)
+        self._session_event_handler = SessionEventHandler()
+        self.session_handler = \
+            WebSessionHandler(session_event_handler=self.session_event_handler)
+        self._event_bus = None
+
+    # yosai omits get_referenced_session_id method
+
+    # new to yosai (fixation countermeasure)
+    def recreate_session(self, session_key):
+        old_session = self.session_handler.do_get_session(session_key)
+        new_session = copy.copy(old_session)
+        self.session_handler.delete(old_session)
+
+        new_session_id = self.session_handler.create_session(new_session)
+
+        if not new_session_id:
+            msg = 'Failed to re-create a sessionid for:' + str(session_key)
+            raise SessionCreationException(msg)
+
+        self.session_handler.on_recreate_session(new_session_id, session_key)
+
+        logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
+                     format(session_key.session_id, new_session_id))
+
+        new_session_key = WebSessionKey(session_id=new_session_id,
+                                        web_registry=session_key.web_registry)
+        return self.create_exposed_session(new_session, key=new_session_key)
+
+    # overidden
+    def create_exposed_session(self, session, key=None, context=None):
+        """
+        This was an overloaded method ported from java that should be refactored. (TBD)
+        Until it is refactored, it is called in one of two ways:
+            1) passing it session and session_context
+            2) passing it session and session_key
+        """
+        if key:
+            return WebDelegatingSession(self, key)
+
+        web_registry = context.web_registry
+        session_key = WebSessionKey(session_id=session.session_id,
+                                    web_registry=web_registry)
+
+        return WebDelegatingSession(self, session_key)
+
+    def new_csrf_token(self, session_key):
         """
         :rtype: str
         :returns: a CSRF token
         """
-        return self._delegate.new_csrf_token()
+        try:
+            csrf_token = self._generate_csrf_token()
 
-    def get_csrf_token(self):
-        return self._delegate.get_csrf_token()
+            session = self._lookup_required_session(session_key)
+            session.set_internal_attribute('csrf_token', csrf_token)
+            self.session_handler.on_change(session)
 
-    def flash(self, msg, queue='default', allow_duplicate=False):
-        return self._delegate.flash(msg, queue, allow_duplicate)
+        except AttributeError:
+            raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
 
-    # new to yosai
-    def peek_flash(self, queue='default'):
-        return self._delegate.peek_flash(queue)
+        return csrf_token
 
-    # new to yosai
-    def pop_flash(self, queue='default'):
-        return self._delegate.pop_flash(queue)
+    def _generate_csrf_token(self):
+        return binascii.hexlify(os.urandom(20)).decode('utf-8')
 
-    # new to yosai
-    def recreate_session(self):
-        return self._delegate.recreate_session()
+    # overridden to support csrf_token
+    def _create_session(self, session_context):
+        csrf_token = self._generate_csrf_token()
+
+        session = self.session_factory.create_session(csrf_token, session_context)
+
+        msg = "Creating session. "
+        logger.debug(msg)
+
+        msg = ("Creating new EIS record for new session instance [{0}]".
+               format(session))
+        logger.debug(msg)
+
+        sessionid = self.session_handler.create_session(session)
+        if not sessionid:  # new to yosai
+            msg = 'Failed to obtain a sessionid while creating session.'
+            raise SessionCreationException(msg)
+
+        return session
+
+
+class WebSessionKey(DefaultSessionKey):
+    """
+    A ``SessionKey`` implementation that also retains the ``WebRegistry``
+    associated with the web request that is performing the session lookup
+    """
+    def __init__(self, session_id=None, web_registry=None):
+        super().__init__(session_id)
+        self.web_registry = web_registry
+        self.resolve_session_id()
+
+    @property
+    def session_id(self):
+        if not self._session_id:
+            self.resolve_session_id()
+            return self._session_id
+        return self._session_id
+
+    def resolve_session_id(self):
+        session_id = self._session_id
+
+        if not session_id:
+            session_id = self.web_registry.session_id
+
+        self._session_id = session_id
+
+    def __repr__(self):
+        return "WebSessionKey(session_id={0}, web_registry={1})".\
+            format(self._session_id, self.web_registry)
+
+    def __getstate__(self):
+        return {'_session_id': self._session_id}
+
+    def __setstate__(self, state):
+        self._session_id = state['_session_id']
 
 
 # new to yosai:
@@ -125,44 +348,34 @@ class WebDelegatingSession(DelegatingSession):
         return self.session_manager.recreate_session(self.session_key)
 
 
-class WebSimpleSession(SimpleSession):
+class WebProxiedSession(ProxiedSession):
+    def __init__(self, target_session):
+        super().__init__(target_session)
 
-    def __init__(self, csrf_token, absolute_timeout, idle_timeout,
-                 attributes_schema, host=None):
-        super().__init__(absolute_timeout, idle_timeout, attributes_schema, host=host)
-        self.set_internal_attribute('flash_messages',
-                                    collections.defaultdict(list))
-        self.set_internal_attribute('csrf_token', csrf_token)
+    def new_csrf_token(self):
+        """
+        :rtype: str
+        :returns: a CSRF token
+        """
+        return self._delegate.new_csrf_token()
 
-    def __getstate__(self):
-        return {
-            '_session_id': self._session_id,
-            '_start_timestamp': self._start_timestamp,
-            '_stop_timestamp': self._stop_timestamp,
-            '_last_access_time': self._last_access_time,
-            '_idle_timeout': self._idle_timeout,
-            '_absolute_timeout': self._absolute_timeout,
-            '_is_expired': self._is_expired,
-            '_host': self._host,
-            '_internal_attributes': dict(self._internal_attributes),
-            '_attributes': self._attributes
-        }
+    def get_csrf_token(self):
+        return self._delegate.get_csrf_token()
 
-    def __setstate__(self, state):
-        self._session_id = state['_session_id']
-        self._start_timestamp = state['_start_timestamp']
-        self._stop_timestamp = state['_stop_timestamp']
-        self._last_access_time = state['_last_access_time']
-        self._idle_timeout = state['_idle_timeout']
-        self._absolute_timeout = state['_absolute_timeout']
-        self._is_expired = state['_is_expired']
-        self._host = state['_host']
-        self._attributes = state['_attributes']
-        self._internal_attributes = state['_internal_attributes']
+    def flash(self, msg, queue='default', allow_duplicate=False):
+        return self._delegate.flash(msg, queue, allow_duplicate)
 
-        flash_messages = collections.defaultdict(list)
-        flash_messages.update(state['_internal_attributes']['flash_messages'])
-        self._internal_attributes['flash_messages'] = flash_messages
+    # new to yosai
+    def peek_flash(self, queue='default'):
+        return self._delegate.peek_flash(queue)
+
+    # new to yosai
+    def pop_flash(self, queue='default'):
+        return self._delegate.pop_flash(queue)
+
+    # new to yosai
+    def recreate_session(self):
+        return self._delegate.recreate_session()
 
 
 class DefaultWebSessionContext(DefaultSessionContext):
@@ -263,216 +476,3 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
         web_registry = subject.web_registry
 
         return web_registry.session_creation_enabled
-
-
-class WebSessionHandler(DefaultNativeSessionHandler):
-
-    def __init__(self, session_event_handler, delete_invalid_sessions=True):
-
-        super().__init__(session_event_handler=session_event_handler,
-                         session_store=WebCachingSessionStore(),
-                         delete_invalid_sessions=delete_invalid_sessions)
-
-        self.is_session_id_cookie_enabled = True
-
-    # overridden
-    def on_start(self, session, session_context):
-        """
-        Stores the Session's ID, usually as a Cookie, to associate with future
-        requests.
-
-        :param session: the session that was just ``createSession`` created
-        """
-        session_id = session.session_id
-        web_registry = session_context.web_registry
-
-        if self.is_session_id_cookie_enabled:
-            web_registry.session_id = session_id
-            logger.debug("Set SessionID cookie using id: " + str(session_id))
-
-        else:
-            msg = ("Session ID cookie is disabled.  No cookie has been set for "
-                   "new session with id: " + str(session_id))
-            logger.debug(msg)
-
-    # new to yosai:
-    def on_recreate_session(self, new_session_id, session_key):
-        web_registry = session_key.web_registry
-
-        if self.is_session_id_cookie_enabled:
-            web_registry.session_id = new_session_id
-
-    # overridden
-    def on_stop(self, session, session_key):
-        super().on_stop(session, session_key)
-        msg = ("Session has been stopped (subject logout or explicit stop)."
-               "  Removing session ID cookie.")
-        logger.debug(msg)
-
-        web_registry = session_key.web_registry
-        del web_registry.session_id
-
-    # overridden
-    def on_expiration(self, session, ese=None, session_key=None):
-        """
-        :type session: session_abcs.Session
-        :type ese: ExpiredSessionException
-        :type session_key:  session_abcs.SessionKey
-        """
-        super().on_expiration(session, ese, session_key)
-        self.on_invalidation(session_key)
-
-    # overridden
-    def on_invalidation(self, session_key, session=None, ise=None):
-        """
-        :type session_key:  session_abcs.SessionKey
-        :type session: session_abcs.Session
-        :type ese: InvalidSessionException
-        """
-        if session:
-            super().on_invalidation(session, ise, session_key)
-
-        web_registry = session_key.web_registry
-
-        del web_registry.session_id
-
-
-class WebSessionFactory(SimpleSessionFactory):
-
-    def __init__(self, attributes_schema, settings):
-        super().__init__(attributes_schema, settings)
-
-    def create_session(self, csrf_token, session_context):
-        return WebSimpleSession(csrf_token,
-                                self.absolute_timeout,
-                                self.idle_timeout,
-                                self.attributes_schema,
-                                host=getattr(session_context, 'host', None))
-
-
-class DefaultWebSessionManager(DefaultNativeSessionManager):
-    """
-    Web-application capable SessionManager implementation
-    """
-    def __init__(self, attributes_schema, settings):
-
-        self.session_factory = WebSessionFactory(attributes_schema, settings)
-        self._session_event_handler = SessionEventHandler()
-        self.session_handler = \
-            WebSessionHandler(session_event_handler=self.session_event_handler)
-        self._event_bus = None
-
-    # yosai omits get_referenced_session_id method
-
-    # new to yosai (fixation countermeasure)
-    def recreate_session(self, session_key):
-        old_session = self.session_handler.do_get_session(session_key)
-        new_session = copy.copy(old_session)
-        self.session_handler.delete(old_session)
-
-        new_session_id = self.session_handler.create_session(new_session)
-
-        if not new_session_id:
-            msg = 'Failed to re-create a sessionid for:' + str(session_key)
-            raise SessionCreationException(msg)
-
-        self.session_handler.on_recreate_session(new_session_id, session_key)
-
-        logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
-                     format(session_key.session_id, new_session_id))
-
-        new_session_key = WebSessionKey(session_id=new_session_id,
-                                        web_registry=session_key.web_registry)
-        return self.create_exposed_session(new_session, key=new_session_key)
-
-    # overidden
-    def create_exposed_session(self, session, key=None, context=None):
-        """
-        This was an overloaded method ported from java that should be refactored. (TBD)
-        Until it is refactored, it is called in one of two ways:
-            1) passing it session and session_context
-            2) passing it session and session_key
-        """
-        if key:
-            return WebDelegatingSession(self, key)
-
-        web_registry = context.web_registry
-        session_key = WebSessionKey(session_id=session.session_id,
-                                    web_registry=web_registry)
-
-        return WebDelegatingSession(self, session_key)
-
-    def new_csrf_token(self, session_key):
-        """
-        :rtype: str
-        :returns: a CSRF token
-        """
-        try:
-            csrf_token = self._generate_csrf_token()
-
-            session = self._lookup_required_session(session_key)
-            session.set_internal_attribute('csrf_token', csrf_token)
-            self.session_handler.on_change(session)
-
-        except AttributeError:
-            raise CSRFTokenException('Could not save CSRF_TOKEN to session.')
-
-        return csrf_token
-
-    def _generate_csrf_token(self):
-        return binascii.hexlify(os.urandom(20)).decode('utf-8')
-
-    # overridden to support csrf_token
-    def _create_session(self, session_context):
-        csrf_token = self._generate_csrf_token()
-
-        session = self.session_factory.create_session(csrf_token, session_context)
-
-        msg = "Creating session. "
-        logger.debug(msg)
-
-        msg = ("Creating new EIS record for new session instance [{0}]".
-               format(session))
-        logger.debug(msg)
-
-        sessionid = self.session_handler.create_session(session)
-        if not sessionid:  # new to yosai
-            msg = 'Failed to obtain a sessionid while creating session.'
-            raise SessionCreationException(msg)
-
-        return session
-
-class WebSessionKey(DefaultSessionKey):
-    """
-    A ``SessionKey`` implementation that also retains the ``WebRegistry``
-    associated with the web request that is performing the session lookup
-    """
-    def __init__(self, session_id=None, web_registry=None):
-        super().__init__(session_id)
-        self.web_registry = web_registry
-        self.resolve_session_id()
-
-    @property
-    def session_id(self):
-        if not self._session_id:
-            self.resolve_session_id()
-            return self._session_id
-        return self._session_id
-
-    def resolve_session_id(self):
-        session_id = self._session_id
-
-        if not session_id:
-            session_id = self.web_registry.session_id
-
-        self._session_id = session_id
-
-    def __repr__(self):
-        return "WebSessionKey(session_id={0}, web_registry={1})".\
-            format(self._session_id, self.web_registry)
-
-    def __getstate__(self):
-        return {'_session_id': self._session_id}
-
-    def __setstate__(self, state):
-        self._session_id = state['_session_id']
