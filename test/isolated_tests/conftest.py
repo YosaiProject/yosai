@@ -8,6 +8,8 @@ from yosai.core import (
 
 from yosai.web import (
     CookieRememberMeManager,
+    DefaultWebSessionContext,
+    DefaultWebSessionManager,
     DefaultWebSessionStorageEvaluator,
     DefaultWebSubjectContext,
     DefaultWebSubjectFactory,
@@ -99,12 +101,41 @@ def cookie_rmm(settings):
 
 
 @pytest.fixture(scope='function')
-def web_simple_session(attributes_schema):
-    return WebSimpleSession(csrf_token='csrftoken123',
-                            absolute_timeout=1800000,
-                            idle_timeout=600000,
-                            attributes_schema=attributes_schema,
-                            host='123.45.6789')
+def web_simple_session_state():
+    internal_attributes = {'identifiers_session_key': 'identifiers_session_key',
+                           'authenticated_session_key': 'authenticated_session_key',
+                           'run_as_identifiers_session_key': 'run_as_identifiers_session_key',
+                           'csrf_token': 'csrftoken123',
+                           'flash_messages': {}}
+
+    return {'_absolute_timeout': 1800000,
+            '_idle_timeout': 600000,
+            '_host': '123.45.6789',
+            '_session_id': 'sessionid123',
+            '_start_timestamp': 1471552578153,
+            '_stop_timestamp': None,
+            '_last_access_time': 1471552659175,
+            '_is_expired': False,
+            '_internal_attributes': internal_attributes}
+
+
+@pytest.fixture(scope='function')
+def mock_web_simple_session():
+    mss = mock.create_autospec(WebSimpleSession)
+    mss.session_id = 'simplesessionid123'
+    return mss
+
+
+@pytest.fixture(scope='function')
+def web_simple_session(attributes_schema, web_simple_session_state):
+    wss = WebSimpleSession(csrf_token='csrftoken123',
+                           absolute_timeout=1800000,
+                           idle_timeout=600000,
+                           attributes_schema=attributes_schema,
+                           host='123.45.6789')
+
+    wss.__dict__.update(web_simple_session_state)
+    return wss
 
 
 @pytest.fixture(scope='function')
@@ -120,13 +151,13 @@ def web_session_handler():
 
 @pytest.fixture(scope='function')
 def web_session_manager(attributes_schema, settings):
-    return WebSessionFactory(attributes_schema, settings)
+    return DefaultWebSessionManager(attributes_schema, settings)
 
 
 @pytest.fixture(scope='function')
 def web_session_key(mock_web_registry):
     return WebSessionKey(session_id='sessionid123',
-                         web_register=mock_web_registry)
+                         web_registry=mock_web_registry)
 
 
 @pytest.fixture(scope='function')
@@ -147,3 +178,11 @@ def web_caching_session_store():
 @pytest.fixture(scope='function')
 def web_session_storage_evaluator():
     return DefaultWebSessionStorageEvaluator()
+
+
+@pytest.fixture(scope='function')
+def mock_session_context(mock_web_registry):
+    sc = mock.create_autospec(DefaultWebSessionContext)
+    sc.host = '123.45.6789'
+    sc.web_registry = mock_web_registry
+    return sc
