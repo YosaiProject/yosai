@@ -7,8 +7,12 @@ from yosai.core import (
 )
 
 from yosai.web import (
+    CSRFTokenException,
     DefaultWebSessionManager,
+    WebDelegatingSession,
+    WebSessionFactory,
     WebSessionHandler,
+    WebSessionKey,
     WebSimpleSession,
 )
 
@@ -155,14 +159,114 @@ def test_web_session_mgr_recreate_session_raises(
         mock_sh_cs.assert_called_once_with('oldsession')
 
 
-# def test_web_session_mgr_recreate_session_no_newsessionid
-# def test_web_session_mgr_create_exposed_session_with_key
-# def test_web_session_mgr_create_exposed_session_wo_key
-# def test_web_session_mgr_new_csrf_token
-# def test_web_session_mgr_new_csrf_token_raises
-# def test_web_session_mgr_generate_csrf_token
-# def test_web_session_mgr_create_session
-# def test_web_session_mgr_create_session_raises
+def test_web_session_mgr_create_exposed_session_without_key(
+        mock_web_delegating_session, web_session_manager, mock_session_context):
+
+    wsm = web_session_manager
+    result = wsm.create_exposed_session(mock_web_delegating_session,
+                                        context=mock_session_context)
+
+    assert (isinstance(result, WebDelegatingSession) and
+            result.session_key.web_registry == mock_session_context.web_registry)
+
+
+def test_web_session_mgr_create_exposed_session_w_key(
+        mock_web_delegating_session, web_session_manager, web_session_key):
+
+    wsm = web_session_manager
+    result = wsm.create_exposed_session(mock_web_delegating_session,
+                                        key=web_session_key)
+
+    assert (isinstance(result, WebDelegatingSession) and
+            result.session_key.web_registry == web_session_key.web_registry)
+
+
+@mock.patch.object(WebSessionHandler, 'on_change')
+def test_web_session_mgr_new_csrf_token(
+        mock_sh_oc, web_session_manager, monkeypatch, mock_web_delegating_session):
+    wsm = web_session_manager
+    mwds = mock_web_delegating_session
+    monkeypatch.setattr(wsm, '_generate_csrf_token', lambda: 'csrftoken')
+    monkeypatch.setattr(wsm, '_lookup_required_session', lambda x: mwds)
+    result = wsm.new_csrf_token('sessionkey123')
+    mwds.set_internal_attribute.assert_called_once_with('csrf_token', 'csrftoken')
+    mock_sh_oc.assert_called_once_with(mwds)
+
+    assert result == 'csrftoken'
+
+
+def test_web_session_mgr_new_csrf_token_raises(
+        web_session_manager, monkeypatch, mock_web_delegating_session):
+    wsm = web_session_manager
+    monkeypatch.setattr(wsm, '_generate_csrf_token', lambda: 'csrftoken')
+    monkeypatch.setattr(wsm, '_lookup_required_session', lambda x: 'failed')
+
+    with pytest.raises(CSRFTokenException):
+        wsm.new_csrf_token('sessionkey123')
+
+
+def test_web_session_mgr_generate_csrf_token(web_session_manager):
+    result = web_session_manager._generate_csrf_token()
+    assert len(result) == 40  # it's always 40
+
+
+@mock.patch.object(WebSessionFactory, 'create_session', return_value='session')
+def test_web_session_mgr_create_session(
+        mock_wsf_cs, web_session_manager, monkeypatch):
+
+    wsm = web_session_manager
+    monkeypatch.setattr(wsm, '_generate_csrf_token', lambda: 'csrftoken')
+    monkeypatch.setattr(wsm.session_handler, 'create_session', lambda x: 'sessionid')
+
+    wsm._create_session('session_context')
+    mock_wsf_cs.assert_called_once_with('csrftoken', 'session_context')
+
+
+@mock.patch.object(DefaultNativeSessionHandler, 'create_session', return_value=None)
+@mock.patch.object(WebSessionFactory, 'create_session', return_value='session')
+def test_web_session_mgr_create_session_raises(
+        mock_wsf_cs, mock_sh_cs, web_session_manager, monkeypatch):
+    wsm = web_session_manager
+    monkeypatch.setattr(wsm, '_generate_csrf_token', lambda: 'csrftoken')
+
+    with pytest.raises(SessionCreationException):
+        wsm._create_session('session_context')
+        mock_wsf_cs.assert_called_once_with('csrftoken', 'session_context')
+        mock_sh_cs.assert_called_once_with('session')
+
+
+@mock.patch.object(WebSessionKey, 'resolve_session_id')
+def test_web_session_key_session_id(mock_wsk_rsi, web_session_key, monkeypatch):
+    wsk = web_session_key
+    monkeypatch.setattr(wsk, '_session_id', None)
+
+    wsk.session_id
+    mock_wsk_rsi.assert_called_once_with()
+
+
+def test_web_session_key_resolve_session_id(web_session_key, monkeypatch):
+    wsk = web_session_key
+    monkeypatch.setattr(wsk, '_session_id', 'sessionid')
+    monkeypatch.setattr(wsk.web_registry, 'current_session_id', 'currentsessionid')
+    wsk.resolve_session_id()
+    assert wsk._session_id == 'sessionid'
+
+
+def test_web_session_key_resolve_session_id_using_webregistry(
+        web_session_key, monkeypatch):
+
+    wsk = web_session_key
+    monkeypatch.setattr(wsk, '_session_id', None)
+    monkeypatch.setattr(wsk.web_registry, 'current_session_id', 'currentsessionid')
+    wsk.resolve_session_id()
+    assert wsk._session_id == 'currentsessionid'
+
+
+def test_web_session_key_serialization(web_session_key, monkeypatch):
+    wsk = web_session_key
+    monkeypatch.setattr(wsk, '_session_id', 'sessionid123456')
+    wsk.__setstate__(wsk.__getstate__())
+    assert wsk._session_id == 'sessionid123456'
 
 
 # def test_web_delegating_session_new_csrf_token(web_delegating_session):
@@ -187,11 +291,3 @@ def test_web_session_mgr_recreate_session_raises(
 # def test_web_sse_is_session_storage_enabled_state_false
 # def test_web_sse_is_session_storage_enabled_not_websubject_false
 # def test_web_sse_is_session_storage_enabled_nostate_webregistry_false
-
-
-# def test_web_session_key_session_id
-# def test_web_session_key_session_id_using_webregistry
-# def test_web_session_key_resolve_session_id
-# def test_web_session_key_resolve_session_id_using_webregistry
-# def test_web_session_key_getstate
-# def test_web_session_key_setstate

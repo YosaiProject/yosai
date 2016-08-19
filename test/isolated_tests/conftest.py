@@ -33,7 +33,9 @@ def web_subject_factory():
 
 @pytest.fixture(scope='function')
 def mock_web_delegating_session():
-    return mock.create_autospec(WebDelegatingSession)
+    wds = mock.create_autospec(WebDelegatingSession)
+    wds.session_id = 'sessionid987'
+    return wds
 
 
 @pytest.fixture(scope='function')
