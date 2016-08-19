@@ -340,9 +340,9 @@ class WebDelegatingSession(DelegatingSession):
         :rtype: list
         """
         flash_messages = self.get_internal_attribute('flash_messages')
-        message = flash_messages.pop(queue, None)
+        messages = flash_messages.pop(queue, None)
         self.set_internal_attribute('flash_messages', flash_messages)
-        return message
+        return messages
 
     def recreate_session(self):
         return self.session_manager.recreate_session(self.session_key)

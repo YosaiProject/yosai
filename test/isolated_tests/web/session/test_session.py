@@ -269,14 +269,101 @@ def test_web_session_key_serialization(web_session_key, monkeypatch):
     assert wsk._session_id == 'sessionid123456'
 
 
-# def test_web_delegating_session_new_csrf_token(web_delegating_session):
-# def test_web_delegating_session_get_csrf_token_no_token
-# def test_web_delegating_session_get_csrf_token_with_token
-# def test_web_delegating_session_flash_allow_duplicate
-# def test_web_delegating_session_flash_notallow_msg_in_flash_messages
-# def test_web_delegating_session_flash_notallow_msg_notin_flash_messages
-# def test_web_delegating_session_peek_flash
-# def test_web_delegating_session_pop_flash
+def test_web_delegating_session_new_csrf_token(
+        web_delegating_session, monkeypatch, web_session_key):
+    wds = web_delegating_session
+    monkeypatch.setattr(wds, 'session_key', 'testing')
+    monkeypatch.setattr(wds.session_manager, 'new_csrf_token', lambda x: x)
+
+    assert wds.new_csrf_token() == 'testing'
+
+
+def test_web_delegating_session_get_csrf_token_no_token(
+        web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+    monkeypatch.setattr(wds, 'get_internal_attribute', lambda x: None)
+    monkeypatch.setattr(wds, 'new_csrf_token', lambda: 'newtoken')
+    assert wds.get_csrf_token() == 'newtoken'
+
+
+def test_web_delegating_session_get_csrf_token_with_token(
+        web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+    monkeypatch.setattr(wds, 'get_internal_attribute', lambda x: 'token')
+    monkeypatch.setattr(wds, 'new_csrf_token', lambda: 'newtoken')
+    assert wds.get_csrf_token() == 'token'
+
+
+@mock.patch.object(WebDelegatingSession, 'set_internal_attribute')
+def test_web_delegating_session_flash_allow_duplicate(
+        mock_wds_sia, web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+
+    flashmessages = {'default': ['testing123']}
+    monkeypatch.setattr(wds, 'get_internal_attribute', lambda x: flashmessages)
+
+    wds.flash('testing123', allow_duplicate=True)
+
+    flashmessages = {'default': ['testing123', 'testing123']}
+    mock_wds_sia.assert_called_once_with('flash_messages', flashmessages)
+
+
+@mock.patch.object(WebDelegatingSession, 'set_internal_attribute')
+def test_web_delegating_session_flash_notallow_msg_in_flash_messages(
+        mock_wds_sia, web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+
+    flashmessages = {'default': ['testing123']}
+    monkeypatch.setattr(wds, 'get_internal_attribute', lambda x: flashmessages)
+
+    wds.flash('testing123')
+
+    assert not mock_wds_sia.called
+
+
+@mock.patch.object(WebDelegatingSession, 'set_internal_attribute')
+def test_web_delegating_session_flash_notallow_msg_notin_flash_messages(
+        mock_wds_sia, web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+
+    flashmessages = {'default': ['testing123']}
+    monkeypatch.setattr(wds, 'get_internal_attribute', lambda x: flashmessages)
+
+    wds.flash('testing456')
+
+    flashmessages = {'default': ['testing123', 'testing456']}
+    mock_wds_sia.assert_called_once_with('flash_messages', flashmessages)
+
+
+@mock.patch.object(WebDelegatingSession,
+                   'get_internal_attribute',
+                   return_value={'default': ['testing123']})
+def test_web_delegating_session_peek_flash(mock_ds_gia, web_delegating_session):
+    assert web_delegating_session.peek_flash() == ['testing123']
+    mock_ds_gia.assert_called_once_with('flash_messages')
+
+
+@mock.patch.object(WebDelegatingSession, 'set_internal_attribute')
+def test_web_delegating_session_pop_flash(
+        mock_wds_sia, web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+    flashmessages = {'default': ['testing123', 'testing456'],
+                     'custom_queue': ['custom123']}
+    monkeypatch.setattr(wds, 'get_internal_attribute', lambda x: flashmessages)
+    result = wds.pop_flash()
+
+    flashmessages = {'custom_queue': ['custom123']}
+
+    mock_wds_sia.assert_called_once_with('flash_messages', flashmessages)
+    assert result == ['testing123', 'testing456']
+
+
+def test_web_delegating_session_recreate_session(
+        web_delegating_session, monkeypatch):
+    wds = web_delegating_session
+    monkeypatch.setattr(wds.session_manager, 'recreate_session', lambda x: x)
+    assert wds.recreate_session() == wds.session_key 
+
 
 # def test_web_proxied_session_new_csrf_token
 # def test_web_proxied_session_get_csrf_token
