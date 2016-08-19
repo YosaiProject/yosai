@@ -362,19 +362,119 @@ def test_web_delegating_session_recreate_session(
         web_delegating_session, monkeypatch):
     wds = web_delegating_session
     monkeypatch.setattr(wds.session_manager, 'recreate_session', lambda x: x)
-    assert wds.recreate_session() == wds.session_key 
+    assert wds.recreate_session() == wds.session_key
 
 
-# def test_web_proxied_session_new_csrf_token
-# def test_web_proxied_session_get_csrf_token
-# def test_web_proxied_session_flash
-# def test_web_proxied_session_peek_flash
-# def test_web_proxied_session_pop_flash
+def test_web_proxied_session_new_csrf_token(web_proxied_session, monkeypatch):
+    monkeypatch.setattr(web_proxied_session._delegate,
+                        'new_csrf_token',
+                        lambda: 'delegated_token')
+    assert web_proxied_session.new_csrf_token() == 'delegated_token'
 
-# def test_web_caching_session_store_cache_identifiers_to_key_map
-# def test_web_caching_session_store_cache_identifiers_to_key_map_raises
 
-# def test_web_sse_is_session_storage_enabled_true
-# def test_web_sse_is_session_storage_enabled_state_false
-# def test_web_sse_is_session_storage_enabled_not_websubject_false
-# def test_web_sse_is_session_storage_enabled_nostate_webregistry_false
+def test_web_proxied_session_get_csrf_token(web_proxied_session, monkeypatch):
+    monkeypatch.setattr(web_proxied_session._delegate,
+                        'get_csrf_token',
+                        lambda: 'delegated_token')
+    assert web_proxied_session.get_csrf_token() == 'delegated_token'
+
+
+def test_web_proxied_session_flash(web_proxied_session, monkeypatch):
+    monkeypatch.setattr(web_proxied_session._delegate,
+                        'flash',
+                        lambda x, y, z: [x, y, z])
+    result = web_proxied_session.flash('message', 'other_q', False)
+    assert result == ['message', 'other_q', False]
+
+
+def test_web_proxied_session_peek_flash(web_proxied_session, monkeypatch):
+    monkeypatch.setattr(web_proxied_session._delegate, 'peek_flash', lambda x: x)
+    result = web_proxied_session.peek_flash('other_q')
+    assert result == 'other_q'
+
+
+def test_web_proxied_session_pop_flash(web_proxied_session, monkeypatch):
+    monkeypatch.setattr(web_proxied_session._delegate, 'pop_flash', lambda x: x)
+    result = web_proxied_session.pop_flash('other_q')
+    assert result == 'other_q'
+
+
+def test_web_proxied_recreate_session(web_proxied_session, monkeypatch):
+    monkeypatch.setattr(web_proxied_session._delegate, 'recreate_session', lambda: 'recreated')
+    result = web_proxied_session.recreate_session()
+    assert result == 'recreated'
+
+
+def test_web_caching_session_store_cache_identifiers_to_key_map(
+        web_caching_session_store, mock_web_simple_session, monkeypatch):
+    wcss = web_caching_session_store
+    mock_cache_handler = mock.MagicMock()
+    mock_identifiers = mock.MagicMock(primary_identifier='primary')
+
+    monkeypatch.setattr(wcss, 'cache_handler', mock_cache_handler)
+    monkeypatch.setattr(mock_web_simple_session,
+                        'get_internal_attribute',
+                        lambda x: mock_identifiers)
+
+    wcss._cache_identifiers_to_key_map(mock_web_simple_session, 'simplesessionid123')
+
+    wcss.cache_handler.set.assert_called_once_with(
+        domain='session',
+        identifier=mock_identifiers.primary_identifier,
+        value=WebSessionKey(session_id='simplesessionid123'))
+
+
+def test_web_caching_session_store_cache_identifiers_to_key_map_raises(
+        web_caching_session_store, mock_web_simple_session, monkeypatch, caplog):
+    wcss = web_caching_session_store
+    mock_cache_handler = mock.MagicMock()
+
+    monkeypatch.setattr(wcss, 'cache_handler', mock_cache_handler)
+    monkeypatch.setattr(mock_web_simple_session,
+                        'get_internal_attribute',
+                        lambda x: 'mock_identifiers')
+
+    wcss._cache_identifiers_to_key_map(mock_web_simple_session, 'simplesessionid123')
+
+    assert 'Could not cache' in caplog.text
+
+
+def test_web_sse_is_session_storage_enabled_true(
+        web_session_storage_evaluator, mock_web_delegating_subject, monkeypatch):
+    wsse = web_session_storage_evaluator
+    monkeypatch.setattr(mock_web_delegating_subject, 'get_session', lambda x: True)
+    assert wsse.is_session_storage_enabled(mock_web_delegating_subject) is True
+
+
+def test_web_sse_is_session_storage_enabled_state_false(
+        web_session_storage_evaluator, mock_web_delegating_subject, monkeypatch):
+
+    wsse = web_session_storage_evaluator
+    monkeypatch.setattr(mock_web_delegating_subject, 'get_session', lambda x: False)
+    monkeypatch.setattr(wsse, 'session_storage_enabled', lambda: False)
+    assert wsse.is_session_storage_enabled(mock_web_delegating_subject) is True
+
+
+def test_web_sse_is_session_storage_enabled_not_websubject_false(
+        web_session_storage_evaluator, monkeypatch):
+    wsse = web_session_storage_evaluator
+
+    mock_subject = mock.MagicMock()
+    mock_subject.get_session.return_value = False
+
+    monkeypatch.setattr(wsse, 'session_manager', 'sessman')
+    monkeypatch.setattr(wsse, 'session_storage_enabled', lambda: True)
+    assert wsse.is_session_storage_enabled(mock_subject) is False
+
+
+def test_web_sse_is_session_storage_enabled_nostate_webregistry_true(
+        web_session_storage_evaluator, monkeypatch, web_delegating_subject):
+    wsse = web_session_storage_evaluator
+
+    mock_subject = mock.MagicMock()
+    mock_subject.get_session.return_value = False
+
+    monkeypatch.setattr(wsse, 'session_storage_enabled', lambda: True)
+    monkeypatch.setattr(web_delegating_subject.web_registry, 'session_creation_enabled', False)
+
+    assert wsse.is_session_storage_enabled(web_delegating_subject)

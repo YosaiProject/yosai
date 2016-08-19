@@ -299,6 +299,10 @@ class WebSessionKey(DefaultSessionKey):
     def __setstate__(self, state):
         self._session_id = state['_session_id']
 
+    def __eq__(self, other):
+        return (self._session_id == other._session_id and
+                self.web_registry == other.web_registry)
+
 
 # new to yosai:
 class WebDelegatingSession(DelegatingSession):
