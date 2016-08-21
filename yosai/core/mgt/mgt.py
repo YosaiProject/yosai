@@ -426,7 +426,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.remember_me_manager = remember_me_manager
         self.subject_factory = subject_factory
 
-        if serialization_manager: 
+        if serialization_manager:
             self.serialization_manager = serialization_manager
         # the yosai attribute is set by Yosai
 
@@ -486,15 +486,14 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     @property
     def serialization_manager(self):
-        return self._serialization_manager
+        pass
 
     @serialization_manager.setter
     def serialization_manager(self, sm):
-        self.cache_handler.serialization_manager = sm
-        self.apply_cache_handler(self.realms)
-        self.apply_cache_handler(self.session_manager)
-        self.remember_me_manager.serialization_manager = sm
-        self._serialization_manager = sm
+        try:
+            self.remember_me_manager.serialization_manager = sm
+        except AttributeError:
+            pass
 
     #  property required by EventBusAware interface:
     @property
@@ -546,14 +545,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         else:
             msg = 'realms argument must have a value'
             raise InvalidArgumentException(msg)
-
-    @property
-    def session_attributes_schema(self):
-        return SimpleSession.AttributesSchema
-
-    @session_attributes_schema.setter
-    def session_attributes_schema(self, schema):
-        SimpleSession.set_attributes_schema(schema)
 
     @property
     def session_manager(self):

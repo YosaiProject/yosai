@@ -48,7 +48,6 @@ class SerializationManager:
         def all_subclasses(cls):
             return cls.__subclasses__() + [g for s in cls.__subclasses__()
                                            for g in all_subclasses(s)]
-
         # manual registration required because it isn't a Serializable subclass:
         if session_attributes_schema:
             self.serializer.register_custom_type(session_attributes_schema)

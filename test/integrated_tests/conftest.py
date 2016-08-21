@@ -80,12 +80,14 @@ def valid_username_password_token():
                                  remember_me=False,
                                  host='127.0.0.1')
 
+
 @pytest.fixture(scope='function')  # because successful login clears password
 def remembered_valid_username_password_token():
     return UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
                                  remember_me=True,
                                  host='127.0.0.1')
+
 
 @pytest.fixture(scope='function')
 def invalid_username_password_token():

@@ -1330,9 +1330,10 @@ class SecurityManagerBuilder:
             msg = 'Failed to initialize realms during SecurityManager Setup'
             raise SecurityManagerInitException(msg)
 
-    def init_cache_handler(self, settings, cache_handler):
+    def init_cache_handler(self, settings, cache_handler, serialization_manager):
         try:
-            return cache_handler(settings=settings)
+            return cache_handler(settings=settings,
+                                 serialization_manager=serialization_manager)
         except TypeError:
             return None
 
@@ -1347,24 +1348,26 @@ class SecurityManagerBuilder:
         realms = self.init_realms(settings, attributes['realms'])
 
         if session_attributes_schema:
-            sac = session_attributes_schema
+            sas = session_attributes_schema
         else:
-            sac = attributes['session_attributes_schema']
+            sas = attributes['session_attributes_schema']
 
         serialization_manager = \
-            SerializationManager(sac, serializer_scheme=attributes['serializer'])
+            SerializationManager(sas, serializer_scheme=attributes['serializer'])
 
         # the cache_handler doesn't initialize a cache_realm until it gets
         # a serialization manager, which is assigned within the SecurityManager
         cache_handler = self.init_cache_handler(settings,
-                                                attributes['cache_handler'])
+                                                attributes['cache_handler'],
+                                                serialization_manager)
 
         manager = mgr_settings.security_manager(yosai,
                                                 settings,
-                                                sac,
+                                                sas,
                                                 realms=realms,
                                                 cache_handler=cache_handler,
                                                 serialization_manager=serialization_manager)
+
         return manager
 
 # Set Global State Managers

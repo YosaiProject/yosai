@@ -153,7 +153,7 @@ def native_security_manager(account_store_realm, cache_handler,
     return nsm
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def attributes_schema():
     class SessionAttributesSchema:
 
@@ -176,12 +176,13 @@ def attributes_schema():
 
 
 @pytest.fixture(scope='function')
-def yosai():
-    return Yosai(env_var='YOSAI_SETTINGS')
+def yosai(attributes_schema):
+    return Yosai(env_var='YOSAI_SETTINGS',
+                 session_attributes_schema=attributes_schema)
 
 
 @pytest.fixture(scope='function')
-def web_yosai(attributes_schema, account_store_realm):
+def web_yosai(attributes_schema):
     return WebYosai(env_var='YOSAI_SETTINGS',
                     session_attributes_schema=attributes_schema)
 
