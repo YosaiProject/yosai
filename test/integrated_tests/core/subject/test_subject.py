@@ -301,7 +301,7 @@ def test_session_idle_expiration_clears_cache(
         session = new_subject.get_session()
         session = cache_handler.get('session', identifier=session.session_id)
 
-        twenty_ago = datetime.timedelta(minutes=30)
+        twenty_ago = (60 * 20 * 1000)
         session.last_access_time = session.last_access_time - twenty_ago
         cache_handler.set('session', session.session_id, session)
         session = cache_handler.get('session', identifier=session.session_id)
