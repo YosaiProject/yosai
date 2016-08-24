@@ -1337,6 +1337,18 @@ class SecurityManagerBuilder:
         except TypeError:
             return None
 
+    def init_attributes_schema(self, session_attributes_schema, attributes):
+        if session_attributes_schema:
+            return session_attributes_schema
+
+        sas = attributes['session_attributes_schema']
+        if sas:
+            return sas
+
+        # The serializer can use a plain old Python object for
+        # marshalling primitives, covering the most likely use cases::
+        return type('SessionAttributes', (object,), {})
+
     def create_manager(self, yosai, settings, session_attributes_schema):
         """
         Order of execution matters.  The sac must be set before the cache_handler is
@@ -1347,10 +1359,7 @@ class SecurityManagerBuilder:
         attributes = mgr_settings.attributes
         realms = self.init_realms(settings, attributes['realms'])
 
-        if session_attributes_schema:
-            sas = session_attributes_schema
-        else:
-            sas = attributes['session_attributes_schema']
+        sas = self.init_attributes_schema(session_attributes_schema, attributes)
 
         serialization_manager = \
             SerializationManager(sas, serializer_scheme=attributes['serializer'])
