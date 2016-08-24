@@ -1085,13 +1085,19 @@ class Yosai:
     @staticmethod
     @contextmanager
     def context(yosai):
-        # clearing the stacks first because the post-yield __exit__ logic
-        # isn't reliable enough (if an exception raises following the yield,
-        # popping the stacks wouldn't happen)
-        global_yosai_context.stack = []
-        global_subject_context.stack = []
         global_yosai_context.stack.append(yosai)
-        yield
+
+        try:
+            yield yosai
+        except:
+            pass
+        finally:
+            global_yosai_context.stack.pop()
+
+            try:
+                global_subject_context.stack.pop()
+            except IndexError:
+                logger.debug('Could not pop a subject from the context stack.')
 
     @staticmethod
     def get_current_subject():

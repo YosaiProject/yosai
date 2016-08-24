@@ -272,17 +272,23 @@ class WebYosai(Yosai):
     @contextmanager
     def context(yosai, webregistry):
 
-        # clearing the stacks first because the post-yield __exit__ logic
-        # isn't reliable enough (if an exception raises following the yield,
-        # popping the stacks wouldn't happen)
-        global_yosai_context.stack = []
-        global_subject_context.stack = []
-        global_webregistry_context.stack = []
-
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
         webregistry.secret = yosai.signed_cookie_secret  # configuration
         global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
         yield
+
+        try:
+            yield
+        except:
+            pass
+        finally:
+            global_yosai_context.stack.pop()
+            global_webregistry_context.stack.pop()
+
+            try:
+                global_subject_context.stack.pop()
+            except IndexError:
+                logger.debug('Could not pop a subject from the context stack.')
 
 
     @staticmethod
