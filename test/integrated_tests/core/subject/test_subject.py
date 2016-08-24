@@ -197,7 +197,7 @@ def test_check_role_raises(
             new_subject.check_role(tr['roles'], all)
 
             assert event_detected == tr['roles']
-            new_subject.logout()
+        new_subject.logout()
 
 
 def test_run_as_raises(walter_identifier, yosai):
@@ -284,11 +284,11 @@ def test_login_clears_cache(
         out = caplog.text
 
         assert 'Clearing cached authz_info for [thedude]' in out
-        new_subject.logout()
+    new_subject.logout()
 
 
 def test_session_idle_expiration_clears_cache(
-        thedude_identifier, valid_username_password_token, thedude_testpermissions,
+        valid_username_password_token, thedude_testpermissions,
         caplog, cache_handler, yosai):
 
     tp = thedude_testpermissions
@@ -315,8 +315,6 @@ def test_session_idle_expiration_clears_cache(
             assert ('Clearing cached credentials for [thedude]' in out and
                     'Clearing cached authz_info for [thedude]' in out)
 
-            new_subject.logout()
-
 
 def test_absolute_expired_session(
         valid_username_password_token, yosai, thedude_testpermissions,
@@ -336,7 +334,6 @@ def test_absolute_expired_session(
 
         with pytest.raises(UnknownSessionException):
             new_subject.is_permitted(tp['perms'])
-            new_subject.logout()
 
 
 def test_requires_permission_succeeds(yosai, valid_username_password_token):

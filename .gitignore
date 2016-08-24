@@ -2,6 +2,7 @@
 .cache
 .coverage
 .eggs
+.idea
 *.egg-info/
 *.pyc
 *.pyo

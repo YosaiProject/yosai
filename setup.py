@@ -36,6 +36,7 @@ install_requires = [
     'cryptography',
     'msgpack-python',
     'cbor2',
+    'python-rapidjson',
 ]
 
 setup(

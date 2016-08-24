@@ -271,17 +271,19 @@ class WebYosai(Yosai):
     @staticmethod
     @contextmanager
     def context(yosai, webregistry):
+
+        # clearing the stacks first because the post-yield __exit__ logic
+        # isn't reliable enough (if an exception raises following the yield,
+        # popping the stacks wouldn't happen)
+        global_yosai_context.stack = []
+        global_subject_context.stack = []
+        global_webregistry_context.stack = []
+
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
         webregistry.secret = yosai.signed_cookie_secret  # configuration
         global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
         yield
 
-        try:
-            global_subject_context.stack.pop()
-        except IndexError:
-            logger.debug('Could not pop a subject from the context stack.')
-        global_yosai_context.stack.pop()
-        global_webregistry_context.stack.pop()
 
     @staticmethod
     def get_current_webregistry():
@@ -309,7 +311,7 @@ class WebYosai(Yosai):
             global_subject_context.stack.append(subject)
             return subject
 
-        except ExpiredSessionException:
+        except ExpiredSessionException as exc:
             # absolute timeout of remember_me cookies is TBD (idle expired rolls)
             if WebYosai.get_current_webregistry().remember_me:
                 msg = ('A remembered subject from the global context has an '
@@ -321,7 +323,7 @@ class WebYosai(Yosai):
                 global_subject_context.stack.append(subject)
                 return subject
 
-            raise WebYosai.get_current_webregistry().raise_unauthorized(msg)
+            raise WebYosai.get_current_webregistry().raise_unauthorized(exc)
 
     @staticmethod
     def requires_authentication(fn):

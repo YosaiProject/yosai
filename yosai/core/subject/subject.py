@@ -1085,13 +1085,13 @@ class Yosai:
     @staticmethod
     @contextmanager
     def context(yosai):
-        global_yosai_context.stack.append(yosai)  # how to weakref? TBD
-        yield yosai
-        global_yosai_context.stack.pop()
-        try:
-            global_subject_context.stack.pop()
-        except IndexError:
-            logger.debug('Could not pop a subject from the context stack.')
+        # clearing the stacks first because the post-yield __exit__ logic
+        # isn't reliable enough (if an exception raises following the yield,
+        # popping the stacks wouldn't happen)
+        global_yosai_context.stack = []
+        global_subject_context.stack = []
+        global_yosai_context.stack.append(yosai)
+        yield
 
     @staticmethod
     def get_current_subject():
@@ -1107,8 +1107,8 @@ class Yosai:
             msg = 'A subject instance _DOES NOT_ exist in the global context.  Creating one.'
             logger.debug(msg)
 
-            yosai = Yosai.get_current_yosai()
-            subject = yosai._get_subject()
+            subject = Yosai.get_current_yosai()._get_subject()
+
             global_subject_context.stack.append(subject)
             return subject
 
