@@ -5,6 +5,7 @@ from yosai.web.subject.subject import global_webregistry_context
 
 from yosai.core import (
     AuthorizationException,
+    DelegatingSubject,
     SubjectBuilder,
     IdentifiersNotSetException,
     IllegalStateException,
@@ -12,22 +13,21 @@ from yosai.core import (
     Yosai,
 )
 
-from yosai.web import (
+from yosai.core.subject.subject import (
+    global_subject_context,
 )
 
 
-def test_yosai_get_subject_returns_subject(
-        yosai, monkeypatch, mock_web_registry):
-
-    @staticmethod
-    def mock_cwr():
-        return mock_web_registry
-
+@mock.patch.object(global_subject_context, 'stack')
+def test_yosai_get_subject_returns_subject(mock_stack, yosai, monkeypatch):
     mock_sb = mock.create_autospec(SubjectBuilder)
+    mock_sb.build_subject.return_value = 'built'
     monkeypatch.setattr(yosai, 'subject_builder', mock_sb)
-    yosai._get_subject()
+    result = yosai._get_subject()
 
-    mock_sb.build_subject.assert_called_once_with(yosai, yosai.security_manager)
+    mock_sb.build_subject.assert_called_once_with()
+    mock_stack.append.assert_called_once_with('built')
+    assert result == 'built'
 
 
 def test_yosai_context(yosai):
@@ -45,7 +45,7 @@ def test_yosai_context(yosai):
     assert (global_subject_context.stack == [] and
             global_yosai_context.stack == [])
 
-    with Yosai.context(yosai, mock_web_registry):
+    with Yosai.context(yosai):
         assert (global_subject_context.stack == [] and
                 global_yosai_context.stack == [yosai])
 
@@ -69,7 +69,6 @@ def test_requires_authentication_succeeds(monkeypatch):
         return m
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_authentication
     def do_this():
@@ -95,7 +94,6 @@ def test_requires_authentication_raises(monkeypatch):
         return m
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_authentication
     def do_this():
@@ -113,14 +111,7 @@ def test_requires_user_succeeds(monkeypatch):
     def mock_gcs():
         return mock.MagicMock(identifiers='username12345')
 
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.raise_unauthorized.return_value = Exception
-        return m
-
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_user
     def do_this():
@@ -139,14 +130,7 @@ def test_requires_user_raises(monkeypatch):
     def mock_gcs():
         return mock.MagicMock(identifiers=None)
 
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.raise_unauthorized.return_value = Exception
-        return m
-
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_user
     def do_this():
@@ -165,14 +149,7 @@ def test_requires_guest(monkeypatch):
     def mock_gcs():
         return mock.MagicMock(identifiers=None)
 
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.raise_unauthorized.return_value = Exception
-        return m
-
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_guest
     def do_this():
@@ -189,14 +166,7 @@ def test_requires_guest_raises(monkeypatch):
     def mock_gcs():
         return mock.MagicMock(identifiers='userid12345')
 
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.raise_unauthorized.return_value = Exception
-        return m
-
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_guest
     def do_this():
@@ -210,11 +180,11 @@ def test_requires_permission_succeeds(monkeypatch):
     """
     This test verifies that the decorator works as expected.
     """
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
+    mock_ds = mock.create_autospec(DelegatingSubject)
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
 
@@ -225,25 +195,17 @@ def test_requires_permission_succeeds(monkeypatch):
     result = do_this()
 
     assert result == 'dothis'
-    mock_wds.check_permission.assert_called_once_with(['something:anything'], all)
+    mock_ds.check_permission.assert_called_once_with(['something:anything'], all)
 
 
 def test_requires_permission_raises_one(monkeypatch):
 
     @staticmethod
     def mock_gcs():
-        m = mock.create_autospec(WebDelegatingSubject)
+        m = mock.create_autospec(DelegatingSubject)
         m.check_permission.side_effect = IdentifiersNotSetException
 
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.raise_unauthorized.return_value = Exception
-        m.raise_forbidden.return_value = Exception
-        return m
-
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_permission(['something_anything'])
     def do_this():
@@ -255,22 +217,14 @@ def test_requires_permission_raises_one(monkeypatch):
 
 def test_requires_permission_raises_two(monkeypatch):
 
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_permission.side_effect = AuthorizationException
+    mock_ds = mock.create_autospec(DelegatingSubject)
+    mock_ds.check_permission.side_effect = AuthorizationException
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
-
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.raise_unauthorized.return_value = Exception
-        m.raise_forbidden.return_value = Exception
-        return m
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_permission(['something_anything'])
     def do_this():
@@ -284,50 +238,36 @@ def test_requires_dynamic_permission_succeeds(monkeypatch):
     """
     This test verifies that the decorator works as expected.
     """
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
+    mock_ds = mock.create_autospec(DelegatingSubject)
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
-
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.resource_params = {'one': 'one'}
-        return m
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_dynamic_permission(['something:anything:{one}'])
-    def do_this():
+    def do_that(one='one'):
         return 'dothis'
 
-    result = do_this()
+    result = do_that(one='one')
 
     assert result == 'dothis'
-    mock_wds.check_permission.assert_called_once_with(['something:anything:one'], all)
+    mock_ds.check_permission.assert_called_once_with(['something:anything:one'], all)
 
 
 def test_requires_dynamic_permission_raises_one(monkeypatch):
     """
     This test verifies that the decorator works as expected.
     """
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_permission.side_effect = IdentifiersNotSetException
+    mock_ds = mock.create_autospec(DelegatingSubject)
+    mock_ds.check_permission.side_effect = IdentifiersNotSetException
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
-
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.resource_params = {'one': 'one'}
-        return m
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_dynamic_permission(['something:anything:{one}'])
     def do_this():
@@ -341,21 +281,14 @@ def test_requires_dynamic_permission_raises_two(monkeypatch):
     """
     This test verifies that the decorator works as expected.
     """
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_permission.side_effect = AuthorizationException
+    mock_ds = mock.create_autospec(DelegatingSubject)
+    mock_ds.check_permission.side_effect = AuthorizationException
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
-
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.resource_params = {'one': 'one'}
-        return m
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_dynamic_permission(['something:anything:{one}'])
     def do_this():
@@ -370,11 +303,11 @@ def test_requires_role_succeeds(monkeypatch):
     This test verifies that the decorator works as expected.
     """
 
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
+    mock_ds = mock.create_autospec(DelegatingSubject)
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
 
@@ -385,7 +318,7 @@ def test_requires_role_succeeds(monkeypatch):
     result = do_this()
 
     assert result == 'dothis'
-    mock_wds.check_role.assert_called_once_with(['role1'], all)
+    mock_ds.check_role.assert_called_once_with(['role1'], all)
 
 
 def test_requires_role_raises_one(monkeypatch):
@@ -393,21 +326,14 @@ def test_requires_role_raises_one(monkeypatch):
     This test verifies that the decorator works as expected.
     """
 
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_role.side_effect = IdentifiersNotSetException
+    mock_ds = mock.create_autospec(DelegatingSubject)
+    mock_ds.check_role.side_effect = IdentifiersNotSetException
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
-
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.resource_params = {'one': 'one'}
-        return m
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_role(['role1'])
     def do_this():
@@ -422,21 +348,14 @@ def test_requires_role_raises_two(monkeypatch):
     This test verifies that the decorator works as expected.
     """
 
-    mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_role.side_effect = AuthorizationException
+    mock_ds = mock.create_autospec(DelegatingSubject)
+    mock_ds.check_role.side_effect = AuthorizationException
 
     @staticmethod
     def mock_gcs():
-        return mock_wds
-
-    @staticmethod
-    def mock_cwr():
-        m = mock.MagicMock()
-        m.resource_params = {'one': 'one'}
-        return m
+        return mock_ds
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
-    monkeypatch.setattr(Yosai, 'get_current_webregistry', mock_cwr)
 
     @Yosai.requires_role(['role1'])
     def do_this():
