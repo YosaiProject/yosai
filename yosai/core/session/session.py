@@ -1280,7 +1280,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
         logger.debug(msg)
 
         try:
-            self.on_stop(session)
+            self.on_stop(session, session_key)
             identifiers = session.get_internal_attribute('identifiers_session_key')
 
             session_tuple = collections.namedtuple(

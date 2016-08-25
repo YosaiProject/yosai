@@ -168,14 +168,12 @@ def test_sh_idle_expired_session(
     monkeypatch.setattr(cachedsession, '_idle_timeout', idle_timeout)
     monkeypatch.setattr(cachedsession, '_absolute_timeout', absolute_timeout)
 
-    import pdb
-    pdb.set_trace()
     sh.on_change(cachedsession)
 
-    # with pytest.raises(ExpiredSessionException):
-    result = sh.do_get_session(DefaultSessionKey(sessionid))
+    with pytest.raises(ExpiredSessionException):
+        sh.do_get_session(DefaultSessionKey(sessionid))
 
-    assert event_detected.items.identifiers
+        assert event_detected.items.identifiers
 
 
 def test_sh_stopped_session(
@@ -194,7 +192,6 @@ def test_sh_stopped_session(
     """
     ch = cache_handler
     sh = session_handler
-    monkeypatch.setattr(sh, 'auto_touch', False)
     sh.cache_handler = cache_handler
 
     event_detected = None
