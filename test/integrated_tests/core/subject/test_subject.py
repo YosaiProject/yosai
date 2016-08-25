@@ -8,7 +8,6 @@ from yosai.core import (
     UnauthenticatedException,
     UnknownSessionException,
     Yosai,
-    event_bus,
 )
 import datetime
 
@@ -72,7 +71,7 @@ def test_authenticated_subject_is_permitted_collective(
 
 
 def test_authenticated_subject_check_permission_succeeds(
-        thedude_testpermissions, valid_username_password_token, yosai):
+        thedude_testpermissions, valid_username_password_token, yosai, event_bus):
 
     tp = thedude_testpermissions
     event_detected = None
@@ -97,7 +96,7 @@ def test_authenticated_subject_check_permission_succeeds(
 
 def test_check_permission_raises(
         permission_resolver, thedude_testpermissions,
-        valid_username_password_token, yosai):
+        valid_username_password_token, yosai, event_bus):
 
     tp = thedude_testpermissions
 
@@ -120,7 +119,7 @@ def test_check_permission_raises(
             new_subject.logout()
 
 
-def test_has_role(valid_username_password_token, thedude_testroles, yosai):
+def test_has_role(valid_username_password_token, thedude_testroles, yosai, event_bus):
 
     tr = thedude_testroles
     event_detected = None
@@ -158,7 +157,7 @@ def test_authenticated_subject_has_role_collective(
 
 
 def test_check_role_succeeds(
-        thedude_testroles, valid_username_password_token, yosai):
+        thedude_testroles, valid_username_password_token, yosai, event_bus):
 
     tr = thedude_testroles
 
@@ -179,7 +178,7 @@ def test_check_role_succeeds(
 
 
 def test_check_role_raises(
-        thedude_testroles, valid_username_password_token, yosai):
+        thedude_testroles, valid_username_password_token, yosai, event_bus):
 
     tr = thedude_testroles
 

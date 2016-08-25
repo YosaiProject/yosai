@@ -524,6 +524,10 @@ class DelegatingSubject(subject_abcs.Subject):
                       self.session is not None and bool(self.session.session_id))))
         logger.debug(msg)
 
+        if self.session and not create:  # touching a new session is redundant
+            self.session.touch()  # this is used to reset the idle timer (new to yosai)
+            return self.session
+
         if (not self.session and create):
             if (not self.session_creation_enabled):
                 msg = ("Session creation has been disabled for the current"

@@ -4,12 +4,11 @@ import pytest
 from yosai.core import (
     SimpleIdentifierCollection,
     UnauthorizedException,
-    event_bus,
 )
 
 def test_is_permitted(permission_resolver, modular_realm_authorizer,
                       authz_info, thedude_identifier,
-                      thedude_testpermissions):
+                      thedude_testpermissions, event_bus):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
@@ -41,7 +40,7 @@ def test_is_permitted_collective(
 
 def test_check_permission_succeeds(
         permission_resolver, modular_realm_authorizer, authz_info,
-        thedude_identifier, thedude_testpermissions):
+        thedude_identifier, thedude_testpermissions, event_bus):
 
     mra = modular_realm_authorizer
     tp = thedude_testpermissions
@@ -58,7 +57,7 @@ def test_check_permission_succeeds(
 
 def test_check_permission_raises(
         permission_resolver, modular_realm_authorizer, authz_info,
-        thedude_identifier, thedude_testpermissions):
+        thedude_identifier, thedude_testpermissions, event_bus):
 
     mra = modular_realm_authorizer
     tp = thedude_testpermissions
@@ -75,7 +74,7 @@ def test_check_permission_raises(
         assert event_detected == tp['perms']
 
 
-def test_has_role(modular_realm_authorizer, thedude_identifier):
+def test_has_role(modular_realm_authorizer, thedude_identifier, event_bus):
 
     mra = modular_realm_authorizer
 
@@ -108,7 +107,7 @@ def test_has_role_collective(modular_realm_authorizer, thedude_identifier):
             (mra.has_role_collective(thedude_identifier, roles, any) is True))
 
 
-def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier):
+def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier, event_bus):
 
     mra = modular_realm_authorizer
     roles = {'bankcustomer', 'courier', 'thief'}
@@ -125,7 +124,7 @@ def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier):
 
 
 def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
-                           clear_cached_authz_info):
+                           clear_cached_authz_info, event_bus):
 
     mra = modular_realm_authorizer
     roles = {'bankcustomer', 'courier', 'thief'}
@@ -144,7 +143,7 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
 
 
 def test_is_permitted_account_doesnt_exist(
-        modular_realm_authorizer, permission_resolver):
+        modular_realm_authorizer, permission_resolver, event_bus):
     """
     when an account cannot be obtained from the account_store, all
     permissions checked return False

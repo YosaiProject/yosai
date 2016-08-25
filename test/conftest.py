@@ -15,8 +15,9 @@ from yosai.core import (
     SimpleRole,
     UsernamePasswordToken,
     Yosai,
-    event_bus,
 )
+
+from yosai.core import event_bus as event_bus_inst
 
 from yosai.web import (
     WebSecurityManager,
@@ -136,9 +137,14 @@ def account_store_realm(cache_handler, alchemy_store, permission_resolver,
     return asr
 
 
+@pytest.fixture(scope='session')
+def event_bus():
+    return event_bus_inst
+
+
 @pytest.fixture(scope='function')
 def native_security_manager(account_store_realm, cache_handler,
-                            yosai):
+                            yosai, event_bus):
 
     class AttributesSchema:
         def __init__(self):

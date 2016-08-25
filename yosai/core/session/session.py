@@ -1295,9 +1295,6 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
             self.after_stopped(session)
 
     def on_change(self, session, update_identifiers_map=False):
-        if not session.is_stopped:
-            session.touch()
-
         self.session_store.update(session, update_identifiers_map)
 
 

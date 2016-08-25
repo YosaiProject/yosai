@@ -4,14 +4,13 @@ from yosai.core import (
     Credential,
     SerializationManager,
     UsernamePasswordToken,
-    event_bus,
     AuthenticationException,
 )
 
 
 def test_authentication_using_accountstore_success(
         caplog, default_authenticator, valid_username_password_token,
-        thedude_credentials):
+        thedude_credentials, event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -29,7 +28,8 @@ def test_authentication_using_accountstore_success(
 
 def test_authentication_using_cache_success(
         caplog, default_authenticator, invalid_username_password_token,
-        valid_username_password_token, cache_handler, thedude_credentials):
+        valid_username_password_token, cache_handler, thedude_credentials, 
+        event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -52,7 +52,7 @@ def test_authentication_using_cache_success(
 
 def test_authentication_using_accountstore_pw_failure(
         caplog, default_authenticator, invalid_username_password_token,
-        thedude_credentials):
+        thedude_credentials, event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -72,7 +72,7 @@ def test_authentication_using_accountstore_pw_failure(
 
 def test_authentication_using_cache_pw_failure(
         caplog, default_authenticator, invalid_username_password_token,
-        cache_handler, thedude_credentials):
+        cache_handler, thedude_credentials, event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -94,7 +94,7 @@ def test_authentication_using_cache_pw_failure(
 
 
 def test_authentication_using_accountstore_user_not_found(
-        default_authenticator):
+        default_authenticator, event_bus):
     da = default_authenticator
     event_detected = None
 

@@ -191,18 +191,6 @@ class WebDelegatingSubject(DelegatingSubject,
         wsc.host = self.host
         return wsc
 
-    # this override is new to yosai, to support CSRF token synchronization:
-    def get_session(self, create=True):
-        """
-        :type create:  bool
-
-        A CSRF Token is generated for each new session (and at successful login).
-        """
-        super().get_session(create)
-        if self.session and not create:  # touching a new session is redundant
-            self.session.touch()  # this is used to reset the idle timer (new to yosai)
-        return self.session
-
     # inner class:
     class StoppingAwareProxiedSession(WebProxiedSession):
 
@@ -275,8 +263,6 @@ class WebYosai(Yosai):
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
         webregistry.secret = yosai.signed_cookie_secret  # configuration
         global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
-        yield
-
         try:
             yield
         except:
@@ -289,7 +275,6 @@ class WebYosai(Yosai):
                 global_subject_context.stack.pop()
             except IndexError:
                 logger.debug('Could not pop a subject from the context stack.')
-
 
     @staticmethod
     def get_current_webregistry():

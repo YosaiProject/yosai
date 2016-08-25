@@ -12,8 +12,8 @@ from yosai.core import (
 from yosai.web import WebYosai
 
 
-def test_subject_invalid_login(web_yosai, mock_web_registry,
-                               invalid_username_password_token):
+def test_subject_invalid_login(web_yosai, invalid_username_password_token,
+                               mock_web_registry):
 
     with pytest.raises(AuthenticationException):
 

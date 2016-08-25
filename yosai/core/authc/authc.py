@@ -243,13 +243,12 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                 try:
                     self.notify_failure(authc_token, ae)
                 except Exception:
-                    if logger.getEffectiveLevel() <= logging.WARNING:
-                        msg4 = ("Unable to send notification for failed "
-                                "authentication attempt - listener error?.  "
-                                "Please check your EventBus implementation.  "
-                                "Logging 'send' exception  and propagating "
-                                "original AuthenticationException instead...")
-                        logger.warning(msg4, exc_info=True)
+                    msg4 = ("Unable to send notification for failed "
+                            "authentication attempt - listener error?.  "
+                            "Please check your EventBus implementation.  "
+                            "Logging 'send' exception  and propagating "
+                            "original AuthenticationException instead...")
+                    logger.warn(msg4, exc_info=True)
                 raise ae
 
             msg5 = ("Authentication successful for submitted authentication "

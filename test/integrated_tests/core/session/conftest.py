@@ -20,8 +20,8 @@ def session_store(cache_handler):
 
 
 @pytest.fixture(scope='function')
-def session_factory(attributes_schema):
-    return SimpleSessionFactory(attributes_schema)
+def session_factory(settings, attributes_schema):
+    return SimpleSessionFactory(attributes_schema, settings)
 
 
 @pytest.fixture(scope='function')
@@ -38,8 +38,8 @@ def session_event_handler():
 
 @pytest.fixture(scope='function')
 def session_handler(session_event_handler, session_store):
-    handler = DefaultNativeSessionHandler(session_event_handler=session_event_handler,
-                                          auto_touch=True)
+    handler = DefaultNativeSessionHandler(session_event_handler=session_event_handler)
+
     handler.session_store = session_store
     return handler
 
@@ -60,4 +60,3 @@ def session(session_factory, session_handler):
     session = session_factory.create_session()
     session_handler.create_session(session)  # obtains a session_id
     return session
-
