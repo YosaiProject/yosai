@@ -1088,7 +1088,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         session_context = DefaultSessionContext()
 
         if (not subject_context.is_empty):
-            session_context.put_all(subject_context)
+            session_context.__dict__.update(subject_context.__dict__)
 
         session_id = subject_context.session_id
         if (session_id):

@@ -6,16 +6,16 @@ from yosai.core import (
 
 class MockRememberMeManager(AbstractRememberMeManager):
 
-    def __init__(self):
-        super().__init__()
-        self.serialization_manager = SerializationManager()
+    def __init__(self, settings, session_attributes_schema):
+        super().__init__(settings)
+        self.serialization_manager = SerializationManager(session_attributes_schema)
 
     def forget_identity(self):
         pass
 
-    def get_remembered_serialized_identity(self):
+    def get_remembered_encrypted_identity(self):
         pass
 
-    def remember_serialized_identity(self, subject, serialized):
+    def remember_encrypted_identity(self, subject, serialized):
         pass
 

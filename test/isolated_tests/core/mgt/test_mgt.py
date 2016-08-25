@@ -7,17 +7,18 @@ from yosai.core import (
     AuthenticationException,
     SaveSubjectException,
     DefaultAuthenticator,
+    DelegatingSubject,
     NativeSecurityManager,
     DefaultSessionKey,
     DefaultSubjectContext,
     DeleteSubjectException,
     InvalidArgumentException,
+    InvalidSessionException,
     ModularRealmAuthorizer,
     SerializationManager,
     UsernamePasswordToken,
     authc_abcs,
     event_bus,
-    mgt_settings,
 )
 
 from ..session.doubles import (
@@ -439,8 +440,8 @@ def test_nsm_create_subject_context(
     returns a new DefaultSubjectContext instance
     """
     nsm = native_security_manager
-
-    result = nsm.create_subject_context()
+    mock_subject = mock.create_autospec(DelegatingSubject)
+    result = nsm.create_subject_context(mock_subject)
     assert isinstance(result, DefaultSubjectContext)
 
 
@@ -455,9 +456,8 @@ def test_nsm_create_subject_wo_context(
     saved and then returned.
     """
     nsm = native_security_manager
-    csu = yosai
 
-    testcontext = DefaultSubjectContext(security_utils=csu)
+    testcontext = DefaultSubjectContext(yosai=yosai, security_manager=nsm)
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account = 'dumb_account'
@@ -484,8 +484,7 @@ def test_nsm_create_subject_wo_context(
                         nsm_dcs.assert_called_once_with(testcontext)
                         assert result == 'subject'
 
-def test_nsm_create_subject_w_context(native_security_manager,
-                                      yosai):
+def test_nsm_create_subject_w_context(native_security_manager, yosai):
     """
     unit tested:  create_subject
 
@@ -493,9 +492,8 @@ def test_nsm_create_subject_w_context(native_security_manager,
     context is passed as an argument, and so it is used
     """
     nsm = native_security_manager
-    csu = yosai
 
-    testcontext = DefaultSubjectContext(security_utils=csu)
+    testcontext = DefaultSubjectContext(yosai=yosai, security_manager=nsm)
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account = 'dumb_account'
@@ -782,20 +780,6 @@ def test_nsm_before_logout(native_security_manager):
         nsm_rml.assert_called_once_with('subject')
 
 
-def test_nsm_copy(native_security_manager, yosai):
-    """
-    unit tested:  copy
-
-    test case:
-    returns a new DefaultSubjectContext
-    """
-    csu = yosai
-    nsm = native_security_manager
-
-    result = nsm.copy({'subject_context': 'subject_context'})
-    assert result == DefaultSubjectContext(security_utils=csu,
-                                           context={'subject_context': 'subject_context'})
-
 def test_nsm_do_create_subject(native_security_manager, monkeypatch):
     """
     unit tested:  do_create_subject
@@ -948,20 +932,21 @@ def test_nsm_resolve_session_contextsessionisnone(
     unit tested:  resolve_session
 
     test case:
-    the subject_context returns and resolve_context_session returns None,
-    subject_context.session doesn't get set
+     - the subject_context doesnt resolve a session
+     - resolve_context_session returns None,
+     - subject_context.session doesn't get set
 
     """
     nsm = native_security_manager
     msc = mock_subject_context
-
-    monkeypatch.setattr(msc, 'resolve_session', lambda: None)
+    msc.resolve_session.return_value = None
 
     with mock.patch.object(NativeSecurityManager,
                            'resolve_context_session') as nsm_rcs:
-        nsm_rcs.return_value = None
+        nsm_rcs.side_effect = InvalidSessionException
         result = nsm.resolve_session(msc)
         assert not hasattr(result, 'session')
+
 
 def test_nsm_resolve_context_session_nokey(
         native_security_manager, monkeypatch):
@@ -1022,6 +1007,7 @@ def test_nsm_get_session_key_wo_sessionid(
     result = nsm.get_session_key(msc)
     assert result is None
 
+
 def test_nsm_resolve_identifiers_incontext(
         native_security_manager, monkeypatch, mock_subject_context):
     """
@@ -1032,7 +1018,8 @@ def test_nsm_resolve_identifiers_incontext(
     """
     nsm = native_security_manager
     msc = mock_subject_context
-    monkeypatch.setattr(msc, 'resolve_identifiers', lambda: 'identifiers')
+    msc.session = None
+    msc.resolve_identifiers.return_value = 'identifiers'
     result = nsm.resolve_identifiers(msc)
 
     assert result == msc
@@ -1066,7 +1053,10 @@ def test_nsm_resolve_identifiers_notincontext_notremembered(
 
     nsm = native_security_manager
     msc = mock_subject_context
-    monkeypatch.setattr(nsm, 'get_remembered_identity', lambda x: None)
+
+    msc.session = None
+    msc.resolve_identifiers.return_value = None
+
     result = nsm.resolve_identifiers(msc)
     assert not hasattr(result, 'identifiers')
 
@@ -1083,13 +1073,16 @@ def test_nsm_resolve_identifiers_notincontext_remembered(
 
     nsm = native_security_manager
     msc = mock_subject_context
+    msc.session = None
+    msc.resolve_identifiers.return_value = None
+
     monkeypatch.setattr(nsm, 'get_remembered_identity', lambda x: 'identifiers')
     result = nsm.resolve_identifiers(msc)
     assert hasattr(result, 'identifiers')
 
-
+@mock.patch('yosai.core.DefaultSessionContext')
 def test_nsm_create_session_context_empty(
-        native_security_manager, monkeypatch, mock_subject_context):
+        mock_dsc, native_security_manager, monkeypatch, mock_subject_context):
     """
     unit tested:  create_session_context
 
@@ -1100,14 +1093,12 @@ def test_nsm_create_session_context_empty(
     """
     nsm = native_security_manager
     msc = mock_subject_context
-
-    monkeypatch.setattr(msc, 'context', {}, raising=False)
-    monkeypatch.setattr(msc, 'session_id', None, raising=False)
-    monkeypatch.setattr(msc, 'resolve_host', lambda: None, raising=False)
-
+    msc.is_empty = True
+    msc.session_id = None
+    msc.resolve_host.return_value = None
     result = nsm.create_session_context(msc)
 
-    assert result.session_id is None and result.host is None
+    assert not hasattr(result, 'session_id') and not hasattr(result, 'host')
 
 def test_nsm_create_session_context(
         native_security_manager, monkeypatch, mock_subject_context):
@@ -1121,16 +1112,17 @@ def test_nsm_create_session_context(
     """
     nsm = native_security_manager
     msc = mock_subject_context
-    msc.put('attrY', 'attributeY')
+    msc.attrY = 'attributeY'
 
-    monkeypatch.setattr(msc, 'session_id', 'session_id', raising=False)
-    monkeypatch.setattr(msc, 'resolve_host', lambda: 'host', raising=False)
+    msc.is_empty = False
+    msc.session_id = 'session_id'
+    msc.resolve_host.return_value = 'host'
 
     result = nsm.create_session_context(msc)
 
     assert (result.session_id == 'session_id' and
             result.host == 'host' and
-            'attrY' in result)
+            hasattr(result, 'attrY'))
 
 def test_nsm_logout_raises(native_security_manager):
     """
@@ -1291,32 +1283,17 @@ def test_nsm_get_remembered_identity_raises(
 # AbstractRememberMeManager
 # ------------------------------------------------------------------------------
 
-def test_armm_init():
+def test_armm_init(remember_me_settings, settings, attributes_schema):
     """
     unit tested:  __init__
 
     test case:
-    confirm that init calls set_cipher_key using mgt_settings default_cipher_key
+    confirm that init calls set_cipher_key using remember_me_settings.default_cipher_key
     """
-    default_key = mgt_settings.default_cipher_key
-    with mock.patch.object(MockRememberMeManager, 'set_cipher_key') as rmm_ssk:
-        rmm_ssk.return_value = None
-        mrmm = MockRememberMeManager()
-        rmm_ssk.assert_called_once_with(encrypt_key=default_key,
-                                        decrypt_key=default_key)
-
-
-def test_armm_set_cipher_key(mock_remember_me_manager):
-    """
-    unit tested:  set_cipher_key
-
-    test case:
-    this method sets two key attributes used for encryption/decryption
-    """
-    mrmm = mock_remember_me_manager
-    key = mgt_settings.default_cipher_key
-    assert (mrmm.encryption_cipher_key == bytes(key, 'utf-8') and
-            mrmm.decryption_cipher_key == bytes(key, 'utf-8'))
+    default_key = remember_me_settings.default_cipher_key
+    mrmm = MockRememberMeManager(settings, attributes_schema)
+    assert (mrmm.encryption_cipher_key == mrmm.decryption_cipher_key and
+            mrmm.encryption_cipher_key == default_key)
 
 
 @pytest.mark.parametrize('authc_token, expected',
@@ -1386,62 +1363,35 @@ def test_armm_remember_identity_woidentitiers_raises(mock_remember_me_manager):
     unit tested:  remember_identity
 
     test case:
-    if identifiers cannot be obtained as an argument, and when calling
-    get_identity_to_remember an exception is raised, an exception is raised
+        - get_identity_to_remember raises an AttributeError
+        - InvalidArgumentException is raised
     """
     mrmm = mock_remember_me_manager
     with mock.patch.object(MockRememberMeManager, 'get_identity_to_remember') as gitr:
         gitr.side_effect = AttributeError
-        pytest.raises(InvalidArgumentException,
-                      "mrmm.remember_identity('subject', identifiers=None, account=None)")
+        with pytest.raises(InvalidArgumentException):
+            mrmm.remember_identity('subject', 'authc_token', 'account')
 
 
-def test_armm_remember_identity_wo_identitiersarg(
-        mock_remember_me_manager, monkeypatch):
+def test_armm_remember_identity(mock_remember_me_manager, monkeypatch):
     """
     unit tested:  remember_identity
 
     test case:
     - identifiers obtained through get_identity_to_remember
-    - calls remember_serialized_identity using serialized identifiers collection
+    - calls remember_encrypted_identity using serialized identifiers collection
       and subject
     """
     mrmm = mock_remember_me_manager
-
     monkeypatch.setattr(mrmm, 'get_identity_to_remember', lambda x,y: 'identifiers')
-    monkeypatch.setattr(mrmm, 'convert_identifiers_to_bytes', lambda x: 'serialized')
 
-    with mock.patch.object(MockRememberMeManager, 'remember_serialized_identity') as rsi:
-        rsi.return_value = None
+    with mock.patch.object(mrmm, 'convert_identifiers_to_bytes') as mock_citb:
+        mock_citb.return_value = 'serialized'
+        with mock.patch.object(MockRememberMeManager, 'remember_encrypted_identity') as rsi:
+            mrmm.remember_identity('subject', 'authc_token', 'account')
 
-        mrmm.remember_identity('subject', identifiers=None, account='account')
+            rsi.assert_called_once_with('subject', 'serialized')
 
-        rsi.assert_called_once_with('subject', 'serialized')
-
-
-def test_armm_remember_identity_w_identitiersarg(
-        mock_remember_me_manager, simple_identifier_collection, monkeypatch):
-    """
-    unit tested:  remember_identity
-
-    test case:
-    calls remember_serialized_identity using serialized identifiers collection and
-    subject
-    """
-    mrmm = mock_remember_me_manager
-    sic = simple_identifier_collection
-
-    monkeypatch.setattr(mrmm, 'convert_identifiers_to_bytes', lambda x: 'serialized')
-
-    with mock.patch.object(MockRememberMeManager,
-                           'remember_serialized_identity') as rsi:
-        rsi.return_value = None
-
-        mrmm.remember_identity('subject',
-                               identifiers=sic,
-                               account='account')
-
-    rsi.assert_called_once_with('subject', 'serialized')
 
 def test_armm_get_identity_to_remember(
         mock_remember_me_manager, full_mock_account):
@@ -1456,9 +1406,7 @@ def test_armm_get_identity_to_remember(
     assert result == full_mock_account.account_id
 
 
-@pytest.mark.xfail
-def test_armm_convert_identifiers_to_bytes(
-        mock_remember_me_manager, monkeypatch):
+def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager, monkeypatch):
     """
     unit tested:  convert_identifiers_to_bytes
 
@@ -1466,53 +1414,51 @@ def test_armm_convert_identifiers_to_bytes(
     returns a byte string encoded serialized identifiers collection
     """
     mrmm = mock_remember_me_manager
-    monkeypatch.setattr(mrmm.serialization_manager, 'serialize', lambda x: 'serialized')
-    result = mrmm.convert_identifiers_to_bytes('identifiers')
-    assert result == 'serialized'
+    with mock.patch.object(mrmm.serialization_manager, 'serialize') as mock_sms:
+        mock_sms.return_value = 'serialized'
+        with mock.patch.object(mrmm, 'encrypt') as mock_rmm_enc:
+            mrmm.convert_identifiers_to_bytes('identifiers')
+            mock_rmm_enc.assert_called_once_with('serialized')
 
 
 def test_armm_get_remembered_identifiers_raises(
-        mock_remember_me_manager, monkeypatch):
+        mock_remember_me_manager, monkeypatch, settings, attributes_schema):
     """
     unit tested:  get_remembered_identifiers
 
     test case:
-    - get_remembered_serialized_identity raises an exception
+    - get_remembered_encrypted_identity raises an exception
         - on_remembered_identifiers_failure is called as a result
     - backup identifiers from o.r.i.f are returned
     """
-    mrmm = MockRememberMeManager()
+    mrmm = mock_remember_me_manager
 
     monkeypatch.setattr(mrmm, 'on_remembered_identifiers_failure',
                         lambda x, y: 'identifiers')
 
     with mock.patch.object(MockRememberMeManager,
-                           'get_remembered_serialized_identity') as grsi:
+                           'get_remembered_encrypted_identity') as grsi:
         grsi.side_effect = AttributeError
         result = mrmm.get_remembered_identifiers('subject_context')
         assert result == 'identifiers'
 
 
-@pytest.mark.xfail
 def test_armm_get_remembered_identifiers_serialized(
         mock_remember_me_manager, monkeypatch):
     """
     unit tested:  get_remembered_identifiers
 
     test case:
-    - obtains a remembered serialized identitifiers
+    - obtains a remembered encrypted identitifiers
     - returns deserialized identitifiers
     """
     mrmm = mock_remember_me_manager
-
-    monkeypatch.setattr(mrmm, 'convert_bytes_to_identifiers',
-                        lambda x, y: 'identifiers', raising=False)
-
-    monkeypatch.setattr(mrmm, "get_remembered_serialized_identity",
-                        lambda x: "serialized_identity", raising=False)
-
-    result = mrmm.get_remembered_identifiers('subject_context')
-    assert result == 'identifiers'
+    monkeypatch.setattr(mrmm, 'convert_bytes_to_identifiers', lambda x, y: 'identifiers')
+    with mock.patch.object(MockRememberMeManager,
+                           'get_remembered_encrypted_identity') as grsi:
+        grsi.return_value = 'encrypted'
+        result = mrmm.get_remembered_identifiers('subject_context')
+        assert result == 'identifiers'
 
 
 def test_armm_convert_bytes_to_identifiers(

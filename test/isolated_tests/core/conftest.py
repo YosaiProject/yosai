@@ -119,8 +119,8 @@ def default_authenticator(
 
 
 @pytest.fixture(scope='function')
-def mock_default_session_manager():
-    return MockDefaultNativeSessionManager()
+def mock_default_session_manager(attributes_schema, settings):
+    return MockDefaultNativeSessionManager(attributes_schema, settings)
 
 
 @pytest.fixture(scope='function')

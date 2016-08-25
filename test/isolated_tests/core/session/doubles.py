@@ -63,8 +63,8 @@ class MockSessionManager:
 
 class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, attributes_schema, settings):
+        super().__init__(attributes_schema, settings)
         self._event_bus = mock.MagicMock() 
         self.listeners = []
 

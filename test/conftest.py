@@ -144,14 +144,12 @@ def event_bus():
 
 @pytest.fixture(scope='function')
 def native_security_manager(account_store_realm, cache_handler,
-                            yosai, event_bus):
+                            yosai, event_bus, settings, attributes_schema):
 
-    class AttributesSchema:
-        def __init__(self):
-            self.name = 'Jeffrey Lebowski'
-
-    nsm = NativeSecurityManager(realms=(account_store_realm,),
-                                session_attributes_schema=AttributesSchema)
+    nsm = NativeSecurityManager(yosai,
+                                settings,
+                                attributes_schema,
+                                realms=(account_store_realm,))
     nsm.cache_handler = cache_handler
     nsm.event_bus = event_bus
     yosai.security_manager = nsm  # why is this here?  TBD.
