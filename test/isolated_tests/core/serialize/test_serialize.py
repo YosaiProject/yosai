@@ -1,98 +1,71 @@
 import pytest
-import msgpack
-import datetime
 from unittest import mock
 
-from .doubles import (
-    MockSerializable,
-)
 from yosai.core import (
-    Credential,
-    InvalidSerializationFormatException,
-    SerializationException,
-    serialize_abcs,
-    MSGPackSerializer,
     SerializationManager,
 )
+from yosai.core.serialize.serialize import msgpack
 
-# ----------------------------------------------------------------------------
-# SerializationManager Tests
-# ----------------------------------------------------------------------------
 
-def test_sm_init_default_format(serialization_manager):
+@mock.patch.object(SerializationManager, 'register_serializables')
+def test_sm_init(mock_sm_rs):
     """
-    unit tested:  __init__
-
-    test case:
-    default format for initialization is msgpack
+    - serializer attribute is set
+    - register_serializables is called with session_attributes_schema
     """
+    sm = SerializationManager('attributes_schema', serializer_scheme='msgpack')
+    mock_sm_rs.assert_called_once_with('attributes_schema')
+    assert isinstance(sm.serializer, msgpack.MsgpackSerializer)
+
+
+def test_sm_register_serializables(serialization_manager):
     sm = serialization_manager
-    assert sm.serializer.__name__ == 'MSGPackSerializer'
 
-def test_sm_init_unrecognized_format():
-    """
-    unit tested:  __init__
+    class TestSerializable:
+        def __init__(self):
+            self.attributeA = 'Aaaaaa!!!'
 
-    test case:
-    an unrecognized serialization format raises an exception
-    """
-    with pytest.raises(InvalidSerializationFormatException):
-        SerializationManager(format='protobufferoni')
+        def __getstate__(self):
+            return {'attributeA': self.attributeA}
 
+        def __setstate__(self, state):
+            self.attributeA = state['attributeA']
 
-# ----------------------------------------------------------------------------
-# MSGPackSerializer Tests
-# ----------------------------------------------------------------------------
+    ts = TestSerializable()
 
-def test_mps_serialize():
-    """
-    unit tested:  seralize
+    with mock.patch.object(sm.serializer, 'register_custom_type') as mock_rct:
+        sm.register_serializables(ts)
 
-    test case:
-    basic code path exercise-- make sure that packb returns a byte string
-    """
-    mydict = {'one': 1, 'two': 2, 'three': 3}
-
-    result = MSGPackSerializer.serialize(mydict)
-    assert type(result) == bytes
+        assert mock_rct.called
 
 
-def test_mps_deserialize():
-    """
-    unit tested:  seralize
+def test_sm_serialize(serialization_manager, monkeypatch):
 
-    test case:
-    basic code path exercise-- make sure that unpackb returns a dict
-    """
-    mydict = {'one': 1, 'two': 2, 'three': 3}
-    mybytes = b'\x83\xa3one\x01\xa3two\x02\xa5three\x03'
-    result = MSGPackSerializer.deserialize(mybytes)
-    assert result == mydict
+    sm = serialization_manager
+    monkeypatch.setattr(sm.serializer, 'serialize', lambda x: x)
+    result = sm.serialize('testing')
+    assert result == 'testing'
 
 
-# ----------------------------------------------------------------------------
-# abc.Serializable Tests
-# ----------------------------------------------------------------------------
-
-def test_serializable_serialize(full_mock_account, mock_account_state):
-    """
-    unit tested:  serialize
-
-    test case:
-    serializes an object according to its marshmallow schema
-    """
-    serialized = full_mock_account.serialize()
-    assert serialized['account_id'] == 'identifier'
+def test_sm_deserialize(serialization_manager, monkeypatch):
+    sm = serialization_manager
+    monkeypatch.setattr(sm.serializer, 'deserialize', lambda x: x)
+    result = sm.deserialize('testing')
+    assert result == 'testing'
 
 
-def test_serializable_deserialize():
-    """
-    unit tested:  deserialize
+def test_sm_deserialize_returns_none(serialization_manager, monkeypatch):
+    sm = serialization_manager
+    with mock.patch.object(sm.serializer, 'deserialize') as mock_deser:
+        mock_deser.side_effect = Exception
+        result = sm.deserialize(None)
+        assert result is None
 
-    test case:
-    converts a dict into an object instance
-    """
-    dumbstate = {'myname': 'Mock Serializable', 'myage': 12}
-    newobj = MockSerializable.deserialize(dumbstate)
-    print(newobj)
-    assert isinstance(newobj, MockSerializable) and hasattr(newobj, 'myname')
+
+def test_sm_deserialize_raises(serialization_manager, monkeypatch):
+    sm = serialization_manager
+    with mock.patch.object(sm.serializer, 'deserialize') as mock_deser:
+        mock_deser.side_effect = Exception
+
+        with pytest.raises(Exception):
+            result = sm.deserialize('testing')
