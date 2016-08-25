@@ -154,24 +154,27 @@ def test_asr_authenticate_account_invalidtoken(default_accountstorerealm):
         asr.authenticate_account('invalid_token')
 
 
-def test_asr_authenticate_account(username_password_token,
-                                  default_accountstorerealm,
-                                  full_mock_account, monkeypatch,
-                                  simple_identifier_collection):
+@mock.patch.object(AccountStoreRealm, 'clear_cached_credentials')
+@mock.patch.object(AccountStoreRealm, 'assert_credentials_match')
+@mock.patch.object(AccountStoreRealm, 'get_credentials')
+def test_asr_authenticate_account(mock_gc, mock_acm, mock_ccc, account_store_realm,
+        monkeypatch):
+    """
+    - obtains identitier from token
+    - get_credentials returns a mock_account
+    - assert_credentials_match doesn't raise
+    """
+    asr = account_store_realm
+    mock_token = mock.MagicMock(identifier='identifier')
+    mock_account = mock.MagicMock(account_id='account123')
+    mock_gc.return_value = mock_account
 
-    token = username_password_token
-    pasr = default_accountstorerealm
-    fma = full_mock_account
-    sic = simple_identifier_collection
+    account = asr.authenticate_account(mock_token)
 
-    monkeypatch.setattr(fma, '_account_id', sic)
-    monkeypatch.setattr(pasr, 'get_credentials', lambda x: fma)
-    with mock.patch.object(AccountStoreRealm, 'assert_credentials_match') as acm:
-        acm.return_value = None
-        result = pasr.authenticate_account(token)
-        acm.assert_called_once_with(token, fma)
-        assert result == fma
-
+    mock_gc.assert_called_once_with('identifier')
+    mock_acm.assert_called_once_with(mock_token, mock_account)
+    mock_ccc.assert_called_once_with('account123')
+    assert account.account_id == mock_account.account_id
 
 def test_asr_acm_succeeds(username_password_token, default_accountstorerealm,
                           full_mock_account):
