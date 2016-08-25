@@ -7,8 +7,7 @@ from yosai.core import (
 )
 
 def test_is_permitted(permission_resolver, modular_realm_authorizer,
-                      authz_info, thedude_identifier,
-                      thedude_testpermissions, event_bus):
+                      thedude_identifier, thedude_testpermissions, event_bus):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
@@ -28,7 +27,7 @@ def test_is_permitted(permission_resolver, modular_realm_authorizer,
 
 
 def test_is_permitted_collective(
-        permission_resolver, modular_realm_authorizer, authz_info,
+        permission_resolver, modular_realm_authorizer,
         thedude_identifier, thedude_testpermissions):
 
     mra = modular_realm_authorizer
@@ -39,7 +38,7 @@ def test_is_permitted_collective(
 
 
 def test_check_permission_succeeds(
-        permission_resolver, modular_realm_authorizer, authz_info,
+        permission_resolver, modular_realm_authorizer,
         thedude_identifier, thedude_testpermissions, event_bus):
 
     mra = modular_realm_authorizer
@@ -56,7 +55,7 @@ def test_check_permission_succeeds(
 
 
 def test_check_permission_raises(
-        permission_resolver, modular_realm_authorizer, authz_info,
+        permission_resolver, modular_realm_authorizer,
         thedude_identifier, thedude_testpermissions, event_bus):
 
     mra = modular_realm_authorizer

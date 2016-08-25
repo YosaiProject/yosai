@@ -10,7 +10,7 @@ from yosai.core import (
 
 def test_authentication_using_accountstore_success(
         caplog, default_authenticator, valid_username_password_token,
-        thedude_credentials, event_bus):
+        event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -28,8 +28,7 @@ def test_authentication_using_accountstore_success(
 
 def test_authentication_using_cache_success(
         caplog, default_authenticator, invalid_username_password_token,
-        valid_username_password_token, cache_handler, thedude_credentials, 
-        event_bus):
+        valid_username_password_token, cache_handler, event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -52,7 +51,7 @@ def test_authentication_using_cache_success(
 
 def test_authentication_using_accountstore_pw_failure(
         caplog, default_authenticator, invalid_username_password_token,
-        thedude_credentials, event_bus):
+        event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -72,7 +71,7 @@ def test_authentication_using_accountstore_pw_failure(
 
 def test_authentication_using_cache_pw_failure(
         caplog, default_authenticator, invalid_username_password_token,
-        cache_handler, thedude_credentials, event_bus):
+        cache_handler, event_bus):
 
     da = default_authenticator
     event_detected = None
@@ -82,7 +81,7 @@ def test_authentication_using_cache_pw_failure(
         event_detected = username
     event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
 
-    cred = Credential(thedude_credentials)
+    cred = Credential('letsgobowlingggggg')
     cache_handler.set(domain='credentials', identifier='thedude', value=cred)
 
     with pytest.raises(AuthenticationException):
