@@ -3,7 +3,7 @@ from threading import Thread, Lock
 
 
 def test_multithreaded_authz_dogpile(
-        authz_info, indexed_authz_info, cache_handler, session):
+        indexed_authz_info, cache_handler, session):
 
     lock = Lock()
     canary = []

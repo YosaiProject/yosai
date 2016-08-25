@@ -14,8 +14,7 @@ import pytest
                           ('thedude',
                            "get cached", "Could not obtain cached", Account)])
 def test_get_credentials(identifier, expected_in, expected_out, expected_class,
-                         caplog, account_store_realm, thedude_credentials,
-                         cache_handler, thedude):
+                         caplog, account_store_realm, cache_handler):
 
     """
     I) Obtains from account store, caches
@@ -24,7 +23,7 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
     """
     asr = account_store_realm
     if "Could not" in expected_in:
-        cache_handler.delete(domain="credentials", identifier=thedude.identifier)
+        cache_handler.delete(domain="credentials", identifier='thedude')
     result = asr.get_credentials(identifier=identifier)
 
     out = caplog.text
@@ -46,8 +45,7 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
                                                       identifier='anonymous'),
                            "No account", "blabla", type(None))])
 def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
-                        caplog, account_store_realm, authz_info, cache_handler,
-                        thedude):
+                        caplog, account_store_realm, cache_handler):
     """
     I) Obtains from account store, caches
     II) Obtains from cache
@@ -56,7 +54,7 @@ def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
     asr = account_store_realm
 
     if "Could not" in expected_in:
-        cache_handler.delete(domain="authz_info", identifier=thedude.identifier)
+        cache_handler.delete(domain="authz_info", identifier='thedude')
 
     result = asr.get_authorization_info(identifiers=identifiers)
 
