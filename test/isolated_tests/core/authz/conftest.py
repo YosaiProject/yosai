@@ -7,7 +7,6 @@ from yosai.core import (
     SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
-    event_bus,
 )
 
 

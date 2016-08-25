@@ -2,9 +2,9 @@ import datetime
 from yosai.core import (
     DefaultNativeSessionManager,
     AbstractSessionStore,
-    event_bus,
     session_abcs,
 )
+from unittest import mock
 
 
 class MockSessionManager:
@@ -65,7 +65,7 @@ class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
 
     def __init__(self):
         super().__init__()
-        self._event_bus = event_bus
+        self._event_bus = mock.MagicMock() 
         self.listeners = []
 
     def create_session(self, session_context):

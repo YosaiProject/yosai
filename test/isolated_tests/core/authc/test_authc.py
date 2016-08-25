@@ -14,10 +14,6 @@ from yosai.core import (
     DefaultCompositeAccount,
     UnauthenticatedException,
     UsernamePasswordToken,
-    requires_authentication,
-    requires_user,
-    requires_guest,
-    event_bus
 )
 
 # -----------------------------------------------------------------------------
@@ -255,7 +251,7 @@ def test_da_clear_cache(
         ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
 
 
-def test_da_register_cache_clear_listener(default_authenticator):
+def test_da_register_cache_clear_listener(default_authenticator, event_bus):
     da = default_authenticator
 
     with mock.patch.object(event_bus, 'register') as eb_r:
@@ -272,7 +268,7 @@ def test_da_register_cache_clear_listener(default_authenticator):
             eb_ir.assert_has_calls(calls)
 
 
-def test_da_notify_success(default_authenticator, full_mock_account):
+def test_da_notify_success(default_authenticator, full_mock_account, event_bus):
     """
     unit tested:  notify_success
 
@@ -342,133 +338,3 @@ def test_da_notify_falure_raises(default_authenticator, monkeypatch):
 
     with pytest.raises(AuthenticationEventException):
         da.notify_failure('token', 'throwable')
-
-# -----------------------------------------------------------------------------
-# Decorator Tests
-# -----------------------------------------------------------------------------
-
-def test_requires_authentication_succeeds(
-        monkeypatch, mock_subject, mock_secutil, yosai):
-    """
-    unit tested:  requires_authentication
-
-    test case:
-    a decorated method that requires authentication succeds to authenticate and
-    then is called
-    """
-    csu = yosai
-
-    @requires_authentication
-    def do_something():
-        return "something was done"
-
-    with csu:
-        monkeypatch.setattr(csu.subject, '_authenticated', True)
-        result = do_something()
-
-        assert result == "something was done"
-
-
-def test_requires_authentication_raises(monkeypatch, mock_subject, yosai,
-                                        yosai):
-
-    """
-    unit tested:  requires_authentication
-
-    test case:
-    a decorated method that requires authentication rails to authenticate and
-    raises
-    """
-    csu = yosai
-
-    @requires_authentication
-    def do_something():
-        return "something was done"
-
-    with pytest.raises(UnauthenticatedException):
-        with csu:
-            do_something()
-
-
-def test_requires_user_succeeds(monkeypatch, mock_subject,
-                                yosai):
-    """
-    unit tested:  requires_user
-
-    test case:
-    a decorated method that requires a 'User-Subject' succeeds to obtain
-    a User status and then is called
-    """
-    csu = yosai
-
-    @requires_user
-    def do_something():
-        return "something was done"
-
-    with csu:
-        monkeypatch.setattr(csu.subject, '_identifiers', True)
-        result = do_something()
-
-        assert result == "something was done"
-
-
-def test_requires_user_raises(monkeypatch, mock_subject,
-                              yosai):
-    """
-    unit tested:  requires_user
-
-    test case:
-    a decorated method that requires a 'User-Subject' fails to obtain
-    a User status and raises
-    """
-    csu = yosai
-
-    @requires_user
-    def do_something():
-        return "something was done"
-
-    with pytest.raises(UnauthenticatedException):
-        with csu:
-            do_something()
-
-
-def test_requires_guest_succeeds(monkeypatch, mock_subject,
-                                 yosai):
-    """
-    unit tested:
-
-    test case:
-    a decorated method that requires a 'Guest-Subject' status succeeds in
-    finding one
-    """
-    csu = yosai
-
-    @requires_guest
-    def do_something():
-        return "something was done"
-
-    with csu:
-        monkeypatch.setattr(csu.subject, '_identifiers', None) 
-        result = do_something()
-
-        assert result == "something was done"
-
-
-def test_requires_guest_raises(monkeypatch, mock_subject, yosai):
-    """
-    unit tested:
-
-    test case:
-    a decorated method that requires a 'Guest-Subject' status fails to find
-    one, raising
-    """
-    csu = yosai
-
-    @requires_guest
-    def do_something():
-        return "something was done"
-
-    with pytest.raises(UnauthenticatedException):
-        with csu:
-            monkeypatch.setattr(csu.subject, '_identifiers', True) 
-            do_something()

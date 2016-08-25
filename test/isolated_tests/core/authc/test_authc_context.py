@@ -6,7 +6,6 @@ from yosai.core import (
     CryptContextException,
     MissingHashAlgorithmException,
     MissingPrivateSaltException,
-    settings,
     AuthenticationSettings,
     CryptContextFactory,
 )

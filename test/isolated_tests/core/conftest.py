@@ -7,11 +7,11 @@ from yosai.core import (
     DefaultAuthenticator,
     DefaultEventBus,
     DefaultSessionContext,
+    DefaultSubjectContext,
     FirstRealmSuccessfulStrategy,
     ModularRealmAuthorizer,
     PasswordVerifier,
     SimpleIdentifierCollection,
-    event_bus,
 )
 
 from .doubles import (
@@ -23,7 +23,6 @@ from .doubles import (
     MockSession,
     MockSubject,
     MockSubjectBuilder,
-    MockSubjectContext,
     MockThreadContext,
     MockToken,
 )
@@ -57,8 +56,8 @@ def return_true(**kwargs):
 
 
 @pytest.fixture(scope='function')
-def default_accountstorerealm(monkeypatch):
-    asr = AccountStoreRealm(name='AccountStoreRealm')
+def default_accountstorerealm(monkeypatch, settings):
+    asr = AccountStoreRealm(settings, name='AccountStoreRealm')
 
     account_store = type('AccountStore', (object,), {})()
     cache_handler = type('CacheHandler', (object,), {})()
@@ -91,8 +90,8 @@ def mock_token():
 
 
 @pytest.fixture(scope='function')
-def default_password_matcher():
-    return PasswordVerifier()
+def default_password_matcher(settings):
+    return PasswordVerifier(settings)
 
 @pytest.fixture(scope='function')
 def mock_pubsub():
@@ -112,7 +111,7 @@ def first_realm_successful_strategy():
 
 @pytest.fixture(scope='function')
 def default_authenticator(
-        first_realm_successful_strategy, monkeypatch, default_accountstorerealm):
+        first_realm_successful_strategy, monkeypatch, default_accountstorerealm, event_bus):
     da = DefaultAuthenticator(first_realm_successful_strategy)
     da.event_bus = event_bus
     da.realms = (default_accountstorerealm,)
@@ -126,7 +125,7 @@ def mock_default_session_manager():
 
 @pytest.fixture(scope='function')
 def mock_subject_context():
-    return MockSubjectContext()
+    return mock.create_autospec(DefaultSubjectContext)
 
 
 @pytest.fixture(scope='function')
@@ -180,7 +179,7 @@ def authz_realms_collection():
 
 @pytest.fixture(scope='function')
 def modular_realm_authorizer_patched(
-        monkeypatch, authz_realms_collection):
+        monkeypatch, authz_realms_collection, event_bus):
     a = ModularRealmAuthorizer()
     monkeypatch.setattr(a, '_realms', authz_realms_collection)
     monkeypatch.setattr(a, '_event_bus', event_bus)

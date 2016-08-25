@@ -1,7 +1,6 @@
 from yosai.core import (
     Credential,
     DelegatingSubject,
-    MapContext,
     account_abcs,
     authc_abcs,
     authz_abcs,
@@ -235,18 +234,6 @@ class MockPubSub:
 
     def __repr__(self):
         return "<MockPubSub()>"
-
-
-class MockSubjectContext(MapContext):
-
-    def resolve_security_manager(self):
-        return None
-
-    def resolve_session(self):
-        return None
-
-    def resolve_identifiers(self):
-        return None
 
 
 class MockSubject(DelegatingSubject):

@@ -13,7 +13,6 @@ from yosai.core import (
     SessionEventHandler,
     DefaultNativeSessionHandler,
     SimpleSession,
-    event_bus,
 )
 
 from .doubles import (
@@ -48,7 +47,7 @@ def patched_delegating_session():
 
 
 @pytest.fixture(scope='function')
-def default_native_session_manager():
+def default_native_session_manager(event_bus):
     nsm = DefaultNativeSessionManager()
     nsm.event_bus = event_bus
     return nsm
@@ -83,7 +82,7 @@ def caching_session_store():
 
 
 @pytest.fixture(scope='function')
-def session_event_handler():
+def session_event_handler(event_bus):
     seh = SessionEventHandler()
     seh.event_bus = event_bus
     return seh
