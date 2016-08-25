@@ -266,7 +266,7 @@ class WebYosai(Yosai):
         try:
             yield
         except:
-            pass
+            raise
         finally:
             global_yosai_context.stack.pop()
             global_webregistry_context.stack.pop()

@@ -1094,7 +1094,7 @@ class Yosai:
         try:
             yield yosai
         except:
-            pass
+            raise
         finally:
             global_yosai_context.stack.pop()
 
