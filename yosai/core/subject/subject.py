@@ -1092,16 +1092,12 @@ class Yosai:
         global_yosai_context.stack.append(yosai)
 
         try:
-            yield yosai
+            yield
         except:
             raise
         finally:
-            global_yosai_context.stack.pop()
-
-            try:
-                global_subject_context.stack.pop()
-            except IndexError:
-                logger.debug('Could not pop a subject from the context stack.')
+            global_yosai_context.stack = []
+            global_subject_context.stack = []
 
     @staticmethod
     def get_current_subject():
