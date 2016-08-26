@@ -5,6 +5,7 @@ from yosai.core import (
     DefaultSubjectFactory,
     DefaultSubjectStore,
     DelegatingSubject,
+    SecurityManagerBuilder,
     SimpleIdentifierCollection,
     SubjectBuilder,
 )
@@ -58,3 +59,8 @@ def subject_builder(subject_builder_context, yosai):
 @pytest.fixture(scope='function')
 def default_subject_factory():
     return DefaultSubjectFactory()
+
+
+@pytest.fixture(scope='function')
+def security_manager_builder():
+    return SecurityManagerBuilder()

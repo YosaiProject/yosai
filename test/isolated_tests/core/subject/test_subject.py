@@ -4,6 +4,7 @@ from unittest import mock
 
 from yosai.core import (
     AuthenticationException,
+    AccountStoreRealm,
     DefaultSessionContext,
     DefaultSessionStorageEvaluator,
     DefaultSubjectContext,
@@ -14,8 +15,12 @@ from yosai.core import (
     IdentifiersNotSetException,
     InvalidArgumentException,
     IllegalStateException,
-    SimpleIdentifierCollection,
+    NativeSecurityManager,
+    SecurityManagerInitException,
+    SecurityManagerSettings,
+    SerializationManager,
     SessionException,
+    SimpleIdentifierCollection,
     SubjectBuilder,
     UsernamePasswordToken,
     Yosai,
@@ -1350,36 +1355,86 @@ def test_dsf_create_subject(
     assert isinstance(result, DelegatingSubject)
 
 
-# ------------------------------------------------------------------------------
-# Yosai
-# ------------------------------------------------------------------------------
-
-def test_su_get_subject_notinthreadlocal(
-        mock_subject_builder, monkeypatch, yosai):
+def test_security_manager_builder_init_realms_succeeds(
+        security_manager_builder):
     """
-    unit tested:  subject
-
-    test case:
-    - when a subject attribute isn't available from the Yosai instance,
-      subject_builder creates one
-        - the newly created subject is bound to the Yosai instance
-    - the subject is returned
+    successfully creates a tuple of initialized realm instances
     """
+    smb = security_manager_builder
+
+    class MockRealm:
+        def __init__(self, settings, account_store):
+            self.settings = settings
+            self.account_store = account_store
+
+    class MockAccountStore:
+        def __init__(self, settings):
+            self.settings = settings
+
+    realms = [(MockRealm, MockAccountStore)]
+    results = smb.init_realms('settings', realms)
+    realm = results[0]
+    assert (isinstance(realm, MockRealm) and
+            isinstance(realm.account_store, MockAccountStore) and
+            realm.settings == 'settings')
+
+def test_security_manager_builder_init_realms_raises(
+        security_manager_builder):
+
+    smb = security_manager_builder
+    realms = [(None, 'MockAccountStore')]
+
+    with pytest.raises(SecurityManagerInitException):
+        smb.init_realms('settings', realms)
+
+def test_security_manager_builder_init_cache_handler_succeeds(
+        security_manager_builder):
+    smb = security_manager_builder
+    mock_ch = mock.MagicMock()
+    smb.init_cache_handler('settings', mock_ch, 'sm')
+    mock_ch.assert_called_once_with(settings='settings',
+                                    serialization_manager='sm')
+
+def test_security_manager_builder_init_cache_handler_fails(
+        security_manager_builder):
+    smb = security_manager_builder
+    result = smb.init_cache_handler('settings', None, 'sm')
+    assert result is None
 
 
-def test_su_get_subject_inthreadlocal(monkeypatch, mock_subject_builder,
-                                      yosai):
-    """
-    unit tested:  get_subject
+def test_security_manager_builder_init_sac_schema(
+        security_manager_builder):
+    smb = security_manager_builder
+    result = smb.init_attributes_schema('schema', None)
+    assert result == 'schema'
 
-    test case:
-    when a subject is bound to a Yosai, it is returned
-    """
 
-# def test_security_manager_builder_init_realms_succeeds
-# def test_security_manager_builder_init_realms_raises
-# def test_security_manager_builder_init_cache_handler_succeeds
-# def test_security_manager_builder_init_cache_handler_fails
-# def test_security_manager_builder_init_sac_succeeds
-# def test_security_manager_builder_init_sac_raises
-# def test_security_manager_builder_create_manager
+def test_security_manager_builder_init_sac_attributes(
+        security_manager_builder):
+    smb = security_manager_builder
+    attributes = {'session_attributes_schema': 'sas'}
+    result = smb.init_attributes_schema(None, attributes)
+    assert result == 'sas'
+
+
+def test_security_manager_builder_init_sac_default(
+        security_manager_builder):
+    smb = security_manager_builder
+    result = smb.init_attributes_schema(None, None)
+    assert result.__name__ == 'SessionAttributes'
+
+
+@mock.patch.object(NativeSecurityManager, '__init__', return_value=None)
+def test_security_manager_builder_create_manager(
+        mock_nsm, security_manager_builder, monkeypatch, core_settings,
+        attributes_schema):
+
+    smb = security_manager_builder
+
+    monkeypatch.setattr(smb, 'init_realms', lambda x, y: 'realms')
+    monkeypatch.setattr(smb, 'init_attributes_schema', lambda x, y: attributes_schema)
+    monkeypatch.setattr(smb, 'init_cache_handler', lambda x, y, z: 'cache_handler')
+
+    result = smb.create_manager('yosai', core_settings, 'session_attributes_schema')
+
+    assert isinstance(result, NativeSecurityManager)

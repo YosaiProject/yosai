@@ -1348,9 +1348,12 @@ class SecurityManagerBuilder:
         if session_attributes_schema:
             return session_attributes_schema
 
-        sas = attributes['session_attributes_schema']
-        if sas:
-            return sas
+        try:
+            sas = attributes['session_attributes_schema']
+            if sas:
+                return sas
+        except (TypeError, KeyError):
+            pass
 
         # The serializer can use a plain old Python object for
         # marshalling primitives, covering the most likely use cases::
