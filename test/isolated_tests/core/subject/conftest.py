@@ -11,29 +11,8 @@ from yosai.core import (
 
 
 @pytest.fixture(scope='function')
-def subject_context():
-    return {"SECURITY_MANAGER": "DefaultSubjectContext.SECURITY_MANAGER",
-            "SESSION_ID": "DefaultSubjectContext.SESSION_ID",
-            "AUTHENTICATION_TOKEN": "DefaultSubjectContext.AUTHENTICATION_TOKEN",
-            "ACCOUNT": "DefaultSubjectContext.ACCOUNT",
-            "SUBJECT": "DefaultSubjectContext.SUBJECT",
-            "IDENTIFIERS": "DefaultSubjectContext.IDENTIFIERS",
-            "SESSION": "DefaultSubjectContext.SESSION",
-            "AUTHENTICATED": "DefaultSubjectContext.AUTHENTICATED",
-            "HOST": "DefaultSubjectContext.HOST",
-            "SESSION_CREATION_ENABLED": "DefaultSubjectContext.SESSION_CREATION_ENABLED",
-            "IDENTIFIERS_SESSION_KEY": "DefaultSubjectContext_IDENTIFIERS_SESSION_KEY",
-            "AUTHENTICATED_SESSION_KEY": "DefaultSubjectContext_AUTHENTICATED_SESSION_KEY"}
-
-
-@pytest.fixture(scope='function')
-def default_subject_context(yosai, subject_context, 
-                            full_mock_account, mock_session):
-    csu = yosai
-    context = {value: 'value_'+value for key, value in subject_context.items()}
-    context["DefaultSubjectContext.ACCOUNT"] = full_mock_account
-    context["DefaultSubjectContext.AUTHENTICATED"] = False
-    return DefaultSubjectContext(security_utils=csu, context=context)
+def subject_context(yosai):
+    return DefaultSubjectContext(yosai=yosai, security_manager=yosai.security_manager)
 
 
 @pytest.fixture(scope='function')
@@ -73,8 +52,8 @@ def subject_builder_context(
 
 @pytest.fixture(scope='function')
 def subject_builder(subject_builder_context, yosai):
-    return SubjectBuilder(security_utils=yosai,
-                          **subject_builder_context)
+    return SubjectBuilder(yosai=yosai, security_manager=yosai.security_manager)
+    
 
 @pytest.fixture(scope='function')
 def default_subject_factory():

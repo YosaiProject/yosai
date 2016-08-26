@@ -47,37 +47,37 @@ def authc_config():
     }
 
 @pytest.fixture(scope='function')
-def patched_authc_settings(authc_config, monkeypatch, settings):
-    monkeypatch.setattr(settings, 'AUTHC_CONFIG', authc_config)
-    return AuthenticationSettings(settings)
+def patched_authc_settings(authc_config, monkeypatch, core_settings):
+    monkeypatch.setattr(core_settings, 'AUTHC_CONFIG', authc_config)
+    return AuthenticationSettings(core_settings)
 
 @pytest.fixture(scope='function')
-def first_accountstorerealm_succeeds(settings, monkeypatch):
+def first_accountstorerealm_succeeds(core_settings, monkeypatch):
     def mock_return(self, token):
         return MockAccount(account_id=12345)
     monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
-    return AccountStoreRealm(settings, name='AccountStoreRealm1')
+    return AccountStoreRealm(core_settings, name='AccountStoreRealm1')
 
 @pytest.fixture(scope='function')
-def first_accountstorerealm_fails(monkeypatch, settings):
+def first_accountstorerealm_fails(monkeypatch, core_settings):
     def mock_return(self, token):
         raise IncorrectCredentialsException
     monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
-    return AccountStoreRealm(settings, name='AccountStoreRealm1')
+    return AccountStoreRealm(core_settings, name='AccountStoreRealm1')
 
 @pytest.fixture(scope='function')
-def second_accountstorerealm_fails(monkeypatch, settings):
+def second_accountstorerealm_fails(monkeypatch, core_settings):
     def mock_return(self, token):
         raise IncorrectCredentialsException
     monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
-    return AccountStoreRealm(settings, name='AccountStoreRealm2')
+    return AccountStoreRealm(core_settings, name='AccountStoreRealm2')
 
 @pytest.fixture(scope='function')
-def second_accountstorerealm_succeeds(monkeypatch, settings):
+def second_accountstorerealm_succeeds(monkeypatch, core_settings):
     def mock_return(self, token):
         return MockAccount(account_id=67890)
     monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
-    return AccountStoreRealm(settings, name='AccountStoreRealm2')
+    return AccountStoreRealm(core_settings, name='AccountStoreRealm2')
 
 @pytest.fixture(scope='function')
 def one_accountstorerealm_succeeds(first_accountstorerealm_succeeds):
@@ -126,8 +126,8 @@ def multirealm_authc_attempt(username_password_token, two_accountstorerealms_suc
                                         two_accountstorerealms_succeeds)
 
 @pytest.fixture(scope='function')
-def cryptcontext_factory(settings):
-    return CryptContextFactory(settings)
+def cryptcontext_factory(core_settings):
+    return CryptContextFactory(core_settings)
 
 
 @pytest.fixture(scope='function')

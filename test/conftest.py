@@ -46,6 +46,16 @@ def settings():
 
 
 @pytest.fixture(scope='function')
+def core_settings():
+    return LazySettings(env_var='YOSAI_CORE_SETTINGS')
+
+
+@pytest.fixture(scope='function')
+def web_settings():
+    return LazySettings(env_var='YOSAI_WEB_SETTINGS')
+
+
+@pytest.fixture(scope='function')
 def session(cache_handler, request, settings):
     session_maker = init_session(settings=settings)
     session = session_maker()
@@ -181,13 +191,13 @@ def attributes_schema():
 
 @pytest.fixture(scope='function')
 def yosai(attributes_schema):
-    return Yosai(env_var='YOSAI_SETTINGS',
+    return Yosai(env_var='YOSAI_CORE_SETTINGS',
                  session_attributes_schema=attributes_schema)
 
 
 @pytest.fixture(scope='function')
 def web_yosai(attributes_schema):
-    return WebYosai(env_var='YOSAI_SETTINGS',
+    return WebYosai(env_var='YOSAI_WEB_SETTINGS',
                     session_attributes_schema=attributes_schema)
 
 

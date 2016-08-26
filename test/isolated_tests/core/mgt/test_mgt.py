@@ -1283,7 +1283,7 @@ def test_nsm_get_remembered_identity_raises(
 # AbstractRememberMeManager
 # ------------------------------------------------------------------------------
 
-def test_armm_init(remember_me_settings, settings, attributes_schema):
+def test_armm_init(remember_me_settings, core_settings, attributes_schema):
     """
     unit tested:  __init__
 
@@ -1291,7 +1291,7 @@ def test_armm_init(remember_me_settings, settings, attributes_schema):
     confirm that init calls set_cipher_key using remember_me_settings.default_cipher_key
     """
     default_key = remember_me_settings.default_cipher_key
-    mrmm = MockRememberMeManager(settings, attributes_schema)
+    mrmm = MockRememberMeManager(core_settings, attributes_schema)
     assert (mrmm.encryption_cipher_key == mrmm.decryption_cipher_key and
             mrmm.encryption_cipher_key == default_key)
 
@@ -1422,7 +1422,7 @@ def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager, monkeypatch
 
 
 def test_armm_get_remembered_identifiers_raises(
-        mock_remember_me_manager, monkeypatch, settings, attributes_schema):
+        mock_remember_me_manager, monkeypatch, attributes_schema):
     """
     unit tested:  get_remembered_identifiers
 

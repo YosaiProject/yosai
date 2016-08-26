@@ -883,7 +883,6 @@ class DefaultSubjectStore:
 
         :type subject:  subject_abcs.Subject
         """
-
         current_identifiers = None
 
         if subject.is_run_as:
@@ -912,8 +911,10 @@ class DefaultSubjectStore:
                        'internal attributes: {1}'.format(session.session_id, to_set))
                 logger.debug(msg)
                 session.set_internal_attributes(to_set)
-
         else:
+            self.merge_identity_with_session(current_identifiers, subject, session)
+
+    def merge_identity_with_session(self, current_identifiers, subject, session):
             msg = 'merge_identity _DID_ find a session for current subject.'
             logger.debug(msg)
 

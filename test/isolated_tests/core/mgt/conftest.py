@@ -11,10 +11,10 @@ from .doubles import (
 
 
 @pytest.fixture(scope='function')
-def remember_me_settings(settings):
-    return RememberMeSettings(settings)
+def remember_me_settings(core_settings):
+    return RememberMeSettings(core_settings)
 
 
 @pytest.fixture(scope='function')
-def mock_remember_me_manager(settings, attributes_schema):
-    return MockRememberMeManager(settings, attributes_schema)
+def mock_remember_me_manager(core_settings, attributes_schema):
+    return MockRememberMeManager(core_settings, attributes_schema)

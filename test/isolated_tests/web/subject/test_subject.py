@@ -133,32 +133,6 @@ def test_web_delegating_subject_create_session_context(
             isinstance(result, DefaultWebSessionContext))
 
 
-@mock.patch.object(DelegatingSubject, 'get_session')
-def test_web_delegating_subject_get_session_not_create(
-        mock_ds_gs, web_delegating_subject, mock_web_delegating_session):
-    """
-    when create=False, the session is touched
-    """
-    wds = web_delegating_subject
-    result = wds.get_session(False)
-    assert result == wds.session
-    mock_ds_gs.assert_called_once_with(False)
-    mock_web_delegating_session.touch.assert_called_once_with()
-
-
-@mock.patch.object(DelegatingSubject, 'get_session')
-def test_web_delegating_subject_get_session_create(
-        mock_ds_gs, web_delegating_subject, mock_web_delegating_session):
-    """
-    when create=True, the session is not touched -- verify this
-    """
-    wds = web_delegating_subject
-    result = wds.get_session()
-    assert result == wds.session
-    mock_ds_gs.assert_called_once_with(True)
-    assert not mock_web_delegating_session.touch.called
-
-
 @mock.patch.object(WebProxiedSession, 'stop')
 def test_web_delegating_subject_proxied_session_stop(
         mock_wps_stop, web_stopping_aware_proxied_session, monkeypatch):

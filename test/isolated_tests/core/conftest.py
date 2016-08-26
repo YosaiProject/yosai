@@ -56,8 +56,8 @@ def return_true(**kwargs):
 
 
 @pytest.fixture(scope='function')
-def default_accountstorerealm(monkeypatch, settings):
-    asr = AccountStoreRealm(settings, name='AccountStoreRealm')
+def default_accountstorerealm(monkeypatch, core_settings):
+    asr = AccountStoreRealm(core_settings, name='AccountStoreRealm')
 
     account_store = type('AccountStore', (object,), {})()
     cache_handler = type('CacheHandler', (object,), {})()
@@ -90,8 +90,8 @@ def mock_token():
 
 
 @pytest.fixture(scope='function')
-def default_password_matcher(settings):
-    return PasswordVerifier(settings)
+def default_password_matcher(core_settings):
+    return PasswordVerifier(core_settings)
 
 @pytest.fixture(scope='function')
 def mock_pubsub():
@@ -119,8 +119,8 @@ def default_authenticator(
 
 
 @pytest.fixture(scope='function')
-def mock_default_session_manager(attributes_schema, settings):
-    return MockDefaultNativeSessionManager(attributes_schema, settings)
+def mock_default_session_manager(attributes_schema, core_settings):
+    return MockDefaultNativeSessionManager(attributes_schema, core_settings)
 
 
 @pytest.fixture(scope='function')
