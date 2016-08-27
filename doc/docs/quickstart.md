@@ -255,8 +255,8 @@ with yosai:
 ```
 
 If you were using Yosai with a web application, the syntax would be similar
-to that above but requires that a ``WebRegistry`` instance be passed as
-as argument to the context manager.  The web integration library is further
+to that above but requires that a ``WebRegistry`` instance be passed as argument 
+to the context manager.  The web integration library is further
 elaborated upon in the Web Integration section of this documentation.
 
 ```Python
