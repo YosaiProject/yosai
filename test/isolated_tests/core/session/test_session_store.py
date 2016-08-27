@@ -31,7 +31,7 @@ def test_asd_generate_session_id_succeeds(
     monkeypatch.setattr(masd, 'session_id_generator', sessiongen)
     with mock.patch.object(sessiongen, 'generate_id') as mock_gen:
         mock_gen.return_value = 'sessionid1234'
-        masd.generate_session_id(session='arbitrarysession')
+        masd.generate_session_id()
 
 
 def test_asd_generate_session_id_raises(mock_abstract_session_store):
@@ -45,7 +45,7 @@ def test_asd_generate_session_id_raises(mock_abstract_session_store):
     with mock.patch.object(RandomSessionIDGenerator, 'generate_id') as mock_gen:
         mock_gen.side_effect = AttributeError
         with pytest.raises(IllegalStateException):
-            masd.generate_session_id(session='arbitrarysession')
+            masd.generate_session_id()
 
 
 def test_asd_create_raises(mock_abstract_session_store, monkeypatch):
@@ -100,37 +100,6 @@ def test_asd_verify_session_id_succeeds(mock_abstract_session_store):
     masd.verify_session_id(session_id='arbitrarysessionid')
 
 
-@pytest.mark.parametrize('session,sessionid',
-                         [('arbitrarysession', None), (None, 'sessionid123'),
-                          (None, None)])
-def test_asd_assign_session_id_raises(
-        mock_abstract_session_store, session, sessionid):
-    """
-    unit tested:  assign_session_id
-
-    test case:
-     I) session = 'arbitrarysession' , session_id = None
-    II) session = None, session_id = 'sessionid123'
-   III) session = None, session_id = None
-    """
-    masd = mock_abstract_session_store
-    with pytest.raises(InvalidArgumentException):
-        masd.assign_session_id(session, sessionid)
-
-
-def test_asd_assign_session_id_succeeds(mock_abstract_session_store):
-    """
-    unit tested:  assign_session_id
-
-    test case:
-    assigns the session_id attribute to a session
-    """
-    masd = mock_abstract_session_store
-    mock_session = mock.MagicMock()
-    masd.assign_session_id(mock_session, 'sessionid123')
-    assert mock_session.session_id == 'sessionid123'
-
-
 def test_asd_read_raises(mock_abstract_session_store, monkeypatch):
     """
     unit tested:  read
@@ -170,21 +139,18 @@ def test_msd_do_create(memory_session_store):
     generates a session id, assigns it to the session, and stores the session
     """
     msd = memory_session_store
+    mock_session = mock.MagicMock(session_id='sessionid123')
 
     with mock.patch.object(msd, 'generate_session_id') as mock_gsi:
         mock_gsi.return_value = 'sessionid123'
-        with mock.patch.object(msd, 'assign_session_id') as mock_asi:
-            mock_asi.return_value = None
-            with mock.patch.object(msd, 'store_session') as mock_ss:
-                mock_ss.return_value = None
+        with mock.patch.object(msd, 'store_session') as mock_ss:
+            mock_ss.return_value = None
 
-                ds = 'dumbsession'
-                result = msd._do_create(ds)
+            result = msd._do_create(mock_session)
 
-                mock_gsi.assert_called_once_with(ds)
-                mock_asi.assert_called_once_with(ds, 'sessionid123')
-                mock_ss.assert_called_once_with('sessionid123', ds)
-                assert result == 'sessionid123'
+            mock_gsi.assert_called_once_with()
+            mock_ss.assert_called_once_with('sessionid123', mock_session)
+            assert result == 'sessionid123'
 
 
 def test_msd_store_session(memory_session_store):
@@ -311,7 +277,7 @@ def test_csd_update_isvalid(caching_session_store, mock_session):
         with mock.patch.object(csd, '_cache_identifiers_to_key_map') as cikm:
             cikm.return_value = None
 
-            csd.update(mock_session)
+            csd.update(mock_session, update_identifiers_map=True)
 
             mock_cache_handler.assert_called_once_with(
                 mock_session, mock_session.session_id)
@@ -334,7 +300,7 @@ def test_csd_update_isnotvalid(
     with mock.patch.object(csd, '_uncache') as mock_uncache:
         mock_uncache.return_value = None
 
-        csd.update(mock_session)
+        csd.update(mock_session, update_identifiers_map=True)
 
         mock_uncache.assert_called_once_with(mock_session)
 

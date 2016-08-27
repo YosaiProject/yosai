@@ -791,7 +791,8 @@ class SimpleSession(session_abcs.ValidatingSession,
             return (self._session_id == other._session_id and
                     self._idle_timeout == other._idle_timeout and
                     self._absolute_timeout == other._absolute_timeout and
-                    self._start_timestamp == other._start_timestamp)
+                    self._start_timestamp == other._start_timestamp and
+                    self.attributes.__dict__ == other.attributes.__dict__)
         return False
 
     def __repr__(self):

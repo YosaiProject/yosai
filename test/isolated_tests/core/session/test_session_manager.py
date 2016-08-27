@@ -281,38 +281,6 @@ def test_sh_dogetsession_notouch(session_handler, monkeypatch, session_key):
         assert result == 'session'
 
 
-def test_sh_dogetsession_touch(
-        session_handler, monkeypatch, session_key, mock_session):
-    """
-    unit tested: do_get_session
-
-    test case:
-    - retrieve_session returns a session
-    - validate will be called
-    - auto_touch is set True, so its clode block is called
-    - session is returned
-    """
-    sh = session_handler
-
-    monkeypatch.setattr(sh, '_retrieve_session', lambda x: mock_session)
-    monkeypatch.setattr(sh, 'auto_touch', True)
-
-    with mock.patch.object(DefaultNativeSessionHandler, 'validate') as sh_validate:
-        sh_validate.return_value = None
-        with mock.patch.object(DefaultNativeSessionHandler, 'on_change') as oc:
-            oc.return_value = None
-            with mock.patch.object(mock_session, 'touch') as ms_touch:
-                ms_touch.return_value = None
-
-                result = sh.do_get_session(session_key)
-
-                sh_validate.assert_called_once_with(mock_session, session_key)
-                ms_touch.assert_called_once_with()
-                oc.assert_called_once_with(mock_session)
-
-                assert result == mock_session
-
-
 def test_sh_validate_succeeds(session_handler, mock_session, monkeypatch,
                               session_key):
     """
@@ -388,7 +356,7 @@ def test_sh_on_stop(session_handler, mock_session, monkeypatch):
     monkeypatch.setattr(mock_session, '_stop_timestamp',
                         datetime.datetime.now(pytz.utc))
     with mock.patch.object(sh, 'on_change') as mock_onchange:
-        sh.on_stop(mock_session)
+        sh.on_stop(mock_session, 'session_key')
         mock_onchange.assert_called_with(mock_session)
         assert mock_session.last_access_time == mock_session.stop_timestamp
 
@@ -540,7 +508,7 @@ def test_sh_on_invalidation_isetype(
                                    ise=ise,
                                    session_key=session_key)
 
-                mock_onstop.assert_called_once_with(mock_session)
+                mock_onstop.assert_called_once_with(mock_session, 'sessionkey123')
                 mock_ns.assert_called_once_with(mysession)
                 mock_as.assert_called_once_with(mock_session)
 
@@ -559,7 +527,7 @@ def test_sh_on_change(session_handler, monkeypatch, caching_session_store):
 
         sh.on_change('session')
 
-        ss_up.assert_called_once_with('session')
+        ss_up.assert_called_once_with('session', False)
 
 
 # ------------------------------------------------------------------------------
@@ -644,7 +612,7 @@ def test_nsm_stop(
                     nsm.stop('sessionkey123', 'identifiers')
 
                     stop.assert_called_with()
-                    on_stop.assert_called_with(mock_session)
+                    on_stop.assert_called_with(mock_session, 'sessionkey123')
                     notify_stop.assert_called_with(mysession)
                     after_stopped.assert_called_with(mock_session)
 
@@ -1005,22 +973,7 @@ def test_nsm_set_internal_attribute(
                                        attribute_key='attr321', value=321)
 
             sia.assert_called_once_with('attr321', 321)
-            mocky.assert_called_once_with(mock_session)
-
-
-def test_nsm_set_internal_attribute_removes(
-        default_native_session_manager):
-    """
-    unit tested:  set_internal_attribute
-
-    test case:
-    calling set_internal_attribute without a value results in the removal of an internal_attribute
-    """
-    nsm = default_native_session_manager
-
-    with mock.patch.object(nsm, 'remove_internal_attribute') as mock_ra:
-        nsm.set_internal_attribute('sessionkey123', attribute_key='attr1')
-        mock_ra.assert_called_once_with('sessionkey123', 'attr1')
+            mocky.assert_called_once_with(mock_session, update_identifiers_map=True)
 
 
 def test_nsm_remove_internal_attribute(

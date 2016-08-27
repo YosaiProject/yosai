@@ -2,6 +2,7 @@ import pytest
 
 from yosai.core import (
     CachingSessionStore,
+    DefaultNativeSessionHandler,
     DefaultNativeSessionManager,
     DefaultSessionKey,
     DefaultSessionSettings,
@@ -11,8 +12,8 @@ from yosai.core import (
     MemorySessionStore,
     ProxiedSession,
     SessionEventHandler,
-    DefaultNativeSessionHandler,
     SimpleSession,
+    SimpleSessionFactory,
 )
 
 from .doubles import (
@@ -37,8 +38,8 @@ def default_proxied_session(mock_session):
 
 
 @pytest.fixture(scope='function')
-def simple_session():
-    return SimpleSession(DefaultSessionSettings())
+def simple_session(attributes_schema):
+    return SimpleSession(1800000, 600000, attributes_schema)
 
 
 @pytest.fixture(scope='function')
@@ -47,8 +48,8 @@ def patched_delegating_session():
 
 
 @pytest.fixture(scope='function')
-def default_native_session_manager(event_bus):
-    nsm = DefaultNativeSessionManager()
+def default_native_session_manager(attributes_schema, core_settings, event_bus):
+    nsm = DefaultNativeSessionManager(attributes_schema, core_settings)
     nsm.event_bus = event_bus
     return nsm
 
@@ -96,3 +97,8 @@ def session_handler(session_event_handler):
 @pytest.fixture(scope='function')
 def session_key():
     return DefaultSessionKey('sessionid123')
+
+
+@pytest.fixture(scope='function')
+def simple_session_factory(attributes_schema, core_settings):
+    return SimpleSessionFactory(attributes_schema, core_settings)

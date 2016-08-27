@@ -1,4 +1,5 @@
 import pytest
+import time
 import pytz
 from unittest import mock
 import datetime
@@ -30,22 +31,22 @@ from yosai.core import (
 # ----------------------------------------------------------------------------
 
 
-def test_create_session_settings():
+def test_create_session_settings(core_settings):
     """
     unit tested:  __init__
 
     test case:
     basic code path exercise, ensuring object instantiation
     """
-    dss = DefaultSessionSettings()
+    dss = DefaultSessionSettings(core_settings)
     assert hasattr(dss, 'absolute_timeout') and hasattr(dss, 'idle_timeout')
 
 
 @pytest.mark.parametrize(
     'attr', ['absolute_timeout', 'idle_timeout', 'validation_scheduler_enable',
              'validation_time_interval'])
-def test_default_session_settings(attr):
-    dss = DefaultSessionSettings()
+def test_default_session_settings(attr, core_settings):
+    dss = DefaultSessionSettings(core_settings)
     assert getattr(dss, attr) is not None
 
 
@@ -218,20 +219,16 @@ def test_ss_is_valid(
 # see docstring below for more information about these parameters:
 @pytest.mark.parametrize(
     ('is_expired,absolute_timeout,idle_timeout,last_access_time,start_timestamp,timedout'),
-    [(True, None, None, None, None, True),
-     (False, datetime.timedelta(minutes=60), None,
-      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=3),
-      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=120), True),
-     (False, None, datetime.timedelta(minutes=15),
-      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=20),
-      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=30), True),
-     (False, datetime.timedelta(minutes=60), datetime.timedelta(minutes=15),
-      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=1),
-      datetime.datetime.now(pytz.utc) - datetime.timedelta(minutes=5),
-      False),
-     (False, None, None,
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=1),
-      datetime.datetime.utcnow() - datetime.timedelta(minutes=5), False)])
+    [(False, (60 * 60 * 1000), (10 * 60 * 1000),
+      round(time.time() * 1000) - (3 * 60 * 1000),
+      round(time.time() * 1000) - (120 * 60 * 1000), True),
+     (False, (60 * 60 * 1000), (15 * 60 * 1000),
+      round(time.time() * 1000) - (20 * 60 * 1000),
+      round(time.time() * 1000) - (30 * 60 * 1000), True),
+     (False, (60 * 60 * 1000), (15 * 60 * 1000),
+      round(time.time() * 1000) - (1 * 60 * 1000),
+      round(time.time() * 1000) - (5 * 60 * 1000),
+      False)])
 def test_ss_is_timed_out(
         simple_session, is_expired, absolute_timeout,
         idle_timeout, last_access_time, start_timestamp, timedout,
@@ -242,27 +239,22 @@ def test_ss_is_timed_out(
     test case:
             is_timed_out()=True:
             ----------------------
-            expired:
-         I) expired = True, rest is None
 
             absolute timeout:
-        II) expired = False, absolute_timeout = 1hour, idle_timeout=None
+        I) expired = False, absolute_timeout = 1hour, idle_timeout=None
             start_timestamp = currenttime-2hours, rest is arbitrary
 
             inactive timeout:
-       III) expired = False, absolute_timeout = None, idle_timeout = 15min,
+       II) expired = False, absolute_timeout = None, idle_timeout = 15min,
             start_timestamp = currenttime, last_access_time=current-30minutes
 
 
             is_timed_out()=False:
             ----------------------
             not idle nor beyond absolute:
-        IV) expired = False, absolute_timeout = 1hr, idle_timeout = 15min,
+        III) expired = False, absolute_timeout = 1hr, idle_timeout = 15min,
             start_timestamp = currenttime-5, last_access_time=current-1minutes
 
-            not expired, neither timeout set:
-        V)  expired = False, absolute_timeout = None, idle_timeout = None,
-            rest is None
     """
     ss = simple_session
 
@@ -337,10 +329,7 @@ def test_ss_validate_is_timedout(simple_session, monkeypatch):
     assert 'set to' in str(exc_info.value)
 
 
-@pytest.mark.parametrize('attributes,key,expected',
-                         [(None, 'attr1', None),
-                          ({'attr1': 'number1'}, 'attr1', 'number1')])
-def test_ss_get_attribute(simple_session, attributes, key, expected, monkeypatch):
+def test_ss_get_attribute(simple_session):
     """
     unit tested:  get_attribute
 
@@ -348,25 +337,10 @@ def test_ss_get_attribute(simple_session, attributes, key, expected, monkeypatch
     returns None either when no attributes or when key doesn't exist
     """
     ss = simple_session
-    monkeypatch.setattr(ss, '_attributes', attributes)
-    assert ss.get_attribute(key) == expected
+    assert ss.get_attribute('attribute1') == 'attribute1'
 
 
-def test_ss_set_attribute_removes(simple_session, monkeypatch):
-    """
-    unit tested:  set_attribute
-
-    test case:
-    setting an attribute without a value will remove the attribute
-    """
-    ss = simple_session
-    attributes = {'attr1': 'attr1', 'attr2': 'attr2'}
-    monkeypatch.setattr(ss, '_attributes', attributes)
-    ss.set_attribute('attr1')
-    assert ss.attributes.get('attr1', 'nope') == 'nope'
-
-
-def test_ss_set_attribute_adds(simple_session, monkeypatch):
+def test_ss_set_attribute(simple_session, monkeypatch):
     """
     unit tested:  set_attribute
 
@@ -374,17 +348,24 @@ def test_ss_set_attribute_adds(simple_session, monkeypatch):
     setting an attribute adds or overrides existing attribute
     """
     ss = simple_session
-    attributes = {'attr1': 'attr1', 'attr2': 'attr2'}
-    monkeypatch.setattr(ss, '_attributes', attributes)
-    ss.set_attribute('attr1')
-    assert ss.attributes.get('attr1', 'nope') == 'nope'
+    ss.set_attribute('attribute1', 'testing')
+    assert ss.attributes.attribute1 == 'testing'
 
 
-@pytest.mark.parametrize('attributes,key,expected',
-                         [(None, 'attr2', None),
-                          ({'attr1': 100, 'attr2': 200}, 'attr2', 200)])
-def test_ss_remove_attribute(simple_session, monkeypatch, attributes,
-                             key, expected):
+def test_ss_set_attributes(simple_session, monkeypatch):
+    """
+    unit tested:  set_attributes
+    """
+    ss = simple_session
+    attributes = {'attribute1': 'test1', 'attribute2': 'test2'}
+
+    ss.set_attributes(attributes)
+
+    assert (ss.attributes.attribute1 == 'test1' and
+            ss.attributes.attribute2 == 'test2')
+
+
+def test_ss_remove_attribute(simple_session):
     """
     unit tested: remove_attribute
 
@@ -392,15 +373,11 @@ def test_ss_remove_attribute(simple_session, monkeypatch, attributes,
     remove an attribute, if attributes exists, else None
     """
     ss = simple_session
-    monkeypatch.setattr(ss, '_attributes', attributes)
-    assert ss.remove_attribute(key) == expected
+    assert (ss.remove_attribute('attribute1') == 'attribute1'
+            and not hasattr(ss.attributes, 'attribute1'))
 
 
-@pytest.mark.parametrize('internal_attributes,key,expected',
-                         [(None, 'attr1', None),
-                          ({'attr1': 'number1'}, 'attr1', 'number1')])
-def test_ss_get_internal_attribute(simple_session, internal_attributes, key,
-                                   expected, monkeypatch):
+def test_ss_get_internal_attribute(simple_session):
     """
     unit tested:  get_internal_attribute
 
@@ -408,25 +385,11 @@ def test_ss_get_internal_attribute(simple_session, internal_attributes, key,
     returns None either when no internal_attributes or when key doesn't exist
     """
     ss = simple_session
-    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
-    assert ss.get_internal_attribute(key) == expected
+    result = ss.get_internal_attribute('identifiers_session_key')
+    assert result is None
 
 
-def test_ss_set_internal_attribute_removes(simple_session, monkeypatch):
-    """
-    unit tested:  set_internal_attribute
-
-    test case:
-    setting an internal_attribute without a value will remove the internal_attribute
-    """
-    ss = simple_session
-    internal_attributes = {'attr1': 'attr1', 'attr2': 'attr2'}
-    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
-    ss.set_internal_attribute('attr1')
-    assert ss.internal_attributes.get('attr1', 'nope') == 'nope'
-
-
-def test_ss_set_internal_attribute_adds(simple_session, monkeypatch):
+def test_ss_set_internal_attribute(simple_session):
     """
     unit tested:  set_internal_attribute
 
@@ -434,17 +397,11 @@ def test_ss_set_internal_attribute_adds(simple_session, monkeypatch):
     setting an internal_attribute adds or overrides existing internal_attribute
     """
     ss = simple_session
-    internal_attributes = {'attr1': 'attr1', 'attr2': 'attr2'}
-    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
-    ss.set_internal_attribute('attr1')
-    assert ss.internal_attributes.get('attr1', 'nope') == 'nope'
+    ss.set_internal_attribute('identifiers_session_key', 'testing')
+    assert ss.internal_attributes.get('identifiers_session_key') == 'testing'
 
 
-@pytest.mark.parametrize('internal_attributes,key,expected',
-                         [(None, 'attr2', None),
-                          ({'attr1': 100, 'attr2': 200}, 'attr2', 200)])
-def test_ss_remove_internal_attribute(simple_session, monkeypatch,
-                                      internal_attributes, key, expected):
+def test_ss_remove_internal_attribute(simple_session):
     """
     unit tested: remove_internal_attribute
 
@@ -452,91 +409,87 @@ def test_ss_remove_internal_attribute(simple_session, monkeypatch,
     remove an internal_attribute, if internal_attributes exists, else None
     """
     ss = simple_session
-    monkeypatch.setattr(ss, '_internal_attributes', internal_attributes)
-    assert ss.remove_internal_attribute(key) == expected
+    result = ss.remove_internal_attribute('identifiers_session_key')
+    assert ss.internal_attributes.get('identifiers_session_key') is None
 
 
-def test_ss_eq_clone():
+def test_ss_eq_clone(attributes_schema):
     """
     unit tested:
 
     test case:
       other is a clone of self
    """
-    s1 = SimpleSession()
+    idle_timeout = (10 * 60 * 1000)
+    absolute_timeout = (60 * 60 * 1000)
+    last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
+    start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
+
+    s1 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
     s1._is_expired = False
     s1.session_id = 'sessionid123'
-    s1._absolute_timeout = datetime.timedelta(minutes=60)
-    s1._idle_timeout = datetime.timedelta(minutes=15)
-    s1._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011)
-    s1._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011)
+    s1._last_access_time = last_access_time
+    s1._start_timestamp = start_timestamp
     s1._host = '127.0.0.1'
-    s1._attributes = {'attr1': 100, 'attr2': 200}
 
-    s2 = SimpleSession()
+    s2 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
     s2.session_id = 'sessionid123'
     s2._is_expired = False
-    s2._absolute_timeout = datetime.timedelta(minutes=60)
-    s2._idle_timeout = datetime.timedelta(minutes=15)
-    s2._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011)
-    s2._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011)
+    s2._last_access_time = last_access_time
+    s2._start_timestamp = start_timestamp
     s2._host = '127.0.0.1'
-    s2._attributes = {'attr1': 100, 'attr2': 200}
 
     assert s1 == s2
 
 
-def test_ss_eq_different_values():
+def test_ss_eq_different_values(attributes_schema):
     """
     unit tested:
 
     test case:
     other has different attribute values than self
-   """
-    s1 = SimpleSession()
-    s1.session_id = 'sessionid123'
-    s1._is_expired = False
-    s1._absolute_timeout = datetime.timedelta(minutes=60)
-    s1._idle_timeout = datetime.timedelta(minutes=25)
-    s1._last_access_time = datetime.datetime(2014, 4, 1, 11, 17, 10, 101011)
-    s1._start_timestamp = datetime.datetime(2014, 4, 1, 11, 11, 11, 101011)
-    s1._host = '192.168.1.1'
-    s1._attributes = {'attr3': 100, 'attr4': 200}
+    """
+    idle_timeout = (10 * 60 * 1000)
+    absolute_timeout = (60 * 60 * 1000)
+    last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
+    start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
-    s2 = SimpleSession()
-    s2.session_id = 'sessionid345'
+    s1 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s1._is_expired = False
+    s1.session_id = 'sessionid1234567'
+    s1._last_access_time = last_access_time
+    s1._start_timestamp = start_timestamp
+    s1._host = '127.0.0.1'
+
+    s2 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s2.session_id = 'sessionid123'
     s2._is_expired = False
-    s2._absolute_timeout = datetime.timedelta(minutes=60)
-    s2._idle_timeout = datetime.timedelta(minutes=15)
-    s2._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011)
-    s2._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011)
+    s2._last_access_time = last_access_time
+    s2._start_timestamp = start_timestamp
     s2._host = '127.0.0.1'
-    s2._attributes = {'attr1': 100, 'attr2': 200}
 
     assert not s1 == s2
 
-def test_ss_eq_different_attributes():
+
+def test_ss_eq_different_attributes(attributes_schema):
     """
     unit tested:
 
     test case:
     other does not have same attributes as self
    """
-    s1 = SimpleSession()
-    s1.session_id = 'session242'
-    s1._is_expired = False
-    s1._absolute_timeout = datetime.timedelta(minutes=60)
-    s1._idle_timeout = datetime.timedelta(minutes=15)
-    s1._last_access_time = datetime.datetime(2011, 1, 1, 11, 17, 10, 101011)
-    s1._start_timestamp = datetime.datetime(2011, 1, 1, 11, 11, 11, 101011)
-    s1._host = '127.0.0.1'
-    s1._attributes = {'attr1': 100, 'attr2': 200}
+    idle_timeout = (10 * 60 * 1000)
+    absolute_timeout = (60 * 60 * 1000)
+    last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
+    start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
-    s2 = SimpleSession()
-    s2._is_expired = False
-    s2._absolute_timeout = datetime.timedelta(minutes=60)
-    s2._idle_timeout = datetime.timedelta(minutes=15)
-    s2._attributes = {'attr1': 100, 'attr2': 200}
+    s1 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s2 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+
+    assert s1 == s2
+
+    s1.set_attribute('attribute1', 'test')
+    s2.set_attribute('attribute1', 'testing')
 
     assert not s1 == s2
 
@@ -549,7 +502,7 @@ def test_ss_eq_different_attributes():
     [(type('SessionContext', (object,), {'host': '123.456.789.10'})(),
       '123.456.789.10'),
      (type('SessionContext', (object,), {})(), None), (None, None)])
-def test_ssf_create_session(context, expected):
+def test_ssf_create_session(context, expected, simple_session_factory):
     """
     unit tested:  create_session
 
@@ -558,7 +511,8 @@ def test_ssf_create_session(context, expected):
      II) a context without a host
     III) no context
     """
-    session = SimpleSessionFactory.create_session(session_context=context)
+    ssf = simple_session_factory
+    session = ssf.create_session(session_context=context)
     assert session.host == expected
 
 # ----------------------------------------------------------------------------
@@ -573,8 +527,8 @@ def test_uuid_sig_generates():
     calling generate_id returns a string
     """
     sid_gen = UUIDSessionIDGenerator
-    result = sid_gen.generate_id('arbitraryvalue')
-    assert isinstance(result, str)
+    result = sid_gen.generate_id()
+    assert len(result) == 36
 
 # ----------------------------------------------------------------------------
 # RandomSessionIdGenerator
@@ -588,8 +542,8 @@ def test_random_sig_generates():
     calling generate_id returns a string
     """
     sid_gen = RandomSessionIDGenerator
-    result = sid_gen.generate_id('arbitraryvalue')
-    assert isinstance(result, str)
+    result = sid_gen.generate_id()
+    assert len(result) == 64
 
 
 # ----------------------------------------------------------------------------
@@ -618,9 +572,9 @@ def test_ds_start_timestamp_exists(
     """
     pds = patched_delegating_session
 
-    dumbdate = datetime.datetime(2013, 3, 3, 3, 33, 33, 333333)
-    monkeypatch.setattr(pds, '_start_timestamp', dumbdate)
-    assert pds.start_timestamp == dumbdate
+    now = round(time.time() * 1000)
+    monkeypatch.setattr(pds, '_start_timestamp', now)
+    assert pds.start_timestamp == now
 
 def test_ds_last_access_time(patched_delegating_session):
     """
@@ -632,7 +586,7 @@ def test_ds_last_access_time(patched_delegating_session):
     result = pds.last_access_time
 
     # verifeis a pre-defined result from the mock
-    assert result == datetime.datetime(2015, 1, 2, 12, 34, 59, 111111)
+    assert result == 1472291665100
 
 
 def test_ds_get_idle_timeout(patched_delegating_session):
@@ -643,7 +597,7 @@ def test_ds_get_idle_timeout(patched_delegating_session):
     """
     pds = patched_delegating_session
     result = pds.idle_timeout
-    assert result == datetime.timedelta(minutes=15)
+    assert result == (10 * 60 * 1000)
 
 def test_ds_set_idle_timeout(patched_delegating_session):
     """
@@ -651,11 +605,10 @@ def test_ds_set_idle_timeout(patched_delegating_session):
 
     test case: delegates the request to the MockSessionManager
     """
-
     pds = patched_delegating_session
     with mock.patch.object(MockSessionManager, 'set_idle_timeout') as msm_sit:
         msm_sit.return_value = None
-        now = datetime.datetime.utcnow()
+        now = (5 * 60 * 1000)
         pds.idle_timeout = now
         msm_sit.assert_called_once_with(pds.session_key, now)
 
@@ -667,7 +620,7 @@ def test_ds_get_absolute_timeout(patched_delegating_session):
     """
     pds = patched_delegating_session
     result = pds.absolute_timeout
-    assert result == datetime.timedelta(minutes=60)
+    assert result == (60 * 60 * 1000)
 
 def test_ds_set_absolute_timeout(patched_delegating_session):
     """
@@ -679,7 +632,7 @@ def test_ds_set_absolute_timeout(patched_delegating_session):
     pds = patched_delegating_session
     with mock.patch.object(MockSessionManager, 'set_absolute_timeout') as msm_sit:
         msm_sit.return_value = None
-        now = datetime.datetime.utcnow()
+        now = round(time.time() * 1000)
         pds.absolute_timeout = now
         msm_sit.assert_called_once_with(pds.session_key, now)
 
@@ -769,21 +722,6 @@ def test_ds_get_attribute(patched_delegating_session):
         ga.assert_called_once_with(pds.session_key, 'attributekey')
 
 
-def test_ds_set_attribute_removes(patched_delegating_session):
-    """
-    unit tested:  set_attribute
-
-    test case:
-    value is None, and so remove_attribute is called
-    """
-    pds = patched_delegating_session
-
-    with mock.patch.object(DelegatingSession, 'remove_attribute') as ds_ra:
-        ds_ra.return_value = None
-        pds.set_attribute('attributekey')
-        ds_ra.assert_called_once_with('attributekey')
-
-
 def test_ds_set_attribute_delegates(patched_delegating_session):
     """
     unit tested:  set_attribute
@@ -846,21 +784,6 @@ def test_ds_get_internal_attribute(patched_delegating_session):
         ga.assert_called_once_with(pds.session_key, 'internal_attribute_key')
 
 
-def test_ds_set_internal_attribute_removes(patched_delegating_session):
-    """
-    unit tested:  set_internal_attribute
-
-    test case:
-    value is None, and so remove_internal_attribute is called
-    """
-    pds = patched_delegating_session
-
-    with mock.patch.object(DelegatingSession, 'remove_internal_attribute') as ds_ra:
-        ds_ra.return_value = None
-        pds.set_internal_attribute('internal_attribute_key')
-        ds_ra.assert_called_once_with('internal_attribute_key')
-
-
 def test_ds_set_internal_attribute_delegates(patched_delegating_session):
     """
     unit tested:  set_internal_attribute
@@ -909,28 +832,6 @@ def test_dsk_eq(first, second, boolcheck):
     dsk1 = DefaultSessionKey(session_id=first)
     dsk2 = DefaultSessionKey(session_id=second)
     assert (dsk1 == dsk2) == boolcheck
-
-
-# ----------------------------------------------------------------------------
-# DefaultSessionContext
-# ----------------------------------------------------------------------------
-
-def test_dsc_basic_test(default_session_context):
-    """
-    unit tested:  entire class
-
-    test case:
-
-    basic accessor / mutator code path exercise
-    """
-    dsc = default_session_context
-
-    dsc.host = 'myhost'
-    dsc.session_id = 'mysessionid'
-    dsc.session_id = None  # should be ignored due to none_safe_put
-
-    assert (dsc.host == 'myhost' and dsc.session_id == 'mysessionid')
-
 
 # ----------------------------------------------------------------------------
 # DefaultSessionStorageEvaluator

@@ -10,19 +10,19 @@ from unittest import mock
 class MockSessionManager:
 
     def get_start_timestamp():
-        return datetime.datetime(2015, 1, 2, 12, 34, 56, 123456)
+        return 1472291665000
 
     def get_last_access_time(self, key):
-        return datetime.datetime(2015, 1, 2, 12, 34, 59, 111111)
+        return 1472291665100
 
     def get_idle_timeout(self, key):
-        return datetime.timedelta(minutes=15)
+        return (10 * 60 * 1000)
 
     def set_idle_timeout(self, key, timeout):
         pass
 
     def get_absolute_timeout(self, key):
-        return datetime.timedelta(minutes=60)
+        return (60 * 60 * 1000)
 
     def set_absolute_timeout(self, key, timeout):
         pass
@@ -65,7 +65,7 @@ class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
 
     def __init__(self, attributes_schema, settings):
         super().__init__(attributes_schema, settings)
-        self._event_bus = mock.MagicMock() 
+        self._event_bus = mock.MagicMock()
         self.listeners = []
 
     def create_session(self, session_context):
