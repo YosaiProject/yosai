@@ -249,15 +249,3 @@ class EventLogger(event_abcs.EventBusAware):
         identifiers = identifiers.__getstate__()
         logger.info(topic, extra={'identifiers': identifiers,
                                   'items': new_items})
-
-
-
-#def log_event(topicObj=pub.AUTO_TOPIC, **mesgData):
-#    event_logger.log(topicObj, mesgData)
-
-# pub.subscribe(log_event, pub.ALL_TOPICS)
-
-
-event_bus = DefaultEventBus()  # pseudo-singleton
-
-event_logger = EventLogger(event_bus)

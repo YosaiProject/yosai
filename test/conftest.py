@@ -5,6 +5,7 @@ from yosai.core import (
     AuthzInfoResolver,
     Credential,
     CredentialResolver,
+    DefaultEventBus,
     DefaultPermission,
     IndexedAuthorizationInfo,
     LazySettings,
@@ -16,8 +17,6 @@ from yosai.core import (
     UsernamePasswordToken,
     Yosai,
 )
-
-from yosai.core import event_bus as event_bus_inst
 
 from yosai.web import (
     WebSecurityManager,
@@ -149,7 +148,7 @@ def account_store_realm(cache_handler, alchemy_store, permission_resolver,
 
 @pytest.fixture(scope='session')
 def event_bus():
-    return event_bus_inst
+    return DefaultEventBus() 
 
 
 @pytest.fixture(scope='function')

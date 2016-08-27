@@ -8,7 +8,6 @@ from yosai.core import (
     DefaultNativeSessionHandler,
     SimpleSessionFactory,
     CachingSessionStore,
-    event_bus,
 )
 
 
@@ -30,7 +29,7 @@ def session_key(session):
 
 
 @pytest.fixture(scope='function')
-def session_event_handler():
+def session_event_handler(event_bus):
     eh = SessionEventHandler()
     eh.event_bus = event_bus
     return eh

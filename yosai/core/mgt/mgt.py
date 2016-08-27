@@ -28,6 +28,8 @@ from yosai.core import(
     Credential,
     CredentialResolver,
     DefaultAuthenticator,
+    DefaultEventBus,
+    EventLogger,
     DefaultPermission,
     DefaultNativeSessionManager,
     DefaultSessionContext,
@@ -48,7 +50,6 @@ from yosai.core import(
     SimpleSession,
     SerializationManager,
     SimpleRole,
-    event_bus,
     mgt_abcs,
     authc_abcs,
     authz_abcs,
@@ -388,7 +389,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  settings,
                  attributes_schema,
                  realms=None,
-                 event_bus=event_bus,
                  cache_handler=None,
                  authenticator=DefaultAuthenticator(),
                  authorizer=ModularRealmAuthorizer(),
@@ -405,8 +405,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :type realms: tuple
         :type session_attributes_schema: serialize_abcs.Serializable class
         """
+        self._event_bus = DefaultEventBus()
         self.yosai = yosai
-        self._event_bus = event_bus
         self._cache_handler = cache_handler
         self.authz_info_resolver = authz_info_resolver
         self.credential_resolver = credential_resolver
@@ -429,6 +429,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if serialization_manager:
             self.serialization_manager = serialization_manager
         # the yosai attribute is set by Yosai
+
+        self.event_logger = EventLogger(self.event_bus)
 
     """
     * ===================================================================== *

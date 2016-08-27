@@ -174,7 +174,7 @@ from yosai.core.account.account import (
 
 from yosai.core.event.event import (
     DefaultEventBus,
-    event_bus,
+    EventLogger,
 )
 
 

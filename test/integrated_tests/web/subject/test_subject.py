@@ -6,7 +6,6 @@ from yosai.core import (
     ExpiredSessionException,
     IdentifiersNotSetException,
     IllegalStateException,
-    event_bus,
 )
 
 from yosai.web import WebYosai
@@ -61,7 +60,7 @@ def test_authenticated_subject_is_permitted_collective(
 
 
 def test_has_role(web_yosai, mock_web_registry, valid_username_password_token,
-                  thedude_testroles):
+                  thedude_testroles, event_bus):
 
     tr = thedude_testroles
     event_detected = None
