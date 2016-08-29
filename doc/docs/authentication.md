@@ -9,15 +9,18 @@ An application bases much of its security on knowing who a user of the system is
 
 Most of your interactions with Yosai are based on the currently executing user,
 called a **Subject**.  You can easily obtain a handle on your subject instance
-from anywhere in your code through the SecurityUtils API.
+within the "Yosai context" of your call stack by invoking the ``Yosai.get_current_subject()``
+staticmethod.  ``Yosai.get_current_subject()`` references a thread-local stack
+that is pushed/popped as context is entered and exited:
 
-When a developer wishes to authenticate a user using password-based methods,
-the first step requires instantiation of an ``AuthenticationToken`` object
-recognizable by Yosai.  The `UsernamePasswordToken` is one such kind of token that
- is already implemented in Yosai as part of default support for password-based
-authentication. `UsernamePasswordToken` is a consolidation of a user account's
-identifying attributes (username) and credentials (password).
+```python
+from yosai import Yosai, UsernamePasswordToken
 
+yosai = Yosai(env_var='YOSAI_SETTINGS')
+
+with Yosai.context(yosai):
+  subject = Yosai.get_current_subject()
+```
 
 ## Logging-In and Logging-Out
 
@@ -55,22 +58,25 @@ if it were to fail.  Yosai features a rich exception hierarchy that offers detai
 explanations as to why a login failed. This exception hierarchy helps developers
 diagnose bugs or customer service issues related to authentication.
 
-Note that the following example assumes that a ``yosai`` instance has already
-been instantiated and configured with a SecurityManager.  See the ``yosai init``
-documentation for how to do that.
+When a developer wishes to authenticate a user using a password-based approach,
+the first step requires instantiation of an ``AuthenticationToken`` object.  The
+`UsernamePasswordToken` is one such kind of token and is used for password-based
+authentication. A `UsernamePasswordToken` is passed identifying attributes
+(username) and credentials (password).
 
-```Python
-from yosai.core import UsernamePasswordToken
+```python
+from yosai import Yosai, UsernamePasswordToken
 
-with yosai:
-    current_user = yosai.subject
+yosai = Yosai(env_var='YOSAI_SETTINGS')
+
+with Yosai.context(yosai):
+    subject = Yosai.get_current_subject()
 
     authc_token = UsernamePasswordToken(username='thedude',
                                         credentials='letsgobowling')
-    authc_token.remember_me = True
 
     try:
-        current_user.login(authc_token)
+        subject.login(authc_token)
     except UnknownAccountException:
         # insert here
     except IncorrectCredentialsException:
@@ -83,18 +89,13 @@ with yosai:
         # insert here
 ```
 
-As you can see, authentication entails a single method call: ``current_user.login(authc_token)``. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.
+As you can see, authentication entails a single method call: ``subject.login(authc_token)``. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.
 
-Notice that `remember_me` is activated in the authentication token.  Yosai features
-native 'remember me' support.  'Remember Me' is a popular feature where users are
-remembered when they return to an application.  Remembering your users offers a
-more convenient user experience for them, although it does come at a cost in
-security.
 
 ### Cryptographic Hashing of Passwords
 
-For password-based authentication, Yosai uses the Passlib library for
-cryptographic hashing and password verification.
+For password-based authentication, Yosai uses the Passlib library for cryptographic
+hashing and password verification.
 
 The default hashing scheme chosen for Yosai is *bcrypt_sha256*. As per Passlib
 documentation [1], the *bcrypt_sha256* algorithm works as follows:
@@ -118,15 +119,10 @@ When you *log-out*, the system no longer recognizes your presence nor will it
 honor any prior recognition of your identity (you would have to re-authenticate
 yourself if you re-engaged the system). When you log-out a user, you are
 releasing the identifying state of the user by the application.  A Subject is
-logged out when the Subject is done interacting with the application by calling:  ``current_user.logout()``, relinquishing all identifying information and
-invalidating the user's session.  If you are logging out in a web app and use
-the yosai.web library, the RememberMe cookie will also be deleted.
-
-After a Subject logs-out, the Subject instance is considered anonymous again
-and, except for web applications, can be re-used for login again if desired.
-
-!!! note ""
-    Because remembered identity in web applications is often persisted with cookies, and cookies can only be deleted before a Response body is committed, it is highly recommended to redirect the end-user to a new view or page immediately after calling current_user.logout(). Doing so guarantees that any security-related cookies are deleted as expected. This is a limitation of how HTTP cookies function and not a limitation of Yosai.
+logged out when the Subject is done interacting with the application by calling:  
+``subject.logout()``, relinquishing all identifying information and
+invalidating the user's session.  If you are logging out in a web app,
+the RememberMe cookie will also be deleted.
 
 
 ### Automatic Log Out
@@ -144,15 +140,12 @@ Manual log-out is initiated by a user engaging a log-out operation through a use
 interface, such as click a "log-out" or "sign out" button, which would ultimately
 call the `logout` method in the Subject API:
 
-Note that the following example assumes that a ``yosai`` instance has already
-been instantiated and configured with a SecurityManager.  See the ``yosai init``
-documentation for how to do that.
 ```Python
-from yosai.core import UsernamePasswordToken
+from yosai.core import UsernamePasswordToken, Yosai
 
-with yosai:
-    current_user = yosai.subject
-    current_user.logout()
+with Yosai.context(yosai):
+    subject = Yosai.get_current_subject()
+    subject.logout()
 ```
 
 ## Factors of Authentication

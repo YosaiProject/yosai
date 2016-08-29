@@ -7,8 +7,8 @@ processing.
 
 Events are communicated using a publish-subscribe paradigm.  An event publisher
 emits the event to a channel (an internal Event Bus) that relays the event to
-consumers who have subscribed to the event's topic. The EventBus is a singleton
-shared throughout the running instance of Yosai.
+consumers who have subscribed to the event's topic.  An EventBus singleton is
+shared throughout the running instance of Yosai, passed down from the SecurityManager.
 
 ![pubsub](img/pubsub.png)
 
@@ -64,8 +64,8 @@ publisher of an event is, and who the subscriber(s) are:
 Communicating events in a structured format facilitates processing of log
 entries by systems independent of Yosai.  Therefore, events are
 logged in a structured format by reducing event payloads to their serializable
-form using ``marshmallow``.
+form.
 
-In addition to reducing payloads using marshmallow, Yosai includes an optional
-logging module that features JSON encoded formatting.  It is highly recommended
-that you use it or another structured format for logging events.
+Yosai includes an optional logging module that features JSON encoded formatting.  
+It is highly recommended that you use this feature or one like it to benefit by
+structured logging.

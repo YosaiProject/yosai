@@ -12,10 +12,20 @@ Installing from PyPI, using pip, will install the project package that includes
 
 ## Setup
 
-Yosai can be configured in two ways:
-- using a YAML config file, whose location must be specified in an environment variable, ``YOSAI_CORE_SETTINGS``
-- using Yosai defaults, which are specified in a YAML config file located in the
-  /config directory of the yosai package
+Yosai is configured through a YAML-formatted settings file.  An example of
+this configuration file can be found within the yosai.core.conf  directory
+of the Yosai project, named **yosai_settings.yaml**.  When you initialize a Yosai
+instance, you specify as an argument *either* a file_path to a configured settings
+file or an environment variable that references the location of this file in
+the system that will use Yosai:
+
+```python
+  #option 1
+  yosai = Yosai(env_var='ANY_ENV_VAR_NAME_YOU_WANT')
+
+  #option 2
+  yosai = Yosai(file_path='/../../../whatever_filename_you_want.yaml')
+```
 
 
 ## Configuration
@@ -33,10 +43,17 @@ AUTHC_CONFIG:
             min_rounds: 1000
             salt_size: 16
 
+REMEMBER_ME_CONFIG:
+    default_cipher_key: you need to update this using the fernet keygen
 
-MGT_CONFIG:
-    DEFAULT_CIPHER_KEY: you need to update this using the fernet keygen
-
+SECURITY_MANAGER_CONFIG:
+    security_manager: yosai.core.NativeSecurityManager
+    attributes:
+        serializer: cbor
+        realms:
+            yosai.core.AccountStoreRealm: yosai_alchemystore.AlchemyAccountStore
+        cache_handler: yosai_dpcache.cache.DPCacheHandler
+        session_attributes_schema: null
 
 SESSION_CONFIG:
     session_timeout:
@@ -45,6 +62,42 @@ SESSION_CONFIG:
     session_validation:
         scheduler_enabled: false
         time_interval: 3600
+
+WEB_REGISTRY:
+    signed_cookie_secret:  changeme
+
+CACHE_HANDLER:
+    init_config:
+        backend: 'yosai_dpcache.redis'
+        region_name: 'yosai_dpcache'
+    server_config:
+      redis:
+        url: '127.0.0.1'
+        host: 'localhost'
+        port: 6379
+        # password:
+        # db:
+        # distributed_lock:
+        # socket_timeout:
+        # lock_timeout:
+        # lock_sleep:
+        # redis_expiration_time:
+        # connection_pool:
+    ttl_config:
+        absolute_ttl: 3600
+        credentials_ttl: 300
+        authz_info_ttl: 1800
+        session_absolute_ttl: 1800
+
+ALCHEMY_STORE:
+    engine_config:
+        dialect:
+        path:
+        userid:
+        password:
+        hostname:
+        port:
+        db:
 ```
 
 ### Configuration:  AUTHC_CONFIG

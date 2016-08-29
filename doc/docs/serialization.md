@@ -5,20 +5,20 @@ The serialization process is as follows:
 
 ![serialization](img/serialization_process.png)
 
-1. Reduce the state of a Yosai object to its primitive form, as a dict
-2. Enrich the payload -- that which is cached -- with metadata
+1. Reduce the state of a Yosai object to its primitive form (marshalling)
+2. Enrich the marshalled payload with metadata
 3. Encode the metadata-enriched payload
-    - yosai.core includes msgpack and json encoders, of which *msgpack* is
-      the default
 
 
-## Marshmallow
+## asphalt.serialization
 
-![marshmallow](img/marshmallow-logo.png)
+![asphalt_serialization](https://avatars3.githubusercontent.com/u/12229495?v=3&s=200)
 
-Yosai uses `marshmallow` to reduce business objects to their primitive form.  As per Marshmallow's docs:
->Marshmallow is an ORM/ODM/framework-agnostic library for converting complex datatypes, such as objects, to and from native Python datatypes.
+Yosai uses a forked copy of the Asphalt framework's serialization library to reduce
+custom classes to a primitive form that can be encoded by a serialization scheme.  
 
+Asphalt is an asyncio based microframework for network oriented applications.  
+If you would like to learn more about it, [click here](https://github.com/asphalt-framework/asphalt).
 
 ## Serializables
 Classes that inherit from the ``Serializable`` abstract base class are eligible

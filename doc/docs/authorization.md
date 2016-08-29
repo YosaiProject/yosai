@@ -9,9 +9,7 @@ mechanisms governing how someone or something accesses resources (in this contex
 ## Role-Based Access Control
 
 There are many access control models [in use today](https://en.wikipedia.org/wiki/Access_control).  By default, Yosai enforces access control by evaluating roles and permissions assigned to a user.
-These roles and permissions are derived from a Role-Based Access Control (RBAC) model. Note that although a default support for RBAC is provided, your Realm
-implementation ultimately decides how your permissions and roles are grouped
-together and whether to return a “yes” or a “no” answer to Yosai.  This feature
+These roles and permissions are derived from a Role-Based Access Control (RBAC) model. Note that although a default support for RBAC is provided, your Realm implementation ultimately decides how your permissions and roles are grouped together and whether to return a “yes” or a “no” answer to Yosai.  This feature
 allows you to architect your application in the manner you chose.
 
 [For more information about RBAC](http://csrc.nist.gov/groups/SNS/rbac/)
@@ -85,7 +83,7 @@ highlight role-level access control:
 
 ```Python
 
-@requires_role(roleid_s=['moderator', 'admin'], logical_operator=any)
+@Yosai.requires_role(roleid_s=['moderator', 'admin'], logical_operator=any)
 def remove_comment(self, submission):
    self.database_handler.delete(submission)
 ```
@@ -96,9 +94,9 @@ Note that the following example assumes that a ``yosai`` instance has already
 been instantiated and configured with a SecurityManager.  See the ``yosai init``
 documentation for how to do that.
 ```Python
-def remove_comment(self, submission):
-    with yosai:
-        subject = yosai.subject
+def remove_comment(self, yosai, submission):
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
 
         try:
             subject.check_role(['moderator', 'creator'], logical_operator=any)
@@ -304,7 +302,7 @@ Declarative-style authorization allows you to itemize access requirements for a 
 The following permissions are required, collectively, to call this_function.
 When this_function is called, the caller of this_function should be ready to handle an AuthorizationException if the user is denied access:
 ```Python
-    @requires_permission(['domain1:action1', 'domain2:action2'], all)
+    @Yosai.requires_permission(['domain1:action1', 'domain2:action2'], all)
     def this_function(...):
         ...
 ```
@@ -313,7 +311,7 @@ When this_function is called, the caller of this_function should be ready to han
 
 The following permissions are required, each independently satisfying the access control requirement, to call this_function. When this_function is called, the caller should be ready to handle an AuthorizationException if the user is denied access:
 ```Python
-    @requires_permission(['domain1:action1', 'domain2:action2'], any)
+    @Yosai.requires_permission(['domain1:action1', 'domain2:action2'], any)
     def this_function(...):
         ...
 ```
@@ -323,7 +321,7 @@ The following permissions are required, each independently satisfying the access
 The following roles are required, collectively, to call this_function.
 When this_function is called, the caller of this_function should be ready to handle an AuthorizationException if the user is denied access:
 ```Python
-    @requires_role(['role1', 'role2'], all)
+    @Yosai.requires_role(['role1', 'role2'], all)
     def this_function(...):
         ...
 ```
@@ -332,7 +330,7 @@ When this_function is called, the caller of this_function should be ready to han
 
 The following roles are required, each independently satisfying the access control requirement, to call this_function. When this_function is called, the caller should be ready to handle an AuthorizationException if the user is denied access:
 ```Python
-@requires_role(['role1', 'role2'], any)
+@Yosai.requires_role(['role1', 'role2'], any)
 def this_function(...):
     ...
 ```
@@ -346,7 +344,7 @@ this example, this_function must be called like this_function(kwarg1=..., kwarg2
 
 When this_function is called, the caller should be ready to handle an AuthorizationException if the user is denied access:
 ```Python
-    @requires_dynamic_permission(['{kwarg1.domain}:action1',
+    @Yosai.requires_dynamic_permission(['{kwarg1.domain}:action1',
                                   '{kwarg2.domain}:action2'], any)
     def this_function(...):
         ...
@@ -496,9 +494,9 @@ documentation for how to do that:
 
 ### Example 1:  is_permitted
 ```Python
-    with yosai:
-        current_user = yosai.subject
-        results = current_user.is_permitted(['domain1:action1', 'domain2:action2'])
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
+        results = subject.is_permitted(['domain1:action1', 'domain2:action2'])
 
         if any(is_permitted for permission, is_permitted in results):
             print('any permission is granted')
@@ -513,14 +511,14 @@ documentation for how to do that:
 
 ### Example 2:  is_permitted_collective
 ```Python
-    with yosai:
-        current_user = yosai.subject
-        any_result_check = current_user.is_permitted_collective(['domain1:action1',
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
+        any_result_check = subject.is_permitted_collective(['domain1:action1',
                                                                  'domain2:action2'], any)
         if any_result_check:
             print('any permission is granted')
 
-        all_result_check = current_user.is_permitted_collective(['domain1:action1',
+        all_result_check = subject.is_permitted_collective(['domain1:action1',
                                                                  'domain2:action2'], all)
 
         if all_result_check:
@@ -532,10 +530,10 @@ documentation for how to do that:
 
 ### Example 3:  check_permission
 ```Python
-    with yosai:
-        current_user = yosai.subject
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
         try:
-            current_user.check_permission(['domain1:action1',
+            subject.check_permission(['domain1:action1',
                                            'domain2:action2'],
                                           any)
         except AuthorizationException:
@@ -544,7 +542,7 @@ documentation for how to do that:
             print('any permission granted')
 
         try:
-            current_user.check_permission(['domain1:action1',
+            subject.check_permission(['domain1:action1',
                                            'domain2:action2'],
                                           all)
         except AuthorizationException:
@@ -558,9 +556,9 @@ documentation for how to do that:
 
 ### Example 1:  has_role
 ```Python
-    with yosai:
-        current_user = yosai.subject
-        results = current_user.has_role(['role1', 'role2'])
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
+        results = subject.has_role(['role1', 'role2'])
 
         if any(has_role for role, has_role in results):
             print('any role is confirmed')
@@ -575,14 +573,14 @@ documentation for how to do that:
 
 ### Example 2:  has_role_collective
 ```Python
-    with yosai:
-        current_user = yosai.subject
-        any_result_check = current_user.has_role_collective(['role1', 'role2'], any)
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
+        any_result_check = subject.has_role_collective(['role1', 'role2'], any)
 
         if any_result_check:
             print('any role is confirmed')
 
-        all_result_check = current_user.has_role_collective(['role1', 'role2'], all)
+        all_result_check = subject.has_role_collective(['role1', 'role2'], all)
 
         if all_result_check:
             print('all role is confirmed, too!')
@@ -593,10 +591,10 @@ documentation for how to do that:
 
 ### Example 3:  check_role
 ```Python
-    with yosai:
-        current_user = yosai.subject
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
         try:
-            current_user.check_role(['role1', 'role2'], any)
+            subject.check_role(['role1', 'role2'], any)
 
         except AuthorizationException:
             print('any role denied')
@@ -604,7 +602,7 @@ documentation for how to do that:
             print('any role confirmed')
 
         try:
-            current_user.check_role(['role1', 'role2'], all)
+            subject.check_role(['role1', 'role2'], all)
 
         except AuthorizationException:
             print('all role denied')

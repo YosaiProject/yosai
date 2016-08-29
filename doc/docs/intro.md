@@ -23,38 +23,37 @@ Although it is customizable, Yosai features a set of default implementations to 
 
 With Yosai initialized, you can authenticate, authorize, and manage sessions.
 
-To initialize Yosai, you must specify, at a minimum:
+To initialize Yosai, you must tell Yosai where to obtain its settings from.  
 
-- What CacheHandler to use, if you are caching.  In this example, we use the
-  DPCacheHandler extension.
+These settings include information such as:
+
+- Cryptographic hashing settings for password-based authentication
+- Whether caching is enabled, and if so what CacheHandler to use
 - The AccountStore instance(s) from which to obtain authentication and
-  authorization information.  In this example, we use the AlchemyAccountStore
-  extension.
-- The ``marshmallow`` serialization Schema you will use to (de)serialize
-  Session state (user-defined session attributes), if you are caching
+  authorization information
+- A class defining special marshalling logic uses for server-side sessions,
+  if one is required for your sessions and you are caching
 
-```Python
-    from marshmallow import Schema, fields
-    from yosai_dpcache.cache import DPCacheHandler
-    from yosai_alchemystore import AlchemyAccountStore
-    from yosai.core import SecurityUtils, AccountStoreRealm
+Yosai is configured through a YAML-formatted settings file.  An example of
+this configuration file can be found within the [yosai.core.conf directory](https://github.com/YosaiProject/yosai/blob/master/yosai/core/conf/yosai_settings.yaml)
+of the Yosai project, named ``yosai_settings.yaml``.  When you initialize a Yosai
+instance, you specify as an argument *either* a file_path to a configured settings
+file or an environment variable (env_var) that references the location of this file in
+the system that will use Yosai:
 
-    class SessionAttributesSchema(Schema):
-        attribute1 = fields.String()
-        attribute2 = fields.String()
+```python
+  #option 1
+  yosai = Yosai(env_var='ANY_ENV_VAR_NAME_YOU_WANT')
 
-    realm = AccountStoreRealm(name='UserAccountStore123',
-                              account_store=AlchemyAccountStore())
-
-    security_manager = NativeSecurityManager(cache_handler=DPCacheHandler(),
-                                             realms=(realm,),
-                                             session_schema=SessionAttributesSchema)
-
-    yosai = SecurityUtils(security_manager=security_manager)
+  #option 2
+  yosai = Yosai(file_path='/../../../whatever_filename_you_want.yaml')
 ```
+
 !!! note ""
-    - To properly serialize your session attributes, you must define a
-      ``marshmallow`` schema class, which in this example we've arbitrarily named SessionAttributesSchema
+    - To properly serialize your session attributes, you will need to define
+      a custom session attributes schema class containing marshalling logic,
+      if your session attributes are beyond simple primitive data types available
+      from python standard library.  
 
 
 ## Introducing: Subject
@@ -82,10 +81,12 @@ been instantiated and configured with a SecurityManager.  See the ``yosai init``
 documentation, further below, for how to do that.
 
 ```Python
-    from yosai.core import AuthenticationToken
+    from yosai.core import AuthenticationToken, Yosai
 
-    with yosai:
-        subject = yosai.subject
+    yosai = Yosai(env_var='YOSAI_SETTINGS')
+
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject()
 
         authc_token = UsernamePasswordToken(username='thedude',
                                             credentials='letsgobowling')
@@ -100,17 +101,15 @@ documentation, further below, for how to do that.
 
 ## Authorization
 
-Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by expicitly calling
-one of Subject's access control methods.
+Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by explicitly calling one of Subject's access control methods.
 
 The following example confirms whether the user logged in above has sufficient
 privileges to approve a bowling tournament application.  We illustrate what is known as the *declarative style* authorization.  Information about authorization styles can be found in the authorization documentation.
 
 ```Python
+    from yosai.core import Yosai
 
-    from yosai.core import check_permission
-
-    @check_permission(['tournament:approve'])
+    @Yosai.check_permission(['tournament:approve'])
     def approve_tournament_application(self, tournament_application):
         tournament_application.status = 'APPROVED'
         self.notify_approval(tournament_application)
@@ -129,10 +128,12 @@ been instantiated and configured with a SecurityManager.  See the ``yosai init``
 documentation, further below, for how to do that.
 
 ```Python
-    with yosai:
-        subject = yosai.subject
+    from yosai.core import Yosai
+
+    yosai = Yosai(env_var='YOSAI_SETTINGS')
+
+    with Yosai.context(yosai):
+        subject = Yosai.get_current_subject() 
         session = subject.get_session()
         session.set_attribute('full_name', 'Jeffrey Lebowski')
 ```
-
-

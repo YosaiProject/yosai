@@ -13,7 +13,7 @@ REMEMBER_ME_CONFIG:
     default_cipher_key: you need to update this using the fernet keygen
 
 SECURITY_MANAGER_CONFIG:
-    security_manager: yosai.web.WebSecurityManager
+    security_manager: yosai.core.NativeSecurityManager
     attributes:
         serializer: cbor
         realms:
@@ -57,8 +57,8 @@ CACHE_HANDLER:
 
 ALCHEMY_STORE:
     engine_config:
-        dialect: sqlite
-        path: ////home/dowwie/MyProjects/monster_rx/monster_rx/yosai_accounts.db
+        dialect:
+        path:
         userid:
         password:
         hostname:
