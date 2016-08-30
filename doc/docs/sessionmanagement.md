@@ -228,12 +228,18 @@ class ShoppingCart:
         self.basket.pop(item)
 
     def __getstate__(self):
-        # defaultdict isn't supported for marshalling, so convert it:
-        return {'basket': {tuple(key): value for key, value in self.basket.items()}}
+        # neither defaultdict nor tuple key is supported for serialization
+        # so we must convert them:
+        return {'basket': {'{0}|{1}'.format(key.upc, key.title): value
+                           for key, value in self.basket.items()}}
 
     def __setstate__(self, state):
         self.basket = collections.defaultdict(int)
-        self.basket.update(state['basket'])
+        for key, value in state['basket'].items():
+            keys = key.split("|")
+            self.basket[ShoppingCartItem(upc=keys[0], title=keys[1])] = value
+
+
 ```
 
 You are ready to initialize Yosai with shopping-cart enabled session management
@@ -256,7 +262,9 @@ class ShoppingCartSessionManager:
     @staticmethod
     def list_items(session):
         shopping_cart = session.get_attribute('shopping_cart')
-        return shopping_cart.items()
+        if shopping_cart:
+            return shopping_cart.items()
+        return None
 
     @staticmethod
     def add_item(session, item, quantity=1):
@@ -264,14 +272,19 @@ class ShoppingCartSessionManager:
         :param item: a ShoppingCartItem namedtuple
         """
         shopping_cart = session.get_attribute('shopping_cart')
-        shopping_cart.add_item(item, quantity)
+        if shopping_cart:
+            shopping_cart.add_item(item, quantity)
+        else:
+            shopping_cart = ShoppingCart()
         session.set_attribute('shopping_cart', shopping_cart)
+
 
     @staticmethod
     def remove_item(session, item):
         shopping_cart = session.get_attribute('shopping_cart')
-        shopping_cart.remove_item(item)
-        session.set_attribute('shopping_cart', shopping_cart)
+        if shopping_cart:
+            shopping_cart.remove_item(item)
+            session.set_attribute('shopping_cart', shopping_cart)
 ```
 
 Let's now see all of our objects in action. We'll add items to the shopping cart
@@ -296,7 +309,7 @@ and then remove one.
       cart.add_item(session, '52159012038', 3)
       cart.add_item(session, '00028400028196', 1)
 
-      my_cart.list_items()
+      cart.list_items(session)
 ```
 
 ### Operation 2:  Remove an item from the shopping cart
@@ -313,7 +326,7 @@ and then remove one.
 
       cart.remove_item(session, '00028400028196')
 
-      my_cart.list_items()
+      cart.list_items(session)
 ```
 
 
