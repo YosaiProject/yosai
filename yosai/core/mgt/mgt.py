@@ -387,7 +387,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     def __init__(self,
                  yosai,
                  settings,
-                 attributes_schema,
                  realms=None,
                  cache_handler=None,
                  authenticator=DefaultAuthenticator(),
@@ -403,7 +402,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  role_resolver=RoleResolver(SimpleRole)):
         """
         :type realms: tuple
-        :type session_attributes_schema: serialize_abcs.Serializable class
         """
         self._event_bus = DefaultEventBus()
         self.yosai = yosai
@@ -417,8 +415,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if session_manager:
             self.session_manager = session_manager
         else:
-            self.session_manager = DefaultNativeSessionManager(attributes_schema,
-                                                               settings)
+            self.session_manager = DefaultNativeSessionManager(settings)
 
         self.realms = realms
         self.authenticator = authenticator

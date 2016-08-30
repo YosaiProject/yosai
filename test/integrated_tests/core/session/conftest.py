@@ -19,8 +19,8 @@ def session_store(cache_handler):
 
 
 @pytest.fixture(scope='function')
-def session_factory(core_settings, attributes_schema):
-    return SimpleSessionFactory(attributes_schema, core_settings)
+def session_factory(core_settings):
+    return SimpleSessionFactory(core_settings)
 
 
 @pytest.fixture(scope='function')
@@ -43,8 +43,8 @@ def session_handler(session_event_handler, session_store):
     return handler
 
 @pytest.fixture(scope='function')
-def session_manager(attributes_schema, core_settings):
-    return DefaultNativeSessionManager(attributes_schema, core_settings)
+def session_manager(core_settings):
+    return DefaultNativeSessionManager(core_settings)
 
 
 @pytest.fixture(scope='function')

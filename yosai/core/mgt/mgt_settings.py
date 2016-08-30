@@ -28,19 +28,19 @@ class SecurityManagerSettings:
         serializer = attributes.get('serializer', 'cbor')
         realms = self.resolve_realms(attributes)
         cache_handler = self.resolve_cache_handler(attributes)
-        session_attributes_schema = self.resolve_session_attributes_schema(attributes)
+        session_attributes = self.resolve_session_attributes(attributes)
 
         return {'serializer': serializer,
                 'realms': realms,
                 'cache_handler': cache_handler,
-                'session_attributes_schema': session_attributes_schema
+                'session_attributes': session_attributes
                 }
 
     def resolve_cache_handler(self, attributes):
         return maybe_resolve(attributes.get('cache_handler'))
 
-    def resolve_session_attributes_schema(self, attributes):
-        return maybe_resolve(attributes.get('session_attributes_schema'))
+    def resolve_session_attributes(self, attributes):
+        return maybe_resolve(attributes.get('session_attributes'))
 
     def resolve_realms(self, attributes):
         """

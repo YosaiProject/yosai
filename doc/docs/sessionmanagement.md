@@ -204,7 +204,7 @@ This is *not* a primer on how to write your own e-commerce shopping cart applica
 objects.
 
 Marshalling supports standard object types from the standard library.  When you use objects other than standard primitives, such as objects from the collections library,
-you'll need to control conversion of your objects to supported data types, and vice versa, by implementing __setstate__ and __getstate__ methods within your session attributes schema:
+you'll need to control conversion of your objects to supported data types, and vice versa, by implementing __setstate__ and __getstate__ methods within your serializables:
 
 ```Python
 
@@ -235,34 +235,14 @@ class ShoppingCart:
         self.basket = collections.defaultdict(int)
         self.basket.update(state['basket'])
 ```
-Let's assume that we are saving more than just a shopping cart in a session.
-For this example, let's add a *watched_items* list to keep track of items that
-a customer has looked at during a session.
 
-All of the information that is to be saved in a session must ultimately reside
-within a single class using "marshallable" objects as its attributes.  This
-class is passed into Yosai at init.
-
-```python
-class SessionAttributes:
-  def __init__(self):
-    self.shopping_cart = ShoppingCart()
-    self.watched_items = []
-
-  def __getstate__(self):
-      return {'shopping_cart': self.shopping_cart,
-              'watched_items': self.watched_items}
-
-  def __setstate__(self, state):
-      self.shopping_cart = state['shopping_cart']
-      self.watched_items = state['watched_items']
-```
-
-With `SessionAttributesSchema`, you are ready to initialize Yosai with shopping-cart enabled session management capabilities.  Simply pass the schema class as a keyword argument during Yosai initialization:
+You are ready to initialize Yosai with shopping-cart enabled session management
+capabilities.  Simply pass the serializable during Yosai initialization within
+a list:
 
 ```Python
     yosai = Yosai(env_var='YOSAI_SETTINGS',
-                  session_attributes_schema=SessionAttributesSchema)
+                  session_attributes=[ShoppingCart])
 ```
 
 Here's one way you could interact with the shopping cart in your application using
@@ -294,17 +274,14 @@ class ShoppingCartSessionManager:
         session.set_attribute('shopping_cart', shopping_cart)
 ```
 
-Let's now see all of our objects in action.  
-
-We'll add four items to the shopping cart, remove one, and modify the quantity
-of another.  Finally, we'll remove the shopping_cart attribute entirely from the
-Session.
+Let's now see all of our objects in action. We'll add items to the shopping cart
+and then remove one.
 
 ### Operation 1:  Add four items to the shopping cart
 
 ```Python
     yosai = Yosai(env_var='YOSAI_SETTINGS',
-                  session_attributes_schema=SessionAttributesSchema)
+                  session_attributes=[ShoppingCart])
 
     cart = ShoppingCartSessionManager
 
@@ -314,7 +291,7 @@ Session.
 
       # could easily use functools.partial for this, but keeping it explicit
       # for the example so as to not confuse:
-      cart.add_item(session, '0043000200216', 4)  # we'll modify the quantity of this later
+      cart.add_item(session, '0043000200216', 4)
       cart.add_item(session, '016000119772', 1)
       cart.add_item(session, '52159012038', 3)
       cart.add_item(session, '00028400028196', 1)
@@ -326,7 +303,7 @@ Session.
 
 ```Python
     yosai = Yosai(env_var='YOSAI_SETTINGS',
-                  session_attributes_schema=SessionAttributesSchema)
+                  session_attributes=[ShoppingCart])
 
     cart = ShoppingCartSessionManager(session)
 
@@ -339,35 +316,6 @@ Session.
       my_cart.list_items()
 ```
 
-### Operation 3:  Modify the quantity of an item in the shopping cart
-
-```Python
-    yosai = Yosai(env_var='YOSAI_SETTINGS',
-                  session_attributes_schema=SessionAttributesSchema)
-
-    cart = ShoppingCartSessionManager
-
-    with Yosai.context(yosai):
-      subject = Yosai.get_current_subject()
-      session = subject.get_session()
-
-      cart.update_item(session, '0043000200216', 2)
-
-      my_cart.list_items()
-```
-
-### Operation 4:  Remove the shopping cart attribute from the Session
-
-```Python
-    yosai = Yosai(env_var='YOSAI_SETTINGS',
-                  session_attributes_schema=SessionAttributesSchema)
-
-    with Yosai.context(yosai):
-      subject = Yosai.get_current_subject()
-      session = subject.get_session()
-
-      session.remove_attribute('shopping_cart')
-```
 
 ## References
 [OWASP Session Management CheatSheet]( https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)

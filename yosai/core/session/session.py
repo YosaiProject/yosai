@@ -483,8 +483,8 @@ class SimpleSession(session_abcs.ValidatingSession,
     #    - the manually-managed class version control process (too policy-reliant)
     #    - the bit-flagging technique (will cross this bridge later, if needed)
 
-    def __init__(self, absolute_timeout, idle_timeout, attributes_schema, host=None):
-        self._attributes = attributes_schema()
+    def __init__(self, absolute_timeout, idle_timeout, host=None):
+        self._attributes = {}
         self._internal_attributes = {'run_as_identifiers_session_key': None,
                                      'authenticated_session_key': None,
                                      'identifiers_session_key': None}
@@ -521,7 +521,7 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     @property
     def attribute_keys(self):
-        return self.attributes.__dict__.keys()
+        return self.attributes.keys()
 
     @property
     def internal_attributes(self):
@@ -745,7 +745,7 @@ class SimpleSession(session_abcs.ValidatingSession,
         return [self.remove_internal_attribute(key) for key in to_remove]
 
     def get_attribute(self, key):
-        return getattr(self.attributes, key, None)
+        return self.attributes.get(key)
 
     # new to yosai
     def get_attributes(self, keys):
@@ -755,10 +755,10 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a dict containing the attributes requested, if they exist
         """
-        return {key: getattr(self.attributes, key, None) for key in keys}
+        return self.attributes.keys()
 
     def set_attribute(self, key, value):
-        setattr(self.attributes, key, value)
+        self.attributes[key] = value
 
     # new to yosai is the bulk setting/getting/removing
     def set_attributes(self, attributes):
@@ -766,10 +766,10 @@ class SimpleSession(session_abcs.ValidatingSession,
         :param attributes: the attributes to add to the session
         :type attributes: dict
         """
-        self.attributes.__dict__.update(attributes)
+        self.attributes.update(attributes)
 
     def remove_attribute(self, key):
-        return self.attributes.__dict__.pop(key, None)
+        return self.attributes.pop(key, None)
 
     # new to yosai
     def remove_attributes(self, keys):
@@ -779,7 +779,7 @@ class SimpleSession(session_abcs.ValidatingSession,
 
         :returns: a list of popped attribute values
         """
-        return [self.attributes.__dict__.pop(key, None) for key in keys]
+        return [self.attributes.pop(key, None) for key in keys]
 
     # omitting the bit-flagging methods:
     #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
@@ -792,7 +792,7 @@ class SimpleSession(session_abcs.ValidatingSession,
                     self._idle_timeout == other._idle_timeout and
                     self._absolute_timeout == other._absolute_timeout and
                     self._start_timestamp == other._start_timestamp and
-                    self.attributes.__dict__ == other.attributes.__dict__)
+                    self.attributes == other.attributes)
         return False
 
     def __repr__(self):
@@ -835,16 +835,14 @@ class SimpleSession(session_abcs.ValidatingSession,
 
 class SimpleSessionFactory(session_abcs.SessionFactory):
 
-    def __init__(self, attributes_schema, settings):
+    def __init__(self, settings):
         session_settings = DefaultSessionSettings(settings)
         self.absolute_timeout = session_settings.absolute_timeout
         self.idle_timeout = session_settings.idle_timeout
-        self.attributes_schema = attributes_schema
 
     def create_session(self, session_context=None):
         return SimpleSession(self.absolute_timeout,
                              self.idle_timeout,
-                             self.attributes_schema,
                              host=getattr(session_context, 'host', None))
 
     def __repr__(self):
@@ -1324,8 +1322,8 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
 
     """
 
-    def __init__(self, attributes_schema, settings):
-        self.session_factory = SimpleSessionFactory(attributes_schema, settings)
+    def __init__(self, settings):
+        self.session_factory = SimpleSessionFactory(settings)
         self._session_event_handler = SessionEventHandler()
         self.session_handler =\
             DefaultNativeSessionHandler(session_event_handler=self.session_event_handler)

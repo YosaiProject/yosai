@@ -222,10 +222,10 @@ class WebYosai(Yosai):
     response objects and functionality to manage cookies.
     """
 
-    def __init__(self, env_var=None, file_path=None, session_attributes_schema=None):
+    def __init__(self, env_var=None, file_path=None, session_attributes=None):
         super().__init__(env_var=env_var,
                          file_path=file_path,
-                         session_attributes_schema=session_attributes_schema)
+                         session_attributes=session_attributes)
 
         # web_registry objects are injected with secret as context is set:
         registry_settings = WebRegistrySettings(self.settings)

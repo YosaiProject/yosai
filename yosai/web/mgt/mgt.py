@@ -92,22 +92,19 @@ class WebSecurityManager(NativeSecurityManager):
     def __init__(self,
                  yosai,
                  settings,
-                 attributes_schema,
                  realms=None,
                  cache_handler=None,
                  serialization_manager=None):
         """
         :type realms: tuple
-        :type session_attributes_schema:  serialize_abcs.Serializable
         """
 
         super().__init__(yosai,
                          settings,
-                         attributes_schema,
                          realms=realms,
                          cache_handler=cache_handler,
                          serialization_manager=serialization_manager,
-                         session_manager=DefaultWebSessionManager(attributes_schema, settings),
+                         session_manager=DefaultWebSessionManager(settings),
                          subject_factory=DefaultWebSubjectFactory(),
                          remember_me_manager=CookieRememberMeManager(settings))
 

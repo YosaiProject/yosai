@@ -118,8 +118,8 @@ def alchemy_store(settings, session):
 
 
 @pytest.fixture(scope='function')
-def serialization_manager(attributes_schema):
-    return SerializationManager(attributes_schema)
+def serialization_manager(session_attributes):
+    return SerializationManager(session_attributes)
 
 
 @pytest.fixture(scope='function')
@@ -153,11 +153,10 @@ def event_bus():
 
 @pytest.fixture(scope='function')
 def native_security_manager(account_store_realm, cache_handler,
-                            yosai, event_bus, settings, attributes_schema):
+                            yosai, event_bus, settings):
 
     nsm = NativeSecurityManager(yosai,
                                 settings,
-                                attributes_schema,
                                 realms=(account_store_realm,))
     nsm.cache_handler = cache_handler
     nsm.event_bus = event_bus
@@ -167,7 +166,7 @@ def native_security_manager(account_store_realm, cache_handler,
 
 
 @pytest.fixture(scope='session')
-def attributes_schema():
+def session_attributes():
     class SessionAttributesSchema:
 
         def __init__(self):
@@ -185,19 +184,19 @@ def attributes_schema():
             self.attribute2 = state['attribute2']
             self.attribute3 = state['attribute3']
 
-    return SessionAttributesSchema
+    return [SessionAttributesSchema]
 
 
 @pytest.fixture(scope='function')
-def yosai(attributes_schema):
+def yosai(session_attributes):
     return Yosai(env_var='YOSAI_CORE_SETTINGS',
-                 session_attributes_schema=attributes_schema)
+                 session_attributes=session_attributes)
 
 
 @pytest.fixture(scope='function')
-def web_yosai(attributes_schema):
+def web_yosai(session_attributes):
     return WebYosai(env_var='YOSAI_WEB_SETTINGS',
-                    session_attributes_schema=attributes_schema)
+                    session_attributes=session_attributes)
 
 
 @pytest.fixture(scope='function')

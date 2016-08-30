@@ -28,29 +28,31 @@ from yosai.core.serialize.serializers import (
 
 class SerializationManager:
     """
-    SerializationManager proxies serialization requests.  It is non-opinionated,
-    designed so as to support multiple serialization methods.  MSGPack is
-    the default encoding scheme.
+    SerializationManager proxies serialization requests.
 
     TO-DO:  configure serialization scheme from yosai.core.settings json
     """
-    def __init__(self, session_attributes_schema, serializer_scheme='cbor'):
+    def __init__(self, session_attributes, serializer_scheme='cbor'):
+        """
+        :type session_attributes: list
+        """
         # add encoders here:
         self.serializers = {'cbor': cbor.CBORSerializer,
                             'msgpack': msgpack.MsgpackSerializer,
                             'json': json.JSONSerializer}
 
         self.serializer = self.serializers[serializer_scheme]()
-        self.register_serializables(session_attributes_schema)
+        self.register_serializables(session_attributes)
 
-    def register_serializables(self, session_attributes_schema):
+    def register_serializables(self, session_attributes):
 
         def all_subclasses(cls):
             return cls.__subclasses__() + [g for s in cls.__subclasses__()
                                            for g in all_subclasses(s)]
         # manual registration required because it isn't a Serializable subclass:
-        if session_attributes_schema:
-            self.serializer.register_custom_type(session_attributes_schema)
+        if session_attributes:
+            for attribute in session_attributes:
+                self.serializer.register_custom_type(attribute)
 
         for serializable in all_subclasses(serialize_abcs.Serializable):
             self.serializer.register_custom_type(serializable)

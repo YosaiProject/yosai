@@ -11,7 +11,6 @@ from yosai.core import (
 def test_authentication_using_accountstore_success(
         caplog, default_authenticator, valid_username_password_token,
         event_bus):
-
     da = default_authenticator
     event_detected = None
 
@@ -91,6 +90,7 @@ def test_authentication_using_cache_pw_failure(
         assert (event_detected == invalid_username_password_token.username and
                 ("Could not obtain cached" not in out))
 
+    cache_handler.delete(domain='credentials', identifier='thedude')
 
 def test_authentication_using_accountstore_user_not_found(
         default_authenticator, event_bus):

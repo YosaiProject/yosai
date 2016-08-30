@@ -1038,16 +1038,19 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
 # moved from its own yosai module so as to avoid circular importing:
 class Yosai:
 
-    def __init__(self, env_var=None, file_path=None, session_attributes_schema=None):
+    def __init__(self, env_var=None, file_path=None, session_attributes=None):
+        """
+        :type session_attributes: tuple
+        """
         # you can configure LazySettings in one of two ways: env or file_path
         self.settings = LazySettings(env_var=env_var, file_path=file_path)
         self.security_manager = \
-            self.generate_security_manager(self.settings, session_attributes_schema)
+            self.generate_security_manager(self.settings, session_attributes)
 
-    def generate_security_manager(self, settings, session_attributes_schema):
+    def generate_security_manager(self, settings, session_attributes):
         # don't forget to pass default_cipher_key into the WebSecurityManager
         mgr_builder = SecurityManagerBuilder()
-        return mgr_builder.create_manager(self, settings, session_attributes_schema)
+        return mgr_builder.create_manager(self, settings, session_attributes)
 
     @memoized_property
     def subject_builder(self):
@@ -1344,22 +1347,19 @@ class SecurityManagerBuilder:
         except TypeError:
             return None
 
-    def init_attributes_schema(self, session_attributes_schema, attributes):
-        if session_attributes_schema:
-            return session_attributes_schema
+    def init_session_attributes(self, session_attributes, attributes):
+        if session_attributes:
+            return session_attributes
 
         try:
-            sas = attributes['session_attributes_schema']
+            sas = attributes['session_attributes']
             if sas:
                 return sas
+
         except (TypeError, KeyError):
-            pass
+            return None
 
-        # The serializer can use a plain old Python object for
-        # marshalling primitives, covering the most likely use cases::
-        return type('SessionAttributes', (object,), {})
-
-    def create_manager(self, yosai, settings, session_attributes_schema):
+    def create_manager(self, yosai, settings, session_attributes):
         """
         Order of execution matters.  The sac must be set before the cache_handler is
         instantiated so that the cache_handler's serialization manager instance
@@ -1367,12 +1367,14 @@ class SecurityManagerBuilder:
         """
         mgr_settings = SecurityManagerSettings(settings)
         attributes = mgr_settings.attributes
+
         realms = self.init_realms(settings, attributes['realms'])
 
-        sas = self.init_attributes_schema(session_attributes_schema, attributes)
+        session_attributes = self.init_session_attributes(session_attributes, attributes)
 
-        serialization_manager = \
-            SerializationManager(sas, serializer_scheme=attributes['serializer'])
+        serialization_manager =\
+            SerializationManager(session_attributes,
+                                 serializer_scheme=attributes['serializer'])
 
         # the cache_handler doesn't initialize a cache_realm until it gets
         # a serialization manager, which is assigned within the SecurityManager
@@ -1382,7 +1384,6 @@ class SecurityManagerBuilder:
 
         manager = mgr_settings.security_manager(yosai,
                                                 settings,
-                                                sas,
                                                 realms=realms,
                                                 cache_handler=cache_handler,
                                                 serialization_manager=serialization_manager)
