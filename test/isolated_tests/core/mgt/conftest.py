@@ -17,5 +17,5 @@ def remember_me_settings(core_settings):
 
 
 @pytest.fixture(scope='function')
-def mock_remember_me_manager(core_settings, attributes_schema):
-    return MockRememberMeManager(core_settings, attributes_schema)
+def mock_remember_me_manager(core_settings, session_attributes):
+    return MockRememberMeManager(core_settings, session_attributes)

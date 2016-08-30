@@ -1405,36 +1405,36 @@ def test_security_manager_builder_init_cache_handler_fails(
 def test_security_manager_builder_init_sac_schema(
         security_manager_builder):
     smb = security_manager_builder
-    result = smb.init_attributes_schema('schema', None)
+    result = smb.init_session_attributes('schema', None)
     assert result == 'schema'
 
 
 def test_security_manager_builder_init_sac_attributes(
         security_manager_builder):
     smb = security_manager_builder
-    attributes = {'session_attributes_schema': 'sas'}
-    result = smb.init_attributes_schema(None, attributes)
+    attributes = {'session_attributes': 'sas'}
+    result = smb.init_session_attributes(None, attributes)
     assert result == 'sas'
 
 
 def test_security_manager_builder_init_sac_default(
         security_manager_builder):
     smb = security_manager_builder
-    result = smb.init_attributes_schema(None, None)
-    assert result.__name__ == 'SessionAttributes'
+    result = smb.init_session_attributes(None, None)
+    assert result is None
 
 
 @mock.patch.object(NativeSecurityManager, '__init__', return_value=None)
 def test_security_manager_builder_create_manager(
         mock_nsm, security_manager_builder, monkeypatch, core_settings,
-        attributes_schema):
+        session_attributes):
 
     smb = security_manager_builder
 
     monkeypatch.setattr(smb, 'init_realms', lambda x, y: 'realms')
-    monkeypatch.setattr(smb, 'init_attributes_schema', lambda x, y: attributes_schema)
+    monkeypatch.setattr(smb, 'init_session_attributes', lambda x, y: session_attributes)
     monkeypatch.setattr(smb, 'init_cache_handler', lambda x, y, z: 'cache_handler')
 
-    result = smb.create_manager('yosai', core_settings, 'session_attributes_schema')
+    result = smb.create_manager('yosai', core_settings, 'session_attributes')
 
     assert isinstance(result, NativeSecurityManager)

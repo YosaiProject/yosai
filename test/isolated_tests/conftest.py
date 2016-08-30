@@ -74,12 +74,11 @@ def web_delegating_subject(
 
 
 @pytest.fixture(scope='function')
-def web_security_manager(web_yosai, settings, attributes_schema,
-                         account_store_realm, cache_handler, serialization_manager):
+def web_security_manager(web_yosai, settings, account_store_realm, 
+                         cache_handler, serialization_manager):
     realms = (account_store_realm,)
     return WebSecurityManager(web_yosai,
                               settings,
-                              attributes_schema,
                               realms=realms,
                               cache_handler=cache_handler,
                               serialization_manager=serialization_manager)
@@ -129,11 +128,10 @@ def mock_web_simple_session():
 
 
 @pytest.fixture(scope='function')
-def web_simple_session(attributes_schema, web_simple_session_state):
+def web_simple_session(web_simple_session_state):
     wss = WebSimpleSession(csrf_token='csrftoken123',
                            absolute_timeout=1800000,
                            idle_timeout=600000,
-                           attributes_schema=attributes_schema,
                            host='123.45.6789')
 
     wss.__dict__.update(web_simple_session_state)
@@ -141,8 +139,8 @@ def web_simple_session(attributes_schema, web_simple_session_state):
 
 
 @pytest.fixture(scope='function')
-def web_session_factory(attributes_schema, settings):
-    return WebSessionFactory(attributes_schema, settings)
+def web_session_factory(settings):
+    return WebSessionFactory(settings)
 
 
 @pytest.fixture(scope='function')
@@ -152,8 +150,8 @@ def web_session_handler():
 
 
 @pytest.fixture(scope='function')
-def web_session_manager(attributes_schema, settings):
-    return DefaultWebSessionManager(attributes_schema, settings)
+def web_session_manager(settings):
+    return DefaultWebSessionManager(settings)
 
 
 @pytest.fixture(scope='function')

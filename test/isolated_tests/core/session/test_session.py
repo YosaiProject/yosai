@@ -80,8 +80,8 @@ def test_ps_get_attribute(default_proxied_session):
     dps = default_proxied_session
     with mock.patch.object(dps._delegate, 'get_attribute') as ms_ga:
         ms_ga.return_value = None
-        dps.get_attribute('attr1')
-        ms_ga.assert_called_once_with('attr1')
+        result = dps.get_attribute('serializable')
+        ms_ga.assert_called_once_with('serializable')
 
 
 def test_ps_set_attribute(default_proxied_session):
@@ -329,7 +329,7 @@ def test_ss_validate_is_timedout(simple_session, monkeypatch):
     assert 'set to' in str(exc_info.value)
 
 
-def test_ss_get_attribute(simple_session):
+def test_ss_get_attribute(simple_session, mock_serializable):
     """
     unit tested:  get_attribute
 
@@ -337,7 +337,8 @@ def test_ss_get_attribute(simple_session):
     returns None either when no attributes or when key doesn't exist
     """
     ss = simple_session
-    assert ss.get_attribute('attribute1') == 'attribute1'
+    result = ss.get_attribute('serializable')
+    assert isinstance(result, mock_serializable)
 
 
 def test_ss_set_attribute(simple_session, monkeypatch):
@@ -349,7 +350,7 @@ def test_ss_set_attribute(simple_session, monkeypatch):
     """
     ss = simple_session
     ss.set_attribute('attribute1', 'testing')
-    assert ss.attributes.attribute1 == 'testing'
+    assert ss.attributes['attribute1'] == 'testing'
 
 
 def test_ss_set_attributes(simple_session, monkeypatch):
@@ -361,11 +362,11 @@ def test_ss_set_attributes(simple_session, monkeypatch):
 
     ss.set_attributes(attributes)
 
-    assert (ss.attributes.attribute1 == 'test1' and
-            ss.attributes.attribute2 == 'test2')
+    assert (ss.attributes['attribute1'] == 'test1' and
+            ss.attributes['attribute2'] == 'test2')
 
 
-def test_ss_remove_attribute(simple_session):
+def test_ss_remove_attribute(simple_session, monkeypatch):
     """
     unit tested: remove_attribute
 
@@ -373,6 +374,7 @@ def test_ss_remove_attribute(simple_session):
     remove an attribute, if attributes exists, else None
     """
     ss = simple_session
+    monkeypatch.setitem(ss.attributes, 'attribute1', 'attribute1')
     assert (ss.remove_attribute('attribute1') == 'attribute1'
             and not hasattr(ss.attributes, 'attribute1'))
 
@@ -413,7 +415,7 @@ def test_ss_remove_internal_attribute(simple_session):
     assert ss.internal_attributes.get('identifiers_session_key') is None
 
 
-def test_ss_eq_clone(attributes_schema):
+def test_ss_eq_clone():
     """
     unit tested:
 
@@ -425,14 +427,14 @@ def test_ss_eq_clone(attributes_schema):
     last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
     start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
-    s1 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s1 = SimpleSession(absolute_timeout, idle_timeout)
     s1._is_expired = False
     s1.session_id = 'sessionid123'
     s1._last_access_time = last_access_time
     s1._start_timestamp = start_timestamp
     s1._host = '127.0.0.1'
 
-    s2 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s2 = SimpleSession(absolute_timeout, idle_timeout)
     s2.session_id = 'sessionid123'
     s2._is_expired = False
     s2._last_access_time = last_access_time
@@ -442,7 +444,7 @@ def test_ss_eq_clone(attributes_schema):
     assert s1 == s2
 
 
-def test_ss_eq_different_values(attributes_schema):
+def test_ss_eq_different_values():
     """
     unit tested:
 
@@ -454,14 +456,14 @@ def test_ss_eq_different_values(attributes_schema):
     last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
     start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
-    s1 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s1 = SimpleSession(absolute_timeout, idle_timeout)
     s1._is_expired = False
     s1.session_id = 'sessionid1234567'
     s1._last_access_time = last_access_time
     s1._start_timestamp = start_timestamp
     s1._host = '127.0.0.1'
 
-    s2 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s2 = SimpleSession(absolute_timeout, idle_timeout)
     s2.session_id = 'sessionid123'
     s2._is_expired = False
     s2._last_access_time = last_access_time
@@ -471,7 +473,7 @@ def test_ss_eq_different_values(attributes_schema):
     assert not s1 == s2
 
 
-def test_ss_eq_different_attributes(attributes_schema):
+def test_ss_eq_different_attributes():
     """
     unit tested:
 
@@ -483,8 +485,8 @@ def test_ss_eq_different_attributes(attributes_schema):
     last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
     start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
-    s1 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
-    s2 = SimpleSession(absolute_timeout, idle_timeout, attributes_schema)
+    s1 = SimpleSession(absolute_timeout, idle_timeout)
+    s2 = SimpleSession(absolute_timeout, idle_timeout)
 
     assert s1 == s2
 
@@ -718,8 +720,8 @@ def test_ds_get_attribute(patched_delegating_session):
 
     with mock.patch.object(MockSessionManager, 'get_attribute') as ga:
         ga.return_value = None
-        pds.get_attribute('attributekey')
-        ga.assert_called_once_with(pds.session_key, 'attributekey')
+        result = pds.get_attribute('serializable')
+        ga.assert_called_once_with(pds.session_key, 'serializable')
 
 
 def test_ds_set_attribute_delegates(patched_delegating_session):

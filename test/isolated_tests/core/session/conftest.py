@@ -38,9 +38,11 @@ def default_proxied_session(mock_session):
 
 
 @pytest.fixture(scope='function')
-def simple_session(attributes_schema):
-    return SimpleSession(1800000, 600000, attributes_schema)
-
+def simple_session(mock_serializable):
+    ss = SimpleSession(1800000, 600000)
+    serializable = mock_serializable('attribute1', 'attribute2', 'attribute3')
+    ss.set_attribute('serializable', serializable)
+    return ss
 
 @pytest.fixture(scope='function')
 def patched_delegating_session():
@@ -48,8 +50,8 @@ def patched_delegating_session():
 
 
 @pytest.fixture(scope='function')
-def default_native_session_manager(attributes_schema, core_settings, event_bus):
-    nsm = DefaultNativeSessionManager(attributes_schema, core_settings)
+def default_native_session_manager(core_settings, event_bus):
+    nsm = DefaultNativeSessionManager(core_settings)
     nsm.event_bus = event_bus
     return nsm
 
@@ -100,5 +102,5 @@ def session_key():
 
 
 @pytest.fixture(scope='function')
-def simple_session_factory(attributes_schema, core_settings):
-    return SimpleSessionFactory(attributes_schema, core_settings)
+def simple_session_factory(core_settings):
+    return SimpleSessionFactory(core_settings)

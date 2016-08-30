@@ -34,7 +34,7 @@ def test_sm_register_serializables(serialization_manager):
     ts = TestSerializable()
 
     with mock.patch.object(sm.serializer, 'register_custom_type') as mock_rct:
-        sm.register_serializables(ts)
+        sm.register_serializables([ts])
 
         assert mock_rct.called
 

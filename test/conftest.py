@@ -148,7 +148,7 @@ def account_store_realm(cache_handler, alchemy_store, permission_resolver,
 
 @pytest.fixture(scope='session')
 def event_bus():
-    return DefaultEventBus() 
+    return DefaultEventBus()
 
 
 @pytest.fixture(scope='function')
@@ -164,15 +164,14 @@ def native_security_manager(account_store_realm, cache_handler,
 
     return nsm
 
-
 @pytest.fixture(scope='session')
-def session_attributes():
-    class SessionAttributesSchema:
+def mock_serializable():
+    class MockSerializable:
 
-        def __init__(self):
-            self.attribute1 = 'attribute1'
-            self.attribute2 = None
-            self.attribute3 = None
+        def __init__(self, attr1, attr2, attr3):
+            self.attribute1 = attr1
+            self.attribute2 = attr2
+            self.attribute3 = attr3
 
         def __getstate__(self):
             return {'attribute1': self.attribute1,
@@ -184,7 +183,12 @@ def session_attributes():
             self.attribute2 = state['attribute2']
             self.attribute3 = state['attribute3']
 
-    return [SessionAttributesSchema]
+    return MockSerializable
+
+
+@pytest.fixture(scope='session')
+def session_attributes(mock_serializable):
+    return [mock_serializable]
 
 
 @pytest.fixture(scope='function')

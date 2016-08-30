@@ -18,7 +18,6 @@ from yosai.core import (
     SerializationManager,
     UsernamePasswordToken,
     authc_abcs,
-    event_bus,
 )
 
 from ..session.doubles import (
@@ -144,7 +143,7 @@ def test_nsm_set_cachehandler_raises(native_security_manager):
         nsm.cache_handler = None
 
 
-def test_nsm_set_eventbus(native_security_manager):
+def test_nsm_set_eventbus(native_security_manager, event_bus):
     """
     unit tested:  event_bus.setter
 
@@ -1283,7 +1282,7 @@ def test_nsm_get_remembered_identity_raises(
 # AbstractRememberMeManager
 # ------------------------------------------------------------------------------
 
-def test_armm_init(remember_me_settings, core_settings, attributes_schema):
+def test_armm_init(remember_me_settings, core_settings, session_attributes):
     """
     unit tested:  __init__
 
@@ -1291,7 +1290,7 @@ def test_armm_init(remember_me_settings, core_settings, attributes_schema):
     confirm that init calls set_cipher_key using remember_me_settings.default_cipher_key
     """
     default_key = remember_me_settings.default_cipher_key
-    mrmm = MockRememberMeManager(core_settings, attributes_schema)
+    mrmm = MockRememberMeManager(core_settings, session_attributes)
     assert (mrmm.encryption_cipher_key == mrmm.decryption_cipher_key and
             mrmm.encryption_cipher_key == default_key)
 
@@ -1422,7 +1421,7 @@ def test_armm_convert_identifiers_to_bytes(mock_remember_me_manager, monkeypatch
 
 
 def test_armm_get_remembered_identifiers_raises(
-        mock_remember_me_manager, monkeypatch, attributes_schema):
+        mock_remember_me_manager, monkeypatch):
     """
     unit tested:  get_remembered_identifiers
 
