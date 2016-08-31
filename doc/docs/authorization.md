@@ -14,7 +14,7 @@ allows you to architect your application in the manner you chose.
 
 [For more information about RBAC](http://csrc.nist.gov/groups/SNS/rbac/)
 
-`yosai.core` obtains roles and permissions from a repository, such as a
+``yosai.core`` obtains roles and permissions from a repository, such as a
 relational database.  Designing and implementing the RBAC data model and its
 authorization policy it represents are concerns beyond the scope
 of yosai.core. As mentioned earlier, Yosai can support any data model for

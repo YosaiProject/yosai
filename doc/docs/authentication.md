@@ -70,7 +70,7 @@ authentication. A `UsernamePasswordToken` is passed identifying attributes
 (username) and credentials (password).
 
 ```python
-from yosai import Yosai, UsernamePasswordToken
+from yosai.core import Yosai, UsernamePasswordToken
 
 yosai = Yosai(env_var='YOSAI_SETTINGS')
 
