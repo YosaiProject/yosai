@@ -37,7 +37,7 @@ and writing adapters for each specific type of client.
 
 ## Python 3 Supported
 
-Yosai v0.1.0 requires Python 3.4 or newer. There are no plans to support python2 
+Yosai v0.2.0 requires Python 3.4 or newer. There are no plans to support python2
 due to anticipated optimizations that require newer versions of python.
 
 
@@ -52,9 +52,10 @@ Installing from PyPI, using pip, will install the project package that includes
 
 ## Authentication Example
 ```Python
+yosai = Yosai(env_var='YOSAI_SETTINGS')
 
-with yosai:
-    current_user = yosai.subject
+with Yosai.context(yosai):
+    current_user = Yosai.get_current_subject()
 
     authc_token = UsernamePasswordToken(username='thedude',
                                         credentials='letsgobowling')
@@ -80,15 +81,15 @@ authorization policy for this example is as follows:
   patient may issue a prescription for that patient
 
 ```Python
-@requires_role(roleid_s=['patient', 'nurse'], logical_operator=any)
+@Yosai.requires_role(roleid_s=['patient', 'nurse'], logical_operator=any)
 def request_prescription_refill(patient, prescription):
     ...
 
-@requires_permission(['prescription:write'])
+@Yosai.requires_permission(['prescription:write'])
 def get_prescription_refill_requests(patient):
     ...
 
-@requires_dynamic_permission(['prescription:write:{patient.patient_id}'])
+@Yosai.requires_dynamic_permission(['prescription:write:{patient.patient_id}'])
 def issue_prescription(patient, prescription):
     ...
 
@@ -100,7 +101,7 @@ when the yosai instance is used as a context manager.
 
 ```Python
 
-with yosai:
+with Yosai.context(yosai):
     issue_prescription(patient)
 
     for prescription in get_prescription_refill_requests(patient):
@@ -114,12 +115,8 @@ elaborated upon in the Web Integration section of this documentation.
 
 ```Python
 
-with yosai(web_registry):
-    issue_prescription(patient)
-
-    for prescription in get_prescription_refill_requests(patient):
-        issue_prescription(patient, prescription)
-
+with WebYosai.context(yosai, web_registry):
+	...
 ```
 
 This is just a README file.  Please visit [the project web site](http://yosaiproject.github.io/yosai) to get a full overview.
@@ -133,40 +130,48 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
-The next release for Yosai, v0.2, is imminent.  Testing is well under way.
-Following testing, documentation and the project web site will be updated.
-Version 0.2 features complete support for web application integration.  
-The first web integration is with the Pyramid web framework.
+The latest release for Yosai, v0.2, was made 09/01/2016. 
+Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/) 
+for details about this major release.
 
-yosai.core coverage stats (ao 12/22/2015):
+yosai.core coverage stats (ao 09/01/2016):
 
-|Name                                    | Stmts |Miss  | Cover |
-|:---------------------------------------|:-----:|:----:|:------:|
-| yosai/core/account/account.py          | 23  | 1  | 96%  |
-| yosai/core/authc/authc.py              | 167 | 14 | 92%  |
-| yosai/core/authc/authc_account.py      | 65  | 12 | 82%  |
-| yosai/core/authc/context.py            | 39  | 2  | 95%  |
-| yosai/core/authc/credential.py         | 56  | 5  | 91%  |
-| yosai/core/authc/decorators.py         | 26  | 0  | 100% |
-| yosai/core/authc/strategy.py           | 98  | 6  | 94%  |
-| yosai/core/authz/authz.py              | 381 | 36 | 91%  |
-| yosai/core/authz/decorators.py         | 18  | 0  | 100% |
-| yosai/core/conf/yosaisettings.py       | 53  | 1  | 98%  |
-| yosai/core/context/context.py          | 54  | 12 | 78%  |
-| yosai/core/event/event.py              | 87  | 5  | 94%  |
-| yosai/core/exceptions.py               | 165 | 1  | 99%  |
-| yosai/core/logging/s_logging.py        | 77  | 56 | 27%  |
-| yosai/core/mgt/mgt.py                  | 380 | 7  | 98%  |
-| yosai/core/mgt/mgt_settings.py         | 9   | 1  | 89%  |
-| yosai/core/realm/realm.py              | 151 | 9  | 94%  |
-| yosai/core/serialize/serialize.py      | 98  | 31 | 68%  |
-| yosai/core/session/session.py          | 743 | 55 | 93%  |
-| yosai/core/session/session_gen.py      | 10  | 0  | 100% |
-| yosai/core/session/session_settings.py | 17  | 1  | 94%  |
-| yosai/core/subject/identifier.py       | 65  | 4  | 94%  |
-| yosai/core/subject/subject.py          | 441 | 25 | 94%  |
-| yosai/core/utils/utils.py              | 66  | 38 | 42%  |
-|-------  -------------------------------|-----|----|------|
+|Name                                        |Stmt|Miss |Cover |
+|:-------------------------------------------|:----:|:-----:|:------:|
+yosai/core/account/account                   |  25|    1|    96%
+yosai/core/authc/authc                       | 168|   16|    90%
+yosai/core/authc/authc_account               |  58|    8|    86%
+yosai/core/authc/authc_settings              |  11|    1|    91%
+yosai/core/authc/context                     |  24|    1|    96%
+yosai/core/authc/credential                  |  62|    7|    89%
+yosai/core/authc/strategy                    |  96|    6|    94%
+yosai/core/authz/authz                       | 351|   26|    93%
+yosai/core/concurrency/concurrency           |  16|    4|    75%
+yosai/core/conf/yosaisettings                |  60|    7|    88%
+yosai/core/event/event                       | 120|    0|   100%
+yosai/core/exceptions                        | 181|    1|    99%
+yosai/core/logging/formatters                |  35|    0|   100%
+yosai/core/logging/slogging                  |   5|    0|   100%
+yosai/core/mgt/mgt                           | 388|    6|    98%
+yosai/core/mgt/mgt_settings                  |  29|    1|    97%
+yosai/core/realm/realm                       | 155|    6|    96%
+yosai/core/serialize/marshalling             |  14|    8|    43%
+yosai/core/serialize/serialize               |  24|    0|   100%
+yosai/core/serialize/serializers/cbor        |  53|    3|    94%
+yosai/core/serialize/serializers/json        |  56|   41|    27%
+yosai/core/serialize/serializers/msgpack     |  49|   29|    41%
+yosai/core/session/session                   | 750|   68|    91%
+yosai/core/session/session_gen               |  10|    0|   100%
+yosai/core/session/session_settings          |  13|    1|    92%
+yosai/core/subject/identifier                |  60|    3|    95%
+yosai/core/subject/subject                   | 525|   21|    96%
+yosai/core/utils/utils                       | 137|   78|    43%
+yosai/web/exceptions                         |   7|    0|   100%
+yosai/web/mgt/mgt                            |  89|    0|   100%
+yosai/web/registry/registry_settings         |   5|    0|   100%
+yosai/web/session/session                    | 202|    1|    99%
+yosai/web/subject/subject                    | 188|    3|    98%
+|--------------------------------------------|----|-----|------|
 
 # GROUP COMMUNICATION
 Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
@@ -179,4 +184,7 @@ If you would like to get involved, please contact me by:
 
 
 # LICENSE
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use any portion of  Yosai except in compliance with the License. Contributors agree to license their work under the same License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not 
+use any portion of Yosai except in compliance with the License. 
+Contributors agree to license their work under the same License. 
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0

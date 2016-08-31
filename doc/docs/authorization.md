@@ -77,7 +77,13 @@ admin.  In other words, the user is a member of *either* the moderator or admin
 roles.  In reality, we would layer additional access control to the
 remove_comment method so that the creator of the post may also delete the
 comment, but this detail is left out for simplicity's sake and only to
-highlight role-level access control:
+highlight role-level access control.
+
+### Native vs Web Yosai APIs
+
+In the examples below, you will see use of the Yosai API, such as ```@Yosai.requires_role```.
+You use the ``Yosai`` API to secure non-web applications.  When you are working
+with web applications, use the ``WebYosai`` API instead.
 
 ### Declarative Style
 

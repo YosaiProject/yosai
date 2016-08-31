@@ -4,6 +4,11 @@
 
 An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject is who *it* claims to be.
 
+# Native vs Web Yosai APIs
+
+In the examples below, you will see use of the Yosai API, such as ```@Yosai.requires_user```.
+You use the ``Yosai`` API to secure non-web applications.  When you are working
+with web applications, use the ``WebYosai`` API instead.
 
 # Powerful Authentication using a Simple API
 
