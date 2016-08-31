@@ -51,7 +51,7 @@
 h1 {
     font-family: 'Yantramanav';
     padding: 50pt 0 0;
-    font-size: 40pt;
+    font-size: 50pt;
     color: #104578;
 }
 h2 {
@@ -254,20 +254,24 @@ h6 {
  }
 
 .top-buffer {
-	margin-top: 100pt;
+	margin-top: 75pt;
 }
 
 .top-buffer-sm {
 	margin-top: 25pt;
 }
 
-.buffer-md {
-	margin-top: 50pt;
-	margin-bottom: 50pt;
+.top-buffer-md {
+	margin-top: 75pt;
 }
 
 .top-buffer-lg {
 	margin-top: 150pt;
+	margin-bottom: 50pt;
+}
+
+.buffer-md {
+	margin-top: 50pt;
 	margin-bottom: 50pt;
 }
 
@@ -277,22 +281,20 @@ h6 {
   	color: white;
 }
 
-.content-section-a {
-    padding: 50pt 0;
+.content-section {
+    padding: 0 0 80pt;
     background: url(../img/grid.png) repeat-x;
-    border-bottom: 1pt solid #e7e7e7;
+		border-bottom: solid #a8a8a8;
 }
 
-.content-section-b {
-    padding: 50pt 0;
-    border-top: 1pt solid #e7e7e7;
-    border-bottom: 1pt solid #e7e7e7;
+.content-section-no-buffer {
+    padding: 0 0 80pt;
     background: url(../img/grid.png) repeat-x;
 }
 
 .section-heading {
     margin-bottom: 30pt;
-	padding: 10pt 0;
+  	padding: 10pt 0;
 }
 
 .section-heading-spacer {
