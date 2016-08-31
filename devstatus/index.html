@@ -132,8 +132,8 @@
             </div>
         </div>
     </div>
-                
-        <div class="container">
+
+<div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
@@ -146,16 +146,29 @@
 
         <li class="main "><a href="#release-notes">Release Notes</a></li>
 
+            <li><a href="#release-v02-sept-2016">Release v0.2 (Sept 2016)</a></li>
+
 
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
 
 <h1 id="testing-status">Testing Status</h1>
-<img src="../img/test_coverage_ao12_22_2015.png">
-
 <h1 id="in-progress">In Progress</h1>
-<h1 id="release-notes">Release Notes</h1></div>
+<p>As of Sept 2016, focus is on creating support for 2-Factor Authentication (2FA),
+with special emphasis on One-Time Passwords (OTP) using secure devices such as <a href="http://www.nitrokey.com">Nitrokey</a>.</p>
+<h1 id="release-notes">Release Notes</h1>
+<h2 id="release-v02-sept-2016">Release v0.2 (Sept 2016)</h2>
+<ul>
+<li>Yosai can be integrated with any web application now that yosai.web development
+and testing is complete.  The first web integration released is <a href="https://github.com/YosaiProject/pyramid_yosai">pyramid_yosai</a>.</li>
+<li>All authc and authz decorators are now accessible through a common interface.</li>
+<li>Yosai's SecurityManager is now created entirely from framework configuration
+  settings.</li>
+<li>Serialization was dramatically changed, replacing Marshmallow with a forked
+instance of Asphalt serialization.  These changes yielded <em>dramatic</em> improvements
+in performance, ease of use, and type support.</li>
+</ul></div>
 
         </div>
 

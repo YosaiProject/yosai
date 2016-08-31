@@ -133,7 +133,7 @@
         </div>
     </div>
 
-        <div class="container">
+  <div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
@@ -148,6 +148,8 @@
 
             <li><a href="#yosai-dpcache">Yosai DPCache</a></li>
 
+            <li><a href="#pyramid-yosai">Pyramid Yosai</a></li>
+
 
     </ul>
 </div></div>
@@ -156,7 +158,9 @@
 <h1 id="extensions-and-integrations">Extensions and Integrations</h1>
 <p><img alt="pluggable_security" src="../img/pluggable_security.png" /></p>
 <p>The mission of The Yosai Project is to secure any kind of Python application.
-To fulfill this mission, extensions and integrations are required.</p>
+Extensions and integrations are added in piecemeal to the Yosai framework to
+create the ideal security stack necessary for your application.  You specify
+which components to use from within Yosai's yaml settings file.</p>
 <h3 id="extensions">Extensions</h3>
 <p>As illustrated, Yosai consists of a core library.  To provide a complete security solution for applications, the core library uses <em>extensions</em> -- components that extend operations enabled by the core.  Examples of extensions include:
 - credentials repositories such as relational databases or LDAP directories
@@ -170,12 +174,12 @@ it can be used with ANY kind of application, including desktop apps, web apps,
 internet-enabled devices, etc.</p>
 <p>Yosai is adapted to an application through what is known as an <em>integration</em>
 library.</p>
-<p>Since a large number of applications are web-based applications, a helper
-library, yosai.web, is included.  The yosai.web library should be used to help
-adapt yosai to the web application of your choice, yet specific customizations
-are left as an exercise for yosai integration development.  Developers are
-encouraged to submit to The Yosai Project integrations for license-compatible
-projects.</p>
+<p>Since a large number of applications are web-based applications, a
+library, yosai.web, is included.  Integrations are created to adopt yosai.web
+components to a specific web application.  For instance, the pyramid_yosai
+project integrates yosai with the Pyramid Web Framework.</p>
+<p>Developers are encouraged to submit to The Yosai Project integrations for
+license-compatible projects.</p>
 <p><img alt="batteries" src="../img/batteries_included.png" /></p>
 <p>Yosai is being released with "batteries included" so that it may be used in a
 project without requiring additional implementation (for quick starts).  To achieve this goal, two integration projects were added to The Yosai Project, providing access to a peristence layer and caching:</p>
@@ -191,7 +195,11 @@ and Riak off the shelf, featuring thread-safe asynchronous interaction using a
 dogpile lock mechanism.  A “dogpile” lock is one that allows a single thread to
 generate an expensive resource while other threads use the “old” value until
 the “new” value is ready.</p>
-<p>Currently, only the Redis backend has been updated and tested.  If you would like to add other backends, your pull request is welcome.  </p></div>
+<p>Currently, only the Redis backend has been updated and tested.  If you would like to add other backends, your pull request is welcome.  </p>
+<h3 id="pyramid-yosai">Pyramid Yosai</h3>
+<p><a href="https://github.com/YosaiProject/pyramid_yosai">This library</a> integrates Yosai with the <a href="http://www.trypyramid.com">Pyramid Web Framework</a>.
+A fully functional demo project, <a href="https://github.com/YosaiProject/monster_rx">MonsterRx</a>, was
+created to show how to use pyramid_yosai and highlights some of Yosai's key features.</p></div>
 
         </div>
 

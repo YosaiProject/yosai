@@ -133,8 +133,7 @@
         </div>
     </div>
 
-
-    <div class="container">
+<div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
@@ -154,19 +153,29 @@
 
 <h1 id="installation-and-setup">Installation and Setup</h1>
 <h2 id="installation">Installation</h2>
-<p>First, install Yosai from PyPi:
+<p>First, install Yosai from PyPI using pip:
     <code>pip install yosai</code></p>
-<p>This will install yosai.core, including its default configuration, and
-its dependencies.</p>
+<p>Installing from PyPI, using pip, will install the project package that includes
+<code>yosai.core</code> and <code>yosai.web</code>, a default configuration, and project dependencies.</p>
 <h2 id="setup">Setup</h2>
-<p>Yosai can be configured in two ways:
-- using a YAML config file, whose location must be specified in an environment variable, <code>YOSAI_CORE_SETTINGS</code>
-- using Yosai defaults, which are specified in a YAML config file located in the
-  /config directory of the yosai package</p>
+<p>Yosai is configured through a YAML-formatted settings file.  An example of
+this configuration file can be found within the yosai.core.conf  directory
+of the Yosai project, named <strong>yosai_settings.yaml</strong>.  When you initialize a Yosai
+instance, you specify as an argument <em>either</em> a file_path to a configured settings
+file or an environment variable that references the location of this file in
+the system that will use Yosai:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #75715e">#option 1</span>
+  <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(env_var</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;ANY_ENV_VAR_NAME_YOU_WANT&#39;</span><span style="color: #f8f8f2">)</span>
+
+  <span style="color: #75715e">#option 2</span>
+  <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(file_path</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;/../../../whatever_filename_you_want.yaml&#39;</span><span style="color: #f8f8f2">)</span>
+</pre></div>
+
+
 <h2 id="configuration">Configuration</h2>
 <p>Following is a copy of the default YAML config file.  As you will see, settings
 are organized according to the services that use them:</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f8f8f2">AUTHC_CONFIG</span><span style="color: #f92672">:</span>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">AUTHC_CONFIG</span><span style="color: #f92672">:</span>
     <span style="color: #f8f8f2">default_algorithm</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">bcrypt_sha256</span>
     <span style="color: #f8f8f2">hash_algorithms</span><span style="color: #f92672">:</span>
         <span style="color: #f8f8f2">bcrypt_sha256</span><span style="color: #f92672">:</span> <span style="color: #f92672">{}</span>
@@ -176,10 +185,17 @@ are organized according to the services that use them:</p>
             <span style="color: #f8f8f2">min_rounds</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">1000</span>
             <span style="color: #f8f8f2">salt_size</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">16</span>
 
+<span style="color: #f8f8f2">REMEMBER_ME_CONFIG</span><span style="color: #f92672">:</span>
+    <span style="color: #f8f8f2">default_cipher_key</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">you</span> <span style="color: #f8f8f2">need</span> <span style="color: #f8f8f2">to</span> <span style="color: #f8f8f2">update</span> <span style="color: #66d9ef">this</span> <span style="color: #f8f8f2">using</span> <span style="color: #f8f8f2">the</span> <span style="color: #f8f8f2">fernet</span> <span style="color: #f8f8f2">keygen</span>
 
-<span style="color: #f8f8f2">MGT_CONFIG</span><span style="color: #f92672">:</span>
-    <span style="color: #f8f8f2">DEFAULT_CIPHER_KEY</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">you</span> <span style="color: #f8f8f2">need</span> <span style="color: #f8f8f2">to</span> <span style="color: #f8f8f2">update</span> <span style="color: #66d9ef">this</span> <span style="color: #f8f8f2">using</span> <span style="color: #f8f8f2">the</span> <span style="color: #f8f8f2">fernet</span> <span style="color: #f8f8f2">keygen</span>
-
+<span style="color: #f8f8f2">SECURITY_MANAGER_CONFIG</span><span style="color: #f92672">:</span>
+    <span style="color: #f8f8f2">security_manager</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #a6e22e">core</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NativeSecurityManager</span>
+    <span style="color: #f8f8f2">attributes</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">serializer</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">cbor</span>
+        <span style="color: #f8f8f2">realms</span><span style="color: #f92672">:</span>
+            <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #a6e22e">core</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AccountStoreRealm</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">yosai_alchemystore</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AlchemyAccountStore</span>
+        <span style="color: #f8f8f2">cache_handler</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">yosai_dpcache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">cache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DPCacheHandler</span>
+        <span style="color: #f8f8f2">session_attributes_schema</span><span style="color: #f92672">:</span> <span style="color: #66d9ef">null</span>
 
 <span style="color: #f8f8f2">SESSION_CONFIG</span><span style="color: #f92672">:</span>
     <span style="color: #f8f8f2">session_timeout</span><span style="color: #f92672">:</span>
@@ -188,6 +204,42 @@ are organized according to the services that use them:</p>
     <span style="color: #f8f8f2">session_validation</span><span style="color: #f92672">:</span>
         <span style="color: #f8f8f2">scheduler_enabled</span><span style="color: #f92672">:</span> <span style="color: #66d9ef">false</span>
         <span style="color: #f8f8f2">time_interval</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">3600</span>
+
+<span style="color: #f8f8f2">WEB_REGISTRY</span><span style="color: #f92672">:</span>
+    <span style="color: #f8f8f2">signed_cookie_secret</span><span style="color: #f92672">:</span>  <span style="color: #f8f8f2">changeme</span>
+
+<span style="color: #f8f8f2">CACHE_HANDLER</span><span style="color: #f92672">:</span>
+    <span style="color: #f8f8f2">init_config</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">backend</span><span style="color: #f92672">:</span> <span style="color: #e6db74">&#39;yosai_dpcache.redis&#39;</span>
+        <span style="color: #f8f8f2">region_name</span><span style="color: #f92672">:</span> <span style="color: #e6db74">&#39;yosai_dpcache&#39;</span>
+    <span style="color: #f8f8f2">server_config</span><span style="color: #f92672">:</span>
+      <span style="color: #f8f8f2">redis</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">url</span><span style="color: #f92672">:</span> <span style="color: #e6db74">&#39;127.0.0.1&#39;</span>
+        <span style="color: #f8f8f2">host</span><span style="color: #f92672">:</span> <span style="color: #e6db74">&#39;localhost&#39;</span>
+        <span style="color: #f8f8f2">port</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">6379</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">password</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">db</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">distributed_lock</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">socket_timeout</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">lock_timeout</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">lock_sleep</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">redis_expiration_time</span><span style="color: #f92672">:</span>
+        <span style="color: #960050; background-color: #1e0010">#</span> <span style="color: #f8f8f2">connection_pool</span><span style="color: #f92672">:</span>
+    <span style="color: #f8f8f2">ttl_config</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">absolute_ttl</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">3600</span>
+        <span style="color: #f8f8f2">credentials_ttl</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">300</span>
+        <span style="color: #f8f8f2">authz_info_ttl</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">1800</span>
+        <span style="color: #f8f8f2">session_absolute_ttl</span><span style="color: #f92672">:</span> <span style="color: #ae81ff">1800</span>
+
+<span style="color: #f8f8f2">ALCHEMY_STORE</span><span style="color: #f92672">:</span>
+    <span style="color: #f8f8f2">engine_config</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">dialect</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">path</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">userid</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">password</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">hostname</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">port</span><span style="color: #f92672">:</span>
+        <span style="color: #f8f8f2">db</span><span style="color: #f92672">:</span>
 </pre></div>
 
 

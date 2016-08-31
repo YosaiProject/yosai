@@ -133,7 +133,7 @@
         </div>
     </div>
 
-    <div class="container">
+  <div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
@@ -160,8 +160,8 @@ authentication, authorization, and session management trigger subsequent
 processing.</p>
 <p>Events are communicated using a publish-subscribe paradigm.  An event publisher
 emits the event to a channel (an internal Event Bus) that relays the event to
-consumers who have subscribed to the event's topic. The EventBus is a singleton
-shared throughout the running instance of Yosai.</p>
+consumers who have subscribed to the event's topic.  An EventBus singleton is
+shared throughout the running instance of Yosai, passed down from the SecurityManager.</p>
 <p><img alt="pubsub" src="../img/pubsub.png" /></p>
 <p>An EventBus relays published events to event subscribers and provides a mechanism for
 registering and unregistering event subscribers. With this pubsub paradigm,
@@ -244,10 +244,10 @@ publisher of an event is, and who the subscriber(s) are:</p>
 <p>Communicating events in a structured format facilitates processing of log
 entries by systems independent of Yosai.  Therefore, events are
 logged in a structured format by reducing event payloads to their serializable
-form using <code>marshmallow</code>.</p>
-<p>In addition to reducing payloads using marshmallow, Yosai includes an optional
-logging module that features JSON encoded formatting.  It is highly recommended
-that you use it or another structured format for logging events.</p></div>
+form.</p>
+<p>Yosai includes an optional logging module that features JSON encoded formatting.<br />
+It is highly recommended that you use this feature or one like it to benefit by
+structured logging.</p></div>
 
         </div>
 

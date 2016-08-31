@@ -5,8 +5,6 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
-
         <link rel="shortcut icon" href="../img/favicon.ico">
 
 	<title>Introduction - Yosai</title>
@@ -132,7 +130,9 @@
             </div>
         </div>
     </div>
-        <div class="container">
+
+
+<div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
@@ -147,6 +147,8 @@
 
         <li class="main "><a href="#fundamentals">Fundamentals</a></li>
 
+            <li><a href="#initializing-yosai">Initializing Yosai</a></li>
+
             <li><a href="#introducing-subject">Introducing: Subject</a></li>
 
             <li><a href="#authentication">Authentication</a></li>
@@ -154,8 +156,6 @@
             <li><a href="#authorization">Authorization</a></li>
 
             <li><a href="#session-management">Session Management</a></li>
-
-            <li><a href="#initializing-yosai">Initializing Yosai</a></li>
 
 
     </ul>
@@ -175,41 +175,38 @@ managing state between requests.  In other words, Yosai offers authentication,
 <h1 id="fundamentals">Fundamentals</h1>
 <h2 id="initializing-yosai">Initializing Yosai</h2>
 <p>With Yosai initialized, you can authenticate, authorize, and manage sessions.</p>
-<p>To initialize Yosai, you must specify, at a minimum:</p>
+<p>To initialize Yosai, you must tell Yosai where to obtain its settings from.  </p>
+<p>These settings include information such as:</p>
 <ul>
-<li>What CacheHandler to use, if you are caching.  In this example, we use the
-  DPCacheHandler extension.</li>
+<li>Cryptographic hashing settings for password-based authentication</li>
+<li>Whether caching is enabled, and if so what CacheHandler to use</li>
 <li>The AccountStore instance(s) from which to obtain authentication and
-  authorization information.  In this example, we use the AlchemyAccountStore
-  extension.</li>
-<li>The <code>marshmallow</code> serialization Schema you will use to (de)serialize
-  Session state (user-defined session attributes), if you are caching</li>
+  authorization information</li>
+<li>A class defining special marshalling logic uses for server-side sessions,
+  if one is required for your sessions and you are caching</li>
 </ul>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">marshmallow</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Schema,</span> <span style="color: #f8f8f2">fields</span>
-    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai_dpcache.cache</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">DPCacheHandler</span>
-    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai_alchemystore</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">AlchemyAccountStore</span>
-    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">SecurityUtils,</span> <span style="color: #f8f8f2">AccountStoreRealm</span>
+<p>Yosai is configured through a YAML-formatted settings file.  An example of
+this configuration file can be found within the <a href="https://github.com/YosaiProject/yosai/blob/master/yosai/core/conf/yosai_settings.yaml">yosai.core.conf directory</a>
+of the Yosai project, named <code>yosai_settings.yaml</code>.  When you initialize a Yosai
+instance, you specify as an argument <em>either</em> a file_path to a configured settings
+file or an environment variable (env_var) that references the location of this file in
+the system that will use Yosai:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span>  <span style="color: #75715e">#option 1</span>
+  <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(env_var</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;ANY_ENV_VAR_NAME_YOU_WANT&#39;</span><span style="color: #f8f8f2">)</span>
 
-    <span style="color: #66d9ef">class</span> <span style="color: #a6e22e">SessionAttributesSchema</span><span style="color: #f8f8f2">(Schema):</span>
-        <span style="color: #f8f8f2">attribute1</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">fields</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">String()</span>
-        <span style="color: #f8f8f2">attribute2</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">fields</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">String()</span>
-
-    <span style="color: #f8f8f2">realm</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">AccountStoreRealm(name</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;UserAccountStore123&#39;</span><span style="color: #f8f8f2">,</span>
-                              <span style="color: #f8f8f2">account_store</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">AlchemyAccountStore())</span>
-
-    <span style="color: #f8f8f2">security_manager</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">NativeSecurityManager(cache_handler</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">DPCacheHandler(),</span>
-                                             <span style="color: #f8f8f2">realms</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">(realm,),</span>
-                                             <span style="color: #f8f8f2">session_schema</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">SessionAttributesSchema)</span>
-
-    <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SecurityUtils(security_manager</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">security_manager)</span>
+  <span style="color: #75715e">#option 2</span>
+  <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(file_path</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;/../../../whatever_filename_you_want.yaml&#39;</span><span style="color: #f8f8f2">)</span>
 </pre></div>
-<div class="admonition note">
-    <ul>
-    <li>To properly serialize your session attributes, you must define a
-      <code>marshmallow</code> schema class, which in this example we've arbitrarily named SessionAttributesSchema</li>
-    </ul>
-</div>
 
+
+<div class="admonition note">
+<ul>
+<li>To properly serialize your session attributes, you will need to define
+  a custom session attributes schema class containing marshalling logic,
+  if your session attributes are beyond simple primitive data types available
+  from python standard library.  </li>
+</ul>
+</div>
 <h2 id="introducing-subject">Introducing: Subject</h2>
 <p>The three core services provided by Yosai are:</p>
 <ol>
@@ -226,16 +223,19 @@ human beings also includes non-human, system entities.  In other words, a <stron
 that raises an AuthenticationException if authentication were to fail.</p>
 <p>Note that the following example assumes that a <code>yosai</code> instance has already
 been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
-documentation, at the top of this page, for how to do that.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">AuthenticationToken</span>
+documentation, further below, for how to do that.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span>    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">AuthenticationToken,</span> <span style="color: #f8f8f2">Yosai</span>
 
-    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
-        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
+    <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(env_var</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;YOSAI_SETTINGS&#39;</span><span style="color: #f8f8f2">)</span>
+
+    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">context(yosai):</span>
+        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_current_subject()</span>
 
         <span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
                                             <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
         <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
 </pre></div>
+
 
 <div class="admonition note">
 <p>UsernamePasswordToken is a consolidation of a user account's identifying
@@ -243,13 +243,12 @@ attributes (username) and credentials (password) submitted by a user
 during an authentication attempt</p>
 </div>
 <h2 id="authorization">Authorization</h2>
-<p>Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by expicitly calling
-one of Subject's access control methods.</p>
+<p>Authorization is conducted in your application either by decorating methods with an authorization check, such as in the example below, or by explicitly calling one of Subject's access control methods.</p>
 <p>The following example confirms whether the user logged in above has sufficient
 privileges to approve a bowling tournament application.  We illustrate what is known as the <em>declarative style</em> authorization.  Information about authorization styles can be found in the authorization documentation.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">check_permission</span>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span>    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Yosai</span>
 
-    <span style="color: #a6e22e">@check_permission</span><span style="color: #f8f8f2">([</span><span style="color: #e6db74">&#39;tournament:approve&#39;</span><span style="color: #f8f8f2">])</span>
+    <span style="color: #a6e22e">@Yosai.check_permission</span><span style="color: #f8f8f2">([</span><span style="color: #e6db74">&#39;tournament:approve&#39;</span><span style="color: #f8f8f2">])</span>
     <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">approve_tournament_application</span><span style="color: #f8f8f2">(self,</span> <span style="color: #f8f8f2">tournament_application):</span>
         <span style="color: #f8f8f2">tournament_application</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">status</span> <span style="color: #f92672">=</span> <span style="color: #e6db74">&#39;APPROVED&#39;</span>
         <span style="color: #f8f8f2">self</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">notify_approval(tournament_application)</span>
@@ -263,15 +262,16 @@ new session in Yosai following successful authentication.  We manage
 the attributes of a session through a CRUD-like series of methods:</p>
 <p>Note that the following example assumes that a <code>yosai</code> instance has already
 been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
-documentation, at the top of this page, for how to do that.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%">    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
-        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
+documentation, further below, for how to do that.</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span>    <span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Yosai</span>
+
+    <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(env_var</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;YOSAI_SETTINGS&#39;</span><span style="color: #f8f8f2">)</span>
+
+    <span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">context(yosai):</span>
+        <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_current_subject()</span>
         <span style="color: #f8f8f2">session</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_session()</span>
         <span style="color: #f8f8f2">session</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">set_attribute(</span><span style="color: #e6db74">&#39;full_name&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #e6db74">&#39;Jeffrey Lebowski&#39;</span><span style="color: #f8f8f2">)</span>
-</pre></div>
-
-
-</div>
+</pre></div></div>
 
         </div>
 

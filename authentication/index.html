@@ -132,12 +132,16 @@
             </div>
         </div>
     </div>
+
         <div class="container">
 
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
 
         <li class="main active"><a href="#authentication">Authentication</a></li>
+
+
+        <li class="main "><a href="#native-vs-web-yosai-apis">Native vs Web Yosai APIs</a></li>
 
 
         <li class="main "><a href="#powerful-authentication-using-a-simple-api">Powerful Authentication using a Simple API</a></li>
@@ -163,17 +167,26 @@
 
 <h1 id="authentication">Authentication</h1>
 <p><img alt="authc" src="../img/authentication.jpg" /></p>
-<p>An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject <strong>is</strong> who <em>it</em> claims to be.</p>
+<p>An application bases much of its security on knowing who a user of the system is. Authentication is the process of verifying identity, proving that a subject is who <em>it</em> claims to be.</p>
+<h1 id="native-vs-web-yosai-apis">Native vs Web Yosai APIs</h1>
+<p>In the examples below, you will see use of the Yosai API, such as <code>@Yosai.requires_user</code>.
+You use the <code>Yosai</code> API to secure non-web applications.  When you are working
+with web applications, use the <code>WebYosai</code> API instead.</p>
 <h1 id="powerful-authentication-using-a-simple-api">Powerful Authentication using a Simple API</h1>
 <p>Most of your interactions with Yosai are based on the currently executing user,
 called a <strong>Subject</strong>.  You can easily obtain a handle on your subject instance
-from anywhere in your code through the SecurityUtils API.</p>
-<p>When a developer wishes to authenticate a user using password-based methods,
-the first step requires instantiation of an <code>AuthenticationToken</code> object
-recognizable by Yosai.  The <code>UsernamePasswordToken</code> is one such kind of token that
- is already implemented in Yosai as part of default support for password-based
-authentication. <code>UsernamePasswordToken</code> is a consolidation of a user account's
-identifying attributes (username) and credentials (password).</p>
+within the "Yosai context" of your call stack by invoking the <code>Yosai.get_current_subject()</code>
+staticmethod.  <code>Yosai.get_current_subject()</code> references a thread-local stack
+that is pushed/popped as context is entered and exited:</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Yosai,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+
+<span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(env_var</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;YOSAI_SETTINGS&#39;</span><span style="color: #f8f8f2">)</span>
+
+<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">context(yosai):</span>
+  <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_current_subject()</span>
+</pre></div>
+
+
 <h2 id="logging-in-and-logging-out">Logging-In and Logging-Out</h2>
 <h2 id="logging-in">Logging-In</h2>
 <p>When you <em>log-in</em>, you are attempting to make a secured system recognize your
@@ -200,20 +213,23 @@ authentication.  This process would raise an AuthenticationException
 if it were to fail.  Yosai features a rich exception hierarchy that offers detailed
 explanations as to why a login failed. This exception hierarchy helps developers
 diagnose bugs or customer service issues related to authentication.</p>
-<p>Note that the following example assumes that a <code>yosai</code> instance has already
-been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
-documentation for how to do that.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+<p>When a developer wishes to authenticate a user using a password-based approach,
+the first step requires instantiation of an <code>AuthenticationToken</code> object.  The
+<code>UsernamePasswordToken</code> is one such kind of token and is used for password-based
+authentication. A <code>UsernamePasswordToken</code> is passed identifying attributes
+(username) and credentials (password).</p>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Yosai,</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
 
-<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
-    <span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
+<span style="color: #f8f8f2">yosai</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai(env_var</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;YOSAI_SETTINGS&#39;</span><span style="color: #f8f8f2">)</span>
+
+<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">context(yosai):</span>
+    <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_current_subject()</span>
 
     <span style="color: #f8f8f2">authc_token</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">UsernamePasswordToken(username</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;thedude&#39;</span><span style="color: #f8f8f2">,</span>
                                         <span style="color: #f8f8f2">credentials</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;letsgobowling&#39;</span><span style="color: #f8f8f2">)</span>
-    <span style="color: #f8f8f2">authc_token</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">remember_me</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">True</span>
 
     <span style="color: #66d9ef">try</span><span style="color: #f8f8f2">:</span>
-        <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
+        <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">login(authc_token)</span>
     <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">UnknownAccountException:</span>
         <span style="color: #75715e"># insert here</span>
     <span style="color: #66d9ef">except</span> <span style="color: #f8f8f2">IncorrectCredentialsException:</span>
@@ -227,15 +243,10 @@ documentation for how to do that.</p>
 </pre></div>
 
 
-<p>As you can see, authentication entails a single method call: <code>current_user.login(authc_token)</code>. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.</p>
-<p>Notice that <code>remember_me</code> is activated in the authentication token.  Yosai features
-native 'remember me' support.  'Remember Me' is a popular feature where users are
-remembered when they return to an application.  Remembering your users offers a
-more convenient user experience for them, although it does come at a cost in
-security.</p>
+<p>As you can see, authentication entails a single method call: <code>subject.login(authc_token)</code>. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.</p>
 <h3 id="cryptographic-hashing-of-passwords">Cryptographic Hashing of Passwords</h3>
-<p>For password-based authentication, Yosai uses the Passlib library for
-cryptographic hashing and password verification.</p>
+<p>For password-based authentication, Yosai uses the Passlib library for cryptographic
+hashing and password verification.</p>
 <p>The default hashing scheme chosen for Yosai is <em>bcrypt_sha256</em>. As per Passlib
 documentation [1], the <em>bcrypt_sha256</em> algorithm works as follows:</p>
 <ul>
@@ -258,14 +269,10 @@ documentation [1], the <em>bcrypt_sha256</em> algorithm works as follows:</p>
 honor any prior recognition of your identity (you would have to re-authenticate
 yourself if you re-engaged the system). When you log-out a user, you are
 releasing the identifying state of the user by the application.  A Subject is
-logged out when the Subject is done interacting with the application by calling:  <code>current_user.logout()</code>, relinquishing all identifying information and
-invalidating the user's session.  If you are logging out in a web app and use
-the yosai.web library, the RememberMe cookie will also be deleted.</p>
-<p>After a Subject logs-out, the Subject instance is considered anonymous again
-and, except for web applications, can be re-used for login again if desired.</p>
-<div class="admonition note">
-<p>Because remembered identity in web applications is often persisted with cookies, and cookies can only be deleted before a Response body is committed, it is highly recommended to redirect the end-user to a new view or page immediately after calling current_user.logout(). Doing so guarantees that any security-related cookies are deleted as expected. This is a limitation of how HTTP cookies function and not a limitation of Yosai.</p>
-</div>
+logged out when the Subject is done interacting with the application by calling:<br />
+<code>subject.logout()</code>, relinquishing all identifying information and
+invalidating the user's session.  If you are logging out in a web app,
+the RememberMe cookie will also be deleted.</p>
 <h3 id="automatic-log-out">Automatic Log Out</h3>
 <p>Automatic log out happens at session expiration.  Yosai expires sessions in two
 ways: idle timeout and absolute time to live timeout.  Please consult the
@@ -276,14 +283,11 @@ is done and you do no wish to continue your current session with the system.<br 
 Manual log-out is initiated by a user engaging a log-out operation through a user
 interface, such as click a "log-out" or "sign out" button, which would ultimately
 call the <code>logout</code> method in the Subject API:</p>
-<p>Note that the following example assumes that a <code>yosai</code> instance has already
-been instantiated and configured with a SecurityManager.  See the <code>yosai init</code>
-documentation for how to do that.</p>
-<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">UsernamePasswordToken</span>
+<div class="codehilite" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">from</span> <span style="color: #f8f8f2">yosai.core</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">UsernamePasswordToken,</span> <span style="color: #f8f8f2">Yosai</span>
 
-<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">yosai:</span>
-    <span style="color: #f8f8f2">current_user</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">subject</span>
-    <span style="color: #f8f8f2">current_user</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">logout()</span>
+<span style="color: #66d9ef">with</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">context(yosai):</span>
+    <span style="color: #f8f8f2">subject</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Yosai</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">get_current_subject()</span>
+    <span style="color: #f8f8f2">subject</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">logout()</span>
 </pre></div>
 
 
@@ -330,7 +334,7 @@ there is an expected guarantee that the Subject has proven that it is who it
 claims to be.</p>
 <p>When a user is merely remembered by a previous interaction with the application,
 the state of proof no longer exists.  The remembered identity gives the system
-an idea who that user <em>probably</em> is, yet the system is has no guarantees that the remembered Subject represents an expected user. Once the subject is authenticated, the user is no longer considered only remembered because its identity would have been verified during the current session.</p>
+an idea who that user <em>probably</em> is, yet the system has no guarantees that the remembered Subject represents an expected user. Once the subject is authenticated, the user is no longer considered only remembered because its identity would have been verified during the current session.</p>
 <p>So although many parts of the application can still perform user-specific logic
 based on the remembered identifiers, such as customized views, it should
 typically never perform highly-sensitive operations until the user has
