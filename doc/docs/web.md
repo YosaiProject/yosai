@@ -38,34 +38,43 @@ consist of a DjangoWebRegistry, etc.
 ## Initializing Web-enabled Yosai
 
 Instantiating a web-enabled instance of Yosai follows the same process as
-instantiating a native Yosai instance except that web-enabled classes are
-used instead:
+instantiating a native Yosai instance except that a WebYosai class is used
+rather than a Yosai class.  However, web-enabled classes are
+used instead of the yosai.core native classes.  These web-enabled classes are
+automatically used by a WebSecurityManager.  So, all you need to do in order to
+make use of the web-enabled classes is specify in Yosai's yaml settings file that
+the WebSecurityManager is used:
+
+```bash
+SECURITY_MANAGER_CONFIG:                                                       
+    security_manager: yosai.web.WebSecurityManager  
+```
 
 ```Python
-from yosai.web import WebSecurityUtils, WebSecurityManager
+from yosai.web import WebYosai
 
-security_manager = WebSecurityManager(realms=(realm,),
-                                      cache_handler=DPCacheHandler(),
-                                      session_attributes_schema=AttributesSchema)
-yosai = WebSecurityUtils()
-yosai.security_manager = security_manager
+yosai = WebYosai(env_var='YOSAI_SETTINGS')
 ```
 
 ## Using a Web-enabled Yosai
 
-Create a new ``WebRegistry`` instance.  Then, when using a web-enabled Yosai,
-such as that created above, you pass a ``WebRegistry`` argument to it
-as you open a new context:
+To secure web applications with Yosai, you open a WebYosai context in an early
+stage of a web request's lifecycle, prior to calling views.  The context is
+passed two parameters-- a ``WebYosai`` instance and ``WebRegistry`` instance:
 
 ```Python
 
-with yosai(web_registry):
-    issue_prescription(patient)
+web_registry = xxxWebRegistry(request)
 
-    for prescription in get_prescription_refill_requests(patient):
-        issue_prescription(patient, prescription)
-
+with WebYosai.context(yosai, web_registry):
+    response = handle(request)  # just an example of request hooking..
 ```
+
+A ``WebRegistry`` is specific to a web application implementation.  Consequently,
+a ``WebRegistry`` must be created for each web framework / application used.  
+For instance, a [PyramidWebRegistry](https://github.com/YosaiProject/pyramid_yosai/blob/master/pyramid_yosai/webregistry.py#L16) is used when integrating Yosai with
+applications created with the Pyramid Web Framework.  In the example above,
+'xxx' is a placeholder for whatever specific web registry you use.
 
 
 ## Middleware Support:  TBD

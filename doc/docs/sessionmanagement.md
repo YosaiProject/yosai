@@ -328,7 +328,7 @@ and then remove one.
 
       cart.list_items(session)
 ```
-
+###[Here](https://github.com/YosaiProject/yosai/blob/master/doc/docs/samplecode/sessionmanagement.py) is a fully working example of the code shared above.
 
 ## References
 [OWASP Session Management CheatSheet]( https://www.owasp.org/index.php/Session_Management_Cheat_Sheet)
