@@ -3,7 +3,9 @@
 ![pluggable_security](img/pluggable_security.png)
 
 The mission of The Yosai Project is to secure any kind of Python application.
-To fulfill this mission, extensions and integrations are required.
+Extensions and integrations are added in piecemeal to the Yosai framework to
+create the ideal security stack necessary for your application.  You specify
+which components to use from within Yosai's yaml settings file.
 
 
 ### Extensions
@@ -25,12 +27,13 @@ internet-enabled devices, etc.
 Yosai is adapted to an application through what is known as an *integration*
 library.
 
-Since a large number of applications are web-based applications, a helper
-library, yosai.web, is included.  The yosai.web library should be used to help
-adapt yosai to the web application of your choice, yet specific customizations
-are left as an exercise for yosai integration development.  Developers are
-encouraged to submit to The Yosai Project integrations for license-compatible
-projects.
+Since a large number of applications are web-based applications, a
+library, yosai.web, is included.  Integrations are created to adopt yosai.web
+components to a specific web application.  For instance, the pyramid_yosai
+project integrates yosai with the Pyramid Web Framework.
+
+Developers are encouraged to submit to The Yosai Project integrations for
+license-compatible projects.
 
 ![batteries](img/batteries_included.png)
 
@@ -55,3 +58,10 @@ generate an expensive resource while other threads use the “old” value until
 the “new” value is ready.
 
 Currently, only the Redis backend has been updated and tested.  If you would like to add other backends, your pull request is welcome.  
+
+
+### Pyramid Yosai
+
+[This library](https://github.com/YosaiProject/pyramid_yosai) integrates Yosai with the [Pyramid Web Framework](http://www.trypyramid.com).
+A fully functional demo project, [MonsterRx](https://github.com/YosaiProject/monster_rx), was
+created to show how to use pyramid_yosai and highlights some of Yosai's key features.

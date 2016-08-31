@@ -15,29 +15,28 @@ The serialization process is as follows:
 ![asphalt_serialization](https://avatars3.githubusercontent.com/u/12229495?v=3&s=200)
 
 Yosai uses a forked copy of the Asphalt framework's serialization library to reduce
-custom classes to a primitive form that can be encoded by a serialization scheme.  
+custom classes to a primitive form that can be serialized. Asphalt is an asyncio based microframework for network oriented applications and it has a great serialization
+library.  If you would like to learn more about Asphalt, [click here](https://github.com/asphalt-framework/asphalt).
 
-Asphalt is an asyncio based microframework for network oriented applications.  
-If you would like to learn more about it, [click here](https://github.com/asphalt-framework/asphalt).
 
 ## Serializables
-Classes that inherit from the ``Serializable`` abstract base class are eligible
-for serialization in Yosai.  A Serializable class has its own marshmallow
-``SerializationSchema`` class defined as an inner class of the
-``serialization_schema`` classmethod.  This class is returned by the classmethod
-and used during (de)serialization:
 
-```Python
-    @classmethod
-    def serialization_schema(cls):
+Classes in yosai.core and yosai.web that inherit from the ``Serializable`` abstract
+base class are eligible for serialization in Yosai.  A Serializable class has its
+own marshalling methods, __getstate__ and __setstate__, to control what gets
+(de)serialized and how.  These methods aren't *required* unless transformation is
+necessary to accommodate the limitations of types supported by serialization
+libraries.  In other words, a serializer can marshall based on an object's __dict__,
+without marshalling guidance if transformation isn't required.  However, since
+Yosai is used for security purposes it is prudent to maintain tighter control
+over serialization.
 
-        class SerializationSchema(Schema):
-            ...
-        return SerializationSchema
-```
 
 ### Examples
-To understand how to reduce objects, you are encouraged to review the serialization source code of the ``Serializable`` classes in Yosai.  The following classes are recommended for their diversity.  The serialization code is located at the bottom of each class, within the ``serialization_schema`` classmethod:
+
+To understand how to reduce objects, you are encouraged to review the
+serialization source code of the ``Serializable`` classes in Yosai.  The
+following classes are recommended for their diversity:
 
 - `authz.authz.IndexedAuthorizationInfo`
 - `subject.identifier.SimpleIndentifierCollection`

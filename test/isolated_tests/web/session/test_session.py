@@ -32,7 +32,7 @@ def test_web_simple_session_getstate(
 
 
 def test_web_simple_session_setstate(
-        web_simple_session, web_simple_session_state, attributes_schema,
+        web_simple_session, web_simple_session_state, mock_serializable,
         monkeypatch):
     """
     Confirm that all expected session attributes are set from __setstate__
@@ -40,7 +40,7 @@ def test_web_simple_session_setstate(
 
     wss = web_simple_session
     wss_state = web_simple_session_state
-    monkeypatch.setitem(wss_state, '_attributes', attributes_schema())
+    monkeypatch.setitem(wss_state, '_attributes', mock_serializable('one','two','three'))
     wss.__setstate__(wss_state)
 
     for key in wss_state.keys():
@@ -49,15 +49,13 @@ def test_web_simple_session_setstate(
 
 @mock.patch.object(WebSimpleSession, '__init__', return_value=None)
 def test_web_session_factory_create_session(
-        mock_wss_init, web_session_factory, attributes_schema,
-        mock_session_context):
+        mock_wss_init, web_session_factory, mock_session_context):
 
     web_session_factory.create_session('csrf_token', mock_session_context)
 
     mock_wss_init.assert_called_once_with('csrf_token',
                                           1800000,
                                           300000,
-                                          attributes_schema,
                                           host='123.45.6789')
 
 

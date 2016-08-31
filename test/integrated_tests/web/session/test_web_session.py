@@ -1,4 +1,5 @@
 from time import sleep
+import pytest
 import pdb
 
 from yosai.web import (
@@ -88,20 +89,19 @@ def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
 
         old_session = subject.get_session()
 
-        old_session.set_attribute('attribute1', value1['attribute1'])
+        old_session.set_attribute('attribute1', 'value1')
         old_session.set_attributes(values)
 
         subject.login(valid_username_password_token)
         new_session = subject.get_session()
-
-        assert (new_session.get_attribute('attribute1') == value1['attribute1'] and
-                new_session.get_attributes(values.keys()) == values)
+        values.update(value1)
+        assert (new_session.get_attributes(values.keys()) == values.keys())
 
     class Value4:
         pass
 
     with pytest.raises(CBOREncodeError):
-        new_session.set_attribute('attribute4', value4())  # not serializable 
+        new_session.set_attribute('attribute4', Value4())  # not serializable
 
 def test_csrf_token_management(web_yosai, mock_web_registry, monkeypatch,
                                valid_username_password_token):
