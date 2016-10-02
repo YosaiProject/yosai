@@ -629,8 +629,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     * ===================================================================== *
     """
 
-    def authenticate_account(self, authc_token):
-        return self.authenticator.authenticate_account(authc_token)
+    def authenticate_account(self, identifiers, authc_token):
+        """
+        :returns: an account and a boolean indicating whether account is
+                  completely authenticated
+        """
+        return self.authenticator.authenticate_account(identifiers, authc_token)
 
     """
     * ===================================================================== *
@@ -765,8 +769,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         arguments.
 
         It is an overloaded method, due to porting java to python, and is
-        consequently eligible for refactoring.  It gets called in one of two
-        ways:
+        consequently highly likely to be refactored.
+
+        It gets called in one of two ways:
         1) the subject_builder creating an anonymous subject, passing create_subject
            a subject_context argument
 
@@ -836,6 +841,11 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.save(subject)
         return subject
 
+    def update_subject_identity(account, subject):
+        subject.identifiers = account.account_id
+        self.save(subject)
+        return subject
+
     def remember_me_successful_login(self, authc_token, account, subject):
         rmm = self.remember_me_manager
         if (rmm is not None):
@@ -884,12 +894,19 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def login(self, subject, authc_token):
         """
-        First authenticates the AuthenticationToken argument, and if successful,
-        constructs a Subject instance representing the authenticated account's
-        identity.
+        Login authenticates a user using an AuthenticationToken.  If authentication is
+        successful AND the Authenticator has determined that authentication is
+        complete for the account, login constructs a Subject instance representing
+        the authenticated account's identity. Once a subject instance is constructed,
+        it is bound to the application for subsequent access before being returned
+        to the caller.
 
-        Once constructed, the Subject instance is then bound to the application
-        for subsequent access before being returned to the caller.
+        If login successfully authenticates a token but the Authenticator has
+        determined that subject's account isn't considered authenticated,
+        the account is configured for multi-factor authentication.
+
+        Sessionless environments must pass all authentication tokens to login
+        at once.
 
         :param authc_token: the authenticationToken to process for the login attempt
         :type authc_token:  authc_abcs.authenticationToken
@@ -897,9 +914,18 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :returns: a Subject representing the authenticated user
         :raises AuthenticationException:  if there is a problem authenticating
                                           the specified authc_token
+        :raises AdditionalAuthenticationRequired: during multi-factor authentication
+                                                  when additional tokens are required
         """
         try:
-            account = self.authenticate_account(authc_token)
+            account = self.authenticate_account(subject.identifiers, authc_token)
+
+        # implies multi-factor authc not complete:
+        except AdditionalAuthenticationRequired as exc:
+            # identity needs to be accessible for subsequent authentication:
+            self.update_subject_identity(account, subject)
+            raise
+
         except AuthenticationException as authc_ex:
             try:
                 self.on_failed_login(authc_token, authc_ex, subject)
@@ -1073,6 +1099,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                 logger.debug(msg)
 
                 subject_context.identifiers = identifiers
+                subject_context.remembered = True
 
             else:
                 msg = ("No remembered identity found.  Returning original "

@@ -25,14 +25,6 @@ from yosai.core import (
 )
 
 
-class RealmFactory(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def realms(self):
-        pass
-
-
 class Realm(metaclass=ABCMeta):
     """
     A ``Realm`` access application-specific security entities such as accounts,
@@ -85,6 +77,15 @@ class Realm(metaclass=ABCMeta):
 # new to yosai.core:
 class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
 
+    @property
+    @abstractmethod
+    def supported_authc_tokens(self):
+        """
+        :rtype: list
+        :returns: a list of authentication token classes supported by the realm
+        """
+        pass
+        
     @property
     @abstractmethod
     def credentials_verifier(self):

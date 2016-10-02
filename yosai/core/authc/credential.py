@@ -82,7 +82,6 @@ class PasswordVerifier(authc_abcs.CredentialsVerifier):
         if (not self.password_service):
             msg = "Required PasswordService has not been configured."
             raise IllegalStateException(msg)
-        return self.password_service
 
     def get_submitted_password(self, authc_token):
         try:
@@ -128,12 +127,11 @@ class SimpleCredentialsVerifier(authc_abcs.CredentialsVerifier):
         returns bool confirming whether the token_credentials are equal to the
         account_credentials
         """
-        if logger.getEffectiveLevel() == logging.DEBUG:
-            msg = ("Performing credentials equality check for tokenCredentials "
-                   "of type [{0}] and accountCredentials of type [{1}]".
-                   format(token_credentials.__class__.__name__,
-                          account_credentials.__class__.__name__))
-            logger.debug(msg)
+        msg = ("Performing credentials equality check for tokenCredentials "
+               "of type [{0}] and accountCredentials of type [{1}]".
+               format(token_credentials.__class__.__name__,
+                      account_credentials.__class__.__name__))
+        logger.debug(msg)
 
         if (isinstance(token_credentials, str)):
             token_credentials = bytearray(token_credentials, 'utf-8')

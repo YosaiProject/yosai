@@ -235,14 +235,14 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # Authentication
     # --------------------------------------------------------------------------
 
-    # removed the basic accessor/mutator methods (not pythonic)
-    def supports(self, authc_token):
+    @property
+    def supported_authc_tokens(self):
         """
-        :type authc_token:  authc_abcs.AuthenticationToken
+        :rtype: list
+        :returns: a list of authentication token classes supported by the realm
         """
-        # override the following return to False if you do not wish to support
-        # authentication from this realm
-        return isinstance(authc_token, UsernamePasswordToken)
+        # TODO hard-coding temporarily until authentication components can be consulted
+        return [UsernamePasswordToken]
 
     def get_credentials(self, identifier):
         """

@@ -16,11 +16,14 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+from collections import defaultdict
 import logging
 
 from yosai.core import (
+    AdditionalAuthenticationRequired,
     AuthenticationException,
     AuthenticationEventException,
+    InvalidAuthenticationSequenceException,
     InvalidTokenPasswordException,
     UnknownAccountException,
     UnsupportedTokenException,
@@ -37,6 +40,8 @@ logger = logging.getLogger(__name__)
 
 class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
                             authc_abcs.RememberMeAuthenticationToken):
+
+    TIER = 1  # tier levels determine priority during multi-factor authentication
 
     def __init__(self, username, password, remember_me=False,
                  host=None):
@@ -150,7 +155,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                            event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
-    def __init__(self, strategy=FirstRealmSuccessfulStrategy()):
+    def __init__(self, strategy=FirstRealmSuccessfulStrategy(), mfa_challenger=None):
         """ Default in Shiro 2.0 is 'first successful'. This is the desired
         behavior for most Shiro users (80/20 rule).  Before v2.0, was
         'at least one successful', which was often not desired and caused
@@ -159,6 +164,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         self._realms = None
         self._event_bus = None
         self._credential_resolver = None
+        self.token_realm_resolver = self.init_token_resolution()
+        self.mfa_challenger = mfa_challenger
 
     @property
     def event_bus(self):
@@ -189,90 +196,85 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                              if isinstance(realm, realm_abcs.AuthenticatingRealm))
         self.register_cache_clear_listener()
 
-    def authenticate_single_realm_account(self, realm, authc_token):
-        if (not realm.supports(authc_token)):
-            msg = ("Realm [{0}] does not support authentication token [{1}]."
-                   "Please ensure that the appropriate Realm implementation "
-                   "is configured correctly or that the realm accepts "
-                   "AuthenticationTokens of this type.".format(realm,
-                                                               authc_token))
-            raise UnsupportedTokenException(msg)
+    def init_token_resolution(self):
+        token_resolver = defaultdict(list)
+        for realm in self.realms:
+            if isinstance(realm, realm_abcs.AuthenticatingRealm):
+                for token_class in realm.supported_tokens():
+                    token_resolver[token_class].append(realm)
+        return token_resolver
 
-        else:
-            return realm.authenticate_account(authc_token)
+    def authenticate_single_realm_account(self, realm, authc_token):
+        return realm.authenticate_account(authc_token)
 
     def authenticate_multi_realm_account(self, realms, authc_token):
-        """
-        :type realms: Tuple
-        """
         attempt = DefaultAuthenticationAttempt(authc_token, realms)
         return self.authentication_strategy.execute(attempt)
 
-    def authenticate_account(self, authc_token):
+    def authenticate_account(self, identifiers, authc_token):
+        """
+        :returns: an authenticated account
+        """
+        msg = ("Authentication submission received for authentication "
+               "token [" + str(authc_token) + "]")
+        logger.debug(msg)
 
-            msg = ("Authentication submission received for authentication "
-                   "token [" + str(authc_token) + "]")
-            logger.debug(msg)
+        if authc_token.TIER != 1:
+            if not identifiers:
+                msg = "Authentication must be performed in expected sequence."
+                raise InvalidAuthenticationSequenceException(msg)
+            authc_token.identifier = identifiers.primary_identifier
 
+        try:
+            account = self.do_authenticate_account(authc_token)
+            if (account is None):
+                msg2 = ("No account returned by any configured realms for "
+                        "submitted authentication token [{0}]".
+                        format(authc_token))
+
+                raise UnknownAccountException(msg2)
+
+        except AdditionalAuthenticationRequired as exc:
+            self.notify_progress(authc_token)
             try:
-                account = self.do_authenticate_account(authc_token)
-                if (account is None):
-                    msg2 = ("No account returned by any configured realms for "
-                            "submitted authentication token [{0}]".
-                            format(authc_token))
+                self.mfa_challenger.send_challenge(account)
+            except AttributeError:
+                pass
+            raise  # the security_manager saves subject identifiers
 
-                    raise UnknownAccountException(msg2)
+        except AuthenticationException as exc:
+            self.notify_failure(authc_token, exc)
+            raise
 
-            except Exception as ex:
-                ae = None
-                if isinstance(ex, AuthenticationException):
-                    ae = AuthenticationException()
-                if ae is None:
-                    """
-                    Exception thrown was not an expected
-                    AuthenticationException.  Therefore it is probably a
-                    little more severe or unexpected.  So, wrap in an
-                    AuthenticationException, log to warn, and propagate:
-                    """
-                    msg3 = ("Authentication failed for submitted token [" +
-                            str(authc_token) + "].  Possible unexpected "
-                            "error? (Typical or expected login exceptions "
-                            "should extend from AuthenticationException).")
-                    ae = AuthenticationException(msg3, ex)
+        self.notify_success(account)
 
-                try:
-                    self.notify_failure(authc_token, ae)
-                except Exception:
-                    msg4 = ("Unable to send notification for failed "
-                            "authentication attempt - listener error?.  "
-                            "Please check your EventBus implementation.  "
-                            "Logging 'send' exception  and propagating "
-                            "original AuthenticationException instead...")
-                    logger.warn(msg4, exc_info=True)
-                raise ae
-
-            msg5 = ("Authentication successful for submitted authentication "
-                    "token [{0}].  Returned account [{1}]".
-                    format(authc_token, account))
-            logger.debug(msg5)
-
-            self.notify_success(account)
-
-            return account
+        return account
 
     def do_authenticate_account(self, authc_token):
+        """
+        Returns an account object only when the current token authenticates AND
+        the authentication process is complete, raising otherwise
 
-        if (not self.realms):
-            msg = ("One or more realms must be configured to perform "
-                   "authentication.")
-            raise AuthenticationException(msg)
+        :returns:  Account
+        :raises AdditionalAuthenticationRequired: when additional tokens are required,
+                                                  passing the account object
+        """
+        realms = self.token_realm_resolver[authc_token.__class__]
 
         if (len(self.realms) == 1):
-            return self.authenticate_single_realm_account(
-                next(iter(self.realms)), authc_token)
+            account = self.authenticate_single_realm_account(realms[0], authc_token)
 
-        return self.authenticate_multi_realm_account(self.realms, authc_token)
+        else:
+            account = self.authenticate_multi_realm_account(self.realms, authc_token)
 
+        # required_authc_tokens is a list of strings of the token class names
+        # such as ['TOTPToken', 'UsernamePasswordToken']
+        if len(account.required_authc_tokens) > authc_token.tier:
+            # the token authenticated but additional authentication is required
+            self.notify_progress(authc_token)
+            raise AdditionalAuthenticationRequired(account)
+
+        return account
     # --------------------------------------------------------------------------
     # Event Communication
     # --------------------------------------------------------------------------
@@ -300,6 +302,15 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
             self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
             self.event_bus.register(self.clear_cache, 'SESSION.STOP')
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
+
+    def notify_progress(self, authc_token):
+        try:
+            self.event_bus.publish('AUTHENTICATION.PROGRESS',
+                                   identifier=authc_token.identifier,
+                                   token=authc_token.__class__.__name__)
+        except AttributeError:
+            msg = "Could not publish AUTHENTICATION.PROGRESS event"
+            raise AuthenticationEventException(msg)
 
     def notify_success(self, account):
         try:

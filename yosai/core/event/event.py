@@ -158,6 +158,7 @@ class EventLogger(event_abcs.EventBusAware):
         self.event_bus.register(self.log_session_start, 'SESSION.START')
         self.event_bus.register(self.log_session_stop, 'SESSION.STOP')
         self.event_bus.register(self.log_session_expire, 'SESSION.EXPIRE')
+        self.event_bus.register(self.log_authc_progress, 'AUTHENTICATION.PROGRESS')
         self.event_bus.register(self.log_authc_succeeded, 'AUTHENTICATION.SUCCEEDED')
         self.event_bus.register(self.log_authc_failed, 'AUTHENTICATION.FAILED')
         self.event_bus.register(self.log_authz_granted, 'AUTHORIZATION.GRANTED')
@@ -171,6 +172,11 @@ class EventLogger(event_abcs.EventBusAware):
     @event_bus.setter
     def event_bus(self, eventbus):
         self._event_bus = eventbus
+
+    def log_authc_progress(self, identifier=None, token=None):
+        topic = 'AUTHENTICATION.PROGRESS'
+        serialized = identifiers.__getstate__()
+        logger.info(topic, extra={'identifier': identifier, 'token': token})
 
     def log_authc_succeeded(self, identifiers=None):
         topic = 'AUTHENTICATION.SUCCEEDED'

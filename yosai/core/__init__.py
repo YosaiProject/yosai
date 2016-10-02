@@ -31,6 +31,7 @@ from .exceptions import (
     AbstractMethodException,
     AccountException,
     AccountStoreRealmAuthenticationException,
+    AdditionalAuthenticationRequired,
     AuthenticationConfigException,
     AuthenticationSettingsContextException,
     AuthenticationException,
@@ -70,6 +71,7 @@ from .exceptions import (
     IncorrectAttributeException,
     InvalidArgumentException,
     InvalidAuthcAttemptRealmsArgumentException,
+    InvalidAuthenticationSequenceException,
     InvalidSessionException,
     InvalidAuthenticationTokenException,
     InvalidSerializationFormatException,
@@ -232,12 +234,6 @@ from yosai.core.subject.subject import(
     SubjectBuilder,
     global_subject_context,
     global_yosai_context,
-)
-
-
-from yosai.core.authc.authc_account import (
-    DefaultCompositeAccountId,
-    DefaultCompositeAccount,
 )
 
 from yosai.core.authc.strategy import (

@@ -70,6 +70,10 @@ class MissingMethodException(YosaiException):
 # ---- Authentication Exceptions
 # ---------------------------------------------------------------------------
 
+class AdditionalAuthenticationRequired(YosaiException):
+    pass
+
+
 class AuthenticationException(YosaiException):
     pass
 
@@ -131,6 +135,10 @@ class InvalidAuthenticationTokenException(AuthenticationException):
 
 
 class InvalidAuthcAttemptRealmsArgumentException(AuthenticationException):
+    pass
+
+
+class InvalidAuthenticationSequenceException(AuthenticationException):
     pass
 
 

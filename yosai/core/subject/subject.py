@@ -212,6 +212,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
     def __init__(self,
                  identifiers=None,
+                 remembered=False,
                  authenticated=False,
                  host=None,
                  session=None,
@@ -220,6 +221,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         self.security_manager = security_manager
         self.identifiers = identifiers
+        self.remembered = remembered
         self.authenticated = authenticated
         self.host = host
 
@@ -317,7 +319,7 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: a List of tuple(s), containing the authz_abcs.Permission and a
                   Boolean indicating whether the permission is granted
         """
-        if self.has_identifiers:
+        if self.authorized:
             self.check_security_manager()
             return (self.security_manager.is_permitted(
                     self.identifiers, permission_s))
@@ -337,7 +339,7 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: a Boolean
         """
         sm = self.security_manager
-        if self.has_identifiers:
+        if self.authorized:
             return sm.is_permitted_collective(self.identifiers,
                                               permission_s,
                                               logical_operator)
@@ -375,7 +377,7 @@ class DelegatingSubject(subject_abcs.Subject):
         :raises UnauthorizedException: if any permission is unauthorized
         """
         self.assert_authz_check_possible()
-        if self.has_identifiers:
+        if self.authorized:
             self.security_manager.check_permission(self.identifiers,
                                                    permission_s,
                                                    logical_operator)
@@ -391,9 +393,8 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: a frozenset of tuple(s), containing the roleid and a Boolean
                   indicating whether the user is a member of the Role
         """
-        if self.has_identifiers:
-            return self.security_manager.has_role(self.identifiers,
-                                                  roleid_s)
+        if self.authorized:
+            return self.security_manager.has_role(self.identifiers, roleid_s)
         msg = 'Cannot check roles when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
@@ -409,11 +410,10 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :returns: a Boolean
         """
-        if self.has_identifiers:
-            return (self.has_identifiers and
-                    self.security_manager.has_role_collective(self.identifiers,
+        if self.authorized:
+            return self.security_manager.has_role_collective(self.identifiers,
                                                               roleid_s,
-                                                              logical_operator))
+                                                              logical_operator)
         else:
             msg = 'Cannot check roles when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
@@ -429,7 +429,7 @@ class DelegatingSubject(subject_abcs.Subject):
 
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
-        if self.has_identifiers:
+        if self.authorized:
             self.security_manager.check_role(self.identifiers,
                                              role_ids,
                                              logical_operator)
@@ -495,8 +495,8 @@ class DelegatingSubject(subject_abcs.Subject):
         self._authenticated = authc
 
     @property
-    def is_remembered(self):
-        return (bool(self.identifiers) and (not self.authenticated))
+    def authorized(self):
+        return self.remembered or self.authenticated
 
     @property
     def session(self):
@@ -1024,10 +1024,12 @@ class DefaultSubjectFactory(subject_abcs.SubjectFactory):
         # passing the session arg is new to yosai, eliminating redunant
         # get_session calls:
         identifiers = subject_context.resolve_identifiers(session)
+        remembered = getattr(subject_context, 'remembered', False)
         authenticated = subject_context.resolve_authenticated(session)
         host = subject_context.resolve_host(session)
 
         return DelegatingSubject(identifiers=identifiers,
+                                 remembered=remembered,
                                  authenticated=authenticated,
                                  host=host,
                                  session=session,
