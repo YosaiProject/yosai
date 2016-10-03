@@ -249,7 +249,6 @@ from yosai.core.authc.context import (
 
 from yosai.core.authc.authc import (
     Credential,
-    CredentialResolver,
     DefaultAuthenticator,
     UsernamePasswordToken,
 )
@@ -263,13 +262,10 @@ from yosai.core.authc.credential import (
 
 from yosai.core.authz.authz import (
     AllPermission,
-    AuthzInfoResolver,
     DefaultPermission,
-    PermissionResolver,
     ModularRealmAuthorizer,
     IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
-    RoleResolver,
     SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,

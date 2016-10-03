@@ -1,5 +1,5 @@
 
-class AuthenticationSettings():
+class AuthenticationSettings:
     """
     AuthenticationSettings is a settings proxy.  It is new for Yosai.
     It obtains the authc configuration from Yosai's global settings.
@@ -9,6 +9,8 @@ class AuthenticationSettings():
         self.default_algorithm = self.authc_config.get('default_algorithm',
                                                        'bcrypt_sha256')
         self.algorithms = self.authc_config.get('hash_algorithms', None)
+        self.account_lock_threshold = self.authc_config.get('account_lock_threshold',
+                                                            None)
 
     def get_config(self, algo):
         """

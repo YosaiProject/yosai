@@ -42,11 +42,7 @@ logger = logging.getLogger(__name__)
 
 class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
-                        authz_abcs.AuthzInfoResolverAware,
-                        cache_abcs.CacheHandlerAware,
-                        authc_abcs.CredentialResolverAware,
-                        authz_abcs.PermissionResolverAware,
-                        authz_abcs.RoleResolverAware):
+                        realm_abcs.LockingRealm):
     """
     A Realm interprets information from a datastore.
 
@@ -60,8 +56,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def __init__(self,
                  settings,
                  name='AccountStoreRealm_' + str(uuid4()),
-                 account_store=None,
-                 ):
+                 account_store=None):
         """
         :type name:  str
         """
@@ -69,17 +64,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._account_store = account_store
         self._cache_handler = None
 
-        # resolvers are setter-injected after init
-        self._permission_resolver = None
-        self._role_resolver = None
-        self._credential_resolver = None
-        self._authz_info_resolver = None
-
         # yosai.core.renamed credentials_matcher:
-        self._credentials_verifier = PasswordVerifier(settings)  # 80/20 rule: passwords
+        self._credentials_verifiers = (PasswordVerifier(settings))  # 80/20 rule: passwords
 
         self._permission_verifier = IndexedPermissionVerifier()
         self._role_verifier = SimpleRoleVerifier()
+        self.token_resolver = self.init_token_resolution()
 
     @property
     def account_store(self):
@@ -93,15 +83,15 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._account_store = accountstore
 
     @property
-    def credentials_verifier(self):
-        return self._credentials_verifier
+    def credentials_verifiers(self):
+        return self._credentials_verifiers
 
-    @credentials_verifier.setter
-    def credentials_verifier(self, credentialsmatcher):
+    @credentials_verifiers.setter
+    def credentials_verifiers(self, verifier_s):
         """
-        :type credentialsmatcher: authc_abcs.CredentialsVerifier
+        :type credentialsmatcher: tuple of authc_abcs.CredentialsVerifier objects
         """
-        self._credentials_verifier = credentialsmatcher
+        self._credentials_verifiers = verifier_s
 
     @property
     def cache_handler(self):
@@ -113,57 +103,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :type cachehandler: cache_abcs.CacheHandler
         """
         self._cache_handler = cachehandler
-
-    @property
-    def authz_info_resolver(self):
-        return self._authz_info_resolver
-
-    @authz_info_resolver.setter
-    def authz_info_resolver(self, authz_info_resolver):
-        """
-        :type authz_info_resolver:  authz_abcs.AuthzInfoResolver
-        """
-        self._authz_info_resolver = authz_info_resolver
-        self.account_store.authz_info_resolver = authz_info_resolver
-
-    @property
-    def credential_resolver(self):
-        return self._credential_resolver
-
-    @credential_resolver.setter
-    def credential_resolver(self, credentialresolver):
-        """
-        :type credentialsresolver:  authz_abcs.CredentialsResolver
-        """
-        self._credential_resolver = credentialresolver
-        self.account_store.credential_resolver = credentialresolver
-
-    @property
-    def permission_resolver(self):
-         self._permission_resolver
-
-    @permission_resolver.setter
-    def permission_resolver(self, permissionresolver):
-        """
-        :type permissionresolver:  authz_abcs.PermissionResolver
-        """
-        # passes through realm and onto the verifier that actually uses it
-        self._permission_resolver = permissionresolver
-        self.permission_verifier.permission_resolver = permissionresolver
-        self.account_store.permission_resolver = permissionresolver
-
-    @property
-    def role_resolver(self):
-        return self._role_resolver
-
-    @role_resolver.setter
-    def role_resolver(self, roleresolver):
-        """
-        :type roleresolver:  authz_abcs.RoleResolver
-        """
-        # passes through realm and onto the verifier that actually uses it
-        self._role_resolver = roleresolver
-        self.account_store.role_resolver = roleresolver
 
     @property
     def permission_verifier(self):
@@ -187,6 +126,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         self._role_verifier = verifier
 
+    def init_token_resolution(self):
+        token_resolver = {}
+        for verifier in self.verifiers:
+            token_resolver[verifier.supported_token].append(realm)
+        return token_resolver
+
     def do_clear_cache(self, identifier):
         """
         :param identifier: the identifier of a specific source, extracted from
@@ -195,10 +140,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         msg = "Clearing cache for: " + str(identifier)
         logger.debug(msg)
 
-        self.clear_cached_credentials(identifier)
+        self.clear_cached_authc_info(identifier)
         self.clear_cached_authorization_info(identifier)
 
-    def clear_cached_credentials(self, identifier):
+    def clear_cached_authc_info(self, identifier):
         """
         When cached credentials are no longer needed, they can be manually
         cleared with this method.  However, account credentials may be
@@ -208,10 +153,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :param identifier: the identifier of a specific source, extracted from
                            the SimpleIdentifierCollection (identifiers)
         """
-        msg = "Clearing cached credentials for [{0}]".format(identifier)
+        msg = "Clearing cached authc_info for [{0}]".format(identifier)
         logger.debug(msg)
 
-        self.cache_handler.delete('credentials', identifier)
+        self.cache_handler.delete('authentication' + self.name, identifier)
 
     def clear_cached_authorization_info(self, identifier):
         """
@@ -231,6 +176,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         self.cache_handler.delete('authz_info', identifier)
 
+    def lock_account(self, account):
+        """
+        :type account: Account
+        """
+        self.account_store.lock_account(account)
+
     # --------------------------------------------------------------------------
     # Authentication
     # --------------------------------------------------------------------------
@@ -241,10 +192,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :rtype: list
         :returns: a list of authentication token classes supported by the realm
         """
-        # TODO hard-coding temporarily until authentication components can be consulted
-        return [UsernamePasswordToken]
+        return self.token_resolver.keys()
 
-    def get_credentials(self, identifier):
+    def get_authc_info(self, identifier):
         """
         The default authentication caching policy is to cache an account's
         credentials that are queried from an account store, for a specific
@@ -261,34 +211,34 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = None
         ch = self.cache_handler
 
-        def get_stored_credentials(self):
+        def query_authc_info(self):
             msg = ("Could not obtain cached credentials for [{0}].  "
                    "Will try to acquire credentials from account store."
                    .format(identifier))
             logger.debug(msg)
 
-            account = self.account_store.get_credentials(identifier)
+            account = self.account_store.query_authc_info(identifier)
             if account is None:
                 msg = "Could not get stored credentials for {0}".format(identifier)
                 raise CredentialsNotFoundException(msg)
-            return account.credentials
+            return {'authc_info': account.authc_info,
+                    'failed_authc_attempts': []}
 
         try:
             msg2 = ("Attempting to get cached credentials for [{0}]"
                     .format(identifier))
             logger.debug(msg2)
 
-            credentials = ch.get_or_create(domain='credentials',
-                                           identifier=identifier,
-                                           creator_func=get_stored_credentials,
-                                           creator=self)
-            account = Account(account_id=identifier,
-                              credentials=credentials)
+            authc_info = ch.get_or_create(domain='authentication:' + self.name,
+                                          identifier=identifier,
+                                          creator_func=query_authc_info,
+                                          creator=self)
+
+            account = Account(account_id=identifier, authc_info=authc_info)
         except AttributeError:
             # this means the cache_handler isn't configured
-            credentials = get_stored_credentials(self)
-            account = Account(account_id=identifier,
-                              credentials=credentials)
+            authc_info = query_authc_info(self)
+            account = Account(account_id=identifier, authc_info=authc_info)
         except CredentialsNotFoundException:
             msg3 = ("No account credentials found for identifiers [{0}].  "
                     "Returning None.".format(identifier))
@@ -309,7 +259,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = 'Failed to obtain authc_token.identifiers'
             raise InvalidArgumentException(msg)
 
-        account = self.get_credentials(identifier)
+        account = self.get_authc_info(identifier)
 
         if not account:
             msg = "Could not obtain account credentials for: " + str(identifier)
@@ -341,8 +291,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :raises IncorrectCredentialsException:  when authentication fails
         """
-        cm = self.credentials_verifier
-        if (not cm.credentials_match(authc_token, account)):
+        verifier = self.token_resolver[authc_token.__class__]
+
+        if (not verifier.credentials_match(authc_token, account)):
             # not successful - raise an exception as signal:
             msg = ("Submitted credentials for token [" + str(authc_token) +
                    "] did not match the stored credentials.")
@@ -384,7 +335,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                     .format(identifier))
             logger.debug(msg2)
 
-            authz_info = ch.get_or_create(domain='authz_info',
+            authz_info = ch.get_or_create(domain='authorization:' + self.name,
                                           identifier=identifier,
                                           creator_func=get_stored_authz_info,
                                           creator=self)

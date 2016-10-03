@@ -24,9 +24,7 @@ from abc import abstractmethod
 
 from yosai.core import(
     AuthenticationException,
-    AuthzInfoResolver,
     Credential,
-    CredentialResolver,
     DefaultAuthenticator,
     DefaultEventBus,
     EventLogger,
@@ -43,9 +41,7 @@ from yosai.core import(
     InvalidSessionException,
     MisconfiguredException,
     ModularRealmAuthorizer,
-    PermissionResolver,
     RememberMeSettings,
-    RoleResolver,
     SaveSubjectException,
     SimpleSession,
     SerializationManager,
@@ -395,21 +391,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  session_manager=None,
                  remember_me_manager=None,
                  subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
-                 subject_factory=DefaultSubjectFactory(),  # unlike shiro, yosai defaults
-                 authz_info_resolver=AuthzInfoResolver(IndexedAuthorizationInfo),
-                 credential_resolver=CredentialResolver(Credential),
-                 permission_resolver=PermissionResolver(DefaultPermission),
-                 role_resolver=RoleResolver(SimpleRole)):
+                 subject_factory=DefaultSubjectFactory()  # unlike shiro, yosai defaults
         """
         :type realms: tuple
         """
         self._event_bus = DefaultEventBus()
         self.yosai = yosai
         self._cache_handler = cache_handler
-        self.authz_info_resolver = authz_info_resolver
-        self.credential_resolver = credential_resolver
-        self.permission_resolver = permission_resolver
-        self.role_resolver = role_resolver
         self.subject_store = subject_store
 
         if session_manager:
@@ -443,7 +431,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if authenticator:
             self._authenticator = authenticator
             self.apply_event_bus(self._authenticator)
-            self._authenticator.realms = self.realms
+            self._authenticator.init_realms(self.realms)
 
         else:
             msg = "authenticator argument must have a value"
@@ -458,7 +446,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         if authorizer:
             self._authorizer = authorizer
             self.apply_event_bus(self._authorizer)
-            self._authorizer.realms = self.realms
+            self._authorizer.init_realms(self.realms)
         else:
             msg = "authorizer argument must have a value"
             raise InvalidArgumentException(msg)
@@ -473,8 +461,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self._cache_handler = cachehandler
 
             self.apply_cache_handler(self.realms)
-            self.authenticator.realms = self.realms
-            self.authorizer.realms = self.realms
+            self.authenticator.init_realms(self.realms)
+            self.authorizer.init_realms(self.realms)
 
             self.apply_cache_handler(self.session_manager)
 
@@ -525,19 +513,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self._realms = realm_s
             self.apply_cache_handler(self._realms)
 
-            # new to yosai.core (shiro v2 alpha is missing it):
-            self.apply_credential_resolver(self._realms)
-            self.apply_authz_info_resolver(self._realms)
-            self.apply_permission_resolver(self._realms)
-            self.apply_role_resolver(self._realms)
-
             try:
-                self.authenticator.realms = self._realms
+                self.authenticator.init_realms(self._realms)
             except AttributeError:
                 msg = "no authenticator attribute set yet"
                 # log debug here
             try:
-                self.authorizer.realms = self._realms
+                self.authorizer.init_realms(self._realms)
             except AttributeError:
                 msg = "no authorizer attribute set yet"
                 # log debug here
@@ -588,38 +570,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         def validate_apply(target):
             if isinstance(target, event_abcs.EventBusAware):
                 target.event_bus = self.event_bus
-
-        self.apply_target_s(validate_apply, target_s)
-
-    def apply_authz_info_resolver(self, target_s):
-
-        def validate_apply(target):
-            if isinstance(target, authz_abcs.AuthzInfoResolverAware):
-                target.authz_info_resolver = self.authz_info_resolver
-
-        self.apply_target_s(validate_apply, target_s)
-
-    def apply_credential_resolver(self, target_s):
-
-        def validate_apply(target):
-            if isinstance(target, authc_abcs.CredentialResolverAware):
-                target.credential_resolver = self.credential_resolver
-
-        self.apply_target_s(validate_apply, target_s)
-
-    def apply_permission_resolver(self, target_s):
-
-        def validate_apply(target):
-            if isinstance(target, authz_abcs.PermissionResolverAware):
-                target.permission_resolver = self.permission_resolver
-
-        self.apply_target_s(validate_apply, target_s)
-
-    def apply_role_resolver(self, target_s):
-
-        def validate_apply(target):
-            if isinstance(target, authz_abcs.RoleResolverAware):
-                target.role_resolver = self.role_resolver
 
         self.apply_target_s(validate_apply, target_s)
 

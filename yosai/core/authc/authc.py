@@ -23,8 +23,10 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationException,
     AuthenticationEventException,
+    AuthenticationSettings,
     InvalidAuthenticationSequenceException,
     InvalidTokenPasswordException,
+    LockedAccountException,
     UnknownAccountException,
     UnsupportedTokenException,
     event_abcs,
@@ -151,21 +153,27 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
 # Yosai deprecates SuccessfulAuthenticationEvent
 
 
-class DefaultAuthenticator(authc_abcs.Authenticator,
-                           event_abcs.EventBusAware):
+class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
-    def __init__(self, strategy=FirstRealmSuccessfulStrategy(), mfa_challenger=None):
+    def __init__(self,
+                 settings,
+                 strategy=FirstRealmSuccessfulStrategy(),
+                 mfa_challenger=None):
         """ Default in Shiro 2.0 is 'first successful'. This is the desired
         behavior for most Shiro users (80/20 rule).  Before v2.0, was
         'at least one successful', which was often not desired and caused
-        unnecessary I/O.  """
+        unnecessary I/O.
+        """
+        self.authc_settings = AuthenticationSettings(settings)
         self.authentication_strategy = strategy
-        self._realms = None
-        self._event_bus = None
-        self._credential_resolver = None
         self.token_realm_resolver = self.init_token_resolution()
         self.mfa_challenger = mfa_challenger
+
+        self.realms = None
+        self.locking_realm = None
+        self.locking_limit = None
+        self._event_bus = None
 
     @property
     def event_bus(self):
@@ -175,26 +183,20 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
     def event_bus(self, eventbus):
         self._event_bus = eventbus
 
-    @property
-    def cache_invalidator(self):
-        return self._cache_invalidator
-
-    @cache_invalidator.setter
-    def cache_invalidator(self, cacheinvalidator):
-        self._cache_invalidator = cacheinvalidator
-
-    @property
-    def realms(self):
-        return self._realms
-
-    @realms.setter
-    def realms(self, realms):
+    def init_realms(self, realms):
         """
         :type realms: Tuple
         """
-        self._realms = tuple(realm for realm in realms
+        self.realms = tuple(realm for realm in realms
                              if isinstance(realm, realm_abcs.AuthenticatingRealm))
         self.register_cache_clear_listener()
+        self.init_locking()
+
+    def init_locking(self):
+        locking_limit = self.authc_settings.account_lock_threshold
+        if locking_limit:
+            self.locking_realm = self.locate_locking_realm()  # for account locking
+            self.locking_limit = locking_limit
 
     def init_token_resolution(self):
         token_resolver = defaultdict(list)
@@ -203,6 +205,16 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                 for token_class in realm.supported_tokens():
                     token_resolver[token_class].append(realm)
         return token_resolver
+
+    def locate_locking_realm(self):
+        """
+        the first realm that is identified as a LockingRealm will be used to
+        lock all accounts
+        """
+        for realm in self.realms:
+            if isinstance(realm, realm_abcs.LockingRealm):
+                return realm
+        return None
 
     def authenticate_single_realm_account(self, realm, authc_token):
         return realm.authenticate_account(authc_token)
@@ -242,9 +254,10 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
                 pass
             raise  # the security_manager saves subject identifiers
 
-        except AuthenticationException as exc:
-            self.notify_failure(authc_token, exc)
-            raise
+        except AuthenticationException as account:
+            self.notify_failure(authc_token, account)
+            self.validate_locked(account)
+            raise  # this won't be called if the Account is locked
 
         self.notify_success(account)
 
@@ -288,9 +301,9 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         try:
             for realm in self.realms:
                 identifiers = items.identifiers
-                realm_identifier = identifiers.from_source(realm.name)
-                if realm_identifier:
-                    realm.clear_cached_credentials(realm_identifier)
+                identifier = identifiers.from_source(realm.name)
+                if identifier:
+                    realm.clear_cached_credentials(identifier)
         except AttributeError:
             msg = ('Could not clear authc_info from cache after event. '
                    'items: ' + str(items))
@@ -302,6 +315,14 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
             self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
             self.event_bus.register(self.clear_cache, 'SESSION.STOP')
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
+
+    def notify_locked(self, identifier):
+        try:
+            self.event_bus.publish('AUTHENTICATION.ACCOUNT_LOCKED',
+                                   identifier=identifier)
+        except AttributeError:
+            msg = "Could not publish AUTHENTICATION.ACCOUNT_LOCKED event"
+            raise AuthenticationEventException(msg)
 
     def notify_progress(self, authc_token):
         try:
@@ -327,6 +348,16 @@ class DefaultAuthenticator(authc_abcs.Authenticator,
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.FAILED event"
             raise AuthenticationEventException(msg)
+
+    def validate_locked(self, account, realm):
+        failed_attempts = account.failed_authc_attempts[authc_token.__name__])
+        if self.locking_limit:
+            if len(failed_attempts) > self.locking_limit:
+                self.locking_realm.lock_account(account)
+                msg = ('Authentication attempts breached threshold.  Account'
+                       'is now locked: ', str(account))
+                self.notify_locked(account.account_id)
+                raise LockedAccountException(msg)
 
     # --------------------------------------------------------------------------
 
@@ -354,25 +385,3 @@ class Credential(serialize_abcs.Serializable):
 
     def __setstate__(self, state):
         self.credential = state['credential']
-
-
-class CredentialResolver(authc_abcs.CredentialResolver):
-
-    # using dependency injection to define which Role class to use
-    def __init__(self, credential_class):
-        self.credential_class = credential_class
-
-    def resolve(self, credential):
-        """
-        :type credential: String
-        """
-        return self.credential_class(credential)
-
-    def __call__(self, credential):
-        """
-        :type credential: String
-        """
-        return self.credential_class(credential)
-
-    def __repr__(self):
-        return "CredentialResolver({0})".format(self.credential_class)

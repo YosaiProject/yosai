@@ -222,24 +222,3 @@ class AuthenticationStrategy(metaclass=ABCMeta):
     @abstractmethod
     def execute(self, attempt):
         pass
-
-
-class CredentialResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def resolve(self, credential):
-        pass
-
-
-# new to yosai.core.
-class CredentialResolverAware(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def credential_resolver(self):
-        pass
-
-    @credential_resolver.setter
-    @abstractmethod
-    def credential_resolver(self, credentialresolver):
-        pass

@@ -24,7 +24,6 @@ from yosai.core import (
     InvalidAuthcAttemptRealmsArgumentException,
     MultiRealmAuthenticationException,
     authc_abcs,
-    DefaultCompositeAccount,
 )
 
 
@@ -67,9 +66,6 @@ class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
 
     def execute(self, authc_attempt):
         token = authc_attempt.authentication_token
-        first_account_realm_name = None
-        first_account = None
-        composite_account = None
 
         # realm is an AccountStoreRealm:
         try:
@@ -91,36 +87,21 @@ class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
                     # an IncorrectCredentialsException halts the loop:
                     account = realm.authenticate_account(token)
 
-                    if (account):
-                        if (not first_account):
-                            first_account = account
-                            first_account_realm_name = realm.name
-                        else:
-                            if (not composite_account):
-                                composite_account = DefaultCompositeAccount()
-                                composite_account.append_realm_account(
-                                    first_account_realm_name, first_account)
-
-                            composite_account.append_realm_account(
-                                realm.name, account)
-        except (TypeError):
+        except TypeError:
             raise AuthenticationStrategyMissingRealmException
-        if (composite_account):
-            return composite_account
 
-        return first_account
+        return account
 
 
 class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
 
     def execute(self, authc_attempt):
         """
-        :rtype:  Account or DefaultCompositeAccount
+        :rtype:  Account
         """
         authc_token = authc_attempt.authentication_token
         realm_errors = {}
-        first_account = None
-        composite_account = None
+
         try:
             for realm in authc_attempt.realms:
                 if (realm.supports(authc_token)):
@@ -133,31 +114,13 @@ class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
                     except IncorrectCredentialsException as ex:
                         realm_errors[realm_name] = ex
 
-                    if (account is not None):
-                        if (not first_account):
-                            first_account = account
-                            first_account_realm_name = realm.name
-                        else:
-                            if (not composite_account):
-                                composite_account = DefaultCompositeAccount()
-                                composite_account.append_realm_account(
-                                    first_account_realm_name, first_account)
-
-                            composite_account.append_realm_account(
-                                realm_name, account)
         except (TypeError):
             raise AuthenticationStrategyMissingRealmException
-
-        if (composite_account is not None):
-            return composite_account
-
-        if (first_account is not None):
-            return first_account
 
         if (realm_errors):  # if no successful authentications
             raise MultiRealmAuthenticationException(realm_errors)
 
-        return None  # implies account was not found for tokent
+        return account
 
 
 class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):

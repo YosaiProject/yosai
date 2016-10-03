@@ -82,27 +82,30 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
     def supported_authc_tokens(self):
         """
         :rtype: list
-        :returns: a list of authentication token classes supported by the realm
+        :returns: a list of authentication token classes verifiable by the realm
         """
         pass
-        
+
     @property
     @abstractmethod
-    def credentials_verifier(self):
+    def credentials_verifiers(self):
         pass
 
-    @credentials_verifier.setter
+    @credentials_verifiers.setter
     @abstractmethod
-    def credentials_verifier(self, credentialsmatcher):
+    def credentials_verifiers(self, verifier_s):
         pass
 
     @abstractmethod
-    def supports(self, authc_token):
-        pass
+    def supported_authc_tokens(self):
+        """
+        :rtype: list
+        :returns: a list of authentication token classes supported by the realm
+        """
 
     # new to yosai.core. considered a counterpart of get_authorization_info
     @abstractmethod
-    def get_credentials(self, authc_token):
+    def get_authc_info(self, authc_token):
         pass
 
     @abstractmethod
@@ -114,7 +117,7 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
         pass
 
     @abstractmethod
-    def clear_cached_credentials(self, identifiers):
+    def clear_cached_authc_info(self, identifiers):
         pass
 
 
@@ -166,17 +169,9 @@ class AuthorizingRealm(Realm):
     def clear_cached_authorization_info(self, identifiers):
         pass
 
-    # By default, Yosai does not support resolution of Role to Permission:
-    # @property
-    # @abstractmethod
-    # def role_permission_resolver(self):
-    #    pass
-    #
-    # @permission_resolver.setter
-    # @abstractmethod
-    # def role_permission_resolver(self, permissionresolver):
-    #    pass
-    #
-    # @abstractmethod
-    # def resolve_role_permission(self, role_names):
-    #    pass
+
+class LockingRealm(Realm):
+
+    @abstractmethod
+    def lock_account(self, account):
+        pass

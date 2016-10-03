@@ -60,8 +60,7 @@ class Authorizer(metaclass=ABCMeta):
     the caller to use a String representation of a Permission if one is so
     desired.  Most implementations of this interface will simply convert these
     String values to Permission instances and then just call the corresponding
-    method.  (Yosai's default implementations do String-to-Permission conversion
-    for these methods using PermissionResolver(s)
+    method.
     """
 
     @abstractmethod
@@ -283,111 +282,6 @@ class Permission(metaclass=ABCMeta):
         :returns: bool
         """
         pass
-
-
-# new to yosai.core.
-class AuthzInfoResolverAware(metaclass=ABCMeta):
-    @property
-    @abstractmethod
-    def authz_info_resolver(self):
-        pass
-
-    @authz_info_resolver.setter
-    @abstractmethod
-    def authz_info_resolver(self, authz_info_resolver):
-        pass
-
-
-# new to yosai.core.
-class RoleResolverAware(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def role_resolver(self):
-        pass
-
-    @role_resolver.setter
-    @abstractmethod
-    def role_resolver(self, roleresolver):
-        pass
-
-
-class PermissionResolverAware(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def permission_resolver(self):
-        pass
-
-    @permission_resolver.setter
-    @abstractmethod
-    def permission_resolver(self, permission_resolver):
-        pass
-
-
-class AuthzInfoResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def resolve(self, permission_s, role_s):
-        pass
-
-
-class PermissionResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def resolve(self, permission_s):
-        pass
-
-
-class RoleResolver(metaclass=ABCMeta):
-
-    @abstractmethod
-    def resolve(self, role_s):
-        pass
-
-
-#class RolePermissionResolver(metaclass=ABCMeta):
-#    """
-#
-#    The RolePermissionResolver resolves roles into permissions.
-#
-#    A RolePermissionResolver resolves a Role, represented as a String value,
-#    into a Collection of Permission instances.  A mapping of Role->Permission
-#    associations is required to facilitate the role->permission resolution.
-#    These Role->Permission associations are obtained from a data store, such a
-#    local database, and may be cached.
-#
-#    The notion of converting role names to permissions is very application
-#    specific.  Therefore, Yosai does NOT include a default implementation of it.
-#
-#    Evaluating Role Membership:
-#        Let Role R1 consists of elements Permission p1, Permission p2, and Permission p3:
-#         r1 = {p1, p2, p3}
-#
-#        Suppose that a user's permissions were obtained from an AccountStore.  If
-#        and only if the collections of permissions obtained from the Store were
-#        to include p1, p2, and p3 then a user would satisfy the criteria for
-#        Role membership of R1.  Only one missing Permission is sufficient to
-#        fail the test for membership (if, for instance the user was assigned
-#        p1 and p2 but not p3).
-#
-#    """
-#    @abstractmethod
-#    def resolve_permissions_in_role(self, role_string):
-#        pass
-
-
-#class RolePermissionResolverAware(metaclass=ABCMeta):
-#
-#    @property
-#    @abstractmethod
-#    def role_permission_resolver(self):
-#        pass
-#
-#    @role_permission_resolver.setter
-#    @abstractmethod
-#    def role_permission_resolver(self, role_permission_resolver):
-#        pass
 
 
 class PermissionVerifier(metaclass=ABCMeta):

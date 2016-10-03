@@ -255,105 +255,6 @@ class WildcardPermission(serialize_abcs.Serializable):
         self.parts = parts
         self.case_sensitive = state['case_sensitive']
 
-
-class AuthzInfoResolver(authz_abcs.AuthzInfoResolver):
-
-    def __init__(self, authz_info_class):
-        """
-        :param authz_info_class: the class injected for AuthorizationInfo conversion
-        :type authz_info_class:  type
-        """
-        self.authz_info_class = authz_info_class
-
-    def resolve(self, roles, permissions):
-        pass  # is never called
-
-    def __call__(self, roles, permissions):
-        """
-        :type roles: Set of authz_abcs.Role
-        :type permissions: Set of authz_abcs.Permission
-        """
-        return self.authz_info_class(roles=roles, permissions=permissions)
-
-    def __repr__(self):
-        return "AuthzInfoResolver({0})".format(self.authz_info_class)
-
-
-class PermissionResolver(authz_abcs.PermissionResolver):
-
-    # using dependency injection to define which Permission class to use
-    def __init__(self, permission_class):
-        """
-        :param permission_class: expecting either a WildcardPermission or
-                                 DefaultPermission class
-        :type permission_class: type
-        """
-        self.permission_class = permission_class
-
-    def resolve(self, permission_s):
-        """
-        :param permission_s: a collection of 1..N permissions expressed in
-                             String or Permission form
-        :type permission_s: List of authz_abcs.Permission
-
-        :returns: a Set of authz_abcs.Permission instances
-        """
-        # the type of the first element in permission_s implies the type of the
-        # rest of the elements -- no commingling!
-        if isinstance(next(iter(permission_s)), str):
-            perms = {self.permission_class(perm) for perm in permission_s}
-            return perms
-        else:  # assumption is that it's already a collection of Permissions
-            return permission_s
-
-    def __call__(self, permission):
-        """
-        :type permission: String
-        :returns: authz_abcs.Permission instance
-        """
-        return self.permission_class(permission)
-
-    def __repr__(self):
-        return "PermissionResolver({0})".format(self.permission_class)
-
-
-class RoleResolver(authz_abcs.RoleResolver):
-
-    # using dependency injection to define which Role class to use
-    def __init__(self, role_class):
-        """
-        :param role_class:  a SimpleRole or other Role class
-        :type role_class:  type
-        """
-        self.role_class = role_class
-
-    def resolve(self, role_s):
-        """
-        :param role_s: a collection of 1..N roles expressed in
-                       String or authz_abcs.Role form
-        :type role_s: List
-
-        :returns: a set of Role object(s)
-        """
-        # the type of the first element in roles_s implies the type of the
-        # rest of the elements -- no commingling!
-        if isinstance(next(iter(role_s)), str):
-            roles = {self.role_class(role) for role in role_s}
-            return roles
-        else:  # assumption is that it's already a collection of Roles
-            return role_s
-
-    def __call__(self, role):
-        """
-        :type role: String
-        :returns: authz_abcs.Role
-        """
-        return self.role_class(role)
-
-    def __repr__(self):
-        return "RoleResolver({0})".format(self.role_class)
-
-
 class DefaultPermission(WildcardPermission):
     """
     This class is known in Shiro as DomainPermission.  It has been renamed
@@ -513,9 +414,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         """
         :type realms: tuple
         """
-        self._realms = None
+        self.realms = None
         self._event_bus = None
-        # yosai omits resolver setting, leaving it to securitymanager instead
         # by default, yosai.core.does not support role -> permission resolution
 
     @property
@@ -526,18 +426,13 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
     def event_bus(self, eventbus):
         self._event_bus = eventbus
 
-    @property
-    def realms(self):
-        return self._realms
-
-    @realms.setter
-    def realms(self, realms):
+    def init_realms(self, realms):
         """
         :type realms: tuple
         """
         # this eliminates the need for an authorizing_realms attribute:
-        self._realms = tuple(realm for realm in realms
-                             if isinstance(realm, realm_abcs.AuthorizingRealm))
+        self.realms = tuple(realm for realm in realms
+                            if isinstance(realm, realm_abcs.AuthorizingRealm))
         self.register_cache_clear_listener()
 
     def assert_realms_configured(self):
@@ -858,25 +753,11 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
                 format(self.realms))
 
 
-class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
-                                authz_abcs.PermissionResolverAware):
-
-    def __init__(self):
-        self._permission_resolver = None  # setter-injected after init
-
-    @property
-    def permission_resolver(self):
-        return self._permission_resolver
-
-    @permission_resolver.setter
-    def permission_resolver(self, permissionresolver):
-        self._permission_resolver = permissionresolver
+class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
 
     def get_authzd_permissions(self, authz_info, permission):
         """
         :type authz_info:  IndexedAuthorizationInfo
-
-        :param permission: a Permission that has already been resolved (if needed)
         :type permission: a Permission object
 
         Queries an indexed collection of permissions in authz_info for
@@ -905,7 +786,10 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier,
         :yields: (Permission, Boolean)
         """
 
-        requested_perms = self.permission_resolver.resolve(permission_s)
+        if isinstance(next(iter(permission_s)), str):
+            requested_perms = {DefaultPermission(perm) for perm in permission_s}
+        else:  # assumption is that it's already a collection of Permissions
+            requested_perms = permission_s
 
         for reqstd_perm in requested_perms:
             is_permitted = False
@@ -923,8 +807,6 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
     def has_role(self, authz_info, roleid_s):
         """
         Confirms whether a subject is a member of one or more roles.
-
-        before yielding, roleid's are resolved into SimpleRole for log serializing
 
         :type authz_info:  authz_abacs.AuthorizationInfo
 
@@ -1056,35 +938,6 @@ class SimpleRole(serialize_abcs.Serializable):
         # note:  yosai.core.doesn't support role->permission resolution by default
         #        and so permissions and the permission methods won't be used
         # self.permissions = permissions
-
-    # def add(self, permission):
-    #    """
-    #    :type permission: a Permission object
-    #    """
-    #    permissions = self.permissions
-    #    if (permissions is None):
-    #        self.permissions = set()
-    #    self.permissions.add(permission)
-
-    # def add_all(self, permissions):
-    #    """
-    #    :type permissions: an set of Permission objects
-    #    """
-    #    if (self.permissions is None):
-    #        self.permissions = set()
-
-    #   for item in permissions:
-    #        self.permissions.add(item)  # adds in order received
-
-    # def is_permitted(self, permission):
-    #    """
-    #    :type permission: Permission object
-    #    """
-    #    if (self.permissions):
-    #        for perm in self.permissions:
-    #            if (perm.implies(permission)):
-    #                return True
-    #    return False
 
     def __hash__(self):
         return hash(self.identifier)

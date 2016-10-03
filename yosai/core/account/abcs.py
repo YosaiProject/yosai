@@ -112,7 +112,6 @@ class Account(metaclass=ABCMeta):
 
 
 class AccountStore(metaclass=ABCMeta):
-    pass
 
 #    @abstractmethod
 #    def get_account(self, request):
@@ -129,11 +128,17 @@ class AccountStore(metaclass=ABCMeta):
 #        """
 #        pass
 
+class LockingAccountStore(AccountStore):
+
+    @abstractmethod
+    def lock_account(self, account):
+        pass
+
 
 class CredentialsAccountStore(AccountStore):
 
     @abstractmethod
-    def get_credentials(self, authc_token):
+    def get_authc_info(self, authc_token):
         """
         :returns: Account
         """

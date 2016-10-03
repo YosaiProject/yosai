@@ -255,8 +255,7 @@ class Subject(metaclass=ABCMeta):
     The underlying Authorization subsystem implementations will usually simply
     convert these String values to Permission instances and then call the
     corresponding method.  (Yosai's default implementations do String-to-Permission
-    conversion (resolution) for these methods using an authz_abcs.PermissionResolver
-    instance.
+    conversion.
     """
 
     @property
