@@ -255,8 +255,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
             raise  # the security_manager saves subject identifiers
 
         except AuthenticationException as account:
-            self.notify_failure(authc_token, account)
-            self.validate_locked(account)
+            self.notify_failure(authc_token)
+            self.validate_locked(authc_token, account)
             raise  # this won't be called if the Account is locked
 
         self.notify_success(account)
@@ -341,7 +341,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)
 
-    def notify_failure(self, authc_token, throwable):
+    def notify_failure(self, authc_token):
         try:
             self.event_bus.publish('AUTHENTICATION.FAILED',
                                    username=authc_token.username)
@@ -349,8 +349,10 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
             msg = "Could not publish AUTHENTICATION.FAILED event"
             raise AuthenticationEventException(msg)
 
-    def validate_locked(self, account, realm):
-        failed_attempts = account.failed_authc_attempts[authc_token.__name__])
+    def validate_locked(self, authc_token, account):
+        token = authc_token.__class__.__name__
+        failed_attempts = account.authc_info[token]['failed_attempts']
+
         if self.locking_limit:
             if len(failed_attempts) > self.locking_limit:
                 self.locking_realm.lock_account(account)

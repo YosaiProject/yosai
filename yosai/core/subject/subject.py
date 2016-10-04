@@ -1336,8 +1336,9 @@ class SecurityManagerBuilder:
 
     def init_realms(self, settings, realms):
         try:
-            return tuple(realm(settings, account_store=account_store(settings=settings))
-                         for realm, account_store in realms)
+            return tuple(realm(account_store=account_store(settings=settings), **verifiers)
+                         for realm, account_store, verifiers in realms)
+
         except (AttributeError, TypeError):
             msg = 'Failed to initialize realms during SecurityManager Setup'
             raise SecurityManagerInitException(msg)

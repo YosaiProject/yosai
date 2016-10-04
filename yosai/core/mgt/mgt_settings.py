@@ -55,10 +55,31 @@ class SecurityManagerSettings:
         """
         realms = []
 
-        for realm, account_store in attributes['realms'].items():
+        for realm in attributes['realms'].items():
             realm_cls = maybe_resolve(realm)
-            account_store_cls = maybe_resolve(account_store)
-            realms.append([realm_cls, account_store_cls])
+            account_store_cls = maybe_resolve(realm['account_store'])
+
+            verifiers = {}
+
+            authc_verifiers = realm.get('authc_verifiers')
+            if authc_verifiers:
+                if isinstance(authc_verifiers, list):
+                    authc_verifiers_cls = tuple(maybe_resolve(verifier) for
+                                                verifier in authc_verifiers)
+                else:
+                    authc_verifiers_cls = tuple(maybe_resolve(authc_verifiers))
+                verifiers['authc_verifiers'] = authc_verifiers_cls
+
+            authz_verifiers = realm.get('authz_verifiers')
+            if authz_verifiers:
+                permission_verifier_cls = authz_verifiers.get('permission_verifier')
+                if permission_verifier_cls:
+                    verifiers['permission_verifier'] = permission_verifier_cls
+                role_verifier_cls = authz_verifiers.get('role_verifier')
+                if role_verifier_cls:
+                    verifiers['role_verifier'] = role_verifier_cls
+
+            realms.append([realm_cls, account_store_cls, verifiers])
 
         return realms
 

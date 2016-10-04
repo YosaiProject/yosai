@@ -16,6 +16,9 @@ v0.3
 - removed setter side effects during realms setting
 - updated cache key domains for authentication and authorization (now realm-specific)
 - broadened accountstore api from get_credentials to get_authc_info
+- security_manager creator now creates the credential verifiers and passes them to
+  realm(s)
+- realm verifiers are configurable through yosai settings
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 

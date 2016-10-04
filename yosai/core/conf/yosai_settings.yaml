@@ -18,7 +18,12 @@ SECURITY_MANAGER_CONFIG:
     attributes:
         serializer: cbor
         realms:
-            yosai.core.AccountStoreRealm: yosai_alchemystore.AlchemyAccountStore
+            yosai.core.AccountStoreRealm:
+                account_store: yosai_alchemystore.AlchemyAccountStore
+                authc_verifiers: PasswordVerifier
+                authz_verifiers:
+                    permission_verifier:  IndexedPermissionVerifier
+                    role_verifier:  SimpleRoleVerifier
         cache_handler: yosai_dpcache.cache.DPCacheHandler
         session_attributes: null
 
