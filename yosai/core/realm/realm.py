@@ -184,6 +184,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         self.account_store.lock_account(account)
 
+    def unlock_account(self, account):
+        """
+        :type account: Account
+        """
+        self.account_store.lock_account(account)
+
     # --------------------------------------------------------------------------
     # Authentication
     # --------------------------------------------------------------------------

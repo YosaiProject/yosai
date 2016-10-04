@@ -175,3 +175,7 @@ class LockingRealm(Realm):
     @abstractmethod
     def lock_account(self, account):
         pass
+
+    @abstractmethod
+    def unlock_account(self, account):
+        pass
