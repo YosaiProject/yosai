@@ -25,7 +25,7 @@ from yosai.core import (
     AuthenticationEventException,
     AuthenticationSettings,
     InvalidAuthenticationSequenceException,
-    InvalidTokenPasswordException,
+    InvalidTokenException,
     LockedAccountException,
     UnknownAccountException,
     UnsupportedTokenException,
@@ -85,14 +85,14 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
     @password.setter
     def password(self, password):
         if not password:
-            raise InvalidTokenPasswordException('Password must be defined.')
+            raise InvalidTokenException('Password must be defined.')
 
         if isinstance(password, bytearray):
             self._password = password
         if isinstance(password, str):
             self._password = bytearray(password, 'utf-8')
         else:
-            raise InvalidTokenPasswordException
+            raise InvalidTokenException
 
     @property
     def is_remember_me(self):
@@ -109,7 +109,7 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
     @username.setter
     def username(self, username):
         if not username:
-            raise InvalidTokenPasswordException('Username must be defined.')
+            raise InvalidTokenException('Username must be defined.')
 
         self._username = username
 
@@ -140,7 +140,7 @@ class UsernamePasswordToken(authc_abcs.HostAuthenticationToken,
                     self._password[index] = 0  # DG:  this equals 0x00
         except TypeError:
             msg = 'expected password to be a bytearray'
-            raise InvalidTokenPasswordException(msg)
+            raise InvalidTokenException(msg)
 
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(

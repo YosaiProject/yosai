@@ -1,7 +1,7 @@
 ---
 AUTHC_CONFIG:
     account_lock_threshold: null
-    default_algorithm: bcrypt_sha256
+    preferred_algorithm: bcrypt_sha256
     hash_algorithms:
         bcrypt_sha256: {}
         sha256_crypt:
@@ -9,9 +9,16 @@ AUTHC_CONFIG:
             max_rounds: 1000000
             min_rounds: 1000
             salt_size: 16
+    totp:
+        context:
+            default_tag: null
+            cost: null
+            secrets_path: null
+            secrets:
+                update_this_tag_name:  update_this_using_passlib.totp.generate_secret()
 
 REMEMBER_ME_CONFIG:
-    default_cipher_key: you need to update this using the fernet keygen
+    default_cipher_key: update_this_using_passlib.totp.generate_secret()
 
 SECURITY_MANAGER_CONFIG:
     security_manager: yosai.core.NativeSecurityManager

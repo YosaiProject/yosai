@@ -131,7 +131,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def init_token_resolution(self):
         token_resolver = {}
         for verifier in self.authc_verifiers:
-            token_resolver[verifier.supported_token].append(realm)
+            token_resolver[verifier.supported_tokens].append(realm)
         return token_resolver
 
     def do_clear_cache(self, identifier):

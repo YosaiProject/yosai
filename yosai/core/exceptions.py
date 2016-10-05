@@ -142,7 +142,7 @@ class InvalidAuthenticationSequenceException(AuthenticationException):
     pass
 
 
-class InvalidTokenPasswordException(AuthenticationException):
+class InvalidTokenException(AuthenticationException):
     pass
 
 
@@ -176,14 +176,6 @@ class MultiRealmAuthenticationException(AuthenticationException):
 
 
 class PasswordMatchException(AuthenticationException):
-    pass
-
-
-class PasswordVerifierInvalidTokenException(AuthenticationException):
-    pass
-
-
-class PasswordVerifierInvalidAccountException(AuthenticationException):
     pass
 
 

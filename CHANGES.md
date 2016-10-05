@@ -19,7 +19,8 @@ v0.3
 - security_manager creator now creates the credential verifiers and passes them to
   realm(s)
 - realm verifiers are configurable through yosai settings
-
+- dramatically reduced/refactored passlib authentication
+ 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 
 See [the Releases section of our GitHub project](https://github.com/YosaiProject/yosai/releases) for changelogs for each release version of Yosai.
