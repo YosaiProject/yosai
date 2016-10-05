@@ -27,6 +27,7 @@ from yosai.core import (
     InvalidArgumentException,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
+    LockedAccountException,
     PasswordVerifier,
     SimpleIdentifierCollection,
     SimpleRoleVerifier,
@@ -182,7 +183,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         :type account: Account
         """
-        self.account_store.lock_account(account)
+        locked_time = int(time.time() * 1000)  # milliseconds
+        self.account_store.lock_account(account, locked_time)
 
     def unlock_account(self, account):
         """
@@ -271,6 +273,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         if not account:
             msg = "Could not obtain account credentials for: " + str(identifier)
             raise AccountException(msg)
+
+        if account.account_lock_millis:
+            msg = "Account Locked:  {0} locked at: {1}".\
+                format(account.account_id, account.account_lock_millis)
+            raise LockedAccountException(msg)
 
         self.assert_credentials_match(authc_token, account)
 
