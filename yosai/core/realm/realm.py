@@ -270,14 +270,15 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         account = self.get_authc_info(identifier)
 
-        if not account:
-            msg = "Could not obtain account credentials for: " + str(identifier)
-            raise AccountException(msg)
-
-        if account.account_lock_millis:
-            msg = "Account Locked:  {0} locked at: {1}".\
-                format(account.account_id, account.account_lock_millis)
-            raise LockedAccountException(msg)
+        try:
+            if account.account_lock_millis:
+                msg = "Account Locked:  {0} locked at: {1}".\
+                    format(account.account_id, account.account_lock_millis)
+                raise LockedAccountException(msg)
+        except AttributeError:
+            if not account:
+                msg = "Could not obtain account credentials for: " + str(identifier)
+                raise AccountException(msg)
 
         self.assert_credentials_match(authc_token, account)
 
@@ -287,15 +288,8 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         # self.clear_cached_credentials(identifier)
         # authc_token.clear()
 
-        identifiers = SimpleIdentifierCollection(source_name=self.name,
-                                                 identifier=account.account_id)
-
-        # new to yosai: until a better approach is found, is the overriding /
-        # enrichment of the account_id attribute with a SIC
-        account.account_id = identifiers
-
-        self.clear_cached_credentials(identifiers.primary_identifier)
-
+        account.account_id = SimpleIdentifierCollection(source_name=self.name,
+                                                        identifier=account.account_id)
         return account
 
     def update_failed_attempt(self, authc_token, account):
@@ -312,14 +306,20 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
     def assert_credentials_match(self, authc_token, account):
         """
+        Calls the verifier with an account containing all of the authc_info
+        for the Account. The verifier pops the required credentials from the
+        Account's authc_info and returns the modified Account here.
+
         :type authc_token: authc_abcs.AuthenticationToken
         :type account:  account_abcs.Account
-
+        :returns: account_abcs.Account
         :raises IncorrectCredentialsException:  when authentication fails,
                                                 including account
         """
         verifier = self.token_resolver[authc_token.__class__]
-        if (not verifier.credentials_match(authc_token, account)):
+        try:
+            verifier.verify_credentials(authc_token, account))
+        except IncorrectCredentialsException:
             account = self.update_failed_attempt(authc_token, account)
             raise IncorrectCredentialsException(account)
 

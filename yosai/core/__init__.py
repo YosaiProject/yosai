@@ -69,6 +69,7 @@ from .exceptions import (
     IllegalStateException,
     IncorrectCredentialsException,
     IncorrectAttributeException,
+    InsufficientAuthcInfoException,
     InvalidArgumentException,
     InvalidAuthcAttemptRealmsArgumentException,
     InvalidAuthenticationSequenceException,

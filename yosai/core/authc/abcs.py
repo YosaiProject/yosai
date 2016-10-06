@@ -58,15 +58,6 @@ class AuthenticationToken(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def identifier(self):
-        """
-        Returns the account identity submitted during the authentication
-        process.
-        """
-        pass
-
-    @property
-    @abstractmethod
     def credentials(self):
         """
         Returns the credentials submitted by the user during the authentication
@@ -116,41 +107,10 @@ class Authenticator(metaclass=ABCMeta):
         pass
 
 
-class CompositeAccountId(account_abcs.AccountId):
-
-    @abstractmethod
-    def get_realm_account_id(self, realm_name):
-        pass
-
-
-class CompositeAccount(account_abcs.Account):
-
-    @property
-    @abstractmethod
-    def realm_names(self):
-        pass
-
-    @abstractmethod
-    def append_realm_account(self, realm_name, account):
-        pass
-
-    @abstractmethod
-    def get_realm_attributes(self, realm_name):
-        pass
-
-
 class CredentialsVerifier(metaclass=ABCMeta):
 
     @abstractmethod
     def credentials_match(authc_token, account):
-        pass
-
-
-class HostAuthenticationToken(AuthenticationToken):
-
-    @property
-    @abstractmethod
-    def host(self):
         pass
 
 
@@ -183,14 +143,6 @@ class HashingPasswordService(PasswordService):
 
     @abstractmethod
     def passwords_match(self, plaintext_password, saved_password_hash):
-        pass
-
-
-class RememberMeAuthenticationToken(AuthenticationToken):
-
-    @property
-    @abstractmethod
-    def is_remember_me(self):
         pass
 
 

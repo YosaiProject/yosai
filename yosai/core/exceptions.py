@@ -130,6 +130,10 @@ class IncorrectCredentialsException(CredentialsException):
     pass
 
 
+class InsufficientAuthcInfoException(AuthenticationException):
+    pass
+
+
 class InvalidAuthenticationTokenException(AuthenticationException):
     pass
 

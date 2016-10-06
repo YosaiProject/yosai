@@ -23,6 +23,7 @@ from passlib.context import CryptContext
 from yosai.core import (
     AuthenticationSettings,
     CryptContextException,
+    InsufficientAuthcInfoException,
     MissingHashAlgorithmException,
     PasswordMatchException,
     TOTPToken,
@@ -42,28 +43,38 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         self.totp = self.create_totp(authc_settings)
         self.cc_token_resolver = {UsernamePasswordToken: self.password_cc,
                                   TOTPToken: self.totp}
+        self.credential_resolver = {UsernamePasswordToken: 'password',
+                                    TOTPToken: 'totp_key'}
         self.supported_tokens = token_verifier.keys()
 
     def verify_credentials(self, authc_token, account):
         submitted = authc_token.credentials
         stored = self.get_stored_credentials(account)
-
         service = self.cc_token_resolver[authc_token]
-        return service.verify(submitted, stored)
+
+        try:
+            if isinstance(authc_token, UsernamePasswordToken):
+                service.verify(submitted, stored)
+            else:
+                totp = service(stored)
+                totp.verify(submitted)
+
+        except (ValueError, TokenError):
+            raise IncorrectCredentialsException
 
     def get_stored_credentials(self, authc_token, account):
         authc_info = account.authc_info
 
         try:
-            if isinstance(authc_token, UsernamePasswordToken):
-                credential = authc_info['password']
-            if isinstance(authc_token, TOTPToken):
-                credential = authc_info['totp_key']
+            return authc_info[self.credential_resolver[authc_token.__class__]]
 
-        except KeyError:
-            msg = '{0} does not support {1}.'.format(self.__class__.__name__,
-                                                     authc_token.__class__.__name__)
-            raise UnsupportedTokenException(msg)
+        except KeyError as exc:
+            if authc_token.__class__ not in self.credential_resolver:
+                msg = '{0} does not support {1}.'.format(self.__class__.__name__,
+                                                         authc_token.__class__.__name__)
+                raise UnsupportedTokenException(msg)
+
+            raise InsufficientAuthcInfoException(exc)
 
     def create_password_crypt_context(self, authc_settings):
         context = authc_settings.preferred_algorithm
