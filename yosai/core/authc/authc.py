@@ -30,7 +30,6 @@ from yosai.core import (
     LockedAccountException,
     UnknownAccountException,
     UnsupportedTokenException,
-    event_abcs,
     authc_abcs,
     serialize_abcs,
     FirstRealmSuccessfulStrategy,
@@ -134,7 +133,7 @@ class TOTPToken(authc_abcs.AuthenticationToken):
             raise InvalidTokenException('TOTPToken must be a 6-digit int')
 
 
-class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
+class DefaultAuthenticator(authc_abcs.Authenticator):
 
     # Unlike Shiro, Yosai injects the strategy and the eventbus
     def __init__(self,
@@ -151,15 +150,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator, event_abcs.EventBusAware):
         self.token_realm_resolver = None
         self.locking_realm = None
         self.locking_limit = None
-        self._event_bus = None
-
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        self._event_bus = eventbus
+        self.event_bus = None
 
     def init_realms(self, realms):
         """

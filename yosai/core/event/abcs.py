@@ -63,24 +63,3 @@ class EventBus(metaclass=ABCMeta):
     @abstractmethod
     def unregister(self, listener, topic_name):
         pass
-
-
-class EventBusAware(metaclass=ABCMeta):
-    """
-    This interface is implemented by components that utilize an EventBus for publishing
-    and/or subscribing to/from events and wish for EventBus to be supplied if
-    one is available.
-
-    **NOTE** If an ``EventBusAware`` implementation wishes to subscribe to events,
-     it must register callbacks with the event bus.
-    """
-
-    @property
-    @abstractmethod
-    def event_bus():
-        pass
-
-    @event_bus.setter
-    @abstractmethod
-    def event_bus(self, eventbus):
-        pass

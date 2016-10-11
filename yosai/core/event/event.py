@@ -55,7 +55,7 @@ class DefaultEventBus(event_abcs.EventBus):
     Note:  most of the comments here are pasted from pypubsub's documentation
     """
     def __init__(self):
-        self._event_bus = pub
+        self.event_bus = pub
 
         # The following two settings enforce topic naming convention.
         # If you want to catch topic naming exceptions, Uncomment the settings
@@ -65,7 +65,7 @@ class DefaultEventBus(event_abcs.EventBus):
 
     def is_registered(self, listener, topic_name):
         try:
-            return self._event_bus.isSubscribed(listener, topic_name)
+            return self.event_bus.isSubscribed(listener, topic_name)
         except TopicNameError:
             msg = "TopicNameError: Unrecognized topic naming convention"
             raise EventBusTopicException(msg)
@@ -82,7 +82,7 @@ class DefaultEventBus(event_abcs.EventBus):
         :param kwargs: message data (must satisfy the topic’s MetadataService)
         """
         try:
-            self._event_bus.sendMessage(topic_name, **kwargs)
+            self.event_bus.sendMessage(topic_name, **kwargs)
         except SenderMissingReqdMsgDataError:
             msg = "SenderMissingReqdMsgDataError: can't send message"
             raise EventBusMessageDataException(msg)
@@ -113,7 +113,7 @@ class DefaultEventBus(event_abcs.EventBus):
 
         try:
             subscribed_listener, success =\
-                self._event_bus.subscribe(_callable, topic_name)
+                self.event_bus.subscribe(_callable, topic_name)
 
         except ListenerMismatchError:
             msg = ("ListenerMismatchError: Invalid Listener -- callable does "
@@ -128,7 +128,7 @@ class DefaultEventBus(event_abcs.EventBus):
 
     def unregister(self, listener, topic_name):
         try:
-            unsubscribed_listener = self._event_bus.unsubscribe(
+            unsubscribed_listener = self.event_bus.unsubscribe(
                 listener, topic_name)
         except TopicNameError:
             msg = "TopicNameError: Unrecognized eventbus topic naming convention"
@@ -147,11 +147,11 @@ class DefaultEventBus(event_abcs.EventBus):
         Note: this method will generate one 'unsubcribe' notification message
         for each listener unsubscribed
         """
-        unsubscribed_listeners = self._event_bus.unsubAll()
+        unsubscribed_listeners = self.event_bus.unsubAll()
         return unsubscribed_listeners
 
 
-class EventLogger(event_abcs.EventBusAware):
+class EventLogger:
     def __init__(self, event_bus):
         self.event_bus = event_bus
 
@@ -164,14 +164,6 @@ class EventLogger(event_abcs.EventBusAware):
         self.event_bus.register(self.log_authz_granted, 'AUTHORIZATION.GRANTED')
         self.event_bus.register(self.log_authz_denied, 'AUTHORIZATION.DENIED')
         self.event_bus.register(self.log_authz_results, 'AUTHORIZATION.RESULTS')
-
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        self._event_bus = eventbus
 
     def log_authc_progress(self, identifier=None, token=None):
         topic = 'AUTHENTICATION.PROGRESS'

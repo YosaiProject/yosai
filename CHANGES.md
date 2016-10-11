@@ -22,7 +22,9 @@ v0.3
 - dramatically reduced/refactored passlib authentication
 - removed marshmallow from requirements
 - Account is now a namedtuple
- 
+- AuthorizationInfo abc updated
+- removed EventBusAware abc, refactored how eventbus is propagated
+
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 
 See [the Releases section of our GitHub project](https://github.com/YosaiProject/yosai/releases) for changelogs for each release version of Yosai.

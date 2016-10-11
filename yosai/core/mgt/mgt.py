@@ -49,7 +49,6 @@ from yosai.core import(
     mgt_abcs,
     authc_abcs,
     authz_abcs,
-    event_abcs,
     cache_abcs,
 )
 
@@ -376,7 +375,6 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
 # also known as ApplicationSecurityManager in Shiro 2.0 alpha:
 class NativeSecurityManager(mgt_abcs.SecurityManager,
-                            event_abcs.EventBusAware,
                             cache_abcs.CacheHandlerAware):
 
     def __init__(self,
@@ -392,188 +390,52 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
                  subject_factory=DefaultSubjectFactory()):  # unlike shiro, yosai defaults
 
-        self._event_bus = DefaultEventBus()
         self.yosai = yosai
-        self._cache_handler = cache_handler
         self.subject_store = subject_store
-
-        if session_manager:
-            self.session_manager = session_manager
-        else:
-            self.session_manager = DefaultNativeSessionManager(settings)
-
         self.realms = realms
+        self.remember_me_manager = remember_me_manager
 
-        if authenticator:
-            self.authentiator = authenticator
-        else:
-            self.authentiator = DefaultAuthenticator(settings)
+        if not session_manager:
+            session_manager = DefaultNativeSessionManager(settings)
+        self.session_manager = session_manager
 
         self.authorizer = authorizer
-        self.remember_me_manager = remember_me_manager
+
+        if not authenticator:
+            authenticator = DefaultAuthenticator(settings)
+        self.authenticator = authenticator
+
+        if serialization_manager and self.remember_me_manager:
+            self.remember_me_manager.serialization_manager = serialization_manager
+
         self.subject_factory = subject_factory
 
-        if serialization_manager:
-            self.serialization_manager = serialization_manager
-        # the yosai attribute is set by Yosai
-
+        self.event_bus = DefaultEventBus()
         self.event_logger = EventLogger(self.event_bus)
 
-    """
-    * ===================================================================== *
-    * Getters and Setters                                                   *
-    * ===================================================================== *
-    """
-    @property
-    def authenticator(self):
-        return self._authenticator
+        self.apply_cache_handler()
+        self.apply_event_bus()
+        self.apply_realms()
 
-    @authenticator.setter
-    def authenticator(self, authenticator):
-        if authenticator:
-            self._authenticator = authenticator
-            self.apply_event_bus(self._authenticator)
-            self._authenticator.init_realms(self.realms)
+    def apply_cache_handler(self):
+        for realm in self.realms:
+            if hasattr(realm, 'cache_handler'):  # implies cache support
+                realm.cache_handler = self.cache_handler
+        self.session_manager.apply_cache_handler(self.cache_handler)
 
-        else:
-            msg = "authenticator argument must have a value"
-            raise InvalidArgumentException(msg)
+    def apply_event_bus(self, eventbus):
+        self.apply_event_bus(self.event_bus)
+        self.authenticator.event_bus = event_bus
+        self.authorizer.event_bus = event_bus
+        self.session_manager.apply_event_bus(event_bus)
 
-    @property
-    def authorizer(self):
-        return self._authorizer
-
-    @authorizer.setter
-    def authorizer(self, authorizer):
-        if authorizer:
-            self._authorizer = authorizer
-            self.apply_event_bus(self._authorizer)
-            self._authorizer.init_realms(self.realms)
-        else:
-            msg = "authorizer argument must have a value"
-            raise InvalidArgumentException(msg)
-
-    @property
-    def cache_handler(self):
-        return self._cache_handler
-
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
-        if (cachehandler):
-            self._cache_handler = cachehandler
-
-            self.apply_cache_handler(self.realms)
-            self.authenticator.init_realms(self.realms)
-            self.authorizer.init_realms(self.realms)
-
-            self.apply_cache_handler(self.session_manager)
-
-        else:
-            msg = ('Incorrect argument.  If you want to disable caching, '
-                   'configure a disabled cachemanager instance')
-            raise InvalidArgumentException(msg)
-
-    @property
-    def serialization_manager(self):
-        pass
-
-    @serialization_manager.setter
-    def serialization_manager(self, sm):
-        try:
-            self.remember_me_manager.serialization_manager = sm
-        except AttributeError:
-            pass
-
-    #  property required by EventBusAware interface:
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        if eventbus:
-            self._event_bus = eventbus
-            self.apply_event_bus(self._authenticator)
-            self.apply_event_bus(self._authorizer)
-            self.apply_event_bus(self._session_manager)
-
-        else:
-            msg = 'eventbus argument must have a value'
-            raise InvalidArgumentException(msg)
-
-    @property
-    def realms(self):
-        return self._realms
-
-    @realms.setter
-    def realms(self, realm_s):
+    def apply_realms(self):
         """
         :realm_s: an immutable collection of one or more realms
         :type realm_s: tuple
         """
-        if realm_s:
-            self._realms = realm_s
-            self.apply_cache_handler(self._realms)
-
-            try:
-                self.authenticator.init_realms(self._realms)
-            except AttributeError:
-                msg = "no authenticator attribute set yet"
-                # log debug here
-            try:
-                self.authorizer.init_realms(self._realms)
-            except AttributeError:
-                msg = "no authorizer attribute set yet"
-                # log debug here
-        else:
-            msg = 'realms argument must have a value'
-            raise InvalidArgumentException(msg)
-
-    @property
-    def session_manager(self):
-        return self._session_manager
-
-    @session_manager.setter
-    def session_manager(self, sessionmanager):
-        self._session_manager = sessionmanager
-
-        self.apply_cache_handler(self._session_manager)
-        self.apply_event_bus(self._session_manager)
-
-    # new to yosai.core. helper method:
-    def apply_target_s(self, validate_apply, target_s):
-        try:
-            for target in target_s:
-                validate_apply(target)
-        except TypeError:  # then its presumably not a collection
-            validate_apply(target_s)
-
-    def apply_cache_handler(self, target_s):
-        """
-        :param target: the object or objects that, if eligible, are to have
-                       the cache manager set
-        :type target: an individual object instance or iterable
-        """
-        # yosai.core.refactored, deferring iteration to the methods that call it
-        def validate_apply(target):
-            if isinstance(target, cache_abcs.CacheHandlerAware):
-                target.cache_handler = self.cache_handler
-
-        self.apply_target_s(validate_apply, target_s)
-
-    def apply_event_bus(self, target_s):
-        """
-        :param target: the object or objects that, if eligible, are to have
-                       the eventbus set
-        :type target: an individual object instance or iterable
-        """
-        # yosai.core.refactored, deferring iteration to the methods that call it
-
-        def validate_apply(target):
-            if isinstance(target, event_abcs.EventBusAware):
-                target.event_bus = self.event_bus
-
-        self.apply_target_s(validate_apply, target_s)
+        self.authenticator.init_realms(self.realms)
+        self.authorizer.init_realms(self.realms)
 
     def is_permitted(self, identifiers, permission_s):
         """

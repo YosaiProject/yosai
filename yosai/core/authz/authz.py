@@ -27,7 +27,6 @@ from yosai.core import (
     SerializationManager,
     UnauthorizedException,
     authz_abcs,
-    event_abcs,
     realm_abcs,
     serialize_abcs,
 )
@@ -401,8 +400,7 @@ class DefaultPermission(WildcardPermission):
         self.case_sensitive = state['case_sensitive']
 
 
-class ModularRealmAuthorizer(authz_abcs.Authorizer,
-                             event_abcs.EventBusAware):
+class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
     """
     A ModularRealmAuthorizer is an Authorizer implementation that consults
@@ -415,16 +413,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer,
         :type realms: tuple
         """
         self.realms = None
-        self._event_bus = None
-        # by default, yosai.core.does not support role -> permission resolution
-
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        self._event_bus = eventbus
+        self.event_bus = None
 
     def init_realms(self, realms):
         """
@@ -821,8 +810,7 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
 
 
 # new to yosai.core. deprecates shiro's SimpleAuthorizationInfo
-class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
-                               serialize_abcs.Serializable):
+class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     """
     This is an implementation of the authz_abcs.AuthorizationInfo interface that
     stores roles and permissions as internal attributes, indexing permissions
@@ -833,24 +821,13 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
         :type roles: set of Role objects
         :type perms: set of DefaultPermission objects
         """
-        self._roles = roles
+        self.roles = roles
         self._permissions = collections.defaultdict(set)
         self.index_permission(permissions)
 
     @property
-    def roles(self):
-        return self._roles
-
-    @roles.setter
-    def roles(self, roles):
-        """
-        :type roles: a set of Role objects
-        """
-        self._roles = roles
-
-    @property
     def roleids(self):
-        return {role.identifier for role in self._roles}
+        return {role.identifier for role in self.roles}
 
     @property
     def permissions(self):
@@ -921,12 +898,12 @@ class IndexedAuthorizationInfo(authz_abcs.AuthorizationInfo,
                 format(perms, self.roles))
 
     def __getstate__(self):
-        return {'_roles': list(self._roles),
+        return {'roles': list(self.roles),
                 '_permissions': {key: list(val) for key, val in self._permissions.items()}
                 }
 
     def __setstate__(self, state):
-        self._roles = set(state['_roles'])
+        self.roles = set(state['roles'])
         self._permissions = {key: set(val) for key, val in state['_permissions'].items()}
 
 

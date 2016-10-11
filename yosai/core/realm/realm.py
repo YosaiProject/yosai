@@ -252,9 +252,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                     "Returning None.".format(identifier))
             logger.warning(msg3)
 
-        return dict(account_id=SimpleIdentifierCollection(source_name=self.name,
-                                                          identifier=identifier),
-                    **account_info)
+        account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
+                                                                identifier=identifier)
+        return account_info
 
     def authenticate_account(self, authc_token):
         """
@@ -364,9 +364,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                     "Returning None.".format(identifier))
             logger.warning(msg3)
 
-        return dict(account_id=SimpleIdentifierCollection(source_name=self.name,
-                                                          identifier=identifier),
-                    **account_info)
+        account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
+                                                                identifier=identifier)
+        return account_info
 
     def is_permitted(self, identifiers, permission_s):
         """

@@ -21,6 +21,8 @@ import collections
 import logging
 import pytz
 import datetime
+from os import urandom
+from hashlib import sha256, sha512
 from abc import abstractmethod
 
 from yosai.core import (
@@ -38,7 +40,6 @@ from yosai.core import (
     StoppedSessionException,
     UnknownSessionException,
     cache_abcs,
-    event_abcs,
     serialize_abcs,
     session_abcs,
 )
@@ -79,7 +80,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
                         generated and then assigned
         """
         try:
-            return self.session_id_generator.generate_id()
+            return sha256(sha512(urandom(20)).digest()).hexdigest()
         except AttributeError:
             msg = "session_id_generator attribute has not been configured"
             raise IllegalStateException(msg)
@@ -169,7 +170,7 @@ class MemorySessionStore(AbstractSessionStore):
         return self.sessions.get(sessionid)
 
 
-class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
+class CachingSessionStore(AbstractSessionStore):
     """
     An CachingSessionStore is a SessionStore that provides a transparent caching
     layer between the components that use it and the underlying EIS
@@ -210,22 +211,10 @@ class CachingSessionStore(AbstractSessionStore, cache_abcs.CacheHandlerAware):
     (FDWs) that pipe data from cache to the database.
 
     Ref: https://en.wikipedia.org/wiki/Cache_%28computing%29#Writing_policies
-
     """
-
     def __init__(self):
         super().__init__()  # obtains a session id generator
-        self._cache_handler = None
-
-    # cache_handler property is required for CacheHandlerAware interface
-    @property
-    def cache_handler(self):
-        return self._cache_handler
-
-    # cache_handler property is required for CacheHandlerAware interface
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
-        self._cache_handler = cachehandler
+        self.cache_handler = None
 
     def _do_create(self, session):
         sessionid = self.generate_session_id()
@@ -479,53 +468,31 @@ class ProxiedSession(session_abcs.Session):
 class SimpleSession(session_abcs.ValidatingSession,
                     serialize_abcs.Serializable):
 
-    # Yosai omits:
-    #    - the manually-managed class version control process (too policy-reliant)
-    #    - the bit-flagging technique (will cross this bridge later, if needed)
-
     def __init__(self, absolute_timeout, idle_timeout, host=None):
-        self._attributes = {}
-        self._internal_attributes = {'run_as_identifiers_session_key': None,
+        self.attributes = {}
+        self.internal_attributes = {'run_as_identifiers_session_key': None,
                                      'authenticated_session_key': None,
                                      'identifiers_session_key': None}
-        self._is_expired = None
-        self._session_id = None
+        self.is_expired = None
+        self.session_id = None
 
-        self._stop_timestamp = None
-        self._start_timestamp = round(time.time() * 1000)  # milliseconds
+        self.stop_timestamp = None
+        self.start_timestamp = round(time.time() * 1000)  # milliseconds
 
-        self._last_access_time = self._start_timestamp
+        self.last_access_time = self.start_timestamp
 
         # yosai.core.renames global_session_timeout to idle_timeout and added
         # the absolute_timeout feature
-        self._absolute_timeout = absolute_timeout
-        self._idle_timeout = idle_timeout
+        self.absolute_timeout = absolute_timeout
+        self.idle_timeout = idle_timeout
 
-        self._host = host
+        self.host = host
 
     # the properties are required to enforce the Session abc-interface..
-    @property
-    def absolute_timeout(self):
-        return self._absolute_timeout
-
-    @absolute_timeout.setter
-    def absolute_timeout(self, abs_timeout):
-        """
-        :type abs_timeout: timedelta
-        """
-        self._absolute_timeout = abs_timeout
-
-    @property
-    def attributes(self):
-        return self._attributes
 
     @property
     def attribute_keys(self):
         return self.attributes.keys()
-
-    @property
-    def internal_attributes(self):
-        return self._internal_attributes
 
     @property
     def internal_attribute_keys(self):
@@ -534,85 +501,8 @@ class SimpleSession(session_abcs.ValidatingSession,
         return set(self.internal_attributes)  # a set of keys
 
     @property
-    def host(self):
-        return self._host
-
-    @host.setter
-    def host(self, host):
-        """
-        :type host:  string
-        """
-        self._host = host
-
-    @property
-    def idle_timeout(self):
-        return self._idle_timeout
-
-    @idle_timeout.setter
-    def idle_timeout(self, idle_timeout):
-        """
-        :type idle_timeout: timedelta
-        """
-        self._idle_timeout = idle_timeout
-
-    @property
-    def is_expired(self):
-        return self._is_expired
-
-    @is_expired.setter
-    def is_expired(self, expired):
-        self._is_expired = expired
-
-    @property
     def is_stopped(self):
         return bool(self.stop_timestamp)
-
-    @property
-    def last_access_time(self):
-        return self._last_access_time
-
-    @last_access_time.setter
-    def last_access_time(self, last_access_time):
-        """
-        :param  last_access_time: time that the Session was last used, in utc
-        :type last_access_time: unix epoch expressed in milli
-        """
-        self._last_access_time = last_access_time
-
-    # DG:  renamed id to session_id because of reserved word conflict
-    @property
-    def session_id(self):
-        return self._session_id
-
-    @session_id.setter
-    def session_id(self, identity):
-        self._session_id = identity
-
-    @property
-    def start_timestamp(self):
-        return self._start_timestamp
-
-    @start_timestamp.setter
-    def start_timestamp(self, start_ts):
-        """
-        :param  start_ts: the time that the Session is started, in utc
-        :type start_ts: unix epoch expressed in milli
-        """
-        self._start_timestamp = start_ts
-
-    @property
-    def stop_timestamp(self):
-        if not hasattr(self, '_stop_timestamp'):
-            self._stop_timestamp = None
-        return self._stop_timestamp
-
-    @stop_timestamp.setter
-    def stop_timestamp(self, stop_ts):
-        """
-        :param  stop_ts: the time that the Session is stopped, in utc
-        :type stop_ts: unix epoch expressed in mill
-        """
-        self._stop_timestamp = stop_ts
 
     def touch(self):
         self.last_access_time = round(time.time() * 1000)  # milliseconds
@@ -781,17 +671,14 @@ class SimpleSession(session_abcs.ValidatingSession,
         """
         return [self.attributes.pop(key, None) for key in keys]
 
-    # omitting the bit-flagging methods:
-    #       writeobject, readObject, getalteredfieldsbitmask, isFieldPresent
-
     def __eq__(self, other):
         if self is other:
             return True
         if isinstance(other, session_abcs.ValidatingSession):
-            return (self._session_id == other._session_id and
-                    self._idle_timeout == other._idle_timeout and
-                    self._absolute_timeout == other._absolute_timeout and
-                    self._start_timestamp == other._start_timestamp and
+            return (self.session_id == other.session_id and
+                    self.idle_timeout == other.idle_timeout and
+                    self.absolute_timeout == other.absolute_timeout and
+                    self.start_timestamp == other.start_timestamp and
                     self.attributes == other.attributes)
         return False
 
@@ -803,34 +690,34 @@ class SimpleSession(session_abcs.ValidatingSession,
                 format(self.session_id, self.start_timestamp,
                        self.stop_timestamp, self.last_access_time,
                        self.idle_timeout, self.absolute_timeout,
-                       self.is_expired, self.host, self._attributes,
-                       self._internal_attributes))
+                       self.is_expired, self.host, self.attributes,
+                       self.internal_attributes))
 
     def __getstate__(self):
         return {
-            '_session_id': self._session_id,
-            '_start_timestamp': self._start_timestamp,
-            '_stop_timestamp': self._stop_timestamp,
-            '_last_access_time': self._last_access_time,
-            '_idle_timeout': self._idle_timeout,
-            '_absolute_timeout': self._absolute_timeout,
-            '_is_expired': self._is_expired,
-            '_host': self._host,
-            '_internal_attributes': self._internal_attributes,
-            '_attributes': self._attributes
+            'session_id': self._session_id,
+            'start_timestamp': self._start_timestamp,
+            'stop_timestamp': self._stop_timestamp,
+            'last_access_time': self._last_access_time,
+            'idle_timeout': self._idle_timeout,
+            'absolute_timeout': self._absolute_timeout,
+            'is_expired': self._is_expired,
+            'host': self._host,
+            'internal_attributes': self._internal_attributes,
+            'attributes': self._attributes
         }
 
     def __setstate__(self, state):
-        self._session_id = state['_session_id']
-        self._start_timestamp = state['_start_timestamp']
-        self._stop_timestamp = state['_stop_timestamp']
-        self._last_access_time = state['_last_access_time']
-        self._idle_timeout = state['_idle_timeout']
-        self._absolute_timeout = state['_absolute_timeout']
-        self._is_expired = state['_is_expired']
-        self._host = state['_host']
-        self._internal_attributes = state['_internal_attributes']
-        self._attributes = state['_attributes']
+        self.session_id = state['_session_id']
+        self.start_timestamp = state['_start_timestamp']
+        self.stop_timestamp = state['_stop_timestamp']
+        self.last_access_time = state['_last_access_time']
+        self.idle_timeout = state['_idle_timeout']
+        self.absolute_timeout = state['_absolute_timeout']
+        self.is_expired = state['_is_expired']
+        self.host = state['_host']
+        self.internal_attributes = state['_internal_attributes']
+        self.attributes = state['_attributes']
 
 
 class SimpleSessionFactory(session_abcs.SessionFactory):
@@ -1019,18 +906,10 @@ class DefaultSessionKey(session_abcs.SessionKey,
 
 
 # yosai.core.refactor:
-class SessionEventHandler(event_abcs.EventBusAware):
+class SessionEventHandler:
 
     def __init__(self):
-        self._event_bus = None  # setter injected
-
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, event_bus):
-        self._event_bus = event_bus
+        self.event_bus = None
 
     def notify_start(self, session):
         """
@@ -1065,56 +944,14 @@ class SessionEventHandler(event_abcs.EventBusAware):
 
 
 # 5 monopoly dollars to the person who helps me rename this:
-class DefaultNativeSessionHandler(session_abcs.SessionHandler,
-                                  event_abcs.EventBusAware):
+class DefaultNativeSessionHandler(session_abcs.SessionHandler):
 
     def __init__(self,
-                 session_event_handler,
                  session_store=CachingSessionStore(),
                  delete_invalid_sessions=True):
         self.delete_invalid_sessions = delete_invalid_sessions
-        self._session_store = session_store
-        self.session_event_handler = session_event_handler
-        self._cache_handler = None  # setter injected
-
-    @property
-    def session_store(self):
-        return self._session_store
-
-    @session_store.setter
-    def session_store(self, sessionstore):
-        self._session_store = sessionstore
-        if self.cache_handler:
-            self.apply_cache_handler_to_session_store()
-
-    @property
-    def cache_handler(self):
-        return self._cache_handler
-
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
-        self._cache_handler = cachehandler
-        self.apply_cache_handler_to_session_store()
-
-    def apply_cache_handler_to_session_store(self):
-        try:
-            if isinstance(self.session_store, cache_abcs.CacheHandlerAware):
-                self.session_store.cache_handler = self._cache_handler
-        except AttributeError:
-            msg = ("tried to set a cache manager in a SessionStore that isn\'t"
-                   "defined or configured in the DefaultNativeSessionManager")
-            logger.warning(msg)
-            return
-
-    @property
-    def event_bus(self):
-        # just a pass-through
-        return self.session_event_handler.event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        # pass-through
-        self.session_event_handler.event_bus = eventbus
+        self.session_store = session_store
+        self.session_event_handler = None
 
     # -------------------------------------------------------------------------
     # Session Creation Methods
@@ -1298,8 +1135,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler,
 
 
 class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
-                                  session_abcs.NativeSessionManager,
-                                  event_abcs.EventBusAware):
+                                  session_abcs.NativeSessionManager):
     """
     Yosai's DefaultNativeSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to
@@ -1319,43 +1155,18 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
     via the session.touch() method.  For non-web environments (e.g. for RMI),
     something else must call the touch() method to ensure the session
     validation logic functions correctly.
-
     """
-
     def __init__(self, settings):
         self.session_factory = SimpleSessionFactory(settings)
-        self._session_event_handler = SessionEventHandler()
-        self.session_handler =\
-            DefaultNativeSessionHandler(session_event_handler=self.session_event_handler)
-        self._event_bus = None
+        self.session_handler = DefaultNativeSessionHandler()
 
-    @property
-    def session_event_handler(self):
-        return self._session_event_handler
-
-    @session_event_handler.setter
-    def session_event_handler(self, handler):
-        self._session_event_handler = handler
-        self.session_handler.session_event_handler = handler
-
-    @property
-    def cache_handler(self):
-        return self.session_handler.cache_handler
-
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
+    def apply_cache_handler(self, cachehandler):
         # no need for a local instance, just pass through
-        self.session_handler.cache_handler = cachehandler
+        self.session_handler.session_store.cache_handler = cachehandler
 
-    @property
-    def event_bus(self):
-        return self._event_bus
-
-    @event_bus.setter
-    def event_bus(self, eventbus):
-        self._event_bus = eventbus
+    def apply_event_bus(self, eventbus):
+        self.session_handler.session_event_handler = SessionEventHandler(event_bus)
         self.session_event_handler.event_bus = eventbus
-        self.session_handler.event_bus = eventbus  # it passes through
 
     # -------------------------------------------------------------------------
     # Session Lifecycle Methods

@@ -99,10 +99,8 @@ class WebSessionFactory(SimpleSessionFactory):
 
 class WebSessionHandler(DefaultNativeSessionHandler):
 
-    def __init__(self, session_event_handler, delete_invalid_sessions=True):
-
-        super().__init__(session_event_handler=session_event_handler,
-                         session_store=WebCachingSessionStore(),
+    def __init__(self, delete_invalid_sessions=True):
+        super().__init__(session_store=WebCachingSessionStore(),
                          delete_invalid_sessions=delete_invalid_sessions)
 
         self.is_session_id_cookie_enabled = True
@@ -174,12 +172,8 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     Web-application capable SessionManager implementation
     """
     def __init__(self, settings):
-
         self.session_factory = WebSessionFactory(settings)
-        self._session_event_handler = SessionEventHandler()
-        self.session_handler = \
-            WebSessionHandler(session_event_handler=self.session_event_handler)
-        self._event_bus = None
+        self.session_handler = WebSessionHandler()
 
     # yosai omits get_referenced_session_id method
 

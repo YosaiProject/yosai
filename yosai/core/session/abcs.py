@@ -31,87 +31,27 @@ class Session(metaclass=ABCMeta):
     great benefit to Python systems as most viable session mechanisms are
     those highly-coupled and deeply embedded in web application
     frameworks.
+
+    The following attributes are required of a Session:
+        session_id: The unique identifier assigned by the system upon session creation.
+        start_timestamp: The time that the session started (the time that the system created
+                         the instance
+        last_access_time: Returns the last time the application received a request or method
+                          invocation from THE USER associated with this session.  Application
+                          calls to this method do not affect this access time.
+
+        absolute_timeout: Returns the time, in milliseconds, that the session may
+                          exist before it expires
+        idle_timeout:  Returns the time, in milliseconds, that the session may
+                       remain idle before it expires
+
+        host: Returns the host name or IP string of the host that originated this
+              session, or None if the host is unknown.
+
+        attributes
+        
+        internal_attributes
     """
-
-    @property
-    @abstractmethod
-    def session_id(self):
-        """
-        The unique identifier assigned by the system upon session creation.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def start_timestamp(self):
-        """
-        The time that the session started (the time that the system created
-        the instance )
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def last_access_time(self):
-        """
-        Returns the last time the application received a request or method
-        invocation from THE USER associated with this session.  Application
-        calls to this method do not affect this access time.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def absolute_timeout(self):
-        """
-        Returns the time, in milliseconds, that the session may
-        exist before it expires
-        """
-        pass
-
-    @absolute_timeout.setter
-    @abstractmethod
-    def absolute_timeout(self, abs_timeout):
-        """
-        Sets the time in milliseconds that the session may exist
-        before expiring.
-
-        - A negative value means the session will never expire
-        - A non-negative value (0 or greater) means the session expiration will
-          occur if idle for that length of time.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def idle_timeout(self):
-        """
-        Returns the time, in milliseconds, that the session may
-        remain idle before it expires
-        """
-        pass
-
-    @idle_timeout.setter
-    @abstractmethod
-    def idle_timeout(self, idle_timeout):
-        """
-        Sets the time in milliseconds that the session may remain idle
-        before expiring.
-
-        - A negative value means the session will never expire
-        - A non-negative value (0 or greater) means the session expiration will
-          occur if idle for that length of time.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def host(self):
-        """
-        Returns the host name or IP string of the host that originated this
-        session, or None if the host is unknown.
-        """
-        pass
 
     @abstractmethod
     def touch(self):
@@ -301,30 +241,6 @@ class SessionIDGenerator(metaclass=ABCMeta):
 
 # new to yosai:
 class SessionHandler(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def session_store(self):
-        pass
-
-    @session_store.setter
-    @abstractmethod
-    def session_store(self, sessionstore):
-        pass
-
-    @property
-    @abstractmethod
-    def cache_handler(self):
-        return self._cache_handler
-
-    @cache_handler.setter
-    @abstractmethod
-    def cache_handler(self, cachehandler):
-        pass
-
-    @abstractmethod
-    def apply_cache_handler_to_session_store(self):
-        pass
 
     @abstractmethod
     def create_session(self, session):

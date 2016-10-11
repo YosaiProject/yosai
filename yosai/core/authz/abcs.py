@@ -20,26 +20,6 @@ under the License.
 from abc import ABCMeta, abstractmethod
 
 
-# differs from shiro in that it does not support string-based permissions:
-class AuthorizationInfo(metaclass=ABCMeta):
-
-    @property
-    @abstractmethod
-    def roles(self):
-        """
-        The names of all roles assigned to a corresponding Subject
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def permissions(self):
-        """
-        Returns all permissions assigned to the corresponding
-        Subject.
-        """
-
-
 class Authorizer(metaclass=ABCMeta):
 
     """
