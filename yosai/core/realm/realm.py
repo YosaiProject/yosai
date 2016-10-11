@@ -20,7 +20,6 @@ import logging
 from uuid import uuid4
 
 from yosai.core import (
-    Account,
     AccountException,
     AuthzInfoNotFoundException,
     CredentialsNotFoundException,
@@ -28,7 +27,6 @@ from yosai.core import (
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
     LockedAccountException,
-    PasswordVerifier,
     SimpleIdentifierCollection,
     SimpleRoleVerifier,
     UsernamePasswordToken,
@@ -61,14 +59,13 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                  permission_verifier=None,
                  role_verifier=None):
         """
-        :type name:  str
-        :credentials_verifiers: tuple of Verifier objects
+        :authc_verifiers: tuple of Verifier objects
         """
         self.name = name
         self._account_store = account_store
         self._cache_handler = None
 
-        self._authc_verifiers = authc_verifiers # (PasswordVerifier(settings))
+        self._authc_verifiers = authc_verifiers
         self._permission_verifier = permission_verifier
         self._role_verifier = role_verifier
 
@@ -130,9 +127,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self._role_verifier = verifier
 
     def init_token_resolution(self):
+        # M:1 between token class and verifier within a realm
         token_resolver = {}
         for verifier in self.authc_verifiers:
-            token_resolver[verifier.supported_tokens].append(realm)
+            for token_cls in verifier.supported_tokens:
+                token_resolver[token_cls] = verifier
         return token_resolver
 
     def do_clear_cache(self, identifier):
@@ -184,13 +183,13 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :type account: Account
         """
         locked_time = int(time.time() * 1000)  # milliseconds
-        self.account_store.lock_account(account, locked_time)
+        self.account_store.lock_account(account['account_id'], locked_time)
 
     def unlock_account(self, account):
         """
         :type account: Account
         """
-        self.account_store.lock_account(account)
+        self.account_store.lock_account(account['account_id'])
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -204,7 +203,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         return self.token_resolver.keys()
 
-    def get_authc_info(self, identifier):
+    def get_authentication_info(self, identifier):
         """
         The default authentication caching policy is to cache an account's
         credentials that are queried from an account store, for a specific
@@ -227,35 +226,36 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                    .format(identifier))
             logger.debug(msg)
 
-            account = self.account_store.query_authc_info(identifier)
-            if account is None:
+            # account_info is a dict
+            account_info = self.account_store.get_authc_info(identifier)
+            if account_info is None:
                 msg = "Could not get stored credentials for {0}".format(identifier)
                 raise CredentialsNotFoundException(msg)
-            return account.authc_info
+
+            return account_info
 
         try:
             msg2 = ("Attempting to get cached credentials for [{0}]"
                     .format(identifier))
             logger.debug(msg2)
 
-            authc_info = ch.get_or_create(domain='authentication:' + self.name,
-                                          identifier=identifier,
-                                          creator_func=query_authc_info,
-                                          creator=self)
-
-            account = Account(account_id=identifier, authc_info=authc_info)
+            # account_info is a dict
+            account_info = ch.get_or_create(domain='authentication:' + self.name,
+                                            identifier=identifier,
+                                            creator_func=query_authc_info,
+                                            creator=self)
         except AttributeError:
             # this means the cache_handler isn't configured
-            authc_info = query_authc_info(self)
-            account = Account(account_id=identifier, authc_info=authc_info)
+            account_info = query_authc_info(self)
         except CredentialsNotFoundException:
             msg3 = ("No account credentials found for identifiers [{0}].  "
                     "Returning None.".format(identifier))
             logger.warning(msg3)
 
-        return account
+        return dict(account_id=SimpleIdentifierCollection(source_name=self.name,
+                                                          identifier=identifier),
+                    **account_info)
 
-    # yosai.core.refactors:
     def authenticate_account(self, authc_token):
         """
         :type authc_token: authc_abcs.AuthenticationToken
@@ -268,12 +268,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = 'Failed to obtain authc_token.identifiers'
             raise InvalidArgumentException(msg)
 
-        account = self.get_authc_info(identifier)
+        account = self.get_authentication_info(identifier)
 
         try:
-            if account.account_lock_millis:
+            if account['account_locked']:
                 msg = "Account Locked:  {0} locked at: {1}".\
-                    format(account.account_id, account.account_lock_millis)
+                    format(account['account_id'], account['account_locked'])
                 raise LockedAccountException(msg)
         except AttributeError:
             if not account:
@@ -282,26 +282,18 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         self.assert_credentials_match(authc_token, account)
 
-        # TBD:  clear immediately or keep for life of session:
-        # at this point, authentication is confirmed, so clear
-        # the cache of credentials (however, they should have a short ttl anyway)
-        # self.clear_cached_credentials(identifier)
-        # authc_token.clear()
-
-        account.account_id = SimpleIdentifierCollection(source_name=self.name,
-                                                        identifier=account.account_id)
         return account
 
     def update_failed_attempt(self, authc_token, account):
             token = authc_token.__class__.__name__
 
-            attempts = authc_info[token].get('failed_attempts', [])
+            attempts = account['authc_info'][token].get('failed_attempts', [])
             attempts.append(int(time.time() * 1000))
-            account.authc_info[token]['failed_attempts'] = attempts
+            account['authc_info'][token]['failed_attempts'] = attempts
 
             self.cache_handler.set(domain='authentication:' + self.name,
-                                   identifier=account.account_id,
-                                   value=account.authc_info)
+                                   identifier=account['account_id'],
+                                   value=account['authc_info'])
             return account
 
     def assert_credentials_match(self, authc_token, account):
@@ -318,10 +310,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         verifier = self.token_resolver[authc_token.__class__]
         try:
-            verifier.verify_credentials(authc_token, account))
+            verifier.verify_credentials(authc_token, account)
         except IncorrectCredentialsException:
             account = self.update_failed_attempt(authc_token, account)
-            raise IncorrectCredentialsException(account)
+            raise
 
     # --------------------------------------------------------------------------
     # Authorization
@@ -348,34 +340,33 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                    .format(identifier))
             logger.debug(msg)
 
-            account = self.account_store.get_authz_info(identifier)
-            if account is None:
+            account_info = self.account_store.get_authz_info(identifier)
+            if account_info is None:
                 msg = "Could not get authz_info for {0}".format(identifier)
                 raise AuthzInfoNotFoundException(msg)
-            return account.authz_info
+            return account_info
 
         try:
             msg2 = ("Attempting to get cached authz_info for [{0}]"
                     .format(identifier))
             logger.debug(msg2)
 
-            authz_info = ch.get_or_create(domain='authorization:' + self.name,
-                                          identifier=identifier,
-                                          creator_func=query_authz_info,
-                                          creator=self)
-            account = Account(account_id=identifier,
-                              authz_info=authz_info)
+            account_info = ch.get_or_create(domain='authorization:' + self.name,
+                                            identifier=identifier,
+                                            creator_func=query_authz_info,
+                                            creator=self)
         except AttributeError:
             # this means the cache_handler isn't configured
-            authz_info = query_authz_info(self)
-            account = Account(account_id=identifier,
-                              authz_info=authz_info)
+            account_info = query_authz_info(self)
+
         except AuthzInfoNotFoundException:
             msg3 = ("No account authz_info found for identifier [{0}].  "
                     "Returning None.".format(identifier))
             logger.warning(msg3)
 
-        return account
+        return dict(account_id=SimpleIdentifierCollection(source_name=self.name,
+                                                          identifier=identifier),
+                    **account_info)
 
     def is_permitted(self, identifiers, permission_s):
         """
@@ -402,7 +393,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             for permission in permission_s:
                 yield (permission, False)
         else:
-            yield from self.permission_verifier.is_permitted(account.authz_info,
+            yield from self.permission_verifier.is_permitted(account['authz_info'],
                                                              permission_s)
 
     def has_role(self, identifiers, roleid_s):
@@ -428,4 +419,4 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             for roleid in roleid_s:
                 yield (roleid, False)
         else:
-            yield from self.role_verifier.has_role(account.authz_info, roleid_s)
+            yield from self.role_verifier.has_role(account['authz_info'], roleid_s)

@@ -8,9 +8,8 @@ import datetime
 
 
 @pytest.fixture(scope='function')
-def default_authenticator(account_store_realm, credential_resolver, event_bus):
-    da = DefaultAuthenticator()
-    account_store_realm.credential_resolver = credential_resolver
-    da.realms = (account_store_realm,)
+def default_authenticator(account_store_realm, event_bus, settings):
+    da = DefaultAuthenticator(settings)
     da.event_bus = event_bus
+    da.init_realms((account_store_realm,))
     return da

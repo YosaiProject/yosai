@@ -10,12 +10,13 @@ AUTHC_CONFIG:
             min_rounds: 1000
             salt_size: 16
     totp:
+        challenger: null
         context:
             default_tag: null
             cost: null
             secrets_path: null
             secrets:
-                update_this_tag_name:  update_this_using_passlib.totp.generate_secret()
+                update_this_tag_with_unixepoch:  update_this_using_passlib.totp.generate_secret()
 
 REMEMBER_ME_CONFIG:
     default_cipher_key: update_this_using_passlib.totp.generate_secret()
@@ -27,7 +28,7 @@ SECURITY_MANAGER_CONFIG:
         realms:
             yosai.core.AccountStoreRealm:
                 account_store: yosai_alchemystore.AlchemyAccountStore
-                authc_verifiers: PasswordVerifier
+                authc_verifiers: PasslibVerifier
                 authz_verifiers:
                     permission_verifier:  IndexedPermissionVerifier
                     role_verifier:  SimpleRoleVerifier

@@ -1,3 +1,6 @@
+from yosai.core import (
+    maybe_resolve,
+)
 
 class AuthenticationSettings:
     """
@@ -8,12 +11,15 @@ class AuthenticationSettings:
         self.authc_config = settings.AUTHC_CONFIG
         self.algorithms = self.init_algorithms()
 
-        preferred = self.authc_config.get('preferred_algorithm')
-        self.preferred_algorithm = self.algorithms.get(preferred)
+        self.preferred_algorithm = self.authc_config.get('preferred_algorithm')
+        self.preferred_algorithm_context = self.algorithms.get(self.preferred_algorithm)
 
-        self.account_lock_threshold = self.authc_config.get('account_lock_threshold',
-                                                            None)
+        self.account_lock_threshold = self.authc_config.get('account_lock_threshold')
+
+        totp_settings = self.authc_config.get('totp')
         self.totp_context = totp_settings.get('context')
+
+        self.mfa_challenger = maybe_resolve(self.authc_config.get('mfa_challenger'))
 
     def init_algorithms(self):
         algorithms = self.authc_config.get('hash_algorithms', None)
@@ -32,6 +38,6 @@ class AuthenticationSettings:
         return {}
 
     def __repr__(self):
-        return ("AuthenticationSettings(default_algorithm={0}, algorithms={1},"
-                "authc_config={2}".format(self.default_algorithm,
+        return ("AuthenticationSettings(preferred_algorithm={0}, algorithms={1},"
+                "authc_config={2}".format(self.preferred_algorithm,
                                           self.algorithms, self.authc_config))

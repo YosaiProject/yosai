@@ -164,7 +164,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         except AttributeError:
             return False
 
-    def on_successful_login(self, subject, authc_token, account):
+    def on_successful_login(self, subject, authc_token, account_id):
         """
         Reacts to the successful login attempt by first always
         forgetting any previously stored identity.  Then if the authc_token
@@ -175,22 +175,21 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
                         remembered
         :param authc_token:  the token that resulted in a successful
                              authentication attempt
-        :param account: account that contains the authentication info resulting
-                        from the successful authentication attempt
+        :param account_id: id of authenticated account
         """
         # always clear any previous identity:
         self.forget_identity(subject)
 
         # now save the new identity:
         if (self.is_remember_me(authc_token)):
-            self.remember_identity(subject, authc_token, account)
+            self.remember_identity(subject, authc_token, account_id)
         else:
             msg = ("AuthenticationToken did not indicate that RememberMe is "
                    "requested.  RememberMe functionality will not be executed "
                    "for corresponding account.")
             logger.debug(msg)
 
-    def remember_identity(self, subject, authc_token, account):
+    def remember_identity(self, subject, authc_token, account_id):
         """
         Yosai consolidates rememberIdentity, an overloaded method in java,
         to a method that will use an identifier-else-account logic.
@@ -203,18 +202,17 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :param subject:  the subject for which the identifying attributes are
                          being remembered
         :param authc_token:  ignored in the AbstractRememberMeManager
-        :param account: the account containing authentication info resulting
-                         from the successful authentication attempt
+        :param account_id: the account id of authenticated account
         """
         try:
-            identifiers = self.get_identity_to_remember(subject, account)
+            identifiers = self.get_identity_to_remember(subject, account_id)
         except AttributeError:
-            msg = "Neither account nor identifier arguments passed"
+            msg = "Neither account_id nor identifier arguments passed"
             raise InvalidArgumentException(msg)
         encrypted = self.convert_identifiers_to_bytes(identifiers)
         self.remember_encrypted_identity(subject, encrypted)
 
-    def get_identity_to_remember(self, subject, account):
+    def get_identity_to_remember(self, subject, account_id):
         """
         Returns the account's identifier and ignores the subject argument
 
@@ -222,7 +220,8 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         :param account: the account resulting from the successful authentication attempt
         :returns: the IdentifierCollection to remember
         """
-        return account.account_id
+        # This is a placeholder.  A more meaningful logic is implemented by subclasses
+        return account_id
 
     def convert_identifiers_to_bytes(self, identifiers):
         """
@@ -385,16 +384,14 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                  settings,
                  realms=None,
                  cache_handler=None,
-                 authenticator=DefaultAuthenticator(),
+                 authenticator=None,
                  authorizer=ModularRealmAuthorizer(),
                  serialization_manager=None,
                  session_manager=None,
                  remember_me_manager=None,
                  subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
-                 subject_factory=DefaultSubjectFactory()  # unlike shiro, yosai defaults
-        """
-        :type realms: tuple
-        """
+                 subject_factory=DefaultSubjectFactory()):  # unlike shiro, yosai defaults
+
         self._event_bus = DefaultEventBus()
         self.yosai = yosai
         self._cache_handler = cache_handler
@@ -406,7 +403,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             self.session_manager = DefaultNativeSessionManager(settings)
 
         self.realms = realms
-        self.authenticator = authenticator
+
+        if authenticator:
+            self.authentiator = authenticator
+        else:
+            self.authentiator = DefaultAuthenticator(settings)
+
         self.authorizer = authorizer
         self.remember_me_manager = remember_me_manager
         self.subject_factory = subject_factory
@@ -573,27 +575,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         self.apply_target_s(validate_apply, target_s)
 
-    """
-    * ===================================================================== *
-    * Authenticator Methods                                                 *
-    * ===================================================================== *
-    """
-
-    def authenticate_account(self, identifiers, authc_token):
-        """
-        :returns: an account and a boolean indicating whether account is
-                  completely authenticated
-        """
-        return self.authenticator.authenticate_account(identifiers, authc_token)
-
-    """
-    * ===================================================================== *
-    * Authorizer Methods                                                    *
-    *
-    * Note: Yosai refactored authz functionality in order to eliminate
-    *       method overloading
-    * ===================================================================== *
-    """
     def is_permitted(self, identifiers, permission_s):
         """
         :type identifiers: SimpleIdentifierCollection
@@ -711,7 +692,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
     def create_subject(self,
                        authc_token=None,
-                       account=None,
+                       account_id=None,
                        existing_subject=None,
                        subject_context=None):
         """
@@ -740,8 +721,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         :type authc_token:  subject_abcs.AuthenticationToken
 
-        :param account:  the Account of a newly authenticated user
-        :type account:  account_abcs.Account
+        :param account_id:  the identifiers of a newly authenticated user
+        :type account:  SimpleIdentifierCollection
 
         :param existing_subject: the existing Subject instance that initiated the
                                  authentication attempt
@@ -758,8 +739,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
             context.authenticated = True
             context.authentication_token = authc_token
-            context.account = account
-            # context.identifiers = account.account_id  # new to yosai
+            context.account_id = account_id
+
             if (existing_subject):
                 context.subject = existing_subject
 
@@ -791,21 +772,21 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.save(subject)
         return subject
 
-    def update_subject_identity(account, subject):
-        subject.identifiers = account.account_id
+    def update_subject_identity(account_id, subject):
+        subject.identifiers = account_id
         self.save(subject)
         return subject
 
-    def remember_me_successful_login(self, authc_token, account, subject):
+    def remember_me_successful_login(self, authc_token, account_id, subject):
         rmm = self.remember_me_manager
         if (rmm is not None):
             try:
-                rmm.on_successful_login(subject, authc_token, account)
+                rmm.on_successful_login(subject, authc_token, account_id)
             except Exception:
                 msg = ("Delegate RememberMeManager instance of type [" +
                        rmm.__class__.__name__ + "] threw an exception "
                        + "during on_successful_login.  RememberMe services "
-                       + "will not be performed for account [" + str(account) +
+                       + "will not be performed for account_id [" + str(account_id) +
                        "].")
                 logger.warning(msg, exc_info=True)
 
@@ -814,7 +795,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             msg = ("This " + rmm.__class__.__name__ +
                    " instance does not have a [RememberMeManager] instance " +
                    "configured.  RememberMe services will not be performed " +
-                   "for account [" + str(account.account_id) + "].")
+                   "for account_id [" + str(account_id) + "].")
             logger.warning(msg)
 
     def remember_me_failed_login(self, authc_token, authc_exc, subject):
@@ -868,12 +849,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                                                   when additional tokens are required
         """
         try:
-            account = self.authenticate_account(subject.identifiers, authc_token)
-
+            account_id = self.authenticator.authenticate_account(subject.identifiers,
+                                                                 authc_token)
         # implies multi-factor authc not complete:
         except AdditionalAuthenticationRequired as exc:
             # identity needs to be accessible for subsequent authentication:
-            self.update_subject_identity(account, subject)
+            self.update_subject_identity(account_id, subject)
             raise
 
         except AuthenticationException as authc_ex:
@@ -886,13 +867,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
             raise
 
         logged_in = self.create_subject(authc_token=authc_token,
-                                        account=account,
+                                        account_id=account_id,
                                         existing_subject=subject)
-        self.on_successful_login(authc_token, account, logged_in)
+        self.on_successful_login(authc_token, account_id, logged_in)
         return logged_in
 
-    def on_successful_login(self, authc_token, account, subject):
-        self.remember_me_successful_login(authc_token, account, subject)
+    def on_successful_login(self, authc_token, account_id, subject):
+        self.remember_me_successful_login(authc_token, account_id, subject)
 
     def on_failed_login(self, authc_token, authc_exc, subject):
         self.remember_me_failed_login(authc_token, authc_exc, subject)

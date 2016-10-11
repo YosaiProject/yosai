@@ -67,7 +67,7 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
                   call stack should a mapping be incorrect.
     """
     def __init__(self, yosai, security_manager):
-        self.account = None  # yosai.core.renamed AuthenticationInfo to Account
+        self.account_id = None
         self.authentication_token = None
         self.authenticated = None
         self.identifiers = None
@@ -102,9 +102,9 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
         identifiers = self.identifiers
 
         if not identifiers:
-            # account.account_id is a SimpleIdentifierCollection:
+            # account_id is a SimpleIdentifierCollection:
             try:
-                identifiers = self.account.account_id
+                identifiers = self.account_id
             except AttributeError:
                 pass
 
@@ -136,9 +136,9 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
 
         if authc is None:
             #  presence of one indicates a successful authentication attempt:
-            #  See whethere there is an Account object.  If one exists, the very
+            #  See whethere there is an AccountID
             try:
-                authc = self.account.account_id
+                authc = self.account_id
             except AttributeError:
                 pass
         if authc is None:

@@ -19,12 +19,11 @@ under the License.
 
 import logging
 from passlib.context import CryptContext
+from passlib.totp import OTPContext, TokenError
 
 from yosai.core import (
     AuthenticationSettings,
-    CryptContextException,
     InsufficientAuthcInfoException,
-    MissingHashAlgorithmException,
     PasswordMatchException,
     TOTPToken,
     UnsupportedTokenException,
@@ -38,19 +37,19 @@ logger = logging.getLogger(__name__)
 class PasslibVerifier(authc_abcs.CredentialsVerifier):
 
     def __init__(self, settings):
-        self.authc_settings = AuthenticationSettings(settings)
+        authc_settings = AuthenticationSettings(settings)
         self.password_cc = self.create_password_crypt_context(authc_settings)
         self.totp = self.create_totp(authc_settings)
         self.cc_token_resolver = {UsernamePasswordToken: self.password_cc,
                                   TOTPToken: self.totp}
         self.credential_resolver = {UsernamePasswordToken: 'password',
                                     TOTPToken: 'totp_key'}
-        self.supported_tokens = token_verifier.keys()
+        self.supported_tokens = self.cc_token_resolver.keys()
 
     def verify_credentials(self, authc_token, account):
         submitted = authc_token.credentials
-        stored = self.get_stored_credentials(account)
-        service = self.cc_token_resolver[authc_token]
+        stored = self.get_stored_credentials(authc_token, account)
+        service = self.cc_token_resolver[authc_token.__class__]
 
         try:
             if isinstance(authc_token, UsernamePasswordToken):
@@ -60,7 +59,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
                 totp.verify(submitted)
 
         except (ValueError, TokenError):
-            raise IncorrectCredentialsException
+            raise IncorrectCredentialsException(account)
 
     def get_stored_credentials(self, authc_token, account):
         authc_info = account.authc_info
@@ -74,12 +73,13 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
                                                          authc_token.__class__.__name__)
                 raise UnsupportedTokenException(msg)
 
-            raise InsufficientAuthcInfoException(exc)
+            raise InsufficientAuthcInfoException
 
     def create_password_crypt_context(self, authc_settings):
-        context = authc_settings.preferred_algorithm
+        context = dict(schemes=[authc_settings.preferred_algorithm])
+        context.update(authc_settings.preferred_algorithm_context)
         return CryptContext(**context)
 
     def create_totp(self, authc_settings):
         context = authc_settings.totp_context
-        return TOTPContext(**context).new(type='totp')  # TODO update with kwargs
+        return OTPContext(**context).new(type='totp')  # TODO update with kwargs

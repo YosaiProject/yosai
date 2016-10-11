@@ -71,7 +71,8 @@ class MissingMethodException(YosaiException):
 # ---------------------------------------------------------------------------
 
 class AdditionalAuthenticationRequired(YosaiException):
-    pass
+    def __init__(self, account=None):
+        self.account = account
 
 
 class AuthenticationException(YosaiException):
@@ -127,7 +128,8 @@ class ExpiredCredentialsException(CredentialsException):
 
 
 class IncorrectCredentialsException(CredentialsException):
-    pass
+    def __init__(self, account=None):
+        self.account = account
 
 
 class InsufficientAuthcInfoException(AuthenticationException):

@@ -20,6 +20,8 @@ v0.3
   realm(s)
 - realm verifiers are configurable through yosai settings
 - dramatically reduced/refactored passlib authentication
+- removed marshmallow from requirements
+- Account is now a namedtuple
  
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 

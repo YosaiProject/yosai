@@ -28,39 +28,8 @@ RememberMe cookies:
     - require tracking in a persistent datastore (nonce id , expiration date)
       so that absolute timeout checking can be performed
 
----------------------------------------------------------------------
-add excessive-login-attempts logic:
-    - login attempt time interval
-    - maximum allowable login attempts within time interval
-    - login-exhausted account lock time interval
-    - maximum allowable login attemps until login-exhausted account lock
-
-    Notes from Les:
-    1) Store 3 additional columns in your User table:
-    loginPeriodStartTimestamp, lastLoginAttemptTimestamp and
-    loginAttemptCount. Based on what you configure the login period to be
-    before accounts are locked (5 minutes?), you can increment the login
-    attempt count. If that number ever becomes greater than what your
-    system deems is allowed (3 tries?), then you would manually throw the
-    ExcessiveAttemptsException. Then your login controller can react to
-    that and show an appropriate GUI message.
-
-    2) An even easier approach than #1, but which requires more disk
-    storage, is to keep an event log of every login attempt. This is very
-    simple - you enter an event into the event log for each login attempt
-    with the timestamp the event occurred and the status of whether or not
-    the login failed for that user. Then, determining if the account
-    should be locked upon login is a very simple exercise - you query your
-    event log to count all failed attempts for that user where the event
-    timestamp is newer than (now - login period). If you receive any
-    count greater than your configured number (say, 3), then you throw the
-    exception.
 
 ---------------------------------------------------------------------
-
-tighten up who sets the resolver objects and where
- - there seems to be overlap between ModularRealmAuthorizer and DefaultSecurityManager
-   with respects to injecting into realms
 
 refactor method overloading, cleanly separating collection vs scalar arguments
 

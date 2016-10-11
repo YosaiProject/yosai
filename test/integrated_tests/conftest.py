@@ -1,5 +1,8 @@
+from passlib.totp import TOTP
+
 from yosai.core import (
     load_logconfig,
+    TOTPToken,
     UsernamePasswordToken,
     SimpleIdentifierCollection,
 )
@@ -73,12 +76,22 @@ def clear_walter_cached_credentials(cache_handler, request, walter):
     request.addfinalizer(remove_walter_credentials)
 
 
-@pytest.fixture(scope='function')  # because successful login clears password
+@pytest.fixture(scope='function')
 def valid_username_password_token():
     return UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
                                  remember_me=False,
                                  host='127.0.0.1')
+
+
+@pytest.fixture(scope='function')
+def thedude_totp_key():
+    return 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+
+@pytest.fixture(scope='function')
+def valid_thedude_totp_token(thedude_totp_key):
+    token = TOTP(key=thedude_totp_key).generate()
+    return TOTPToken(token=token)
 
 
 @pytest.fixture(scope='function')  # because successful login clears password

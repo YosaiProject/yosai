@@ -242,21 +242,15 @@ from yosai.core.authc.strategy import (
     FirstRealmSuccessfulStrategy,
 )
 
-from yosai.core.authc.context import (
-    CryptContextFactory,
-)
-
 from yosai.core.authc.authc import (
     Credential,
     DefaultAuthenticator,
+    TOTPToken,
     UsernamePasswordToken,
 )
 
 from yosai.core.authc.credential import (
-    DefaultPasswordService,
-    PasswordVerifier,
-    SimpleCredentialsVerifier,
-    AllowAllCredentialsVerifier,
+    PasslibVerifier,
 )
 
 from yosai.core.authz.authz import (

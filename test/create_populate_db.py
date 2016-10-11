@@ -4,15 +4,16 @@ from yosai_alchemystore import (
     Base,
 )
 
-    
+
 from yosai_alchemystore.models.models import (
-    CredentialModel,
-    UserModel,
-    DomainModel,
-    ActionModel,
-    ResourceModel,
-    PermissionModel,
-    RoleModel,
+    Credential,
+    CredentialType,
+    User,
+    Domain,
+    Action,
+    Resource,
+    Permission,
+    Role,
     role_membership,
     role_permission,
 )
@@ -31,42 +32,46 @@ pp = pprint.PrettyPrinter(indent=1)
 Session = init_session(settings=settings)
 
 # Please watch 'The Big Lebowski' so that you may understand the following data.
-users = [UserModel(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),
-         UserModel(first_name='Walter', last_name='Sobchak', identifier='walter'),
-         UserModel(first_name='Larry', last_name='Sellers', identifier='larry'),
-         UserModel(first_name='Jackie', last_name='Treehorn', identifier='jackie'),
-         UserModel(first_name='Karl', last_name='Hungus', identifier='karl'),
-         UserModel(first_name='Marty', last_name='Houston', identifier='marty')]
+users = [User(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),
+         User(first_name='Walter', last_name='Sobchak', identifier='walter'),
+         User(first_name='Larry', last_name='Sellers', identifier='larry'),
+         User(first_name='Jackie', last_name='Treehorn', identifier='jackie'),
+         User(first_name='Karl', last_name='Hungus', identifier='karl'),
+         User(first_name='Marty', last_name='Houston', identifier='marty')]
 
-domains = [DomainModel(name='money'),
-           DomainModel(name='leatherduffelbag')]
+domains = [Domain(name='money'),
+           Domain(name='leatherduffelbag')]
 
-actions = [ActionModel(name='write'),
-           ActionModel(name='deposit'),
-           ActionModel(name='transport'),
-           ActionModel(name='access'),
-           ActionModel(name='withdrawal'),
-           ActionModel(name='bowl'),
-           ActionModel(name='run')]
+actions = [Action(name='write'),
+           Action(name='deposit'),
+           Action(name='transport'),
+           Action(name='access'),
+           Action(name='withdrawal'),
+           Action(name='bowl'),
+           Action(name='run')]
 
-resources = [ResourceModel(name='theringer'),
-             ResourceModel(name='ransom'),
-             ResourceModel(name='bankcheck_19911109069')]
+resources = [Resource(name='theringer'),
+             Resource(name='ransom'),
+             Resource(name='bankcheck_19911109069')]
 
-roles = [RoleModel(title='courier'),
-         RoleModel(title='tenant'),
-         RoleModel(title='landlord'),
-         RoleModel(title='thief'),
-         RoleModel(title='bankcustomer')]
+roles = [Role(title='courier'),
+         Role(title='tenant'),
+         Role(title='landlord'),
+         Role(title='thief'),
+         Role(title='bankcustomer')]
+
+credential_types = [CredentialType(title='password'),
+                    CredentialType(title='totp_key')]
 
 session = Session()
-session.add_all(users + roles + domains + actions + resources)
+session.add_all(users + roles + domains + actions + resources + credential_types)
 
-users = dict((user.first_name+'_'+user.last_name, user) for user in session.query(UserModel).all())
-domains = dict((domain.name, domain) for domain in session.query(DomainModel).all())
-actions = dict((action.name, action) for action in session.query(ActionModel).all())
-resources = dict((resource.name, resource) for resource in session.query(ResourceModel).all())
-roles = dict((role.title, role) for role in session.query(RoleModel).all())
+users = dict((user.first_name+'_'+user.last_name, user) for user in session.query(User).all())
+domains = dict((domain.name, domain) for domain in session.query(Domain).all())
+actions = dict((action.name, action) for action in session.query(Action).all())
+resources = dict((resource.name, resource) for resource in session.query(Resource).all())
+roles = dict((role.title, role) for role in session.query(Role).all())
+cred_types =  dict((ct.title, ct) for ct in session.query(CredentialType).all())
 
 thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
 print('thirty from now is:  ', thirty_from_now)
@@ -74,37 +79,38 @@ print('thirty from now is:  ', thirty_from_now)
 cc = CryptContext(schemes=['bcrypt_sha256'])
 password = cc.encrypt('letsgobowling')
 
-credentials = [CredentialModel(user_id=user.pk_id, 
+credentials = [Credential(user_id=user.pk_id,
                           credential=password,
+                          credential_type_id=cred_types['password'].pk_id,
                           expiration_dt=thirty_from_now) for user in users.values()]
 session.add_all(credentials)
 
 
-perm1 = PermissionModel(domain=domains['money'],
+perm1 = Permission(domain=domains['money'],
                    action=actions['write'],
                    resource=resources['bankcheck_19911109069'])
 
-perm2 = PermissionModel(domain=domains['money'],
+perm2 = Permission(domain=domains['money'],
                    action=actions['deposit'])
 
-perm3 = PermissionModel(domain=domains['money'],
+perm3 = Permission(domain=domains['money'],
                    action=actions['access'],
                    resource=resources['ransom'])
 
-perm4 = PermissionModel(domain=domains['leatherduffelbag'],
+perm4 = Permission(domain=domains['leatherduffelbag'],
                    action=actions['transport'],
                    resource=resources['theringer'])
 
-perm5 = PermissionModel(domain=domains['leatherduffelbag'],
+perm5 = Permission(domain=domains['leatherduffelbag'],
                    action=actions['access'],
                    resource=resources['theringer'])
 
-perm6 = PermissionModel(domain=domains['money'],
+perm6 = Permission(domain=domains['money'],
                    action=actions['withdrawal'])
 
-perm7 = PermissionModel(action=actions['bowl'])
+perm7 = Permission(action=actions['bowl'])
 
-perm8 = PermissionModel(action=actions['run'])  # I dont know!?
+perm8 = Permission(action=actions['run'])  # I dont know!?
 
 session.add_all([perm1, perm2, perm3, perm4, perm5, perm6, perm7, perm8])
 
@@ -146,23 +152,23 @@ def get_permissions_query(session, identifier_s):
     """
     :type identifier_s: list
     """
-    thedomain = case([(DomainModel.name == None, '*')], else_=DomainModel.name)
-    theaction = case([(ActionModel.name == None, '*')], else_=ActionModel.name)
-    theresource = case([(ResourceModel.name == None, '*')], else_=ResourceModel.name)
+    thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
+    theaction = case([(Action.name == None, '*')], else_=Action.name)
+    theresource = case([(Resource.name == None, '*')], else_=Resource.name)
 
     action_agg = func.group_concat(theaction.distinct())
     resource_agg = func.group_concat(theresource.distinct())
 
     return (session.query(thedomain + ':' + action_agg + ':' + resource_agg).
-            select_from(UserModel).
-            join(role_membership, UserModel.pk_id == role_membership.c.user_id).
+            select_from(User).
+            join(role_membership, User.pk_id == role_membership.c.user_id).
             join(role_permission, role_membership.c.role_id == role_permission.c.role_id).
-            join(PermissionModel, role_permission.c.permission_id == PermissionModel.pk_id).
-            outerjoin(DomainModel, PermissionModel.domain_id == DomainModel.pk_id).
-            outerjoin(ActionModel, PermissionModel.action_id == ActionModel.pk_id).
-            outerjoin(ResourceModel, PermissionModel.resource_id == ResourceModel.pk_id).
-            filter(UserModel.identifier.in_(identifier_s)).
-            group_by(PermissionModel.domain_id, PermissionModel.resource_id))
+            join(Permission, role_permission.c.permission_id == Permission.pk_id).
+            outerjoin(Domain, Permission.domain_id == Domain.pk_id).
+            outerjoin(Action, Permission.action_id == Action.pk_id).
+            outerjoin(Resource, Permission.resource_id == Resource.pk_id).
+            filter(User.identifier.in_(identifier_s)).
+            group_by(Permission.domain_id, Permission.resource_id))
 
 #result = get_permissions_query(session, ['walter']).all()
 #pp.pprint(result)

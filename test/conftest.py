@@ -2,18 +2,17 @@ import pytest
 
 from yosai.core import (
     AccountStoreRealm,
-    AuthzInfoResolver,
     Credential,
-    CredentialResolver,
     DefaultEventBus,
     DefaultPermission,
     IndexedAuthorizationInfo,
+    IndexedPermissionVerifier,
     LazySettings,
     NativeSecurityManager,
-    PermissionResolver,
-    RoleResolver,
+    PasslibVerifier,
     SerializationManager,
     SimpleRole,
+    SimpleRoleVerifier,
     UsernamePasswordToken,
     Yosai,
 )
@@ -62,16 +61,6 @@ def session(cache_handler, request, settings):
 
 
 @pytest.fixture(scope='function')
-def authz_info_resolver():
-    return AuthzInfoResolver(IndexedAuthorizationInfo)
-
-
-@pytest.fixture(scope='function')
-def credential_resolver():
-    return CredentialResolver(Credential)
-
-
-@pytest.fixture(scope='function')
 def indexed_authz_info(permission_collection, role_collection):
     return IndexedAuthorizationInfo(roles=role_collection,
                                     permissions=permission_collection)
@@ -88,20 +77,10 @@ def permission_collection():
 
 
 @pytest.fixture(scope='function')
-def permission_resolver():
-    return PermissionResolver(DefaultPermission)
-
-
-@pytest.fixture(scope='function')
 def role_collection():
     return {SimpleRole('role1'),
             SimpleRole('role2'),
             SimpleRole('role3')}
-
-
-@pytest.fixture(scope='function')
-def role_resolver():
-    return RoleResolver(SimpleRole)
 
 
 @pytest.fixture(scope='function')
@@ -128,21 +107,29 @@ def cache_handler(settings, serialization_manager):
 
 
 @pytest.fixture(scope='function')
-def account_store_realm(cache_handler, alchemy_store, permission_resolver,
-                        role_resolver, authz_info_resolver, credential_resolver,
-                        settings):
+def permission_verifier():
+    return IndexedPermissionVerifier()
 
-    asr = AccountStoreRealm(settings,
-                            name='AccountStoreRealm',
-                            account_store=alchemy_store)
 
+@pytest.fixture(scope='function')
+def role_verifier():
+    return SimpleRoleVerifier()
+
+
+@pytest.fixture(scope='function')
+def authc_verifiers(settings):
+    return (PasslibVerifier(settings),)
+
+
+@pytest.fixture(scope='function')
+def account_store_realm(cache_handler, alchemy_store, authc_verifiers,
+                        permission_verifier, role_verifier):
+    asr = AccountStoreRealm(name='AccountStoreRealm',
+                            account_store=alchemy_store,
+                            authc_verifiers=authc_verifiers,
+                            permission_verifier=permission_verifier,
+                            role_verifier=role_verifier)
     asr.cache_handler = cache_handler
-
-    asr.credential_resolver = credential_resolver
-    asr.permission_resolver = permission_resolver
-    asr.authz_info_resolver = authz_info_resolver
-    asr.role_resolver = role_resolver
-
     return asr
 
 

@@ -88,24 +88,16 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
 
     @property
     @abstractmethod
-    def credentials_verifiers(self):
+    def authc_verifiers(self):
         pass
 
-    @credentials_verifiers.setter
+    @authc_verifiers.setter
     @abstractmethod
-    def credentials_verifiers(self, verifier_s):
+    def authc_verifiers(self, verifier_s):
         pass
 
     @abstractmethod
-    def supported_authc_tokens(self):
-        """
-        :rtype: list
-        :returns: a list of authentication token classes supported by the realm
-        """
-
-    # new to yosai.core. considered a counterpart of get_authorization_info
-    @abstractmethod
-    def get_authc_info(self, authc_token):
+    def get_authentication_info(self, authc_token):
         pass
 
     @abstractmethod

@@ -110,7 +110,7 @@ class Authenticator(metaclass=ABCMeta):
 class CredentialsVerifier(metaclass=ABCMeta):
 
     @abstractmethod
-    def credentials_match(authc_token, account):
+    def verify_credentials(authc_token, account):
         pass
 
 
