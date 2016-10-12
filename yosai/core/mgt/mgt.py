@@ -24,7 +24,6 @@ from abc import abstractmethod
 
 from yosai.core import(
     AuthenticationException,
-    Credential,
     DefaultAuthenticator,
     DefaultEventBus,
     EventLogger,
@@ -710,12 +709,13 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                                                   when additional tokens are required
         """
         try:
+            # account_id is a SimpleIdentifierCollection
             account_id = self.authenticator.authenticate_account(subject.identifiers,
                                                                  authc_token)
         # implies multi-factor authc not complete:
         except AdditionalAuthenticationRequired as exc:
             # identity needs to be accessible for subsequent authentication:
-            self.update_subject_identity(account_id, subject)
+            self.update_subject_identity(exc.account_id, subject)
             raise
 
         except AuthenticationException as authc_ex:

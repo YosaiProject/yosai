@@ -446,7 +446,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
         session = subject.get_session(False)
         if session:
-            self.session = self.decorate(session)
+            session.stop_session_callback = self.session_stopped
+            self.session = session
         else:
             self.session = None
 
@@ -483,7 +484,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
             session_context = self.create_session_context()
             session = self.security_manager.start(session_context)
-            self.session = self.decorate(session)
+            session.stop_session_callback = self.session_stopped
+            self.session = session
 
         return self.session
 
@@ -922,7 +924,7 @@ class Yosai:
 
     def generate_security_manager(self, settings, session_attributes):
         # don't forget to pass default_cipher_key into the WebSecurityManager
-        mgr_builder = SecurityManagerBuilder()
+        mgr_builder = SecurityManagerCreator()
         return mgr_builder.create_manager(self, settings, session_attributes)
 
     @memoized_property
@@ -1203,7 +1205,7 @@ class Yosai:
 
 
 # new to yosai
-class SecurityManagerBuilder:
+class SecurityManagerCreator:
 
     def init_realms(self, settings, realms):
         try:

@@ -165,23 +165,21 @@ class EventLogger:
         self.event_bus.register(self.log_authz_denied, 'AUTHORIZATION.DENIED')
         self.event_bus.register(self.log_authz_results, 'AUTHORIZATION.RESULTS')
 
-    def log_authc_progress(self, identifier=None, token=None):
+    def log_authc_progress(self, identifier=None):
         topic = 'AUTHENTICATION.PROGRESS'
-        serialized = identifiers.__getstate__()
-        logger.info(topic, extra={'identifier': identifier, 'token': token})
+        logger.info(topic, extra={'identifier': identifier})
 
-    def log_authc_succeeded(self, identifiers=None):
+    def log_authc_succeeded(self, identifier=None):
         topic = 'AUTHENTICATION.SUCCEEDED'
-        serialized = identifiers.__getstate__()
-        logger.info(topic, extra={'identifiers': serialized})
+        logger.info(topic, extra={'identifier': identifier})
 
-    def log_authc_failed(self, username=None):
+    def log_authc_failed(self, identifier=None):
         topic = 'AUTHENTICATION.FAILED'
-        logger.info(topic, extra={'username': username})
+        logger.info(topic, extra={'identifier': identifier})
 
     def log_session_start(self, session_id=None):
         topic = 'SESSION.START'
-        logger.info(topic, extra={'sessionid': session_id})
+        logger.info(topic, extra={'session_id': session_id})
 
     def log_session_stop(self, items=None):
         topic = 'SESSION.STOP'

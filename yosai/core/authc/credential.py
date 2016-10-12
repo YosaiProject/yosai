@@ -19,7 +19,7 @@ under the License.
 
 import logging
 from passlib.context import CryptContext
-from passlib.totp import OTPContext, TokenError
+from passlib.totp import OTPContext, TokenError, TOTP
 
 from yosai.core import (
     AuthenticationSettings,
@@ -39,9 +39,11 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
     def __init__(self, settings):
         authc_settings = AuthenticationSettings(settings)
         self.password_cc = self.create_password_crypt_context(authc_settings)
-        self.totp = self.create_totp(authc_settings)
+        self.totp_cc = self.create_totp_crypt_context(authc_settings)
         self.cc_token_resolver = {UsernamePasswordToken: self.password_cc,
-                                  TOTPToken: self.totp}
+                                  TOTPToken: self.totp_cc}
+
+        # this is a map between the title from the db and the python class:
         self.credential_resolver = {UsernamePasswordToken: 'password',
                                     TOTPToken: 'totp_key'}
         self.supported_tokens = self.cc_token_resolver.keys()
@@ -55,14 +57,14 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
             if isinstance(authc_token, UsernamePasswordToken):
                 service.verify(submitted, stored)
             else:
-                totp = service(stored)
+                totp = TOTP(key=stored)
                 totp.verify(submitted)
 
         except (ValueError, TokenError):
-            raise IncorrectCredentialsException(account)
+            raise IncorrectCredentialsException(authc_token.identifier)
 
     def get_stored_credentials(self, authc_token, account):
-        authc_info = account.authc_info
+        authc_info = account['authc_info']
 
         try:
             return authc_info[self.credential_resolver[authc_token.__class__]]
@@ -80,6 +82,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         context.update(authc_settings.preferred_algorithm_context)
         return CryptContext(**context)
 
-    def create_totp(self, authc_settings):
-        context = authc_settings.totp_context
-        return OTPContext(**context).new(type='totp')  # TODO update with kwargs
+    def create_totp_crypt_context(self, saved_key):
+        pass
+        # context = authc_settings.totp_context
+        # return OTPContext(**context).new(type='totp')

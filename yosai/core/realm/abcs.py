@@ -76,6 +76,10 @@ class Realm(metaclass=ABCMeta):
 
 # new to yosai.core:
 class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
+    """
+    required attributes:
+        authc_verifiers
+    """
 
     @property
     @abstractmethod
@@ -84,16 +88,6 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
         :rtype: list
         :returns: a list of authentication token classes verifiable by the realm
         """
-        pass
-
-    @property
-    @abstractmethod
-    def authc_verifiers(self):
-        pass
-
-    @authc_verifiers.setter
-    @abstractmethod
-    def authc_verifiers(self, verifier_s):
         pass
 
     @abstractmethod
@@ -115,26 +109,11 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
 
 # new to yosai.core:
 class AuthorizingRealm(Realm):
-
-    @property
-    @abstractmethod
-    def permission_verifier(self):
-        pass
-
-    @permission_verifier.setter
-    @abstractmethod
-    def permission_verifier(self, verifier):
-        pass
-
-    @property
-    @abstractmethod
-    def role_verifier(self):
-        pass
-
-    @role_verifier.setter
-    @abstractmethod
-    def role_verifier(self, verifier):
-        pass
+    """
+    required attributes:
+        permission_verifier
+        role_verifier
+    """
 
     @abstractmethod
     def get_authorization_info(self, identifiers):

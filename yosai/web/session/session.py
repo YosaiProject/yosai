@@ -30,7 +30,6 @@ from yosai.core import (
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
-    ProxiedSession,
     SessionCreationException,
     SessionEventHandler,
     SimpleSession,
@@ -46,7 +45,7 @@ from yosai.web import (
 logger = logging.getLogger(__name__)
 
 
-class WebSessionKey(namedtuple('WebSessionKey', 'session_id, web_registry')):
+class WebSessionKey(collections.namedtuple('WebSessionKey', 'session_id, web_registry')):
     __slots__ = ()
     def __new__(cls, session_id, web_registry=None):
         return super(WebSessionKey, cls).__new__(cls, session_id, web_registry)
@@ -308,36 +307,6 @@ class WebDelegatingSession(DelegatingSession):
 
     def recreate_session(self):
         return self.session_manager.recreate_session(self.session_key)
-
-
-class WebProxiedSession(ProxiedSession):
-    def __init__(self, target_session):
-        super().__init__(target_session)
-
-    def new_csrf_token(self):
-        """
-        :rtype: str
-        :returns: a CSRF token
-        """
-        return self._delegate.new_csrf_token()
-
-    def get_csrf_token(self):
-        return self._delegate.get_csrf_token()
-
-    def flash(self, msg, queue='default', allow_duplicate=False):
-        return self._delegate.flash(msg, queue, allow_duplicate)
-
-    # new to yosai
-    def peek_flash(self, queue='default'):
-        return self._delegate.peek_flash(queue)
-
-    # new to yosai
-    def pop_flash(self, queue='default'):
-        return self._delegate.pop_flash(queue)
-
-    # new to yosai
-    def recreate_session(self):
-        return self._delegate.recreate_session()
 
 
 class DefaultWebSessionContext(DefaultSessionContext):

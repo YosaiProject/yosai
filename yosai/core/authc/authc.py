@@ -128,7 +128,7 @@ class TOTPToken(authc_abcs.AuthenticationToken):
     def credentials(self, credentials):
         try:
             assert credentials >= 100000 and credentials < 1000000
-
+            self._credentials = credentials
         except (TypeError, AssertionError):
             raise InvalidTokenException('TOTPToken must be a 6-digit int')
 
@@ -195,14 +195,17 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
 
     def authenticate_account(self, identifiers, authc_token):
         """
+        :type identifiers: SimpleIdentifierCollection or None
+
         :returns: account_id if the account authenticates
+        :rtype: SimpleIdentifierCollection
         """
         msg = ("Authentication submission received for authentication "
                "token [" + str(authc_token) + "]")
         logger.debug(msg)
 
         # the following conditions verify correct authentication sequence
-        if not authc_token.identifier:
+        if not getattr(authc_token, 'identifier', None):
             if not identifiers:
                 msg = "Authentication must be performed in expected sequence."
                 raise InvalidAuthenticationSequenceException(msg)
@@ -218,19 +221,19 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 raise UnknownAccountException(msg2)
 
         except AdditionalAuthenticationRequired as exc:
-            self.notify_progress(authc_token)
+            self.notify_progress(authc_token.identifier)
             try:
-                self.mfa_challenger.send_challenge(exc.account)
+                self.mfa_challenger.send_challenge(exc.account_id)
             except AttributeError:
                 pass
             raise exc # the security_manager saves subject identifiers
 
         except IncorrectCredentialsException as exc:
-            self.notify_failure(authc_token)
+            self.notify_failure(authc_token.identifier)
             self.validate_locked(authc_token, exc.account)
             raise  # this won't be called if the Account is locked
 
-        self.notify_success(account)
+        self.notify_success(account['account_id'].primary_identifier)
 
         return account['account_id']
 
@@ -245,17 +248,17 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         """
         realms = self.token_realm_resolver[authc_token.__class__]
 
+        # account is a dict:
         if (len(self.realms) == 1):
             account = self.authenticate_single_realm_account(realms[0], authc_token)
-
         else:
             account = self.authenticate_multi_realm_account(self.realms, authc_token)
 
         # the following condition verifies whether the account uses MFA:
         if len(account['authc_info']) > authc_token.TIER:
             # the token authenticated but additional authentication is required
-            self.notify_progress(authc_token)
-            raise AdditionalAuthenticationRequired(account)
+            self.notify_progress(authc_token.identifier)
+            raise AdditionalAuthenticationRequired(account['account_id'])
 
         return account
     # --------------------------------------------------------------------------
@@ -294,27 +297,26 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             msg = "Could not publish AUTHENTICATION.ACCOUNT_LOCKED event"
             raise AuthenticationEventException(msg)
 
-    def notify_progress(self, authc_token):
+    def notify_progress(self, identifier):
         try:
             self.event_bus.publish('AUTHENTICATION.PROGRESS',
-                                   identifier=authc_token.identifier,
-                                   token=authc_token.__class__.__name__)
+                                   identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.PROGRESS event"
             raise AuthenticationEventException(msg)
 
-    def notify_success(self, account):
+    def notify_success(self, identifier):
         try:
             self.event_bus.publish('AUTHENTICATION.SUCCEEDED',
-                                   identifiers=account['account_id'])
+                                   identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
             raise AuthenticationEventException(msg)
 
-    def notify_failure(self, authc_token):
+    def notify_failure(self, identifier):
         try:
             self.event_bus.publish('AUTHENTICATION.FAILED',
-                                   username=authc_token.username)
+                                   identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.FAILED event"
             raise AuthenticationEventException(msg)
@@ -328,7 +330,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 self.locking_realm.lock_account(account)
                 msg = ('Authentication attempts breached threshold.  Account'
                        'is now locked: ', str(account))
-                self.notify_locked(account['account_id'])
+                self.notify_locked(account['account_id'].primary_identifier)
                 raise LockedAccountException(msg)
 
     def __repr__(self):

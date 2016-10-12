@@ -2,7 +2,6 @@ import pytest
 
 from yosai.core import (
     AccountStoreRealm,
-    Credential,
     DefaultEventBus,
     DefaultPermission,
     IndexedAuthorizationInfo,

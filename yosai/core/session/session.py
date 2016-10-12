@@ -33,7 +33,6 @@ from yosai.core import (
     InvalidArgumentException,
     IllegalStateException,
     InvalidSessionException,
-    RandomSessionIDGenerator,
     SessionCacheException,
     SessionCreationException,
     SessionEventException,
@@ -46,6 +45,7 @@ from yosai.core import (
 
 logger = logging.getLogger(__name__)
 
+DefaultSessionKey = collections.namedtuple('DefaultSessionKey', 'session_id')
 
 class AbstractSessionStore(session_abcs.SessionStore):
     """
@@ -69,10 +69,6 @@ class AbstractSessionStore(session_abcs.SessionStore):
     entirely and just return the data store's ID from the do_create
     implementation.
     """
-
-    def __init__(self):
-        # shiro defaults to UUID where as yosai.core.uses well hashed urandom:
-        self.session_id_generator = RandomSessionIDGenerator
 
     def generate_session_id(self):
         """
@@ -285,7 +281,7 @@ class CachingSessionStore(AbstractSessionStore):
         try:
             self.cache_handler.set(domain='session',
                                    identifier=identifiers.primary_identifier,
-                                   value=DefaultSessionKey(session_id))
+                                   value=session_id)
         except AttributeError:
             msg = "Could not cache identifiers_session_key."
             if not identifiers:
@@ -751,36 +747,6 @@ class DelegatingSession(session_abcs.Session):
     def __repr__(self):
         return "{0}(session_id: {1})".format(self.__class__.__name__,
                                              self.session_id)
-
-
-class DefaultSessionKey(session_abcs.SessionKey, serialize_abcs.Serializable):
-
-    def __init__(self, session_id):
-        self._session_id = session_id
-
-    @property
-    def session_id(self):
-        return self._session_id
-
-    @session_id.setter
-    def session_id(self, session_id):
-        self._session_id = session_id
-
-    def __eq__(self, other):
-        try:
-            return self.session_id == other.session_id
-        except AttributeError:
-            return False
-
-    def __repr__(self):
-        return "SessionKey(session_id={0})".format(self.session_id)
-
-    def __getstate__(self):
-        return {'_session_id': self._session_id}
-
-    def __setstate__(self, state):
-        self._session_id = state['_session_id']
-
 
 # yosai.core.refactor:
 class SessionEventHandler:

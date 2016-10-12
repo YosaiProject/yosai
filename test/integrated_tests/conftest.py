@@ -77,29 +77,43 @@ def clear_walter_cached_credentials(cache_handler, request, walter):
 
 
 @pytest.fixture(scope='function')
-def valid_username_password_token():
-    return UsernamePasswordToken(username='thedude',
+def valid_username_password_token(cache_handler):
+    domain = 'authentication:AccountStoreRealm'
+    cache_handler.delete(domain=domain, identifier='thedude')
+    yield UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
                                  remember_me=False,
                                  host='127.0.0.1')
 
+    cache_handler.delete(domain=domain, identifier='thedude')
 
 @pytest.fixture(scope='function')
 def thedude_totp_key():
     return 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
 
 @pytest.fixture(scope='function')
-def valid_thedude_totp_token(thedude_totp_key):
-    token = TOTP(key=thedude_totp_key).generate()
-    return TOTPToken(token=token)
+def valid_totp_token(thedude_totp_key, cache_handler):
+    domain = 'authentication:AccountStoreRealm'
+    cache_handler.delete(domain=domain, identifier='thedude')
 
+    token = int(TOTP(key=thedude_totp_key).generate().token)
+
+    yield TOTPToken(totp_token=token)
+
+    cache_handler.delete(domain=domain, identifier='thedude')
 
 @pytest.fixture(scope='function')  # because successful login clears password
-def remembered_valid_username_password_token():
-    return UsernamePasswordToken(username='thedude',
+def remembered_valid_username_password_token(cache_handler):
+    domain = 'authentication:AccountStoreRealm'
+    cache_handler.delete(domain=domain, identifier='thedude')
+
+    yield UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
                                  remember_me=True,
                                  host='127.0.0.1')
+
+    cache_handler.delete(domain=domain, identifier='thedude')
+
 
 
 @pytest.fixture(scope='function')

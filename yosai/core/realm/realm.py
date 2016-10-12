@@ -172,6 +172,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
             # account_info is a dict
             account_info = self.account_store.get_authc_info(identifier)
+            
             if account_info is None:
                 msg = "Could not get stored credentials for {0}".format(identifier)
                 raise CredentialsNotFoundException(msg)
@@ -203,7 +204,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     def authenticate_account(self, authc_token):
         """
         :type authc_token: authc_abcs.AuthenticationToken
-
+        :rtype: dict
         :raises IncorrectCredentialsException:  when authentication fails
         """
         try:

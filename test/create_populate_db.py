@@ -79,12 +79,17 @@ print('thirty from now is:  ', thirty_from_now)
 cc = CryptContext(schemes=['bcrypt_sha256'])
 password = cc.encrypt('letsgobowling')
 
-credentials = [Credential(user_id=user.pk_id,
+totp_key = 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+
+passwords = [Credential(user_id=user.pk_id,
                           credential=password,
                           credential_type_id=cred_types['password'].pk_id,
                           expiration_dt=thirty_from_now) for user in users.values()]
-session.add_all(credentials)
-
+totp_keys = [Credential(user_id=user.pk_id,
+                          credential=totp_key,
+                          credential_type_id=cred_types['totp_key'].pk_id,
+                          expiration_dt=thirty_from_now) for user in users.values()]
+session.add_all(passwords + totp_keys)
 
 perm1 = Permission(domain=domains['money'],
                    action=actions['write'],
