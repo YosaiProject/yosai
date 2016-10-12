@@ -338,133 +338,6 @@ class CachingSessionStore(AbstractSessionStore):
         pass
 
 
-# Yosai omits the SessionListenerAdapter class
-
-class ProxiedSession(session_abcs.Session):
-    """
-    Simple Session implementation that immediately delegates all
-    corresponding calls to an underlying proxied session instance.
-
-    This class is mostly useful for framework subclassing to intercept certain
-    Session calls and perform additional logic.
-    """
-
-    def __init__(self, target_session):
-        """
-        unlike shiro, yosai differentiates session attributes for internal use
-        from session attributes for external use
-        """
-        # the proxied instance:
-        self._delegate = target_session
-        self._session_id = None
-
-    @property
-    def session_id(self):
-        return self._delegate.session_id
-
-    @property
-    def start_timestamp(self):
-        return self._delegate.start_timestamp
-
-    @property
-    def last_access_time(self):
-        return self._delegate.last_access_time
-
-    @property
-    def idle_timeout(self):
-        return self._delegate.idle_timeout
-
-    @idle_timeout.setter
-    def idle_timeout(self, max_idle_time):
-        self._delegate.idle_timeout = max_idle_time
-
-    @property
-    def absolute_timeout(self):
-        return self._delegate.absolute_timeout
-
-    @absolute_timeout.setter
-    def absolute_timeout(self, abs_time):
-        self._delegate.absolute_timeout = abs_time
-
-    @property
-    def host(self):
-        return self._delegate.host
-
-    def touch(self):
-        self._delegate.touch()
-
-    def stop(self, identifiers):
-        self._delegate.stop(identifiers)
-
-    @property
-    def attribute_keys(self):
-        return self._delegate.attribute_keys
-
-    @property
-    def internal_attribute_keys(self):
-        return self._delegate.internal_attribute_keys
-
-    def get_internal_attribute(self, key):
-        return self._delegate.get_internal_attribute(key)
-
-    def get_internal_attributes(self):
-        return self._delegate.get_internal_attributes()
-
-    def set_internal_attribute(self, key, value):
-        self._delegate.set_internal_attribute(key, value)
-
-    def set_internal_attributes(self, key_values):
-        self._delegate.set_internal_attributes(key_values)
-
-    def remove_internal_attribute(self, key):
-        self._delegate.remove_internal_attribute(key)
-
-    def remove_internal_attributes(self, to_remove):
-        self._delegate.remove_internal_attributes(to_remove)
-
-    def get_attribute(self, key):
-        return self._delegate.get_attribute(key)
-
-    # new to yosai
-    def get_attributes(self, attributes):
-        """
-        :param attributes: the keys of attributes to get from the session
-        :type attributes: list of strings
-
-        :returns: a dict containing the attributes requested
-        """
-        return self._delegate.get_attributes(attributes)
-
-    def set_attribute(self, key, value):
-        self._delegate.set_attribute(key, value)
-
-    # new to yosai
-    def set_attributes(self, attributes):
-        """
-        :param attributes: the attributes to add to the session
-        :type attributes: dict
-        """
-        self._delegate.set_attributes(attributes)
-
-    def remove_attribute(self, key):
-        self._delegate.remove_attribute(key)  # you could validate here
-
-    # new to yosai
-    def remove_attributes(self, keys):
-        """
-        :param attributes: the keys of attributes to remove from the session
-        :type attributes: list of strings
-        """
-        self._delegate.remove_attributes(keys)  # you could validate here
-
-    def __repr__(self):
-        return "{0}(session_id={0}, attributes={1})".format(self.__class__.__name__,
-                                                            self.session_id,
-                                                            self.attribute_keys)
-
-# removed ImmutableProxiedSession because it can't be sent over the eventbus
-
-
 class SimpleSession(session_abcs.ValidatingSession,
                     serialize_abcs.Serializable):
 
@@ -751,7 +624,6 @@ class DelegatingSession(session_abcs.Session):
     as might be the case in a web-based application where the web classes
     and server-side business objects exist in the same namespace, a remote
     method call will not be incurred.
-
     """
 
     def __init__(self, session_manager, sessionkey):
@@ -760,6 +632,7 @@ class DelegatingSession(session_abcs.Session):
         self.session_manager = session_manager
         self._start_timestamp = None
         self._host = None
+        self.stop_session_callback = None  # is set by Subject owner
 
     @property
     def session_id(self):
@@ -804,6 +677,11 @@ class DelegatingSession(session_abcs.Session):
 
     def stop(self, identifiers):
         self.session_manager.stop(self.session_key, identifiers)
+        try:
+            self.stop_session_callback()
+        except TypeError:
+            msg = "DelegatingSession has no stop_session_callback set."
+            logger.debug(msg)
 
     @property
     def internal_attribute_keys(self):
@@ -875,8 +753,7 @@ class DelegatingSession(session_abcs.Session):
                                              self.session_id)
 
 
-class DefaultSessionKey(session_abcs.SessionKey,
-                        serialize_abcs.Serializable):
+class DefaultSessionKey(session_abcs.SessionKey, serialize_abcs.Serializable):
 
     def __init__(self, session_id):
         self._session_id = session_id
@@ -1433,18 +1310,10 @@ class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
     # Subject state if the Subject's Session does not yet exist.
 
     def __init__(self):
-        self._session_storage_enabled = True
-
-    @property
-    def session_storage_enabled(self):
-        return self._session_storage_enabled
-
-    @session_storage_enabled.setter
-    def session_storage_enabled(self, sse):
-        self._session_storage_enabled = sse
+        self.session_storage_enabled = True
 
     def is_session_storage_enabled(self, subject=None):
         try:
             return subject.get_session(False) is not None
         except AttributeError:
-            return self._session_storage_enabled
+            return self.session_storage_enabled

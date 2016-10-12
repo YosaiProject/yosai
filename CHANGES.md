@@ -24,6 +24,7 @@ v0.3
 - Account is now a namedtuple
 - AuthorizationInfo abc updated
 - removed EventBusAware abc, refactored how eventbus is propagated
+- eliminated need for ProxiedSession (telling subject about stopped sessions)
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 

@@ -533,8 +533,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
     * ===================================================================== *
     """
     def start(self, session_context):
-        test = self.session_manager.start(session_context)
-        return test
+        return self.session_manager.start(session_context)
 
     def get_session(self, session_key):
         return self.session_manager.get_session(session_key)

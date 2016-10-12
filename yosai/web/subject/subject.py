@@ -38,7 +38,6 @@ from yosai.core import (
 
 from yosai.web import (
     DefaultWebSessionContext,
-    WebProxiedSession,
     WebRegistrySettings,
     web_subject_abcs,
 )
@@ -190,28 +189,6 @@ class WebDelegatingSubject(DelegatingSubject,
         wsc = DefaultWebSessionContext(web_registry=self.web_registry)
         wsc.host = self.host
         return wsc
-
-    # inner class:
-    class StoppingAwareProxiedSession(WebProxiedSession):
-
-        def __init__(self, target_session, owning_subject):
-            """
-            :type target_session:  session_abcs.Session
-            :type owning_subject:  subject_abcs.Subject
-            """
-            super().__init__(target_session)
-            self.owner = owning_subject
-
-        def stop(self, identifiers):
-            """
-            :type identifiers:  subject_abcs.IdentifierCollection
-            :raises InvalidSessionException:
-            """
-            super().stop(identifiers)
-            self.owner.session_stopped()
-
-        def __repr__(self):
-            return "WebStoppingAwareProxiedSession()"
 
 
 class WebYosai(Yosai):

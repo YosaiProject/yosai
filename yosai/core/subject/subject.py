@@ -28,7 +28,6 @@ from yosai.core import (
     InvalidArgumentException,
     IllegalStateException,
     LazySettings,
-    ProxiedSession,
     SecurityManagerInitException,
     SecurityManagerNotSetException,
     SecurityManagerSettings,
@@ -208,6 +207,8 @@ class DelegatingSubject(subject_abcs.Subject):
     Shiro uses multithreading.  Yosai's approach to concurrency will be decided
     once CPU and IO statistics have been collected from the synchronous version.
     Until then, I've commented out the ported multithreading-related methods.
+
+    :type authenticated: bool
     """
 
     def __init__(self,
@@ -226,45 +227,13 @@ class DelegatingSubject(subject_abcs.Subject):
         self.host = host
 
         if (session is not None):
-            self.session = self.decorate(session)  # shiro's decorate
+            session.stop_session_callback = self.session_stopped
+            self.session = session
         else:
             self.session = None
 
-        self._session_creation_enabled = session_creation_enabled
+        self.session_creation_enabled = session_creation_enabled
         self.run_as_identifiers_session_key = 'run_as_identifiers_session_key'
-
-    def decorate(self, session):
-        """
-        :type session:  session_abcs.Session
-        """
-        if not isinstance(session, session_abcs.Session):
-            raise InvalidArgumentException('incorrect session argument passed')
-        return self.StoppingAwareProxiedSession(session, self)
-
-    @property
-    def security_manager(self):
-        if not hasattr(self, '_security_manager'):
-            self._security_manager = None
-        return self._security_manager
-
-    @security_manager.setter
-    def security_manager(self, security_manager):
-        """
-        :type security_manager:  mgt_abcs.SecurityManager
-        """
-        if (isinstance(security_manager, mgt_abcs.SecurityManager) or
-                security_manager is None):
-            self._security_manager = security_manager
-        else:
-            raise InvalidArgumentException('must use SecurityManager')
-
-    @property
-    def session_creation_enabled(self):
-        return self._session_creation_enabled
-
-    @session_creation_enabled.setter
-    def session_creation_enabled(self, enabled):
-        self._session_creation_enabled = enabled
 
     # new to yosai.core.
     # security_manager is required for certain operations
@@ -466,7 +435,7 @@ class DelegatingSubject(subject_abcs.Subject):
             raise IllegalStateException(msg)
 
         self._identifiers = identifiers
-        self._authenticated = True
+        self.authenticated = True
 
         if not host:
             try:
@@ -477,42 +446,13 @@ class DelegatingSubject(subject_abcs.Subject):
 
         session = subject.get_session(False)
         if session:
-            self._session = self.decorate(session)
+            self.session = self.decorate(session)
         else:
-            self._session = None
-
-    @property
-    def authenticated(self):
-        return self._authenticated
-
-    @authenticated.setter
-    def authenticated(self, authc):
-        """
-        :type authc: bool
-        """
-        if not isinstance(authc, bool):
-            raise InvalidArgumentException('authenticated must be Boolean')
-        self._authenticated = authc
+            self.session = None
 
     @property
     def authorized(self):
         return self.remembered or self.authenticated
-
-    @property
-    def session(self):
-        if not hasattr(self, '_session'):
-            self._session = None
-        return self._session
-
-    @session.setter
-    def session(self, session):
-        """
-        :type session:  session_abcs.Session
-        """
-        if (isinstance(session, session_abcs.Session) or session is None):
-            self._session = session
-        else:
-            raise InvalidArgumentException('must use Session object')
 
     def get_session(self, create=True):
         """
@@ -566,9 +506,9 @@ class DelegatingSubject(subject_abcs.Subject):
             self.clear_run_as_identities_internal()
             self.security_manager.logout(self)
         finally:
-            self._session = None
+            self.session = None
             self._identifiers = None
-            self._authenticated = False
+            self.authenticated = False
 
             # Don't set securityManager to None here - the Subject can still be
             # used, it is just considered anonymous at this point.
@@ -576,43 +516,7 @@ class DelegatingSubject(subject_abcs.Subject):
             # log in again or acquire a new session.
 
     def session_stopped(self):
-        self._session = None
-
-    # --------------------------------------------------------------------------
-    # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
-    # --------------------------------------------------------------------------
-    # def execute(self, _able):
-    #    """
-    #    :param _able:  a Runnable or Callable
-    #    """
-    #    associated = self.associate_with(_able)
-    #
-    #    if isinstance(_able, concurrency_abcs.Callable):
-    #        try:
-    #            return associated.call()
-    #        except Exception as ex:
-    #            raise ExecutionException(ex)
-    #
-    #    elif isinstance(_able, concurrency_abcs.Runnable):
-    #        associated.run()
-
-    # --------------------------------------------------------------------------
-    # Concurrency is TBD:  Shiro uses multithreading whereas Yosai...
-    # --------------------------------------------------------------------------
-    # def associate_with(self, _able):
-    #    if isinstance(_able, Thread):
-    #        msg = ("This implementation does not support Thread args."
-    #               "Instead, the method argument should be a "
-    #               "non-Thread Runnable and the return value from "
-    #               "this method can then be given to an "
-    #               "ExecutorService or another Thread.")
-    #        raise UnsupportedOperationException(msg)
-    #
-    #    if isinstance(_able, Runnable):
-    #        return SubjectRunnable(self, _able)
-    #
-    #    if isinstance(_able, Callable):
-    #        return SubjectCallable(self, _able)
+        self.session = None
 
     def run_as(self, identifiers):
         """
@@ -705,30 +609,8 @@ class DelegatingSubject(subject_abcs.Subject):
         return popped
 
     def __repr__(self):
-        return "{0}(_identifiers={1}, _authenticated={2})".\
-            format(self.__class__.__name__, self._identifiers, self._authenticated)
-
-    # inner class:
-    class StoppingAwareProxiedSession(ProxiedSession):
-
-        def __init__(self, target_session, owning_subject):
-            """
-            :type target_session:  session_abcs.Session
-            :type owning_subject:  subject_abcs.Subject
-            """
-            super().__init__(target_session)
-            self.owner = owning_subject
-
-        def stop(self, identifiers):
-            """
-            :type identifiers:  subject_abcs.IdentifierCollection
-            :raises InvalidSessionException:
-            """
-            super().stop(identifiers)
-            self.owner.session_stopped()
-
-        def __repr__(self):
-            return "StoppingAwareProxiedSession()"
+        return "{0}(_identifiers={1}, authenticated={2})".\
+            format(self.__class__.__name__, self._identifiers, self.authenticated)
 
 
 # migrated from /mgt:
@@ -802,7 +684,7 @@ class DefaultSubjectStore:
 
         # used to determine whether session state may be persisted for this
         # subject if the session has not yet been persisted
-        self._session_storage_evaluator = DefaultSessionStorageEvaluator()
+        self.session_storage_evaluator = DefaultSessionStorageEvaluator()
 
         self.dsc_isk = 'identifiers_session_key'
         self.dsc_ask = 'authenticated_session_key'
@@ -817,17 +699,6 @@ class DefaultSubjectStore:
         """
         return self.session_storage_evaluator.\
             is_session_storage_enabled(subject)
-
-    @property
-    def session_storage_evaluator(self):
-        return self._session_storage_evaluator
-
-    @session_storage_evaluator.setter
-    def session_storage_evaluator(self, sse):
-        """
-        :type sse:  session_abcs.SessionStorageEvaluator
-        """
-        self._session_storage_evaluator = sse
 
     def save(self, subject):
         """
@@ -1079,7 +950,7 @@ class Yosai:
     @property
     def security_manager(self):
         try:
-            return self._security_manager
+            return self.security_manager
         except AttributeError:
             msg = "No SecurityManager accessible to the calling code."
             raise UnavailableSecurityManagerException(msg)

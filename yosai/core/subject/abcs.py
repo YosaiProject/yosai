@@ -468,21 +468,6 @@ class Subject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def authenticated(self):
-        """
-        Returns True if this Subject/user proved its identity *during its current
-        session* by providing valid credentials matching those known to the system,
-        False otherwise.
-
-        Note that even if this Subject's identity has been remembered via
-        'remember me' services, this method will still return False unless the
-        user has actually logged in with proper credentials *during its
-        current session*.
-        """
-        pass
-
-    @property
-    @abstractmethod
     def is_remembered(self):
         """
         Returns True} if this Subject has an identity (it is not anonymous) and
@@ -589,16 +574,6 @@ class Subject(metaclass=ABCMeta):
         again if desired.
         """
         pass
-
-    # TBD:  commenting out until concurrency is decided:
-    # @abstractmethod
-    # def execute(self, x_able):
-    #    pass
-
-    # TBD:  commenting out until concurrency is decided:
-    # @abstractmethod
-    # def associate_with(self, x_able):
-    #    pass
 
     @abstractmethod
     def run_as(self, identifiers):

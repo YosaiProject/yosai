@@ -62,69 +62,13 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :authc_verifiers: tuple of Verifier objects
         """
         self.name = name
-        self._account_store = account_store
-        self._cache_handler = None
+        self.account_store = account_store
+        self.authc_verifiers = authc_verifiers
+        self.permission_verifier = permission_verifier
+        self.role_verifier = role_verifier
 
-        self._authc_verifiers = authc_verifiers
-        self._permission_verifier = permission_verifier
-        self._role_verifier = role_verifier
-
+        self.cache_handler = None
         self.token_resolver = self.init_token_resolution()
-
-    @property
-    def account_store(self):
-        return self._account_store
-
-    @account_store.setter
-    def account_store(self, accountstore):
-        """
-        :type accountstore: account_abcs.AccountStore
-        """
-        self._account_store = accountstore
-
-    @property
-    def authc_verifiers(self):
-        return self._authc_verifiers
-
-    @authc_verifiers.setter
-    def authc_verifiers(self, verifier_s):
-        """
-        :type credentialsmatcher: tuple of authc_abcs.CredentialsVerifier objects
-        """
-        self._authc_verifiers = verifier_s
-
-    @property
-    def cache_handler(self):
-        return self._cache_handler
-
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
-        """
-        :type cachehandler: cache_abcs.CacheHandler
-        """
-        self._cache_handler = cachehandler
-
-    @property
-    def permission_verifier(self):
-        return self._permission_verifier
-
-    @permission_verifier.setter
-    def permission_verifier(self, verifier):
-        """
-        :type verifier:  authz_abcs.PermissionVerifier
-        """
-        self._permission_verifier = verifier
-
-    @property
-    def role_verifier(self):
-        return self._role_verifier
-
-    @role_verifier.setter
-    def role_verifier(self, verifier):
-        """
-        :type verifier:  authz_abcs.RoleVerifier
-        """
-        self._role_verifier = verifier
 
     def init_token_resolution(self):
         # M:1 between token class and verifier within a realm
