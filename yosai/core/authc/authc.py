@@ -331,29 +331,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 self.notify_locked(account['account_id'])
                 raise LockedAccountException(msg)
 
-    # --------------------------------------------------------------------------
-
     def __repr__(self):
         return "<DefaultAuthenticator(event_bus={0}, strategy={0})>".\
             format(self.event_bus, self.authentication_strategy)
-
-
-class Credential(serialize_abcs.Serializable):
-
-    def __init__(self, credential):
-        """
-        :type credential: bytestring
-        """
-        self.credential = credential
-
-    def __eq__(self, other):
-        return self.credential == other.credential
-
-    def __bool__(self):
-        return bool(self.credential)
-
-    def __getstate__(self):
-        return {'credential': self.credential}
-
-    def __setstate__(self, state):
-        self.credential = state['credential']

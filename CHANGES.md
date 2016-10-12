@@ -25,6 +25,7 @@ v0.3
 - AuthorizationInfo abc updated
 - removed EventBusAware abc, refactored how eventbus is propagated
 - eliminated need for ProxiedSession (telling subject about stopped sessions)
+- removed Credential class, refactored credential collection to a dict
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 

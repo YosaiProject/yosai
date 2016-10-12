@@ -148,8 +148,7 @@ class WebSecurityManager(NativeSecurityManager):
             web_registry = subject_context.resolve_web_registry()
             session_id = subject_context.session_id
 
-            return WebSessionKey(session_id=session_id,
-                                 web_registry=web_registry)
+            return WebSessionKey(session_id, web_registry=web_registry)
         except AttributeError:  # not dealing with a WebSubjectContext
             return super().get_session_key(subject_context)
 

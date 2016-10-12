@@ -46,6 +46,12 @@ from yosai.web import (
 logger = logging.getLogger(__name__)
 
 
+class WebSessionKey(namedtuple('WebSessionKey', 'session_id, web_registry')):
+    __slots__ = ()
+    def __new__(cls, session_id, web_registry=None):
+        return super(WebSessionKey, cls).__new__(cls, session_id, web_registry)
+
+
 class WebSimpleSession(SimpleSession):
 
     def __init__(self, csrf_token, absolute_timeout, idle_timeout, host=None):
@@ -194,7 +200,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         logger.debug('Re-created SessionID. [old: {0}, new: {1}]'.
                      format(session_key.session_id, new_session_id))
 
-        new_session_key = WebSessionKey(session_id=new_session_id,
+        new_session_key = WebSessionKey(new_session_id,
                                         web_registry=session_key.web_registry)
         return self.create_exposed_session(new_session, key=new_session_key)
 
@@ -210,7 +216,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
             return WebDelegatingSession(self, key)
 
         web_registry = context.web_registry
-        session_key = WebSessionKey(session_id=session.session_id,
+        session_key = WebSessionKey(session.session_id,
                                     web_registry=web_registry)
 
         return WebDelegatingSession(self, session_key)
@@ -254,46 +260,6 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
             raise SessionCreationException(msg)
 
         return session
-
-
-class WebSessionKey(DefaultSessionKey):
-    """
-    A ``SessionKey`` implementation that also retains the ``WebRegistry``
-    associated with the web request that is performing the session lookup
-    """
-    def __init__(self, session_id=None, web_registry=None):
-        super().__init__(session_id)
-        self.web_registry = web_registry
-        self.resolve_session_id()
-
-    @property
-    def session_id(self):
-        if not self._session_id:
-            self.resolve_session_id()
-            return self._session_id
-        return self._session_id
-
-    def resolve_session_id(self):
-        session_id = self._session_id
-
-        if not session_id:
-            session_id = self.web_registry.session_id
-
-        self._session_id = session_id
-
-    def __repr__(self):
-        return "WebSessionKey(session_id={0}, web_registry={1})".\
-            format(self._session_id, self.web_registry)
-
-    def __getstate__(self):
-        return {'_session_id': self._session_id}
-
-    def __setstate__(self, state):
-        self._session_id = state['_session_id']
-
-    def __eq__(self, other):
-        return (self._session_id == other._session_id and
-                self.web_registry == other.web_registry)
 
 
 # new to yosai:
@@ -401,7 +367,7 @@ class WebCachingSessionStore(CachingSessionStore):
         try:
             self.cache_handler.set(domain='session',
                                    identifier=identifiers.primary_identifier,
-                                   value=WebSessionKey(session_id=session_id))
+                                   value=WebSessionKey(session_id))
         except AttributeError:
             msg = "Could not cache identifiers_session_key."
             if not identifiers:
