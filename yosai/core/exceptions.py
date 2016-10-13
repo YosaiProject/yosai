@@ -154,7 +154,7 @@ class InvalidTokenException(AuthenticationException):
     pass
 
 
-class LockedAccountException(DisabledAccountException):
+class LockedAccountException(YosaiException):
     pass
 
 

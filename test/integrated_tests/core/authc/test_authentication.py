@@ -164,6 +164,7 @@ def test_single_factor_locks_account(
     lock_event_detected = None
     fail_event_detected = None
     success_event_detected = None
+    other_success_event_detected = None
 
     def lock_event_listener(identifier=None):
         nonlocal lock_event_detected
@@ -177,11 +178,13 @@ def test_single_factor_locks_account(
         nonlocal success_event_detected
         success_event_detected = identifier
 
+    def other_success_event_listener(identifier=None):
+        nonlocal other_success_event_detected
+        other_success_event_detected = identifier
+
     monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
     da.init_locking()
 
-    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-    event_bus.register(fail_event_listener, 'AUTHENTICATION.FAILED')
     event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     da.locking_realm.unlock_account('walter')
@@ -201,16 +204,13 @@ def test_single_factor_locks_account(
                     account_id = da.authenticate_account(None, invalid_walter_username_password_token)
                 except LockedAccountException:
                     try:
+                        event_bus.register(fail_event_listener, 'AUTHENTICATION.FAILED')
+                        event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+                        event_bus.register(other_success_event_listener, 'AUTHENTICATION.SUCCEEDED')
                         account_id = da.authenticate_account(None, valid_walter_username_password_token)
                     except LockedAccountException:
                         assert lock_event_detected == fail_event_detected == 'walter'
-
-#def test_unlock_verify
-#                    da.locking_realm.unlock_account('walter')
-#                    account_id = da.authenticate_account(None, valid_walter_username_password_token)
-#                    assert success_event_listener == account_id.primary_identifier == 'walter'
-#                    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
-
+                        assert other_success_event_detected is None
 
 #def test_multi_factor_locks_account
 #    - locks an account after N attempts during totp authc

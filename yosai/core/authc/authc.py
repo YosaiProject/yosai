@@ -239,7 +239,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             raise
 
         except LockedAccountException:
-            import pdb; pdb.set_trace()
             self.notify_failure(authc_token.identifier)
             self.notify_locked(authc_token.identifier)
             raise
@@ -275,6 +274,10 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             # the token authenticated but additional authentication is required
             self.notify_progress(authc_token.identifier)
             raise AdditionalAuthenticationRequired(account['account_id'])
+
+        cred_type = authc_token.token_info['cred_type']
+        attempts = account['authc_info'][cred_type].get('failed_attempts', [])
+        self.validate_locked(authc_token, attempts)
 
         return account
     # --------------------------------------------------------------------------

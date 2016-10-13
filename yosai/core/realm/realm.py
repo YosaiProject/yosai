@@ -219,7 +219,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         try:
             if account['account_locked']:
-                import pdb; pdb.set_trace()
                 msg = "Account Locked:  {0} locked at: {1}".\
                     format(account['account_id'], account['account_locked'])
                 raise LockedAccountException(msg)
