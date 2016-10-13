@@ -23,6 +23,7 @@ from passlib.totp import OTPContext, TokenError, TOTP
 
 from yosai.core import (
     AuthenticationSettings,
+    IncorrectCredentialsException,
     InsufficientAuthcInfoException,
     PasswordMatchException,
     TOTPToken,
@@ -42,40 +43,35 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         self.totp_cc = self.create_totp_crypt_context(authc_settings)
         self.cc_token_resolver = {UsernamePasswordToken: self.password_cc,
                                   TOTPToken: self.totp_cc}
-
-        # this is a map between the title from the db and the python class:
-        self.credential_resolver = {UsernamePasswordToken: 'password',
-                                    TOTPToken: 'totp_key'}
         self.supported_tokens = self.cc_token_resolver.keys()
 
-    def verify_credentials(self, authc_token, account):
+    def verify_credentials(self, authc_token, authc_info):
         submitted = authc_token.credentials
-        stored = self.get_stored_credentials(authc_token, account)
+        stored = self.get_stored_credentials(authc_token, authc_info)
         service = self.cc_token_resolver[authc_token.__class__]
 
         try:
             if isinstance(authc_token, UsernamePasswordToken):
-                service.verify(submitted, stored)
+                result = service.verify(submitted, stored)
+                if not result:
+                    raise IncorrectCredentialsException
             else:
                 totp = TOTP(key=stored)
                 totp.verify(submitted)
 
         except (ValueError, TokenError):
-            raise IncorrectCredentialsException(authc_token.identifier)
+            raise IncorrectCredentialsException
 
-    def get_stored_credentials(self, authc_token, account):
-        authc_info = account['authc_info']
+    def get_stored_credentials(self, authc_token, authc_info):
+        # look up the db credential type assigned to this type token:
+        cred_type = authc_token.token_info['cred_type']
 
         try:
-            return authc_info[self.credential_resolver[authc_token.__class__]]
+            return authc_info[cred_type]['credential']
 
-        except KeyError as exc:
-            if authc_token.__class__ not in self.credential_resolver:
-                msg = '{0} does not support {1}.'.format(self.__class__.__name__,
-                                                         authc_token.__class__.__name__)
-                raise UnsupportedTokenException(msg)
-
-            raise InsufficientAuthcInfoException
+        except KeyError:
+            msg = "{0} is required but unavailable from authc_info".format(cred_type)
+            raise InsufficientAuthcInfoException(msg)
 
     def create_password_crypt_context(self, authc_settings):
         context = dict(schemes=[authc_settings.preferred_algorithm])

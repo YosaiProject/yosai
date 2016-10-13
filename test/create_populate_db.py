@@ -76,20 +76,23 @@ cred_types =  dict((ct.title, ct) for ct in session.query(CredentialType).all())
 thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
 print('thirty from now is:  ', thirty_from_now)
 
-cc = CryptContext(schemes=['bcrypt_sha256'])
-password = cc.encrypt('letsgobowling')
+cc = CryptContext(schemes=['bcrypt'])
+password = cc.hash('letsgobowling')
 
 totp_key = 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+
+thedude = users['Jeffrey_Lebowski']
 
 passwords = [Credential(user_id=user.pk_id,
                           credential=password,
                           credential_type_id=cred_types['password'].pk_id,
                           expiration_dt=thirty_from_now) for user in users.values()]
-totp_keys = [Credential(user_id=user.pk_id,
+thedude_totp_key = [Credential(user_id=thedude.pk_id,
                           credential=totp_key,
                           credential_type_id=cred_types['totp_key'].pk_id,
-                          expiration_dt=thirty_from_now) for user in users.values()]
-session.add_all(passwords + totp_keys)
+                          expiration_dt=thirty_from_now)]
+session.add_all(passwords + thedude_totp_key)
+
 
 perm1 = Permission(domain=domains['money'],
                    action=actions['write'],
@@ -131,7 +134,6 @@ tenant.permissions.extend([perm1, perm7, perm8])
 thief.permissions.extend([perm3, perm4, perm5, perm7, perm8])
 landlord.permissions.extend([perm6, perm7, perm8])
 
-thedude = users['Jeffrey_Lebowski']
 thedude.roles.extend([bankcustomer, courier, tenant])
 
 walter = users['Walter_Sobchak']

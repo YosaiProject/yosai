@@ -1,7 +1,7 @@
 ---
 AUTHC_CONFIG:
     account_lock_threshold: null
-    preferred_algorithm: bcrypt_sha256
+    preferred_algorithm: bcrypt
     hash_algorithms:
         bcrypt_sha256: {}
         sha256_crypt:

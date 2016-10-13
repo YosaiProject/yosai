@@ -235,6 +235,7 @@ from yosai.core.authc.authc import (
     DefaultAuthenticator,
     TOTPToken,
     UsernamePasswordToken,
+    token_info,
 )
 
 from yosai.core.authc.credential import (

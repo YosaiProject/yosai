@@ -18,7 +18,7 @@ under the License.
 """
 import logging
 from uuid import uuid4
-
+import time
 from yosai.core import (
     AccountException,
     AuthzInfoNotFoundException,
@@ -122,18 +122,18 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         self.cache_handler.delete('authz_info', identifier)
 
-    def lock_account(self, account):
+    def lock_account(self, identifier):
         """
         :type account: Account
         """
         locked_time = int(time.time() * 1000)  # milliseconds
-        self.account_store.lock_account(account['account_id'], locked_time)
+        self.account_store.lock_account(identifier, locked_time)
 
-    def unlock_account(self, account):
+    def unlock_account(self, identifier):
         """
         :type account: Account
         """
-        self.account_store.lock_account(account['account_id'])
+        self.account_store.unlock_account(identifier)
 
     # --------------------------------------------------------------------------
     # Authentication
@@ -161,7 +161,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :returns: an Account object
         """
-        account = None
+        account_info = None
         ch = self.cache_handler
 
         def query_authc_info(self):
@@ -172,7 +172,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
             # account_info is a dict
             account_info = self.account_store.get_authc_info(identifier)
-            
+
             if account_info is None:
                 msg = "Could not get stored credentials for {0}".format(identifier)
                 raise CredentialsNotFoundException(msg)
@@ -189,6 +189,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                                             identifier=identifier,
                                             creator_func=query_authc_info,
                                             creator=self)
+
         except AttributeError:
             # this means the cache_handler isn't configured
             account_info = query_authc_info(self)
@@ -197,8 +198,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                     "Returning None.".format(identifier))
             logger.warning(msg3)
 
-        account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
-                                                                identifier=identifier)
+        if account_info:
+            account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
+                                                                    identifier=identifier)
         return account_info
 
     def authenticate_account(self, authc_token):
@@ -217,10 +219,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         try:
             if account['account_locked']:
+                import pdb; pdb.set_trace()
                 msg = "Account Locked:  {0} locked at: {1}".\
                     format(account['account_id'], account['account_locked'])
                 raise LockedAccountException(msg)
-        except AttributeError:
+        except (AttributeError, TypeError):
             if not account:
                 msg = "Could not obtain account credentials for: " + str(identifier)
                 raise AccountException(msg)
@@ -230,35 +233,37 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return account
 
     def update_failed_attempt(self, authc_token, account):
-            token = authc_token.__class__.__name__
+        cred_type = authc_token.token_info['cred_type']
 
-            attempts = account['authc_info'][token].get('failed_attempts', [])
-            attempts.append(int(time.time() * 1000))
-            account['authc_info'][token]['failed_attempts'] = attempts
+        attempts = account['authc_info'][cred_type].get('failed_attempts', [])
+        attempts.append(int(time.time() * 1000))
+        account['authc_info'][cred_type]['failed_attempts'] = attempts
 
-            self.cache_handler.set(domain='authentication:' + self.name,
-                                   identifier=account['account_id'],
-                                   value=account['authc_info'])
-            return account
+        self.cache_handler.set(domain='authentication:' + self.name,
+                               identifier=authc_token.identifier,
+                               value=account)
+        return account
 
     def assert_credentials_match(self, authc_token, account):
         """
-        Calls the verifier with an account containing all of the authc_info
-        for the Account. The verifier pops the required credentials from the
-        Account's authc_info and returns the modified Account here.
-
         :type authc_token: authc_abcs.AuthenticationToken
         :type account:  account_abcs.Account
         :returns: account_abcs.Account
         :raises IncorrectCredentialsException:  when authentication fails,
-                                                including account
+                                                including unix epoch timestamps
+                                                of recently failed attempts
         """
         verifier = self.token_resolver[authc_token.__class__]
         try:
-            verifier.verify_credentials(authc_token, account)
+            verifier.verify_credentials(authc_token, account['authc_info'])
         except IncorrectCredentialsException:
-            account = self.update_failed_attempt(authc_token, account)
-            raise
+            updated_account = self.update_failed_attempt(authc_token, account)
+
+            cred_type = authc_token.token_info['cred_type']
+            failed_attempts = updated_account['authc_info'][cred_type].\
+                get('failed_attempts', [])
+
+            raise IncorrectCredentialsException(failed_attempts)
 
     # --------------------------------------------------------------------------
     # Authorization

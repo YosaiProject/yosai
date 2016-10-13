@@ -12,7 +12,7 @@ class AuthenticationSettings:
         self.algorithms = self.init_algorithms()
 
         self.preferred_algorithm = self.authc_config.get('preferred_algorithm')
-        self.preferred_algorithm_context = self.algorithms.get(self.preferred_algorithm)
+        self.preferred_algorithm_context = self.algorithms.get(self.preferred_algorithm, {})
 
         self.account_lock_threshold = self.authc_config.get('account_lock_threshold')
 

@@ -158,12 +158,17 @@ class EventLogger:
         self.event_bus.register(self.log_session_start, 'SESSION.START')
         self.event_bus.register(self.log_session_stop, 'SESSION.STOP')
         self.event_bus.register(self.log_session_expire, 'SESSION.EXPIRE')
+        self.event_bus.register(self.log_authc_acct_not_found, 'AUTHENTICATION.ACCOUNT_NOT_FOUND')
         self.event_bus.register(self.log_authc_progress, 'AUTHENTICATION.PROGRESS')
         self.event_bus.register(self.log_authc_succeeded, 'AUTHENTICATION.SUCCEEDED')
         self.event_bus.register(self.log_authc_failed, 'AUTHENTICATION.FAILED')
         self.event_bus.register(self.log_authz_granted, 'AUTHORIZATION.GRANTED')
         self.event_bus.register(self.log_authz_denied, 'AUTHORIZATION.DENIED')
         self.event_bus.register(self.log_authz_results, 'AUTHORIZATION.RESULTS')
+
+    def log_authc_acct_not_found(self, identifier=None):
+        topic = 'AUTHENTICATION.ACCOUNT_NOT_FOUND'
+        logger.info(topic, extra={'identifier': identifier})
 
     def log_authc_progress(self, identifier=None):
         topic = 'AUTHENTICATION.PROGRESS'

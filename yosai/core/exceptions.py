@@ -74,7 +74,6 @@ class AdditionalAuthenticationRequired(YosaiException):
     def __init__(self, account_id=None):
         self.account_id = account_id
 
-
 class AuthenticationException(YosaiException):
     pass
 
@@ -128,8 +127,11 @@ class ExpiredCredentialsException(CredentialsException):
 
 
 class IncorrectCredentialsException(CredentialsException):
-    def __init__(self, account_id=None):
-        self.account_id = account_id
+    def __init__(self, failed_attempts=None):
+        """
+        a list of unix epoch timestampts of recently failed attempts for user
+        """
+        self.failed_attempts = failed_attempts
 
 
 class InsufficientAuthcInfoException(AuthenticationException):

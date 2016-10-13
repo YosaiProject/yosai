@@ -632,8 +632,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         self.save(subject)
         return subject
 
-    def update_subject_identity(account_id, subject):
-        subject.identifiers = account_id
+    def update_subject_identity(identifiers, subject):
+        subject.identifiers = identifiers
         self.save(subject)
         return subject
 
@@ -715,8 +715,9 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         # implies multi-factor authc not complete:
         except AdditionalAuthenticationRequired as exc:
             # identity needs to be accessible for subsequent authentication:
-            self.update_subject_identity(exc.account_id, subject)
-            raise
+            self.update_subject_identity(exc.identifiers, subject)
+            # no need to propagate account further:
+            raise AdditionalAuthenticationRequired
 
         except AuthenticationException as authc_ex:
             try:
