@@ -453,22 +453,22 @@ class WebYosai(Yosai):
         return outer_wrap
 
     @staticmethod
-    def requires_role(roleid_s, logical_operator=all):
+    def requires_role(role_s, logical_operator=all):
         """
         Requires that the calling Subject be authorized to the extent that is
-        required to satisfy the roleid_s specified and the logical operation
+        required to satisfy the role_s specified and the logical operation
         upon them.
 
-        :param roleid_s:   a collection of the role(s) required, specified by
+        :param role_s:   a collection of the role(s) required, specified by
                            identifiers (such as a role name)
-        :type roleid_s:  a List of Strings
+        :type role_s:  a List of Strings
 
         :param logical_operator:  indicates whether all or at least one permission
                                   is true (and, any)
         :type: and OR all (from python standard library)
 
         Elaborate Example:
-            requires_role(roleid_s=['sysadmin', 'developer'], logical_operator=any)
+            requires_role(role_s=['sysadmin', 'developer'], logical_operator=any)
 
         Basic Example:
             requires_role('physician')
@@ -480,7 +480,7 @@ class WebYosai(Yosai):
                 subject = WebYosai.get_current_subject()
 
                 try:
-                    subject.check_role(roleid_s, logical_operator)
+                    subject.check_role(role_s, logical_operator)
 
                 except IdentifiersNotSetException:
                     msg = ("Attempting to perform a user-only operation.  The "

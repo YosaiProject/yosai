@@ -354,24 +354,24 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = 'Cannot check permission when identifiers aren\'t set!'
             raise IdentifiersNotSetException(msg)
 
-    def has_role(self, roleid_s):
+    def has_role(self, role_s):
         """
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
-        :returns: a frozenset of tuple(s), containing the roleid and a Boolean
+        :returns: a frozenset of tuple(s), containing the role and a Boolean
                   indicating whether the user is a member of the Role
         """
         if self.authorized:
-            return self.security_manager.has_role(self.identifiers, roleid_s)
+            return self.security_manager.has_role(self.identifiers, role_s)
         msg = 'Cannot check roles when identifiers aren\'t set!'
         raise IdentifiersNotSetException(msg)
 
     # refactored has_all_roles:
-    def has_role_collective(self, roleid_s, logical_operator=all):
+    def has_role_collective(self, role_s, logical_operator=all):
         """
-        :param roleid_s: 1..N role identifier
-        :type roleid_s:  a Set of Strings
+        :param role_s: 1..N role identifier
+        :type role_s:  a Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
@@ -381,7 +381,7 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         if self.authorized:
             return self.security_manager.has_role_collective(self.identifiers,
-                                                              roleid_s,
+                                                              role_s,
                                                               logical_operator)
         else:
             msg = 'Cannot check roles when identifiers aren\'t set!'
@@ -1165,15 +1165,15 @@ class Yosai:
         return outer_wrap
 
     @staticmethod
-    def requires_role(roleid_s, logical_operator=all):
+    def requires_role(role_s, logical_operator=all):
         """
         Requires that the calling Subject be authorized to the extent that is
-        required to satisfy the roleid_s specified and the logical operation
+        required to satisfy the role_s specified and the logical operation
         upon them.
 
-        :param roleid_s:   a collection of the role(s) required, specified by
+        :param role_s:   a collection of the role(s) required, specified by
                            identifiers (such as a role name)
-        :type roleid_s:  a List of Strings
+        :type role_s:  a List of Strings
 
         :param logical_operator:  indicates whether all or at least one permission
                                   is true (and, any)
@@ -1183,7 +1183,7 @@ class Yosai:
                                           role membership
 
         Elaborate Example:
-            requires_role(roleid_s=['sysadmin', 'developer'], logical_operator=any)
+            requires_role(role_s=['sysadmin', 'developer'], logical_operator=any)
 
         Basic Example:
             requires_role('physician')
@@ -1194,7 +1194,7 @@ class Yosai:
 
                 subject = Yosai.get_current_subject()
 
-                subject.check_role(roleid_s, logical_operator)
+                subject.check_role(role_s, logical_operator)
 
                 return fn(*args, **kwargs)
             return inner_wrap

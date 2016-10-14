@@ -436,14 +436,14 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
     # and improve code readability
 
     # new to Yosai:
-    def _has_role(self, identifiers, roleid_s):
+    def _has_role(self, identifiers, role_s):
         """
         :type identifiers:  subject_abcs.IdentifierCollection
-        :type roleid_s: Set of String(s)
+        :type role_s: Set of String(s)
         """
         for realm in self.realms:
             # the realm's has_role returns a generator
-            yield from realm.has_role(identifiers, roleid_s)
+            yield from realm.has_role(identifiers, role_s)
 
     # new to Yosai:
     def _is_permitted(self, identifiers, permission_s):
@@ -557,44 +557,44 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             raise UnauthorizedException(msg)
 
     # yosai.core.consolidates has_role functionality to one method:
-    def has_role(self, identifiers, roleid_s, log_results=True):
+    def has_role(self, identifiers, role_s, log_results=True):
         """
         :param identifiers: a collection of identifiers
         :type identifiers:  subject_abcs.IdentifierCollection
 
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
+        :param role_s: a collection of 1..N Role identifiers
+        :type role_s: Set of String(s)
 
         :param log_results:  states whether to log results (True) or allow the
                              calling method to do so instead (False)
         :type log_results:  bool
 
-        :returns: a frozenset of tuple(s), containing the roleid and a Boolean
+        :returns: a frozenset of tuple(s), containing the role and a Boolean
                   indicating whether the user is a member of the Role
         """
         self.assert_realms_configured()
 
         results = collections.defaultdict(bool)  # defaults to False
 
-        for roleid, has_role in self._has_role(identifiers, roleid_s):
-            # checkrole expected format is: (roleid, Boolean)
-            # As long as one realm returns True for a roleid, a subject is
+        for role, has_role in self._has_role(identifiers, role_s):
+            # checkrole expected format is: (role, Boolean)
+            # As long as one realm returns True for a role, a subject is
             # considered a member of that Role.
             # Given that (True or False == True), assign accordingly:
-            results[roleid] = results[roleid] or has_role
+            results[role] = results[role] or has_role
 
         if log_results:
             self.notify_results(identifiers, list(results.items()))  # before freezing
         results = frozenset(results.items())
         return results
 
-    def has_role_collective(self, identifiers, roleid_s, logical_operator):
+    def has_role_collective(self, identifiers, role_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers:  subject_abcs.IdentifierCollection
 
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
+        :param role_s: a collection of 1..N Role identifiers
+        :type role_s: Set of String(s)
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
@@ -605,25 +605,25 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         self.assert_realms_configured()
 
         # interim_results is a frozenset of tuples:
-        interim_results = self.has_role(identifiers, roleid_s, log_results=False)
+        interim_results = self.has_role(identifiers, role_s, log_results=False)
 
-        results = logical_operator(has_role for roleid, has_role
+        results = logical_operator(has_role for role, has_role
                                    in interim_results)
 
         if results:
-            self.notify_success(identifiers, roleid_s, logical_operator)
+            self.notify_success(identifiers, role_s, logical_operator)
         else:
-            self.notify_failure(identifiers, roleid_s, logical_operator)
+            self.notify_failure(identifiers, role_s, logical_operator)
 
         return results
 
-    def check_role(self, identifiers, roleid_s, logical_operator):
+    def check_role(self, identifiers, role_s, logical_operator):
         """
         :param identifiers: a collection of identifiers
         :type identifiers:  subject_abcs.IdentifierCollection
 
-        :param roleid_s: 1..N role identifiers
-        :type roleid_s:  a String or Set of Strings
+        :param role_s: 1..N role identifiers
+        :type role_s:  a String or Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
@@ -633,7 +633,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         """
         self.assert_realms_configured()
         has_role_s = self.has_role_collective(identifiers,
-                                              roleid_s, logical_operator)
+                                              role_s, logical_operator)
         if not has_role_s:
             msg = "Subject does not have role(s) assigned."
             raise UnauthorizedException(msg)
@@ -793,20 +793,20 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
 
 class SimpleRoleVerifier(authz_abcs.RoleVerifier):
 
-    def has_role(self, authz_info, roleid_s):
+    def has_role(self, authz_info, role_s):
         """
         Confirms whether a subject is a member of one or more roles.
 
         :type authz_info:  authz_abacs.AuthorizationInfo
 
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
+        :param role_s: a collection of 1..N Role identifiers
+        :type role_s: Set of String(s)
 
-        :yields: tuple(SimpleRole, Boolean)
+        :yields: tuple(role, Boolean)
         """
-        for roleid in roleid_s:
-            hasrole = ({roleid} <= authz_info.roleids)
-            yield (roleid, hasrole)
+        for role in role_s:
+            hasrole = ({role} <= authz_info.roles)
+            yield (role, hasrole)
 
 
 # new to yosai.core. deprecates shiro's SimpleAuthorizationInfo
@@ -826,10 +826,6 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         self.index_permission(permissions)
 
     @property
-    def roleids(self):
-        return {role.identifier for role in self.roles}
-
-    @property
     def permissions(self):
         return set(itertools.chain.from_iterable(self._permissions.values()))
 
@@ -846,7 +842,7 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         """
         :type role_s: set
         """
-        self._roles.update(role_s)
+        self.roles.update(role_s)
 
     # yosai.core.combines add_string_permission with add_string_permissions
     def add_permission(self, permission_s):
@@ -905,33 +901,6 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     def __setstate__(self, state):
         self.roles = set(state['roles'])
         self._permissions = {key: set(val) for key, val in state['_permissions'].items()}
-
-
-class SimpleRole(serialize_abcs.Serializable):
-
-    def __init__(self, role_identifier):
-
-        self.identifier = role_identifier
-        # note:  yosai.core.doesn't support role->permission resolution by default
-        #        and so permissions and the permission methods won't be used
-        # self.permissions = permissions
-
-    def __hash__(self):
-        return hash(self.identifier)
-
-    def __eq__(self, other):
-        if (isinstance(other, SimpleRole)):
-            return self.identifier == other.identifier
-        return False
-
-    def __repr__(self):
-        return "SimpleRole(identifier={0})".format(self.identifier)
-
-    def __getstate__(self):
-        return {'identifier': self.identifier}
-
-    def __setstate__(self, state):
-        self.identifier = state['identifier']
 
 
 class AllPermission:

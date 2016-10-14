@@ -345,7 +345,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             yield from self.permission_verifier.is_permitted(account['authz_info'],
                                                              permission_s)
 
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifiers, role_s):
         """
         Confirms whether a subject is a member of one or more roles.
 
@@ -354,10 +354,10 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :type identifiers:  subject_abcs.IdentifierCollection
 
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
+        :param role_s: a collection of 1..N Role identifiers
+        :type role_s: Set of String(s)
 
-        :yields: tuple(roleid, Boolean)
+        :yields: tuple(role, Boolean)
         """
         account = self.get_authorization_info(identifiers)
 
@@ -365,7 +365,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = 'has_role:  authz_info returned None for [{0}]'.\
                 format(identifiers)
             logger.warning(msg)
-            for roleid in roleid_s:
-                yield (roleid, False)
+            for role in role_s:
+                yield (role, False)
         else:
-            yield from self.role_verifier.has_role(account['authz_info'], roleid_s)
+            yield from self.role_verifier.has_role(account['authz_info'], role_s)

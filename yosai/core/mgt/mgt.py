@@ -27,7 +27,6 @@ from yosai.core import(
     DefaultAuthenticator,
     DefaultEventBus,
     EventLogger,
-    DefaultPermission,
     DefaultNativeSessionManager,
     DefaultSessionContext,
     DefaultSessionKey,
@@ -36,7 +35,6 @@ from yosai.core import(
     DefaultSubjectStore,
     DeleteSubjectException,
     InvalidArgumentException,
-    IndexedAuthorizationInfo,
     InvalidSessionException,
     MisconfiguredException,
     ModularRealmAuthorizer,
@@ -44,7 +42,6 @@ from yosai.core import(
     SaveSubjectException,
     SimpleSession,
     SerializationManager,
-    SimpleRole,
     mgt_abcs,
     authc_abcs,
     authz_abcs,
@@ -482,19 +479,19 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                                                 permission_s,
                                                 logical_operator)
 
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifiers, role_s):
         """
         :type identifiers: SimpleIdentifierCollection
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
-        :returns: a frozenset of tuple(s), containing the roleid and a Boolean
+        :returns: a frozenset of tuple(s), containing the role and a Boolean
                   indicating whether the user is a member of the Role
         """
-        return self.authorizer.has_role(identifiers, roleid_s)
+        return self.authorizer.has_role(identifiers, role_s)
 
-    def has_role_collective(self, identifiers, roleid_s, logical_operator):
+    def has_role_collective(self, identifiers, role_s, logical_operator):
         """
         :type identifiers: SimpleIdentifierCollection
 
@@ -502,20 +499,20 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
                                   permission check is true (any)
         :type: any OR all (from python standard library)
 
-        :param roleid_s: 1..N role identifier
-        :type roleid_s:  a Set of Strings
+        :param role_s: 1..N role identifier
+        :type role_s:  a Set of Strings
 
         :returns: a Boolean
         """
         return self.authorizer.has_role_collective(identifiers,
-                                                   roleid_s, logical_operator)
+                                                   role_s, logical_operator)
 
-    def check_role(self, identifiers, roleid_s, logical_operator):
+    def check_role(self, identifiers, role_s, logical_operator):
         """
         :type identifiers: SimpleIdentifierCollection
 
-        :param roleid_s: 1..N role identifier
-        :type roleid_s:  a Set of Strings
+        :param role_s: 1..N role identifier
+        :type role_s:  a Set of Strings
 
         :param logical_operator:  indicates whether all or at least one
                                   permission check is true (any)
@@ -524,7 +521,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
         :raises UnauthorizedException: if Subject not assigned to all roles
         """
         return self.authorizer.check_role(identifiers,
-                                          roleid_s, logical_operator)
+                                          role_s, logical_operator)
 
     """
     * ===================================================================== *

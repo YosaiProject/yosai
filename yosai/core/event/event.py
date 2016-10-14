@@ -215,7 +215,7 @@ class EventLogger:
             # Permission objects are serializable
             new_items = [item.__getstate__() for item in items]
         except:
-            # presumably a set of roleid strings
+            # presumably a set of role strings
             new_items = list(items)
 
         identifiers = identifiers.__getstate__()
@@ -230,7 +230,7 @@ class EventLogger:
             # Permission objects are serializable
             new_items = [item.__getstate__() for item in items]
         except:
-            # presumably a set of roleid strings
+            # presumably a set of role strings
             new_items = list(items)
 
         identifiers = identifiers.__getstate__()
@@ -244,7 +244,7 @@ class EventLogger:
             # Permission objects are serializable
             new_items = [(item.__getstate__(), check) for (item, check) in items]
         except AttributeError:
-            # presumably roleid strings
+            # presumably role strings
             new_items = items
 
         identifiers = identifiers.__getstate__()

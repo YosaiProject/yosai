@@ -248,7 +248,6 @@ from yosai.core.authz.authz import (
     ModularRealmAuthorizer,
     IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
-    SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
 )

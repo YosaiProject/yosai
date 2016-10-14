@@ -130,7 +130,7 @@ class AuthorizingRealm(Realm):
         pass
 
     @abstractmethod
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifiers, role_s):
         """
         :type identifiers:  SimpleRealmCollection
         """

@@ -377,22 +377,22 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def has_role(self, roleid_s):
+    def has_role(self, role_s):
         """
         Determines whether a Subject is a member of the Role(s) requested
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
         :returns: a frozenset of tuple(s), each containing the Role identifier
                   requested and a Boolean indicating whether the subject is
                   a member of that Role
-                  - the tuple format is: (roleid, Boolean)
+                  - the tuple format is: (role, Boolean)
         """
         pass
 
     @abstractmethod
-    def has_role_collective(self, roleid_s, logical_operator):
+    def has_role_collective(self, role_s, logical_operator):
         """
         This method determines whether the Subject's role membership
         collectively grants authorization for the roles requested.  The
@@ -407,8 +407,8 @@ class Subject(metaclass=ABCMeta):
                          implied permission
         Else returns False
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
         :param logical_operator:  any or all
         :type logical_operator:  function  (stdlib)
@@ -418,7 +418,7 @@ class Subject(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def check_role(self, roleid_s, logical_operator):
+    def check_role(self, role_s, logical_operator):
         """
         This method determines whether the Subject's role membership
         collectively grants authorization for the roles requested.  The
@@ -430,8 +430,8 @@ class Subject(metaclass=ABCMeta):
         This method is similar to has_role_collective except that it raises
         an AuthorizationException if collectively False else does not return any
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
         :param logical_operator:  any or all
         :type logical_operator:  function  (stdlib)

@@ -115,25 +115,25 @@ class Authorizer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def has_role(self, identifiers, roleid_s):
+    def has_role(self, identifiers, role_s):
         """
         Determines whether a ``Subject`` is a member of the Role(s) requested
 
         :param identifiers: the application-specific subject/user identifiers(s)
         :type identifiers: subject_abcs.IdentifierCollection
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
         :returns: a frozenset of tuple(s), each containing the Role identifier
                   requested and a Boolean indicating whether the subject is
                   a member of that Role
-                  - the tuple format is: (roleid, Boolean)
+                  - the tuple format is: (role, Boolean)
         """
         pass
 
     @abstractmethod
-    def has_role_collective(self, identifiers, roleid_s, logical_operator):
+    def has_role_collective(self, identifiers, role_s, logical_operator):
         """
         This method determines whether the Subject's role membership
         collectively grants authorization for the roles requested.  The
@@ -151,8 +151,8 @@ class Authorizer(metaclass=ABCMeta):
         :param identifiers: the application-specific subject/user identifiers(s)
         :type identifiers: subject_abcs.IdentifierCollection
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
         :param logical_operator:  any or all
         :type logical_operator:  function  (stdlib)
@@ -177,8 +177,8 @@ class Authorizer(metaclass=ABCMeta):
         :param identifiers: the application-specific subject/user identifiers(s)
         :type identifiers: subject_abcs.IdentifierCollection
 
-        :param roleid_s: 1..N role identifiers (strings)
-        :type roleid_s:  Set of Strings
+        :param role_s: 1..N role identifiers (strings)
+        :type role_s:  Set of Strings
 
         :param logical_operator:  any or all
         :type logical_operator:  function  (stdlib)
@@ -301,13 +301,13 @@ class RoleVerifier(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def has_role(self, authz_info, roleid_s):
+    def has_role(self, authz_info, role_s):
         """
         Confirms whether a subject is a member of one or more roles.
 
-        :param roleid_s: a collection of 1..N Role identifiers
-        :type roleid_s: Set of String(s)
+        :param role_s: a collection of 1..N Role identifiers
+        :type role_s: Set of String(s)
 
-        :yields: tuple(roleid, Boolean)
+        :yields: tuple(role, Boolean)
         """
         pass

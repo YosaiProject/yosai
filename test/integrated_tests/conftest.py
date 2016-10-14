@@ -1,6 +1,7 @@
 from passlib.totp import TOTP
 
 from yosai.core import (
+    DefaultPermission,
     load_logconfig,
     TOTPToken,
     UsernamePasswordToken,
@@ -152,11 +153,11 @@ def clear_walter_cached_authz_info(cache_handler, request):
 
 
 @pytest.fixture(scope='function')
-def thedude_testpermissions(permission_resolver):
-    perm1 = permission_resolver('money:write:bankcheck_19911109069')
-    perm2 = permission_resolver('money:withdrawal')
-    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm4 = permission_resolver('leatherduffelbag:access:theringer')
+def thedude_testpermissions():
+    perm1 = DefaultPermission('money:write:bankcheck_19911109069')
+    perm2 = DefaultPermission('money:withdrawal')
+    perm3 = DefaultPermission('leatherduffelbag:transport:theringer')
+    perm4 = DefaultPermission('leatherduffelbag:access:theringer')
 
     perms = [perm1, perm2, perm3, perm4]
 
@@ -178,11 +179,11 @@ def thedude_testroles():
 
 
 @pytest.fixture(scope='function')
-def jackie_testpermissions(permission_resolver):
+def jackie_testpermissions():
 
-    perm1 = permission_resolver('money:access:ransom')
-    perm2 = permission_resolver('leatherduffelbag:access:theringer')
-    perm3 = permission_resolver('money:withdrawal')
+    perm1 = DefaultPermission('money:access:ransom')
+    perm2 = DefaultPermission('leatherduffelbag:access:theringer')
+    perm3 = DefaultPermission('money:withdrawal')
 
     perms = [perm1, perm2, perm3]
 
@@ -193,11 +194,11 @@ def jackie_testpermissions(permission_resolver):
 
 
 @pytest.fixture(scope='function')
-def walter_testpermissions(permission_resolver):
+def walter_testpermissions():
 
-    perm1 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm2 = permission_resolver('leatherduffelbag:access:theringer')
-    perm3 = permission_resolver('*:bowl:*')
+    perm1 = DefaultPermission('leatherduffelbag:transport:theringer')
+    perm2 = DefaultPermission('leatherduffelbag:access:theringer')
+    perm3 = DefaultPermission('*:bowl:*')
 
     perms = [perm1, perm2, perm3]
 

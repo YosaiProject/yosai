@@ -2,12 +2,13 @@
 import pytest
 
 from yosai.core import (
+    DefaultPermission,
     SimpleIdentifierCollection,
     UnauthorizedException,
 )
 
-def test_is_permitted(permission_resolver, modular_realm_authorizer,
-                      thedude_identifier, thedude_testpermissions, event_bus):
+def test_is_permitted(modular_realm_authorizer, thedude_identifier,
+        thedude_testpermissions, event_bus):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
@@ -27,8 +28,7 @@ def test_is_permitted(permission_resolver, modular_realm_authorizer,
 
 
 def test_is_permitted_collective(
-        permission_resolver, modular_realm_authorizer,
-        thedude_identifier, thedude_testpermissions):
+         modular_realm_authorizer, thedude_identifier, thedude_testpermissions):
 
     mra = modular_realm_authorizer
     tp = thedude_testpermissions
@@ -38,8 +38,7 @@ def test_is_permitted_collective(
 
 
 def test_check_permission_succeeds(
-        permission_resolver, modular_realm_authorizer,
-        thedude_identifier, thedude_testpermissions, event_bus):
+        modular_realm_authorizer, thedude_identifier, thedude_testpermissions, event_bus):
 
     mra = modular_realm_authorizer
     tp = thedude_testpermissions
@@ -55,8 +54,7 @@ def test_check_permission_succeeds(
 
 
 def test_check_permission_raises(
-        permission_resolver, modular_realm_authorizer,
-        thedude_identifier, thedude_testpermissions, event_bus):
+        modular_realm_authorizer, thedude_identifier, thedude_testpermissions, event_bus):
 
     mra = modular_realm_authorizer
     tp = thedude_testpermissions
@@ -142,17 +140,17 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
 
 
 def test_is_permitted_account_doesnt_exist(
-        modular_realm_authorizer, permission_resolver, event_bus):
+        modular_realm_authorizer, event_bus):
     """
     when an account cannot be obtained from the account_store, all
     permissions checked return False
     """
     mra = modular_realm_authorizer
 
-    perm1 = permission_resolver('money:write:bankcheck_19911109069')
-    perm2 = permission_resolver('money:withdrawal')
-    perm3 = permission_resolver('leatherduffelbag:transport:theringer')
-    perm4 = permission_resolver('leatherduffelbag:access:theringer')
+    perm1 = DefaultPermission('money:write:bankcheck_19911109069')
+    perm2 = DefaultPermission('money:withdrawal')
+    perm3 = DefaultPermission('leatherduffelbag:transport:theringer')
+    perm4 = DefaultPermission('leatherduffelbag:access:theringer')
 
     perms = [perm1, perm2, perm3, perm4]
 
