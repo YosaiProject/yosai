@@ -256,6 +256,64 @@ class Subject(metaclass=ABCMeta):
     convert these String values to Permission instances and then call the
     corresponding method.  (Yosai's default implementations do String-to-Permission
     conversion.
+
+    remembered attribute:
+    ---------------------
+    Returns True if this Subject has an identity (it is not anonymous) and
+    the identity (aka identifiers}) is remembered from a successful
+    authentication during a previous session.
+
+    Although the underlying implementation determines exactly how this
+    method functions, most implementations have this method act as the
+    logical equivalent to this code:
+
+        - subject.identifiers is not None and subject.authenticated
+
+    Note as indicated by the above code example, if a Subject is remembered,
+    it is *NOT* considered authenticated.  A check against authenticated
+    is a more strict check than that reflected by this method.  For example,
+    a check to see whether a subject can access financial information should
+    almost always depend on subject.authenticated rather, than this method,
+    to *guarantee* a verified identity.
+
+    Once the subject is authenticated, it is no longer considered only
+    remembered because its identity would have been verified during the
+    current session.
+
+    Remembered vs Authenticated
+    -----------------------------
+    Authentication is the process of *proving* a subject is who it claims to
+    be.  When a user is only remembered, the remembered identity gives the
+    system an idea who that user probably is, but in reality, the system
+    has no way of absolutely *guaranteeing* whether the remembered Subject
+    represents the user currently using the application.
+
+    So, although many parts of the application can still perform user-specific
+    logic based on the remembered identifiers, such as customized views,
+    the application should never perform highly-sensitive operations until
+    the user has legitimately verified its identity by executing a successful
+     authentication attempt.
+
+    We see this paradigm all over the web, and we will use
+    <a href="http://www.amazon.com">Amazon.com</a> as an example:
+
+    When you visit Amazon.com and perform a login and ask it to 'remember me',
+     Amazon will set a cookie with your identity.  If you don't log out and
+    your session expires, but you come back the next day, Amazon still knows
+    who you *probably* are and so you see all of your book and movie
+    recommendations and similar user-specific features since these are based
+    on your (remembered) user id (identifiers).
+
+    However, if you try to do something sensitive, such as access your
+    account's billing data, Amazon forces you to perform an actual log-in,
+    requiring your username and password.
+
+    Amazon does this because although it assumes your identity from
+    'remember me', it recognized that you were not actually authenticated.
+    The only way to really guarantee you are who you say you are, and
+    therefore allow you access to sensitive account data, is to require you
+    to perform an actual successful authentication.  You can check this
+    guarantee via the subject.authenticated method and not via this method.
     """
 
     @property
@@ -463,74 +521,6 @@ class Subject(metaclass=ABCMeta):
         :type authc_token:  authc_abcs.AuthenticationToken
 
         :raises AuthenticationException: if the authentication attempt fails
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def is_remembered(self):
-        """
-        Returns True} if this Subject has an identity (it is not anonymous) and
-        the identity (aka identifiers}) is remembered from a successful
-        authentication during a previous session.
-
-        Although the underlying implementation determines exactly how this
-        method functions, most implementations have this method act as the
-        logical equivalent to this code:
-
-            - subject.identifiers is not None and subject.authenticated
-
-        Note as indicated by the above code example, if a Subject is remembered,
-        it is *NOT* considered authenticated.  A check against authenticated
-        is a more strict check than that reflected by this method.  For example,
-        a check to see whether a subject can access financial information should
-        almost always depend on subject.authenticated rather, than this method,
-        to *guarantee* a verified identity.
-
-        Once the subject is authenticated, it is no longer considered only
-        remembered because its identity would have been verified during the
-        current session.
-
-        Remembered vs Authenticated
-        -----------------------------
-        Authentication is the process of *proving* a subject is who it claims to
-        be.  When a user is only remembered, the remembered identity gives the
-        system an idea who that user probably is, but in reality, the system
-        has no way of absolutely *guaranteeing* whether the remembered Subject
-        represents the user currently using the application.
-
-        So, although many parts of the application can still perform user-specific
-        logic based on the remembered identifiers, such as customized views,
-        the application should never perform highly-sensitive operations until
-        the user has legitimately verified its identity by executing a successful
-         authentication attempt.
-
-        We see this paradigm all over the web, and we will use
-        <a href="http://www.amazon.com">Amazon.com</a> as an example:
-
-        When you visit Amazon.com and perform a login and ask it to 'remember me',
-         Amazon will set a cookie with your identity.  If you don't log out and
-        your session expires, but you come back the next day, Amazon still knows
-        who you *probably* are and so you see all of your book and movie
-        recommendations and similar user-specific features since these are based
-        on your (remembered) user id (identifiers).
-
-        However, if you try to do something sensitive, such as access your
-        account's billing data, Amazon forces you to perform an actual log-in,
-        requiring your username and password.
-
-        Amazon does this because although it assumes your identity from
-        'remember me', it recognized that you were not actually authenticated.
-        The only way to really guarantee you are who you say you are, and
-        therefore allow you access to sensitive account data, is to require you
-        to perform an actual successful authentication.  You can check this
-        guarantee via the subject.authenticated method and not via this method.
-
-        :returns: True if this Subject's identity (aka identifiers) is
-                  remembered from a successful authentication during a previous
-                  session, False otherwise
-
-        :rtype:  bool
         """
         pass
 

@@ -656,17 +656,16 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                    'items: ' + str(items))
             logger.warn(msg)
 
-    def authc_clears_cache(self, identifiers=None):
+    def authc_clears_cache(self, identifier=None):
         """
         :type items: namedtuple
         """
         try:
-            identifier = identifiers.primary_identifier
             for realm in self.realms:
                 realm.clear_cached_authorization_info(identifier)
         except AttributeError:
             msg = ('Could not clear authc_info from cache after event. '
-                   'identifiers: ' + str(identifiers))
+                   'identifiers: ' + identifiers)
             logger.warn(msg)
 
     def register_cache_clear_listener(self):

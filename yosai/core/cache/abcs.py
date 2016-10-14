@@ -20,17 +20,6 @@ under the License.
 from abc import ABCMeta, abstractmethod
 
 
-class CacheHandlerAware(metaclass=ABCMeta):
-
-    @property
-    def cache_handler(self):
-        pass
-
-    @cache_handler.setter
-    def cache_handler(self, cachehandler):
-        pass
-
-
 class CacheHandler(metaclass=ABCMeta):
 
     @abstractmethod

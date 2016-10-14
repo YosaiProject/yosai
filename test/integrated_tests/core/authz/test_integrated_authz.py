@@ -7,7 +7,7 @@ from yosai.core import (
     UnauthorizedException,
 )
 
-def test_is_permitted(modular_realm_authorizer, thedude_identifier,
+def test_is_permitted(modular_realm_authorizer, logged_in_thedude,
         thedude_testpermissions, event_bus):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean

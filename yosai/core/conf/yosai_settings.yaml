@@ -28,10 +28,10 @@ SECURITY_MANAGER_CONFIG:
         realms:
             yosai.core.AccountStoreRealm:
                 account_store: yosai_alchemystore.AlchemyAccountStore
-                authc_verifiers: PasslibVerifier
+                authc_verifiers: yosai.core.PasslibVerifier
                 authz_verifiers:
-                    permission_verifier:  IndexedPermissionVerifier
-                    role_verifier:  SimpleRoleVerifier
+                    permission_verifier:  yosai.core.IndexedPermissionVerifier
+                    role_verifier:  yosai.core.SimpleRoleVerifier
         cache_handler: yosai_dpcache.cache.DPCacheHandler
         session_attributes: null
 

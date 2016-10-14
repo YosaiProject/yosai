@@ -370,8 +370,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
 
 
 # also known as ApplicationSecurityManager in Shiro 2.0 alpha:
-class NativeSecurityManager(mgt_abcs.SecurityManager,
-                            cache_abcs.CacheHandlerAware):
+class NativeSecurityManager(mgt_abcs.SecurityManager):
 
     def __init__(self,
                  yosai,
@@ -406,21 +405,21 @@ class NativeSecurityManager(mgt_abcs.SecurityManager,
 
         self.subject_factory = subject_factory
 
-        self.event_bus = DefaultEventBus()
-        self.event_logger = EventLogger(self.event_bus)
+        event_bus = DefaultEventBus()
+        self.event_logger = EventLogger(event_bus)
+        self.apply_event_bus(event_bus)
 
-        self.apply_cache_handler()
-        self.apply_event_bus()
+        self.apply_cache_handler(cache_handler)
         self.apply_realms()
 
-    def apply_cache_handler(self):
+    def apply_cache_handler(self, cache_handler):
         for realm in self.realms:
             if hasattr(realm, 'cache_handler'):  # implies cache support
-                realm.cache_handler = self.cache_handler
-        self.session_manager.apply_cache_handler(self.cache_handler)
+                realm.cache_handler = cache_handler
+        if hasattr(self.session_manager, 'apply_cache_handler'):
+            self.session_manager.apply_cache_handler(cache_handler)
 
-    def apply_event_bus(self, eventbus):
-        self.apply_event_bus(self.event_bus)
+    def apply_event_bus(self, event_bus):
         self.authenticator.event_bus = event_bus
         self.authorizer.event_bus = event_bus
         self.session_manager.apply_event_bus(event_bus)

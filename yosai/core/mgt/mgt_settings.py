@@ -18,10 +18,11 @@ class SecurityManagerSettings:
 
     """
     def __init__(self, settings):
+        self.settings = settings
         manager_config = settings.SECURITY_MANAGER_CONFIG
         self.security_manager =\
             maybe_resolve(manager_config.get('security_manager',
-                                             'yosai.core.DefaultSecurityManager'))
+                                             'yosai.core.NativeSecurityManager'))
         self.attributes = self.resolve_attributes(manager_config.get('attributes'))
 
     def resolve_attributes(self, attributes):
@@ -55,29 +56,29 @@ class SecurityManagerSettings:
         """
         realms = []
 
-        for realm in attributes['realms'].items():
+        for realm, realm_attributes in attributes['realms'].items():
             realm_cls = maybe_resolve(realm)
-            account_store_cls = maybe_resolve(realm['account_store'])
+            account_store_cls = maybe_resolve(realm_attributes['account_store'])
 
             verifiers = {}
 
-            authc_verifiers = realm.get('authc_verifiers')
+            authc_verifiers = realm_attributes.get('authc_verifiers')
             if authc_verifiers:
                 if isinstance(authc_verifiers, list):
-                    authc_verifiers_cls = tuple(maybe_resolve(verifier) for
+                    authc_verifiers_cls = tuple(maybe_resolve(verifier)(self.settings) for
                                                 verifier in authc_verifiers)
                 else:
-                    authc_verifiers_cls = tuple(maybe_resolve(authc_verifiers))
+                    authc_verifiers_cls = tuple([maybe_resolve(authc_verifiers)(self.settings)])
                 verifiers['authc_verifiers'] = authc_verifiers_cls
 
-            authz_verifiers = realm.get('authz_verifiers')
+            authz_verifiers = realm_attributes.get('authz_verifiers')
             if authz_verifiers:
                 permission_verifier_cls = authz_verifiers.get('permission_verifier')
                 if permission_verifier_cls:
-                    verifiers['permission_verifier'] = permission_verifier_cls
+                    verifiers['permission_verifier'] = maybe_resolve(permission_verifier_cls)()
                 role_verifier_cls = authz_verifiers.get('role_verifier')
                 if role_verifier_cls:
-                    verifiers['role_verifier'] = role_verifier_cls
+                    verifiers['role_verifier'] = maybe_resolve(role_verifier_cls)()
 
             realms.append([realm_cls, account_store_cls, verifiers])
 

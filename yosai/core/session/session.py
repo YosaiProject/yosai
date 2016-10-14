@@ -751,8 +751,8 @@ class DelegatingSession(session_abcs.Session):
 # yosai.core.refactor:
 class SessionEventHandler:
 
-    def __init__(self):
-        self.event_bus = None
+    def __init__(self, event_bus=None):
+        self.event_bus = event_bus
 
     def notify_start(self, session):
         """
@@ -977,8 +977,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
         self.session_store.update(session, update_identifiers_map)
 
 
-class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
-                                  session_abcs.NativeSessionManager):
+class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
     """
     Yosai's DefaultNativeSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to
@@ -1008,8 +1007,9 @@ class DefaultNativeSessionManager(cache_abcs.CacheHandlerAware,
         self.session_handler.session_store.cache_handler = cachehandler
 
     def apply_event_bus(self, eventbus):
-        self.session_handler.session_event_handler = SessionEventHandler(event_bus)
-        self.session_event_handler.event_bus = eventbus
+        event_handler = SessionEventHandler(eventbus)
+        self.session_handler.session_event_handler = event_handler
+        self.session_event_handler = event_handler
 
     # -------------------------------------------------------------------------
     # Session Lifecycle Methods

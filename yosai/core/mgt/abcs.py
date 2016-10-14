@@ -111,10 +111,7 @@ class RememberMeManager(metaclass=ABCMeta):
         pass
 
 
-class SecurityManager(authc_abcs.Authenticator,
-                      authz_abcs.Authorizer,
-                      session_abcs.SessionManager):
-
+class SecurityManager(metaclass=ABCMeta):
     """
     A SecurityManager executes ALL security operations for ALL Subjects (aka users)
     across a single application.
@@ -189,7 +186,7 @@ class SecurityManager(authc_abcs.Authenticator,
         pass
 
     @abstractmethod
-    def create_subject(self, subject_context):
+    def create_subject(self, authc_token=None, account_id=None, existing_subject=None, subject_context=None):
         """
         Creates a Subject instance that reflects the specified contextual data.
 

@@ -921,6 +921,7 @@ class Yosai:
         self.settings = LazySettings(env_var=env_var, file_path=file_path)
         self.security_manager = \
             self.generate_security_manager(self.settings, session_attributes)
+        self.subject_builder.security_manager = self.security_manager
 
     def generate_security_manager(self, settings, session_attributes):
         # don't forget to pass default_cipher_key into the WebSecurityManager
@@ -948,22 +949,6 @@ class Yosai:
         subject = self.subject_builder.build_subject()
         global_subject_context.stack.append(subject)
         return subject
-
-    @property
-    def security_manager(self):
-        try:
-            return self.security_manager
-        except AttributeError:
-            msg = "No SecurityManager accessible to the calling code."
-            raise UnavailableSecurityManagerException(msg)
-
-    @security_manager.setter
-    def security_manager(self, security_manager):
-        """
-        :type security_manager:  mgt_abcs.SecurityManager
-        """
-        self._security_manager = security_manager
-        self.subject_builder.security_manager = security_manager
 
     @staticmethod
     @contextmanager

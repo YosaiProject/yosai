@@ -10,7 +10,6 @@ from yosai.core import (
     NativeSecurityManager,
     PasslibVerifier,
     SerializationManager,
-    SimpleRole,
     SimpleRoleVerifier,
     UsernamePasswordToken,
     Yosai,
@@ -77,9 +76,7 @@ def permission_collection():
 
 @pytest.fixture(scope='function')
 def role_collection():
-    return {SimpleRole('role1'),
-            SimpleRole('role2'),
-            SimpleRole('role3')}
+    return {'role1', 'role2', 'role3'}
 
 
 @pytest.fixture(scope='function')
