@@ -1,11 +1,13 @@
 from passlib.totp import TOTP
 
 from yosai.core import (
+    AdditionalAuthenticationRequired,
     DefaultPermission,
     load_logconfig,
+    SimpleIdentifierCollection,
     TOTPToken,
     UsernamePasswordToken,
-    SimpleIdentifierCollection,
+    Yosai,
 )
 
 import pytest
@@ -113,7 +115,7 @@ def logged_in_thedude(yosai, valid_thedude_username_password_token,
             thedude.login(valid_thedude_totp_token)
             yield thedude
             thedude.logout()
-            
+
 
 @pytest.fixture(scope='function')  # because successful login clears password
 def remembered_valid_username_password_token(cache_handler):

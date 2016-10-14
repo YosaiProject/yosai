@@ -23,6 +23,7 @@ from cryptography.fernet import Fernet
 from abc import abstractmethod
 
 from yosai.core import(
+    AdditionalAuthenticationRequired,
     AuthenticationException,
     DefaultAuthenticator,
     DefaultEventBus,
@@ -628,8 +629,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         self.save(subject)
         return subject
 
-    def update_subject_identity(identifiers, subject):
-        subject.identifiers = identifiers
+    def update_subject_identity(self, account_id, subject):
+        subject.identifiers = account_id
         self.save(subject)
         return subject
 
@@ -711,7 +712,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         # implies multi-factor authc not complete:
         except AdditionalAuthenticationRequired as exc:
             # identity needs to be accessible for subsequent authentication:
-            self.update_subject_identity(exc.identifiers, subject)
+            self.update_subject_identity(exc.account_id, subject)
             # no need to propagate account further:
             raise AdditionalAuthenticationRequired
 

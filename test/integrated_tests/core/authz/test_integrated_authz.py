@@ -8,7 +8,7 @@ from yosai.core import (
 )
 
 def test_is_permitted(modular_realm_authorizer, logged_in_thedude,
-        thedude_testpermissions, event_bus):
+        thedude_testpermissions, event_bus, thedude_identifier):
     """
     get a frozenset of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
