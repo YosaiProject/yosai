@@ -84,7 +84,17 @@ def valid_thedude_totp_token(thedude_totp_key, cache_handler):
     domain = 'authentication:AccountStoreRealm'
     cache_handler.delete(domain=domain, identifier='thedude')
 
-    token = int(TOTP(key=thedude_totp_key).generate().token)
+    token = int(TOTP(key=thedude_totp_key, digits=6).generate().token)
+    yield TOTPToken(totp_token=token)
+
+    cache_handler.delete(domain=domain, identifier='thedude')
+
+@pytest.fixture(scope='function')
+def invalid_thedude_totp_token(cache_handler):
+    domain = 'authentication:AccountStoreRealm'
+    cache_handler.delete(domain=domain, identifier='thedude')
+
+    token = int(TOTP(key='AYAGB3C5RPYX5375L5VY2ULKZXMXWLZF', digits=6).generate().token)
     yield TOTPToken(totp_token=token)
 
     cache_handler.delete(domain=domain, identifier='thedude')

@@ -212,6 +212,54 @@ def test_single_factor_locks_account(
                         assert lock_event_detected == fail_event_detected == 'walter'
                         assert other_success_event_detected is None
 
-#def test_multi_factor_locks_account
-#    - locks an account after N attempts during totp authc
-#    - confirms that a locked account will not authenticate totp
+    da.locking_realm.unlock_account('walter')
+
+def test_multi_factor_locks_account(
+        default_authenticator, valid_thedude_username_password_token,
+        invalid_thedude_totp_token, valid_thedude_totp_token, event_bus,
+        monkeypatch):
+    """
+        - locks an account after N attempts during totp authc
+        - confirms that a locked account will not authenticate totp
+    """
+    lock_event_detected = None
+    success_event_detected = None
+    da = default_authenticator
+
+    def lock_event_listener(identifier=None):
+        nonlocal lock_event_detected
+        lock_event_detected = identifier
+
+    def success_event_listener(identifier=None):
+        nonlocal success_event_detected
+        success_event_detected = identifier
+
+    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+    da.init_locking()
+    da.locking_realm.unlock_account('thedude')
+
+    try:
+        identifiers = da.authenticate_account(None, valid_thedude_username_password_token)
+    except AdditionalAuthenticationRequired as exc:
+        identifiers = exc.account_id
+        try:
+            da.authenticate_account(identifiers, invalid_thedude_totp_token)
+        except AuthenticationException:
+            try:
+                da.authenticate_account(identifiers, invalid_thedude_totp_token)
+            except AuthenticationException:
+                try:
+                    da.authenticate_account(identifiers, invalid_thedude_totp_token)
+                except AuthenticationException:
+                    try:
+                        da.authenticate_account(identifiers, invalid_thedude_totp_token)
+                    except LockedAccountException:
+                        with pytest.raises(LockedAccountException):
+                            da.authenticate_account(identifiers, valid_thedude_totp_token)
+
+    assert lock_event_detected == 'thedude'
+    assert success_event_detected is None
+
+    da.locking_realm.unlock_account('thedude')
