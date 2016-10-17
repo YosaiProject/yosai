@@ -8,12 +8,10 @@ from yosai.core import (
 import pytest
 
 
-@pytest.mark.parametrize('identifier, expected_in, expected_out, expected_class',
-                         [('thedude',
-                          "Could not obtain cached", "No account", Account),
-                          ('thedude',
-                           "get cached", "Could not obtain cached", Account)])
-def test_get_credentials(identifier, expected_in, expected_out, expected_class,
+@pytest.mark.parametrize('identifier, expected_in, expected_out',
+                         [('thedude', "Could not obtain cached", "No account"),
+                          ('thedude', "get cached", "Could not obtain cached")])
+def test_get_authc_info(identifier, expected_in, expected_out,
                          caplog, account_store_realm, cache_handler):
 
     """
@@ -24,27 +22,24 @@ def test_get_credentials(identifier, expected_in, expected_out, expected_class,
     asr = account_store_realm
     if "Could not" in expected_in:
         cache_handler.delete(domain="credentials", identifier='thedude')
-    result = asr.get_credentials(identifier=identifier)
+    result = asr.get_authentication_info(identifier=identifier)
 
     out = caplog.text
 
-    assert (expected_in in out and
-            expected_out not in out)
-
-    assert isinstance(result, expected_class)
+    assert (expected_in in out and expected_out not in out)
 
 
-@pytest.mark.parametrize('identifiers, expected_in, expected_out, expected_class',
+@pytest.mark.parametrize('identifiers, expected_in, expected_out',
                          [(SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                                       identifier='thedude'),
-                           "Could not obtain cached", "No account", Account),
+                           "Could not obtain cached", "No account"),
                           (SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                                       identifier='thedude'),
-                           "get cached", "Could not obtain cached", Account),
+                           "get cached", "Could not obtain cached"),
                           (SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                                       identifier='anonymous'),
-                           "No account", "blabla", type(None))])
-def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
+                           "No account", "blabla")])
+def test_get_authz_info(identifiers, expected_in, expected_out,
                         caplog, account_store_realm, cache_handler):
     """
     I) Obtains from account store, caches
@@ -61,8 +56,6 @@ def test_get_authz_info(identifiers, expected_in, expected_out, expected_class,
     out = caplog.text
     assert (expected_in in out and
             expected_out not in out)
-
-    assert isinstance(result, expected_class)
 
 
 def test_do_clear_cache(account_store_realm):
