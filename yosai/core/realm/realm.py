@@ -278,7 +278,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
         :returns: Account
         """
-        account = None
+        account_info = None
         ch = self.cache_handler
 
         identifier = identifiers.primary_identifier  # TBD
@@ -313,8 +313,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                     "Returning None.".format(identifier))
             logger.warning(msg3)
 
-        account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
-                                                                identifier=identifier)
+        if account_info:
+            account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
+                                                                    identifier=identifier)
         return account_info
 
     def is_permitted(self, identifiers, permission_s):
