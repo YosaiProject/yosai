@@ -1273,6 +1273,6 @@ class DefaultSessionStorageEvaluator:
 
     def is_session_storage_enabled(self, subject=None):
         try:
-            return subject.get_session(False) is not None
+            return bool(subject.get_session(False)) or self.session_storage_enabled
         except AttributeError:
             return self.session_storage_enabled

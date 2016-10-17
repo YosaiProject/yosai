@@ -295,7 +295,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 identifiers = items.identifiers
                 identifier = identifiers.from_source(realm.name)
                 if identifier:
-                    realm.clear_cached_credentials(identifier)
+                    realm.clear_cached_authc_info(identifier)
         except AttributeError:
             msg = ('Could not clear authc_info from cache after event. '
                    'items: ' + str(items))

@@ -20,8 +20,12 @@ def test_get_authc_info(identifier, expected_in, expected_out,
     III) Fails to obtain from any source
     """
     asr = account_store_realm
+
     if "Could not" in expected_in:
-        cache_handler.delete(domain="credentials", identifier='thedude')
+        keys = cache_handler.keys('*authentication*')
+        for key in keys:
+            cache_handler.cache_region.delete(key)
+
     result = asr.get_authentication_info(identifier=identifier)
 
     out = caplog.text
@@ -49,7 +53,9 @@ def test_get_authz_info(identifiers, expected_in, expected_out,
     asr = account_store_realm
 
     if "Could not" in expected_in:
-        cache_handler.delete(domain="authz_info", identifier='thedude')
+        keys = cache_handler.keys('*authorization*')
+        for key in keys:
+            cache_handler.cache_region.delete(key)
 
     result = asr.get_authorization_info(identifiers=identifiers)
 

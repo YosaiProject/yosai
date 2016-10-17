@@ -1,7 +1,6 @@
 from passlib.totp import TOTP
 
 from yosai.core import (
-    AdditionalAuthenticationRequired,
     DefaultPermission,
     load_logconfig,
     SimpleIdentifierCollection,
@@ -101,20 +100,6 @@ def invalid_thedude_totp_token(cache_handler):
     yield TOTPToken(totp_token=token)
 
     cache_handler.delete(domain=domain, identifier='thedude')
-
-
-@pytest.fixture(scope='function')
-def logged_in_thedude(yosai, valid_thedude_username_password_token,
-        valid_thedude_totp_token):
-
-    with Yosai.context(yosai):
-        thedude = Yosai.get_current_subject()
-        try:
-            thedude.login(valid_thedude_username_password_token)
-        except AdditionalAuthenticationRequired:
-            thedude.login(valid_thedude_totp_token)
-            yield thedude
-            thedude.logout()
 
 
 @pytest.fixture(scope='function')  # because successful login clears password

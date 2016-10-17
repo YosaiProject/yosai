@@ -397,6 +397,4 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
                 not isinstance(self.session_manager, session_abcs.NativeSessionManager)):
             return False
 
-        web_registry = subject.web_registry
-
-        return web_registry.session_creation_enabled
+        return subject.web_registry.session_creation_enabled
