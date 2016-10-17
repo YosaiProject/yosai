@@ -564,29 +564,29 @@ class SimpleSession(session_abcs.ValidatingSession,
 
     def __getstate__(self):
         return {
-            'session_id': self._session_id,
-            'start_timestamp': self._start_timestamp,
-            'stop_timestamp': self._stop_timestamp,
-            'last_access_time': self._last_access_time,
-            'idle_timeout': self._idle_timeout,
-            'absolute_timeout': self._absolute_timeout,
-            'is_expired': self._is_expired,
-            'host': self._host,
-            'internal_attributes': self._internal_attributes,
-            'attributes': self._attributes
+            'session_id': self.session_id,
+            'start_timestamp': self.start_timestamp,
+            'stop_timestamp': self.stop_timestamp,
+            'last_access_time': self.last_access_time,
+            'idle_timeout': self.idle_timeout,
+            'absolute_timeout': self.absolute_timeout,
+            'is_expired': self.is_expired,
+            'host': self.host,
+            'internal_attributes': self.internal_attributes,
+            'attributes': self.attributes
         }
 
     def __setstate__(self, state):
-        self.session_id = state['_session_id']
-        self.start_timestamp = state['_start_timestamp']
-        self.stop_timestamp = state['_stop_timestamp']
-        self.last_access_time = state['_last_access_time']
-        self.idle_timeout = state['_idle_timeout']
-        self.absolute_timeout = state['_absolute_timeout']
-        self.is_expired = state['_is_expired']
-        self.host = state['_host']
-        self.internal_attributes = state['_internal_attributes']
-        self.attributes = state['_attributes']
+        self.session_id = state['session_id']
+        self.start_timestamp = state['start_timestamp']
+        self.stop_timestamp = state['stop_timestamp']
+        self.last_access_time = state['last_access_time']
+        self.idle_timeout = state['idle_timeout']
+        self.absolute_timeout = state['absolute_timeout']
+        self.is_expired = state['is_expired']
+        self.host = state['host']
+        self.internal_attributes = state['internal_attributes']
+        self.attributes = state['attributes']
 
 
 class SimpleSessionFactory(session_abcs.SessionFactory):

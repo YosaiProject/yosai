@@ -35,9 +35,8 @@ def test_create_cache_session(session_store, session, cache_handler):
 
     cached_session = css.read(sessionid)
     cached_session_token = css.cache_handler.get('session', 'user12345678')
-    assert (cached_session == session and
-            cached_session_token == DefaultSessionKey(sessionid))
-
+    assert (DefaultSessionKey(cached_session_token) == DefaultSessionKey(sessionid) and
+            cached_session == session)
 
 def test_delete_cached_session(session_store, session, cache_handler):
     """
@@ -163,10 +162,10 @@ def test_sh_idle_expired_session(
     start_timestamp = round(time.time() * 1000) - (10 * 60 * 1000)
     last_access_time = round(time.time() * 1000) - (6 * 60 * 1000)
 
-    monkeypatch.setattr(cachedsession, '_last_access_time', last_access_time)
-    monkeypatch.setattr(cachedsession, '_start_timestamp', start_timestamp)
-    monkeypatch.setattr(cachedsession, '_idle_timeout', idle_timeout)
-    monkeypatch.setattr(cachedsession, '_absolute_timeout', absolute_timeout)
+    monkeypatch.setattr(cachedsession, 'last_access_time', last_access_time)
+    monkeypatch.setattr(cachedsession, 'start_timestamp', start_timestamp)
+    monkeypatch.setattr(cachedsession, 'idle_timeout', idle_timeout)
+    monkeypatch.setattr(cachedsession, 'absolute_timeout', absolute_timeout)
 
     sh.on_change(cachedsession)
 
@@ -228,8 +227,8 @@ def test_session_manager_start(
         - create_exposed_session
     """
     sm = session_manager
-    monkeypatch.setattr(sm, 'cache_handler', cache_handler)
-    monkeypatch.setattr(sm, 'event_bus', event_bus)
+    sm.apply_cache_handler(cache_handler)
+    sm.apply_event_bus(event_bus)
 
     event_detected = None
 
@@ -278,52 +277,6 @@ def test_session_manager_stop(
         out, err = capsys.readouterr()
         assert ('Coult not find session' in out and
                 isinstance(event_detected.results, namedtuple))
-
-
-def test_delegatingsession_getters(
-        session_manager, cache_handler, session_context, event_bus):
-    """
-    test objective:  verify the pass-through getter methods
-
-    session manager aspects tested:
-        - get_X internal_attribute methods
-    """
-    sm = session_manager
-    sm.cache_handler = cache_handler
-    sm.event_bus = event_bus
-
-    session = sm.start(session_context)  # returns a DelegatingSession
-
-    assert (session.session_id is not None and
-            session.start_timestamp is not None and
-            session.last_access_time is not None and
-            session.idle_timeout is not None and
-            session.absolute_timeout is not None and
-            session.host is not None)
-
-
-def test_delegatingsession_setters(
-        session_manager, cache_handler, session_context, event_bus):
-    sm = session_manager
-    sm.cache_handler = cache_handler
-    sm.event_bus = event_bus
-
-    session = sm.start(session_context)  # returns a DelegatingSession
-    session.idle_timeout = (90 * 60 * 1000)
-    assert session.idle_timeout == (90 * 60 * 1000)
-
-    session.absolute_timeout = (120 * 60 * 1000)
-    assert session.absolute_timeout == (120 * 60 * 1000)
-
-    old_last_access = session.last_access_time
-    session.touch()
-    assert session.last_access_time > old_last_access
-
-    is_valid = sm.is_valid(session.session_key)
-    assert is_valid
-    session.stop(session.session_key)
-    is_valid = sm.is_valid(session.session_key)
-    assert not is_valid
 
 
 def test_delegatingsession_internal_attributes(

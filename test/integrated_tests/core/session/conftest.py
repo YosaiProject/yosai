@@ -2,7 +2,6 @@ import pytest
 
 from yosai.core import (
     DefaultSessionKey,
-    DefaultSessionContext,
     DefaultNativeSessionManager,
     SessionEventHandler,
     DefaultNativeSessionHandler,
@@ -37,21 +36,23 @@ def session_event_handler(event_bus):
 
 @pytest.fixture(scope='function')
 def session_handler(session_event_handler, session_store):
-    handler = DefaultNativeSessionHandler(session_event_handler=session_event_handler)
-
+    handler = DefaultNativeSessionHandler()
+    handler.session_event_handler = session_event_handler
     handler.session_store = session_store
     return handler
 
+
 @pytest.fixture(scope='function')
-def session_manager(core_settings):
-    return DefaultNativeSessionManager(core_settings)
+def session_manager(core_settings, cache_handler, event_bus):
+    nsm = DefaultNativeSessionManager(core_settings)
+    nsm.apply_cache_handler(cache_handler)
+    nsm.apply_event_bus(event_bus)
+    return nsm
 
 
 @pytest.fixture(scope='function')
 def session_context():
-    sc = DefaultSessionContext()
-    sc.host = '127.0.0.1'
-    return sc
+    return {'host': '127.0.0.1'}
 
 
 @pytest.fixture(scope='function')
