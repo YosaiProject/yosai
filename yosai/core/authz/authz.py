@@ -860,11 +860,14 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         domain per Permission.  This is a generally acceptable limitation.
 
         """
-        for permission in permission_s:
-            domain = next(iter(permission.domain))  # should only be ONE domain
-            self._permissions[domain].add(permission)
+        try:
+            for permission in permission_s:
+                domain = next(iter(permission.domain))  # should only be ONE domain
+                self._permissions[domain].add(permission)
+            self.assert_permissions_indexed(permission_s)
 
-        self.assert_permissions_indexed(permission_s)
+        except TypeError:
+            logger.debug(self.__class__.__name__ + ': No permissions to index.')
 
     def get_permission(self, domain):
         """
