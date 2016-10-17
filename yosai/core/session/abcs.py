@@ -49,7 +49,7 @@ class Session(metaclass=ABCMeta):
               session, or None if the host is unknown.
 
         attributes
-        
+
         internal_attributes
     """
 
@@ -225,7 +225,7 @@ class SessionFactory(metaclass=ABCMeta):
 
         :param init_data: the initialization data to be used during
                           Session creation.
-        :type init_data: SessionContext
+        :type init_data: dict 
         :returns: a new Session instance
         """
         pass

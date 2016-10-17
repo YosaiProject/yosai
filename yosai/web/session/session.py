@@ -26,7 +26,6 @@ from yosai.core import (
     CachingSessionStore,
     DefaultNativeSessionHandler,
     DefaultNativeSessionManager,
-    DefaultSessionContext,
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
@@ -307,12 +306,6 @@ class WebDelegatingSession(DelegatingSession):
 
     def recreate_session(self):
         return self.session_manager.recreate_session(self.session_key)
-
-
-class DefaultWebSessionContext(DefaultSessionContext):
-
-    def __init__(self, web_registry):
-        self.web_registry = web_registry
 
 
 class WebCachingSessionStore(CachingSessionStore):

@@ -37,7 +37,6 @@ from yosai.core import (
 )
 
 from yosai.web import (
-    DefaultWebSessionContext,
     WebRegistrySettings,
     web_subject_abcs,
 )
@@ -186,8 +185,7 @@ class WebDelegatingSubject(DelegatingSubject,
 
     # overridden
     def create_session_context(self):
-        wsc = DefaultWebSessionContext(web_registry=self.web_registry)
-        wsc.host = self.host
+        wsc = {'web_registry': self.web_registry, 'host': self.host}
         return wsc
 
 

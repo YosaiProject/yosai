@@ -40,7 +40,6 @@ from yosai.web.registry.registry_settings import (
 
 
 from yosai.web.session.session import (
-    DefaultWebSessionContext,
     DefaultWebSessionStorageEvaluator,
     DefaultWebSessionManager,
     WebCachingSessionStore,

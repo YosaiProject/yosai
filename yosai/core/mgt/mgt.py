@@ -29,7 +29,6 @@ from yosai.core import(
     DefaultEventBus,
     EventLogger,
     DefaultNativeSessionManager,
-    DefaultSessionContext,
     DefaultSessionKey,
     DefaultSubjectContext,
     DefaultSubjectFactory,
@@ -901,18 +900,18 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
     # DG:  it's not clear to me why this method exists, as it doesn't seem to be
     # called (TBD)
     def create_session_context(self, subject_context):
-        session_context = DefaultSessionContext()
+        session_context = {}
 
         if (not subject_context.is_empty):
-            session_context.__dict__.update(subject_context.__dict__)
+            session_context.update(subject_context.__dict__)
 
         session_id = subject_context.session_id
         if (session_id):
-            session_context.session_id = session_id
+            session_context['session_id'] = session_id
 
         host = subject_context.resolve_host(None)
         if (host):
-            session_context.host = host
+            session_context['host'] = host
 
         return session_context
 

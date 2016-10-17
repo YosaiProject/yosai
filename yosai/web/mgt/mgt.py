@@ -27,7 +27,6 @@ from yosai.core import (
 )
 
 from yosai.web import (
-    DefaultWebSessionContext,
     DefaultWebSessionStorageEvaluator,
     DefaultWebSessionManager,
     DefaultWebSubjectContext,
@@ -105,10 +104,9 @@ class WebSecurityManager(NativeSecurityManager):
                          cache_handler=cache_handler,
                          serialization_manager=serialization_manager,
                          session_manager=DefaultWebSessionManager(settings),
+                         subject_store=DefaultSubjectStore(DefaultWebSessionStorageEvaluator()),
                          subject_factory=DefaultWebSubjectFactory(),
                          remember_me_manager=CookieRememberMeManager(settings))
-
-        self.subject_store.session_storage_evaluator = DefaultWebSessionStorageEvaluator()
 
     def create_subject_context(self, subject):
 
@@ -137,8 +135,8 @@ class WebSecurityManager(NativeSecurityManager):
     # overridden:
     def create_session_context(self, subject_context):
         web_registry = subject_context.resolve_web_registry()
-        session_context = DefaultWebSessionContext(web_registry)
-        session_context.host = getattr(self, 'host', None)
+        session_context = {'web_registry': web_registry,
+                           'host': getattr(self, 'host', None)}
 
         return session_context
 

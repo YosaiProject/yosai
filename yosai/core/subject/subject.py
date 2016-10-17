@@ -21,7 +21,6 @@ import logging
 from contextlib import contextmanager
 
 from yosai.core import (
-    DefaultSessionContext,
     DefaultSessionStorageEvaluator,
     DisabledSessionException,
     IdentifiersNotSetException,
@@ -57,13 +56,6 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
     Most Yosai users will never instantiate a SubjectContext object directly
     but rather will use a SubjectBuilder, which internally uses a SubjectContext,
     to build Subject instances.
-
-    Yosai notes:  Shiro uses the getTypedValue method to validate objects
-                  as it obtains them from the MapContext.  I've decided that
-                  this checking is unecessary overhead in Python and to
-                  instead *assume* that objects are mapped correctly within
-                  the MapContext.  Exceptions will raise further down the
-                  call stack should a mapping be incorrect.
     """
     def __init__(self, yosai, security_manager):
         self.account_id = None
@@ -471,8 +463,8 @@ class DelegatingSubject(subject_abcs.Subject):
 
         if (not self.session and create):
             if (not self.session_creation_enabled):
-                msg = ("Session creation has been disabled for the current"
-                       " subject. This exception indicates that there is "
+                msg = ("Session creation is disabled for the current subject. "
+                       "This exception indicates that there is "
                        "either a programming error (using a session when "
                        "it should never be used) or that Yosai's "
                        "configuration needs to be adjusted to allow "
@@ -490,8 +482,8 @@ class DelegatingSubject(subject_abcs.Subject):
         return self.session
 
     def create_session_context(self):
-        session_context = DefaultSessionContext()
-        session_context.host = self.host
+        session_context = {}
+        session_context['host'] = self.host
         return session_context
 
     def clear_run_as_identities_internal(self):
@@ -636,19 +628,12 @@ class DefaultSubjectStore:
     Controlling How Sessions are Used
     ---------------------------------
     Whether a Subject's ``Session`` is used to persist the Subject's state is
-    controlled on a per-Subject basis.  This is accomplish by configuring
-    a ``SessionStorageEvaluator``.
-
-    The default "Evaluator" is a ``DefaultSessionStorageEvaluator``.  This evaluator
-    supports enabling or disabling session usage for ``Subject`` persistence at a
-    global level for all subjects (and defaults to allowing sessions to be
-    used).
+    controlled on a per-Subject basis.
 
     Disabling Session Persistence Entirely
     --------------------------------------
-    Because the default ``SessionStorageEvaluator`` instance is a
-    ``DefaultSessionStorageEvaluator``, you can disable Session usage for Subject
-    state entirely by configuring that instance directly, e.g.:::
+    You can disable Session usage for Subject state entirely by setting
+    the Subject Store's session_storage_enabled attribute:
 
         session_store.session_storage_evaluator.session_storage_enabled = False
 
@@ -672,29 +657,15 @@ class DefaultSubjectStore:
         - Stateless: Stateless subjects might represent API clients (e.g. REST
           clients) that authenticate on every request, and therefore don't need
           authentication state to be stored across requests in a session.
-
-    To support the hybrid *per-Subject* approach, you will need to create your
-    own implementation of the ``SessionStorageEvaluator`` interface and configure
-    it by setting your session_storage_evaluator property-attribute
-
-    Unless overridden, the default evaluator is a
-    ``DefaultSessionStorageEvaluator``, which enables session usage for ``Subject``
-    state by default.
     """
-
-    def __init__(self):
-
-        # used to determine whether session state may be persisted for this
-        # subject if the session has not yet been persisted
-        self.session_storage_evaluator = DefaultSessionStorageEvaluator()
-
+    def __init__(self, ss_evaluator=DefaultSessionStorageEvaluator()):
+        self.session_storage_evaluator = ss_evaluator
         self.dsc_isk = 'identifiers_session_key'
         self.dsc_ask = 'authenticated_session_key'
 
     def is_session_storage_enabled(self, subject):
         """
         :type subject:  subject_abcs.Subject
-
         Determines whether the subject's ``Session`` will be used to persist
         subject state.  This default implementation merely delegates to the
         internal ``DefaultSessionStorageEvaluator``.

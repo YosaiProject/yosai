@@ -1263,18 +1263,11 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
         return removed
 
 
-class DefaultSessionContext:
-    def __repr__(self):
-        return "{0}(session_id={1}, host={2})".format(self.__class__.__name__,
-                                                      self.session_id,
-                                                      self.host)
-
-
-class DefaultSessionStorageEvaluator(session_abcs.SessionStorageEvaluator):
-
-    # Global policy determining whether Subject sessions may be used to persist
-    # Subject state if the Subject's Session does not yet exist.
-
+class DefaultSessionStorageEvaluator:
+    """
+    Global policy determining whether Subject sessions may be used to persist
+    Subject state if the Subject's Session does not yet exist.
+    """
     def __init__(self):
         self.session_storage_enabled = True
 
