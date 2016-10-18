@@ -1,3 +1,6 @@
+from yosai.core import (
+    AdditionalAuthenticationRequired,
+)
 from yosai.web import (
     WebYosai,
 )
@@ -19,7 +22,7 @@ def test_create_yosai_instance():
     file_path = os.environ.get('YOSAI_SETTINGS')
     second_yosai = WebYosai(file_path=file_path)
 
-    assert first_yosai._security_manager and second_yosai._security_manager
+    assert first_yosai.security_manager and second_yosai.security_manager
 
 
 def test_webyosai_security_manager_configuration(web_yosai):
@@ -31,13 +34,14 @@ def test_webyosai_security_manager_configuration(web_yosai):
     # using a random sample:
     assert isinstance(web_yosai.security_manager.authorizer.realms[0].account_store,
                       AlchemyAccountStore)
-    assert isinstance(web_yosai.security_manager.session_manager.session_handler.cache_handler,
-                      DPCacheHandler)
+    assert isinstance(web_yosai.security_manager.session_manager.\
+                      session_handler.session_store.cache_handler, DPCacheHandler)
     assert web_yosai.signed_cookie_secret == 'changeme'
 
 
 def test_webyosai_requires_authentication(
-        web_yosai, mock_web_registry, valid_username_password_token):
+        web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     confirm authentication approved and denied
     """
@@ -48,7 +52,11 @@ def test_webyosai_requires_authentication(
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
+
         result = transport_ransom('the_ringer', 'the_nihilists')
 
         assert result == 'transported'
@@ -60,7 +68,8 @@ def test_webyosai_requires_authentication(
 
 
 def test_webyosai_requires_user(
-        web_yosai, mock_web_registry, valid_username_password_token):
+        web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     confirm user approved and denied
     """
@@ -71,7 +80,10 @@ def test_webyosai_requires_user(
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
         result = transport_ransom('the_ringer', 'the_nihilists')
 
         assert result == 'transported'
@@ -83,7 +95,8 @@ def test_webyosai_requires_user(
 
 
 def test_webyosai_requires_guest(
-        web_yosai, mock_web_registry, valid_username_password_token):
+        web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     confirm guest approved and denied
     """
@@ -98,14 +111,18 @@ def test_webyosai_requires_guest(
 
         assert result == 'transported'
 
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
 
         with pytest.raises(mock_web_registry.mock_exception):
             transport_ransom('the_ringer', 'the_nihilists')
 
 
 def test_webyosai_requires_permission(
-        web_yosai, mock_web_registry, valid_username_password_token):
+        web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     confirm permission approved and denied
     """
@@ -123,7 +140,10 @@ def test_webyosai_requires_permission(
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
 
         result = transport_ransom('the_ringer', 'the_nihilists')
         assert result == 'transported'
@@ -133,7 +153,8 @@ def test_webyosai_requires_permission(
 
 
 def test_webyosai_requires_dynamic_permission(
-        web_yosai, mock_web_registry, monkeypatch, valid_username_password_token):
+        web_yosai, mock_web_registry, monkeypatch,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     confirm dynamic_permission approved and denied
     """
@@ -153,7 +174,10 @@ def test_webyosai_requires_dynamic_permission(
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
 
         result = transport_ransom('the_ringer', 'the_nihilists')
         assert result == 'transported'
@@ -163,7 +187,8 @@ def test_webyosai_requires_dynamic_permission(
 
 
 def test_webyosai_requires_role(
-        web_yosai, mock_web_registry, valid_username_password_token):
+        web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     confirm role approved and denied
     """
@@ -181,7 +206,10 @@ def test_webyosai_requires_role(
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
 
         result = transport_ransom('the_ringer', 'the_nihilists')
         assert result == 'transported'
