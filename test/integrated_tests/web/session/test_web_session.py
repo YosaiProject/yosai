@@ -2,6 +2,10 @@ from time import sleep
 import pytest
 import pdb
 
+from yosai.core import (
+    AdditionalAuthenticationRequired,
+)
+
 from yosai.web import (
     WebYosai
 )
@@ -9,7 +13,7 @@ from yosai.web import (
 from cbor2.encoder import CBOREncodeError
 
 def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
-                      valid_username_password_token):
+                      valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     A session that idle timeouts will raise an exception at validation and the
     sessionmanager deletes the expired session from cache.
@@ -19,7 +23,12 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
+
         sleep(2)
         try:
             subject = WebYosai.get_current_subject()
@@ -29,7 +38,7 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
 
 
 def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
-                          valid_username_password_token):
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     A session that absolute timeouts will raise an exception at validation and
     the sessionmanager deletes the expired session from cache.
@@ -39,7 +48,10 @@ def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
         sleep(2)
         try:
             subject = WebYosai.get_current_subject()
@@ -48,13 +60,17 @@ def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
                     mock_web_registry.session_id_history[0][0] == 'SET')
 
 
-def test_stopped_session(web_yosai, mock_web_registry, valid_username_password_token):
+def test_stopped_session(web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     When a user logs out, the user's session is stopped.
     """
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
         subject.logout()
         assert (mock_web_registry.current_session_id is None and
                 mock_web_registry.session_id_history[0][0] == 'SET' and
@@ -62,21 +78,24 @@ def test_stopped_session(web_yosai, mock_web_registry, valid_username_password_t
                 mock_web_registry.session_id_history[2][0] == 'DELETE')
 
 
-def test_new_session_at_login(web_yosai, mock_web_registry, valid_username_password_token):
+def test_new_session_at_login(web_yosai, mock_web_registry,
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     At login, an anonymous session is deleted from cache and a new session is created.
     """
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
         old_session_id = subject.get_session().session_id
-
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
         new_session_id = subject.get_session().session_id
         assert old_session_id != new_session_id
 
 
 def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
-                            valid_username_password_token):
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     Developer-defined session attribute schema is to serialize correctly
     """
@@ -92,7 +111,11 @@ def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
         old_session.set_attribute('attribute1', 'value1')
         old_session.set_attributes(values)
 
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
+
         new_session = subject.get_session()
         values.update(value1)
         assert (new_session.get_attributes(values.keys()) == values.keys())
@@ -104,7 +127,7 @@ def test_session_attributes(web_yosai, mock_web_registry, monkeypatch,
         new_session.set_attribute('attribute4', Value4())  # not serializable
 
 def test_csrf_token_management(web_yosai, mock_web_registry, monkeypatch,
-                               valid_username_password_token):
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     CSRF Token generation and retrieval from session state
     """
@@ -115,7 +138,10 @@ def test_csrf_token_management(web_yosai, mock_web_registry, monkeypatch,
         old_session = subject.get_session()
         old_token = old_session.get_csrf_token()
 
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
 
         new_session = subject.get_session()
         new_token = new_session.new_csrf_token()
@@ -124,7 +150,7 @@ def test_csrf_token_management(web_yosai, mock_web_registry, monkeypatch,
 
 
 def test_flash_messages_management(web_yosai, mock_web_registry, monkeypatch,
-                                   valid_username_password_token):
+        valid_thedude_username_password_token, valid_thedude_totp_token):
     """
     flash messages saving and retrieval from session state
     """
@@ -144,7 +170,10 @@ def test_flash_messages_management(web_yosai, mock_web_registry, monkeypatch,
 
         default_queue_flash_peek = old_session.peek_flash()
         default_queue_flash_pop = old_session.pop_flash()
-        subject.login(valid_username_password_token)
+        try:
+            subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            subject.login(valid_thedude_totp_token)
 
         new_session = subject.get_session()
         default_queue_flash_peek_new = new_session.peek_flash()
