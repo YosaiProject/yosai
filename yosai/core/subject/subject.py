@@ -813,78 +813,6 @@ class DefaultSubjectStore:
         self.remove_from_session(subject)
 
 
-class SubjectBuilder:
-    """
-    Creates Subject instances in a simplified way without requiring knowledge of
-    Yosai's construction techniques.
-
-    NOTE:
-    This is provided for framework development support only and should typically
-    never be used by application developers.  Subject instances should generally
-    be acquired by using ``Yosai.subject``
-
-    The simplest usage of this builder is to construct an anonymous, session-less
-    ``Subject`` instance. The returned Subject instance is *not* automatically bound
-    to the application (thread) for further use.  That is, ``Yosai.subject``
-    will not automatically return the same instance as what is returned by the
-    builder.  It is up to the framework developer to bind the built
-    Subject for continued use if so desired.
-
-    Shiro uses the Builder design pattern for this class, including it as an
-    inner class of the Subject interface.  Unlike Shiro, Yosai doesn't use the
-    builder pattern and simplifies builder's responsibilities a bit.
-
-    In future releases, this class may be refactored or removed entirely.  TBD
-    """
-    def __init__(self, yosai, security_manager):
-        """
-        :type subject_context:  DefaultSubjectContext
-        """
-        self.yosai = yosai
-        self.security_manager = security_manager
-
-    # yosai omits context_attributes
-
-    # refactored resolve_subject_context:
-    def create_subject_context(self):
-        return DefaultSubjectContext(yosai=self.yosai,
-                                     security_manager=self.security_manager)
-
-    def build_subject(self):
-        subject_context = self.create_subject_context()
-        return self.security_manager.create_subject(subject_context=subject_context)
-
-
-# the subject factory is used exclusively by the mgt module, so look into
-# moving it over (TBD)
-class DefaultSubjectFactory(subject_abcs.SubjectFactory):
-    def __init__(self):
-        pass
-
-    def create_subject(self, subject_context):
-        """
-        :type subject_context:  subject_abcs.SubjectContext
-        """
-        security_manager = subject_context.resolve_security_manager()
-        session = subject_context.resolve_session()
-        session_creation_enabled = subject_context.session_creation_enabled
-
-        # passing the session arg is new to yosai, eliminating redunant
-        # get_session calls:
-        identifiers = subject_context.resolve_identifiers(session)
-        remembered = getattr(subject_context, 'remembered', False)
-        authenticated = subject_context.resolve_authenticated(session)
-        host = subject_context.resolve_host(session)
-
-        return DelegatingSubject(identifiers=identifiers,
-                                 remembered=remembered,
-                                 authenticated=authenticated,
-                                 host=host,
-                                 session=session,
-                                 session_creation_enabled=session_creation_enabled,
-                                 security_manager=security_manager)
-
-
 # moved from its own yosai module so as to avoid circular importing:
 class Yosai:
 
@@ -896,18 +824,11 @@ class Yosai:
         self.settings = LazySettings(env_var=env_var, file_path=file_path)
         self.security_manager = \
             self.generate_security_manager(self.settings, session_attributes)
-        self.subject_builder.security_manager = self.security_manager
 
     def generate_security_manager(self, settings, session_attributes):
         # don't forget to pass default_cipher_key into the WebSecurityManager
         mgr_builder = SecurityManagerCreator()
         return mgr_builder.create_manager(self, settings, session_attributes)
-
-    @memoized_property
-    def subject_builder(self):
-        self._subject_builder = SubjectBuilder(yosai=self,
-                                               security_manager=self.security_manager)
-        return self._subject_builder
 
     def _get_subject(self):
         """
@@ -921,7 +842,9 @@ class Yosai:
                                         application configuration because a Subject
                                         should *always* be available to the caller)
         """
-        subject = self.subject_builder.build_subject()
+        subject_context = DefaultSubjectContext(yosai=self,
+                                                security_manager=self.security_manager)
+        subject = self.security_manager.create_subject(subject_context=subject_context)
         global_subject_context.stack.append(subject)
         return subject
 

@@ -201,9 +201,7 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         or is one yet does not have a web_registry, this implementation returns
         None.
 
-        :param subject_context: the contextual data, usually provided by a
-                                ``SubjectBuilder`` implementation, that is being
-                                used to construct a ``Subject`` instance
+        :param subject_context: the contextual data used to construct a ``Subject`` instance
 
         :returns: an encrypted, serialized identifier collection
         """
@@ -245,7 +243,6 @@ class CookieRememberMeManager(AbstractRememberMeManager):
         :param subject: the subject instance for which identity data should be
                         forgotten from the underlying persistence
 
-        :param subject_context: the contextual data, usually provided by a
-                                ``SubjectBuilder`` implementation
+        :param subject_context: the contextual data
         """
         del subject.web_registry.remember_me  # no use of subject data (TBD)

@@ -28,7 +28,6 @@ from yosai.core import (
     IdentifiersNotSetException,
     IllegalStateException,
     Yosai,
-    SubjectBuilder,
     ThreadStateManager,
     YosaiContextException,
     global_yosai_context,
@@ -80,52 +79,6 @@ class DefaultWebSubjectContext(DefaultSubjectContext,
                 return None
 
         return registry
-
-
-# yosai renamed:
-class WebSubjectBuilder(SubjectBuilder):
-    """
-    A ``WebSubjectBuilder`` performs the same function as a ``SubjectBuilder``,
-    but additionally ensures that the web request, coordinating with the
-    request/response objects,  is retained for use by internal Yosai components.
-    """
-
-    def __init__(self, yosai, security_manager=None):
-        """
-        Constructs a new ``WebSubjectBuilder`` instance using the ``SecurityManager``
-        obtained by calling ``Yosai.security_manager``.  If you want
-        to specify your own SecurityManager instance, pass it as an argument.
-
-        """
-        self.yosai = yosai
-        self.security_manager = security_manager
-
-    # overridden
-    def create_subject_context(self, web_registry):
-        subject_context = DefaultWebSubjectContext(yosai=self.yosai,
-                                                   security_manager=self.security_manager,
-                                                   web_registry=web_registry)
-        return subject_context
-
-    def build_subject(self, web_registry):
-        """
-        :param web_registry:  facilitates interaction with request and response
-                              objects used by the web application
-        :type web_registry:  WebRegistry
-
-        :returns: a new ``WebSubject`` instance
-        """
-        subject_context = self.create_subject_context(web_registry)
-        subject = self.security_manager.create_subject(subject_context=subject_context)
-
-        if not hasattr(subject, 'web_registry'):
-            msg = ("Subject implementation returned from the SecurityManager"
-                   "was not a WebSubject implementation.  Please ensure a "
-                   "Web-enabled SecurityManager has been configured and made"
-                   "available to this builder.")
-            raise IllegalStateException(msg)
-
-        return subject
 
 
 class WebDelegatingSubject(DelegatingSubject):
@@ -197,12 +150,6 @@ class WebYosai(Yosai):
         registry_settings = WebRegistrySettings(self.settings)
         self.signed_cookie_secret = registry_settings.signed_cookie_secret
 
-    @memoized_property
-    def subject_builder(self):
-        self._subject_builder = WebSubjectBuilder(yosai=self,
-                                                  security_manager=self.security_manager)
-        return self._subject_builder
-
     # overridden:
     def _get_subject(self):
         """
@@ -220,7 +167,19 @@ class WebYosai(Yosai):
                                         should *always* be available to the caller)
         """
         web_registry = WebYosai.get_current_webregistry()
-        return self.subject_builder.build_subject(web_registry=web_registry)
+        subject_context = DefaultWebSubjectContext(yosai=self,
+                                                   security_manager=self.security_manager,
+                                                   web_registry=web_registry)
+        subject = self.security_manager.create_subject(subject_context=subject_context)
+
+        if not hasattr(subject, 'web_registry'):
+            msg = ("Subject implementation returned from the SecurityManager"
+                   "was not a WebSubject implementation.  Please ensure a "
+                   "Web-enabled SecurityManager has been configured and made"
+                   "available to this builder.")
+            raise IllegalStateException(msg)
+
+        return subject
 
     @staticmethod
     @contextmanager

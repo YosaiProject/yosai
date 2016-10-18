@@ -242,11 +242,8 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         Based on the given subject context data, retrieves the previously
         persisted serialized identity, or None if there is no available data.
-        The context map is usually populated by a ``SubjectBuilder``
-        implementation.
 
-        :param subject_context: the contextual data, usually provided by a
-                                SubjectBuilder implementation, that
+        :param subject_context: the contextual data, that
                                 is being used to construct a Subject instance.
 
         :returns: the previously persisted serialized identity, or None if
@@ -260,8 +257,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         serialized message.  Then, the bytes are deserialized and returned.
 
         :param serialized:      the bytes to decrypt and then deserialize
-        :param subject_context: the contextual data, usually provided by a
-                                SubjectBuilder implementation, that is being
+        :param subject_context: the contextual data, that is being
                                 used to construct a Subject instance
         :returns: the de-serialized identifier
         """
@@ -287,8 +283,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         previous key.
 
         :param exc: the exception that was thrown
-        :param subject_context: the contextual data, usually provided by a
-                                SubjectBuilder implementation, that is being
+        :param subject_context: the contextual data that is being
                                 used to construct a Subject instance
         :raises:  the original Exception passed is propagated in all cases
         """
@@ -539,10 +534,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         consequently highly likely to be refactored.
 
         It gets called in one of two ways:
-        1) the subject_builder creating an anonymous subject, passing create_subject
+        1) when creating an anonymous subject, passing create_subject
            a subject_context argument
 
-        2) following a after successful login
+        2) following a after successful login, passing all but the context argument
 
         This implementation functions as follows:
 
@@ -947,8 +942,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         Using the specified subject context map intended to build a ``Subject``
         instance, returns any previously remembered identifiers for the subject
         for automatic identity association (aka 'Remember Me').
-
-        The context map is usually populated by a ``SubjectBuilder`` implementation.
         """
         rmm = self.remember_me_manager
         if rmm is not None:

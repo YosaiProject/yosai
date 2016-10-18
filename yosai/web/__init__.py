@@ -51,7 +51,6 @@ from yosai.web.session.session import (
 
 
 from yosai.web.subject.subject import (
-    WebSubjectBuilder,
     DefaultWebSubjectContext,
     WebDelegatingSubject,
     WebYosai,

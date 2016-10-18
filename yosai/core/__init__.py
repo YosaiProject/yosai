@@ -206,8 +206,6 @@ from yosai.core.serialize.serialize import (
     SerializationManager,
 )
 
-
-
 thread_local = threading.local()  # use only one global instance
 
 from yosai.core.subject.subject import(
@@ -216,7 +214,6 @@ from yosai.core.subject.subject import(
     DefaultSubjectStore,
     DelegatingSubject,
     SecurityManagerCreator,
-    SubjectBuilder,
     global_subject_context,
     global_yosai_context,
 )
