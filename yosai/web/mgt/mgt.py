@@ -21,7 +21,6 @@ import logging
 
 from yosai.core import (
     AbstractRememberMeManager,
-    DefaultSubjectFactory,
     DefaultSubjectStore,
     MisconfiguredException,
     NativeSecurityManager,
@@ -37,42 +36,6 @@ from yosai.web import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class DefaultWebSubjectFactory(DefaultSubjectFactory):
-    """
-    ``SubjectFactory`` implementation that creates ``WebDelegatingSubject``
-    instances.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def create_subject(self, subject_context=None):
-        if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
-            return super().create_subject(subject_context=subject_context)
-
-        security_manager = subject_context.resolve_security_manager()
-        session = subject_context.resolve_session()
-        session_creation_enabled = subject_context.session_creation_enabled
-
-        # passing the session arg is new to yosai, eliminating redunant
-        # get_session calls:
-        identifiers = subject_context.resolve_identifiers(session)
-        authenticated = subject_context.resolve_authenticated(session)
-        host = subject_context.resolve_host(session)
-
-        # must run after resolve_identifiers:
-        remembered = getattr(subject_context, 'remembered', None)
-
-        return WebDelegatingSubject(identifiers=identifiers,
-                                    remembered=remembered,
-                                    authenticated=authenticated,
-                                    host=host,
-                                    session=session,
-                                    session_creation_enabled=session_creation_enabled,
-                                    security_manager=security_manager,
-                                    web_registry=subject_context.web_registry)
 
 
 class WebSecurityManager(NativeSecurityManager):
@@ -107,7 +70,6 @@ class WebSecurityManager(NativeSecurityManager):
                          serialization_manager=serialization_manager,
                          session_manager=DefaultWebSessionManager(settings),
                          subject_store=DefaultSubjectStore(DefaultWebSessionStorageEvaluator()),
-                         subject_factory=DefaultWebSubjectFactory(),
                          remember_me_manager=CookieRememberMeManager(settings))
 
     def create_subject_context(self, subject):
@@ -148,6 +110,40 @@ class WebSecurityManager(NativeSecurityManager):
         subject.session = subject.session.recreate_session()
         super().remember_me_successful_login(authc_token, account_id, subject)
 
+    # overridden
+    def do_create_subject(self, subject_context):
+        """
+        By the time this method is invoked, all possible
+        ``SubjectContext`` data (session, identifiers, et. al.) has been made
+        accessible using all known heuristics.
+
+        :returns: a Subject instance reflecting the data in the specified
+                  SubjectContext data map
+        """
+        if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
+            return super().do_create_subject(subject_context=subject_context)
+
+        security_manager = subject_context.resolve_security_manager()
+        session = subject_context.resolve_session()
+        session_creation_enabled = subject_context.session_creation_enabled
+
+        # passing the session arg is new to yosai, eliminating redunant
+        # get_session calls:
+        identifiers = subject_context.resolve_identifiers(session)
+        authenticated = subject_context.resolve_authenticated(session)
+        host = subject_context.resolve_host(session)
+
+        # must run after resolve_identifiers:
+        remembered = getattr(subject_context, 'remembered', None)
+
+        return WebDelegatingSubject(identifiers=identifiers,
+                                    remembered=remembered,
+                                    authenticated=authenticated,
+                                    host=host,
+                                    session=session,
+                                    session_creation_enabled=session_creation_enabled,
+                                    security_manager=security_manager,
+                                    web_registry=subject_context.web_registry)
 
 class CookieRememberMeManager(AbstractRememberMeManager):
     """

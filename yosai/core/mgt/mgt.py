@@ -27,11 +27,11 @@ from yosai.core import(
     AuthenticationException,
     DefaultAuthenticator,
     DefaultEventBus,
+    DelegatingSubject,
     EventLogger,
     DefaultNativeSessionManager,
     DefaultSessionKey,
     DefaultSubjectContext,
-    DefaultSubjectFactory,
     DefaultSubjectStore,
     DeleteSubjectException,
     InvalidArgumentException,
@@ -243,8 +243,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         Based on the given subject context data, retrieves the previously
         persisted serialized identity, or None if there is no available data.
         The context map is usually populated by a ``SubjectBuilder``
-        implementation.  See the ``SubjectFactory`` class constants for Yosai's
-        known map keys.
+        implementation.
 
         :param subject_context: the contextual data, usually provided by a
                                 SubjectBuilder implementation, that
@@ -366,8 +365,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
                  serialization_manager=None,
                  session_manager=None,
                  remember_me_manager=None,
-                 subject_store=DefaultSubjectStore(),
-                 subject_factory=DefaultSubjectFactory()):
+                 subject_store=DefaultSubjectStore()):
 
         self.yosai = yosai
         self.subject_store = subject_store
@@ -386,8 +384,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         if serialization_manager and self.remember_me_manager:
             self.remember_me_manager.serialization_manager = serialization_manager
-
-        self.subject_factory = subject_factory
 
         event_bus = DefaultEventBus()
         self.event_logger = EventLogger(event_bus)
@@ -587,20 +583,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         else:
             context = copy.copy(subject_context)  # if this necessary? TBD.
 
-        # ensure that the context has a security_manager instance, and if
-        # not, add one:
         context = self.ensure_security_manager(context)
-
-        # Resolve an associated Session (usually based on a referenced
-        # session ID), and place it in the context before sending to the
-        # subject_factory.  The subject_factory should not need to know how
-        # to acquire sessions as the process is often environment specific -
-        # better to shield the SF from these details:
         context = self.resolve_session(context)
-
-        # Similarly, the subject_factory should not require any concept of
-        # remember_me -- translate that here first if possible before handing
-        # off to the subject_factory:
         context = self.resolve_identifiers(context)
 
         subject = self.do_create_subject(context)  # DelegatingSubject
@@ -725,20 +709,31 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
     def do_create_subject(self, subject_context):
         """
-        This method creates a ``Subject`` instance by delegating to the internal
-        subject_factory.  By the time this method is invoked, all possible
+        By the time this method is invoked, all possible
         ``SubjectContext`` data (session, identifiers, et. al.) has been made
-        accessible using all known heuristics and will be accessible to the
-        subject_factory} via the subject_context.resolve* methods.
+        accessible using all known heuristics.
 
-        :param subject_context: the populated context (data map) to be used by
-                                the subject_factory when creating a Subject
-                                instance
         :returns: a Subject instance reflecting the data in the specified
                   SubjectContext data map
         """
-        subject = self.subject_factory.create_subject(subject_context)
-        return subject
+        security_manager = subject_context.resolve_security_manager()
+        session = subject_context.resolve_session()
+        session_creation_enabled = subject_context.session_creation_enabled
+
+        # passing the session arg is new to yosai, eliminating redunant
+        # get_session calls:
+        identifiers = subject_context.resolve_identifiers(session)
+        remembered = getattr(subject_context, 'remembered', False)
+        authenticated = subject_context.resolve_authenticated(session)
+        host = subject_context.resolve_host(session)
+
+        return DelegatingSubject(identifiers=identifiers,
+                                 remembered=remembered,
+                                 authenticated=authenticated,
+                                 host=host,
+                                 session=session,
+                                 session_creation_enabled=session_creation_enabled,
+                                 security_manager=security_manager)
 
     def save(self, subject):
         """
@@ -769,13 +764,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
     def ensure_security_manager(self, subject_context):
         """
         Determines whether there is a ``SecurityManager`` instance in the context,
-        and if not, adds 'self' to the context.  This ensures that the ``SubjectFactory``
-        instance will have access to a ``SecurityManager`` during Subject construction.
+        and if not, adds 'self' to the context.  This ensures that do_create_subject
+        will have access to a ``SecurityManager`` during Subject construction.
 
         :param subject_context: the subject context data that may contain a
                                 SecurityManager instance
-        :returns: the SubjectContext intended for a SubjectFactory's Subject
-                  creation
+        :returns: the SubjectContext
         """
         try:
             if (subject_context.resolve_security_manager() is not None):
@@ -800,7 +794,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         """
         This method attempts to resolve any associated session based on the
         context and returns a context that represents this resolved Session to
-        ensure it may be referenced, if needed, by the invoked ``SubjectFactory``
+        ensure it may be referenced, if needed, by the invoked do_create_subject
         that performs actual ``Subject`` construction.
 
         If there is a ``Session`` already in the context (because that is what the
@@ -810,7 +804,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         :param subject_context: the subject context data that may resolve a
                                 Session instance
-        :returns: the context intended for a SubjectFactory's subject creation
+        :returns: the context
         """
         if (subject_context.resolve_session() is not None):
             msg = ("Context already contains a session.  Returning.")
@@ -867,8 +861,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
             if identifiers:
                 msg = ("Found remembered IdentifierCollection.  Adding to the "
-                       "context to be used for subject construction by the "
-                       "SubjectFactory.")
+                       "context to be used for subject construction.")
                 logger.debug(msg)
 
                 subject_context.identifiers = identifiers

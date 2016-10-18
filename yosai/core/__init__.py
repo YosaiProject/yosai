@@ -214,7 +214,6 @@ from yosai.core.subject.subject import(
     Yosai,
     DefaultSubjectContext,
     DefaultSubjectStore,
-    DefaultSubjectFactory,
     DelegatingSubject,
     SecurityManagerCreator,
     SubjectBuilder,
