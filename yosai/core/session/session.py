@@ -589,22 +589,6 @@ class SimpleSession(session_abcs.ValidatingSession,
         self.attributes = state['attributes']
 
 
-class SimpleSessionFactory(session_abcs.SessionFactory):
-
-    def __init__(self, settings):
-        session_settings = DefaultSessionSettings(settings)
-        self.absolute_timeout = session_settings.absolute_timeout
-        self.idle_timeout = session_settings.idle_timeout
-
-    def create_session(self, session_context=None):
-        return SimpleSession(self.absolute_timeout,
-                             self.idle_timeout,
-                             host=session_context.get('host'))
-
-    def __repr__(self):
-        return self.__class__.__name__
-
-
 class DelegatingSession(session_abcs.Session):
     """
     A DelegatingSession is a client-tier representation of a server side
@@ -998,9 +982,14 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
     something else must call the touch() method to ensure the session
     validation logic functions correctly.
     """
-    def __init__(self, settings):
-        self.session_factory = SimpleSessionFactory(settings)
-        self.session_handler = DefaultNativeSessionHandler()
+    def __init__(self, settings, session_handler=DefaultNativeSessionHandler()):
+
+        # timeouts are use during session construction:
+        session_settings = DefaultSessionSettings(settings)
+        self.absolute_timeout = session_settings.absolute_timeout
+        self.idle_timeout = session_settings.idle_timeout
+
+        self.session_handler = session_handler
 
     def apply_cache_handler(self, cachehandler):
         # no need for a local instance, just pass through
@@ -1065,8 +1054,9 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
 
     # consolidated with do_create_session:
     def _create_session(self, session_context):
-        session = self.session_factory.create_session(session_context)
-
+        session = SimpleSession(self.absolute_timeout,
+                                self.idle_timeout,
+                                host=session_context.get('host'))
         msg = "Creating session. "
         logger.debug(msg)
 

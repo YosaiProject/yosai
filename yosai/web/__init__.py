@@ -45,7 +45,6 @@ from yosai.web.session.session import (
     WebCachingSessionStore,
     WebDelegatingSession,
     WebSimpleSession,
-    WebSessionFactory,
     WebSessionHandler,
     WebSessionKey,
 )

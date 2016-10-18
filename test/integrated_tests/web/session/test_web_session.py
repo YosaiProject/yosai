@@ -18,8 +18,7 @@ def test_idle_timeout(web_yosai, mock_web_registry, monkeypatch,
     A session that idle timeouts will raise an exception at validation and the
     sessionmanager deletes the expired session from cache.
     """
-    monkeypatch.setattr(web_yosai.security_manager.session_manager.session_factory,
-                        'idle_timeout', 1000)  # milliseconds
+    monkeypatch.setattr(web_yosai.security_manager.session_manager, 'idle_timeout', 1000)  # milliseconds
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()
@@ -43,8 +42,7 @@ def test_absolute_timeout(web_yosai, mock_web_registry, monkeypatch,
     A session that absolute timeouts will raise an exception at validation and
     the sessionmanager deletes the expired session from cache.
     """
-    monkeypatch.setattr(web_yosai.security_manager.session_manager.session_factory,
-                        'absolute_timeout', 1000)  # milliseconds
+    monkeypatch.setattr(web_yosai.security_manager.session_manager, 'absolute_timeout', 1000)  # milliseconds
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()

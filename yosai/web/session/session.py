@@ -32,7 +32,6 @@ from yosai.core import (
     SessionCreationException,
     SessionEventHandler,
     SimpleSession,
-    SimpleSessionFactory,
     session_abcs,
 )
 
@@ -86,19 +85,6 @@ class WebSimpleSession(SimpleSession):
         flash_messages = collections.defaultdict(list)
         flash_messages.update(state['internal_attributes']['flash_messages'])
         self.internal_attributes['flash_messages'] = flash_messages
-
-
-class WebSessionFactory(SimpleSessionFactory):
-
-    def __init__(self, settings):
-        super().__init__(settings)
-
-    def create_session(self, csrf_token, session_context):
-        return WebSimpleSession(csrf_token,
-                                self.absolute_timeout,
-                                self.idle_timeout,
-                                host=session_context.get('host'))
-
 
 class WebSessionHandler(DefaultNativeSessionHandler):
 
@@ -175,10 +161,8 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     Web-application capable SessionManager implementation
     """
     def __init__(self, settings):
-        self.session_factory = WebSessionFactory(settings)
-        self.session_handler = WebSessionHandler()
-
-    # yosai omits get_referenced_session_id method
+        super().__init__(settings,
+                         session_handler=WebSessionHandler())
 
     # new to yosai (fixation countermeasure)
     def recreate_session(self, session_key):
@@ -242,7 +226,10 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
     def _create_session(self, session_context):
         csrf_token = self._generate_csrf_token()
 
-        session = self.session_factory.create_session(csrf_token, session_context)
+        session = WebSimpleSession(csrf_token,
+                                   self.absolute_timeout,
+                                   self.idle_timeout,
+                                   host=session_context.get('host'))
 
         msg = "Creating session. "
         logger.debug(msg)

@@ -36,8 +36,7 @@ def test_remember_me_with_expired_session(
     Send a request that contains an idle expired session_id and remember_me cookie.
     A new session is created and the user remembered.  Confirm user identity.
     """
-    monkeypatch.setattr(web_yosai.security_manager.session_manager.session_factory,
-                        'idle_timeout', 1000)  # milliseconds
+    monkeypatch.setattr(web_yosai.security_manager.session_manager, 'idle_timeout', 1000)  # milliseconds
 
     with WebYosai.context(web_yosai, mock_web_registry):
         subject = WebYosai.get_current_subject()

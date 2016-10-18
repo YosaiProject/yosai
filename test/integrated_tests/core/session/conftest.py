@@ -5,7 +5,6 @@ from yosai.core import (
     DefaultNativeSessionManager,
     SessionEventHandler,
     DefaultNativeSessionHandler,
-    SimpleSessionFactory,
     CachingSessionStore,
 )
 
@@ -16,10 +15,6 @@ def session_store(cache_handler):
     css.cache_handler = cache_handler
     return css
 
-
-@pytest.fixture(scope='function')
-def session_factory(core_settings):
-    return SimpleSessionFactory(core_settings)
 
 
 @pytest.fixture(scope='function')
@@ -56,7 +51,5 @@ def session_context():
 
 
 @pytest.fixture(scope='function')
-def session(session_factory, session_handler):
-    session = session_factory.create_session()
-    session_handler.create_session(session)  # obtains a session_id
-    return session
+def session(session_manager, session_handler):
+    return session_manager._create_session({})

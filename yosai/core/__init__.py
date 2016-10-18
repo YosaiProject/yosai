@@ -199,7 +199,6 @@ from yosai.core.session.session import (
     MemorySessionStore,
     DefaultNativeSessionHandler,
     SimpleSession,
-    SimpleSessionFactory,
 )
 
 

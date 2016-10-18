@@ -121,7 +121,7 @@ def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier, event
 
 
 def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
-                           clear_cached_authz_info, event_bus):
+                           event_bus):
 
     mra = modular_realm_authorizer
     roles = {'bankcustomer', 'courier', 'thief'}

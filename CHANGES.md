@@ -28,6 +28,7 @@ v0.3
 - removed Credential class, refactored credential collection to a dict
 - refactored SessionKey and WebSessionKey from class to namedtuple
 - refactored SessionContext to a dict
+- refactored away the need for a SessionFactory
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 
