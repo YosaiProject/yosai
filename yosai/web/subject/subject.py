@@ -118,7 +118,7 @@ class WebSubjectBuilder(SubjectBuilder):
         subject_context = self.create_subject_context(web_registry)
         subject = self.security_manager.create_subject(subject_context=subject_context)
 
-        if not isinstance(subject, web_subject_abcs.WebSubject):
+        if not hasattr(subject, 'web_registry'):
             msg = ("Subject implementation returned from the SecurityManager"
                    "was not a WebSubject implementation.  Please ensure a "
                    "Web-enabled SecurityManager has been configured and made"
@@ -128,8 +128,7 @@ class WebSubjectBuilder(SubjectBuilder):
         return subject
 
 
-class WebDelegatingSubject(DelegatingSubject,
-                           web_subject_abcs.WebSubject):
+class WebDelegatingSubject(DelegatingSubject):
     """
     A ``WebDelegatingSubject`` delegates method calls to an underlying ``WebSecurityManager``
     instance for security checks.  It is essentially a ``WebSecurityManager`` proxy,
@@ -140,12 +139,15 @@ class WebDelegatingSubject(DelegatingSubject,
     authorization. However, Subject-specific state, such as username, and
     the WebRegistry object is saved so to facilitate subject-specific processing
     in the context of a web request.
+
+    Unlike DelegatingSubject, WebDelegatingSubject requires a web_registry attribute
     """
-    def __init__(self, identifiers=None, authenticated=False,
+    def __init__(self, identifiers=None, remembered=False, authenticated=False,
                  host=None, session=None, session_creation_enabled=True,
                  security_manager=None, web_registry=None):
 
         super().__init__(identifiers=identifiers,
+                         remembered=False,
                          authenticated=authenticated,
                          host=host,
                          session=session,
@@ -154,18 +156,7 @@ class WebDelegatingSubject(DelegatingSubject,
 
         self.web_registry = web_registry
 
-    # property is required for interface enforcement:
-    @property
-    def web_registry(self):
-        return self._web_registry
-
-    @web_registry.setter
-    def web_registry(self, web_registry):
-        self._web_registry = web_registry
-
-    # overridden
-    @property
-    def session_creation_enabled(self):
+    def is_session_creation_enabled(self):
         """
         Returns True if session creation is allowed  (as determined by the super
         class's is_session_creation_enabled value and no request-specific override
@@ -180,7 +171,7 @@ class WebDelegatingSubject(DelegatingSubject,
                    request-specific override has disabled sessions for this
                    subject, False otherwise
         """
-        return (self._session_creation_enabled and
+        return (self.session_creation_enabled and
                 self.web_registry.session_creation_enabled)
 
     # overridden

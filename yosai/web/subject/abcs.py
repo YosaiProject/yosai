@@ -23,20 +23,6 @@ from yosai.core import (
     subject_abcs,
 )
 
-
-class WebSubject(subject_abcs.Subject):
-
-    @property
-    @abstractmethod
-    def web_registry(self):
-        pass
-
-    @web_registry.setter
-    @abstractmethod
-    def web_registry(self, web_registry):
-        pass
-
-
 class WebSubjectContext(subject_abcs.SubjectContext):
 
     @abstractmethod

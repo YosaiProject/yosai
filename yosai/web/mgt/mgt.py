@@ -22,6 +22,7 @@ import logging
 from yosai.core import (
     AbstractRememberMeManager,
     DefaultSubjectFactory,
+    DefaultSubjectStore,
     MisconfiguredException,
     NativeSecurityManager,
 )
@@ -48,7 +49,6 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
         super().__init__()
 
     def create_subject(self, subject_context=None):
-
         if not isinstance(subject_context, web_subject_abcs.WebSubjectContext):
             return super().create_subject(subject_context=subject_context)
 
@@ -62,15 +62,17 @@ class DefaultWebSubjectFactory(DefaultSubjectFactory):
         authenticated = subject_context.resolve_authenticated(session)
         host = subject_context.resolve_host(session)
 
-        web_registry = subject_context.web_registry
+        # must run after resolve_identifiers:
+        remembered = getattr(subject_context, 'remembered', None)
 
         return WebDelegatingSubject(identifiers=identifiers,
+                                    remembered=remembered,
                                     authenticated=authenticated,
                                     host=host,
                                     session=session,
                                     session_creation_enabled=session_creation_enabled,
                                     security_manager=security_manager,
-                                    web_registry=web_registry)
+                                    web_registry=subject_context.web_registry)
 
 
 class WebSecurityManager(NativeSecurityManager):
@@ -109,35 +111,14 @@ class WebSecurityManager(NativeSecurityManager):
                          remember_me_manager=CookieRememberMeManager(settings))
 
     def create_subject_context(self, subject):
-
-        if not hasattr(self, 'yosai'):
-            msg = "WebSecurityManager has no yosai attribute set."
-            raise MisconfiguredException(msg)
-
         web_registry = subject.web_registry
         return DefaultWebSubjectContext(self.yosai, self, web_registry)
-
-    @property
-    def session_manager(self):
-        return self._session_manager  # inherited
-
-    # extends the property of the parent:
-    @session_manager.setter
-    def session_manager(self, sessionmanager):
-
-        # this is the syntax used to call the property setter of the parent:
-        super_dwsm = super(WebSecurityManager, WebSecurityManager)
-        super_dwsm.session_manager.__set__(self, sessionmanager)
-
-        evaluator = self.subject_store.session_storage_evaluator
-        evaluator.session_manager = sessionmanager
 
     # overridden:
     def create_session_context(self, subject_context):
         web_registry = subject_context.resolve_web_registry()
         session_context = {'web_registry': web_registry,
                            'host': getattr(self, 'host', None)}
-
         return session_context
 
     # overridden
@@ -145,7 +126,6 @@ class WebSecurityManager(NativeSecurityManager):
         try:
             web_registry = subject_context.resolve_web_registry()
             session_id = subject_context.session_id
-
             return WebSessionKey(session_id, web_registry=web_registry)
         except AttributeError:  # not dealing with a WebSubjectContext
             return super().get_session_key(subject_context)
@@ -163,11 +143,9 @@ class WebSecurityManager(NativeSecurityManager):
 
     # new to yosai, overriding to support CSRF token synchronization
     def on_successful_login(self, authc_token, account_id, subject):
-
         # Generating a new session_id at successful login is a recommended
         # countermeasure to a session fixation
         subject.session = subject.session.recreate_session()
-
         super().remember_me_successful_login(authc_token, account_id, subject)
 
 

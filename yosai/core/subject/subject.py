@@ -227,6 +227,10 @@ class DelegatingSubject(subject_abcs.Subject):
         self.session_creation_enabled = session_creation_enabled
         self.run_as_identifiers_session_key = 'run_as_identifiers_session_key'
 
+    # this is a placeholder for subclasses, which use more elaborate checking:
+    def is_session_creation_enabled(self):
+        return self.session_creation_enabled
+
     # new to yosai.core.
     # security_manager is required for certain operations
     def check_security_manager(self):
@@ -462,7 +466,7 @@ class DelegatingSubject(subject_abcs.Subject):
             return self.session
 
         if (not self.session and create):
-            if (not self.session_creation_enabled):
+            if (not self.is_session_creation_enabled()):
                 msg = ("Session creation is disabled for the current subject. "
                        "This exception indicates that there is "
                        "either a programming error (using a session when "

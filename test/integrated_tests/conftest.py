@@ -112,6 +112,7 @@ def valid_thedude_totp_token(thedude_totp_key, cache_handler):
     for key in keys:
         cache_handler.cache_region.delete(key)
 
+
 @pytest.fixture(scope='function')
 def invalid_thedude_totp_token(cache_handler, yosai, monkeypatch):
     keys = cache_handler.keys('*authentication*')
@@ -134,7 +135,7 @@ def invalid_thedude_totp_token(cache_handler, yosai, monkeypatch):
 
 
 @pytest.fixture(scope='function')  # because successful login clears password
-def remembered_valid_username_password_token(cache_handler):
+def remembered_valid_thedude_username_password_token(cache_handler):
     keys = cache_handler.keys('*authentication*')
     for key in keys:
         cache_handler.cache_region.delete(key)
@@ -144,8 +145,22 @@ def remembered_valid_username_password_token(cache_handler):
                                  remember_me=True,
                                  host='127.0.0.1')
 
-    cache_handler.delete(domain=domain, identifier='thedude')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
+@pytest.fixture(scope='function')
+def remembered_valid_thedude_totp_token(thedude_totp_key, cache_handler):
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
+
+    token = int(TOTP(key=thedude_totp_key, digits=6).generate().token)
+    yield TOTPToken(token, remember_me=True)
+
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
 
 @pytest.fixture(scope='function')
@@ -160,36 +175,6 @@ def invalid_thedude_username_password_token(yosai, monkeypatch):
         monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
         da.init_locking()
         da.locking_realm.unlock_account('thedude')
-
-
-@pytest.fixture(scope='function')
-def clear_cached_authz_info(cache_handler, request):
-    def remove_authz_info():
-        nonlocal cache_handler
-        cache_handler.delete(domain="authz_info",
-                             identifier='thedude')
-
-    request.addfinalizer(remove_authz_info)
-
-
-@pytest.fixture(scope='function')
-def clear_jackie_cached_authz_info(cache_handler, request):
-    def remove_jackie_authz_info():
-        nonlocal cache_handler
-        cache_handler.delete(domain="authz_info",
-                             identifier='jackie')
-
-    request.addfinalizer(remove_jackie_authz_info)
-
-
-@pytest.fixture(scope='function')
-def clear_walter_cached_authz_info(cache_handler, request):
-    def remove_walter_authz_info():
-        nonlocal cache_handler
-        cache_handler.delete(domain="authz_info",
-                             identifier='walter')
-
-    request.addfinalizer(remove_walter_authz_info)
 
 
 @pytest.fixture(scope='function')

@@ -38,7 +38,6 @@ from yosai.core import (
 
 from yosai.web import (
     CSRFTokenException,
-    web_subject_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,33 +59,33 @@ class WebSimpleSession(SimpleSession):
 
     def __getstate__(self):
         return {
-            '_session_id': self._session_id,
-            '_start_timestamp': self._start_timestamp,
-            '_stop_timestamp': self._stop_timestamp,
-            '_last_access_time': self._last_access_time,
-            '_idle_timeout': self._idle_timeout,
-            '_absolute_timeout': self._absolute_timeout,
-            '_is_expired': self._is_expired,
-            '_host': self._host,
-            '_internal_attributes': dict(self._internal_attributes),
-            '_attributes': self._attributes
+            'session_id': self.session_id,
+            'start_timestamp': self.start_timestamp,
+            'stop_timestamp': self.stop_timestamp,
+            'last_access_time': self.last_access_time,
+            'idle_timeout': self.idle_timeout,
+            'absolute_timeout': self.absolute_timeout,
+            'is_expired': self.is_expired,
+            'host': self.host,
+            'internal_attributes': dict(self.internal_attributes),
+            'attributes': self.attributes
         }
 
     def __setstate__(self, state):
-        self._session_id = state['_session_id']
-        self._start_timestamp = state['_start_timestamp']
-        self._stop_timestamp = state['_stop_timestamp']
-        self._last_access_time = state['_last_access_time']
-        self._idle_timeout = state['_idle_timeout']
-        self._absolute_timeout = state['_absolute_timeout']
-        self._is_expired = state['_is_expired']
-        self._host = state['_host']
-        self._attributes = state['_attributes']
-        self._internal_attributes = state['_internal_attributes']
+        self.session_id = state['session_id']
+        self.start_timestamp = state['start_timestamp']
+        self.stop_timestamp = state['stop_timestamp']
+        self.last_access_time = state['last_access_time']
+        self.idle_timeout = state['idle_timeout']
+        self.absolute_timeout = state['absolute_timeout']
+        self.is_expired = state['is_expired']
+        self.host = state['host']
+        self.attributes = state['attributes']
+        self.internal_attributes = state['internal_attributes']
 
         flash_messages = collections.defaultdict(list)
-        flash_messages.update(state['_internal_attributes']['flash_messages'])
-        self._internal_attributes['flash_messages'] = flash_messages
+        flash_messages.update(state['internal_attributes']['flash_messages'])
+        self.internal_attributes['flash_messages'] = flash_messages
 
 
 class WebSessionFactory(SimpleSessionFactory):
@@ -98,7 +97,7 @@ class WebSessionFactory(SimpleSessionFactory):
         return WebSimpleSession(csrf_token,
                                 self.absolute_timeout,
                                 self.idle_timeout,
-                                host=getattr(session_context, 'host', None))
+                                host=session_context.get('host'))
 
 
 class WebSessionHandler(DefaultNativeSessionHandler):
@@ -118,7 +117,7 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         :param session: the session that was just ``createSession`` created
         """
         session_id = session.session_id
-        web_registry = session_context.web_registry
+        web_registry = session_context['web_registry']
 
         if self.is_session_id_cookie_enabled:
             web_registry.session_id = session_id
@@ -213,7 +212,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         if key:
             return WebDelegatingSession(self, key)
 
-        web_registry = context.web_registry
+        web_registry = context['web_registry']
         session_key = WebSessionKey(session.session_id,
                                     web_registry=web_registry)
 
@@ -392,8 +391,7 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
             return False
 
         # non-web subject instances can't be saved to web-only session managers:
-        if (not isinstance(subject, web_subject_abcs.WebSubject) and
-            self.session_manager and
+        if (not hasattr(subject, 'web_registry') and self.session_manager and
                 not isinstance(self.session_manager, session_abcs.NativeSessionManager)):
             return False
 

@@ -143,22 +143,6 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         """
         pass
 
-    def is_remember_me(self, authc_token):
-        """
-        Determines whether remember me services should be performed for the
-        specified token.
-
-        :param authc_token: the authentication token submitted during the
-                            successful authentication attempt
-        :returns: True if remember me services should be performed as a
-                  result of the successful authentication attempt
-        """
-        # Yosai uses a more implicit check:
-        try:
-            return authc_token.is_remember_me
-        except AttributeError:
-            return False
-
     def on_successful_login(self, subject, authc_token, account_id):
         """
         Reacts to the successful login attempt by first always
@@ -176,7 +160,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
         self.forget_identity(subject)
 
         # now save the new identity:
-        if (self.is_remember_me(authc_token)):
+        if authc_token.is_remember_me:
             self.remember_identity(subject, authc_token, account_id)
         else:
             msg = ("AuthenticationToken did not indicate that RememberMe is "
@@ -382,8 +366,8 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
                  serialization_manager=None,
                  session_manager=None,
                  remember_me_manager=None,
-                 subject_store=DefaultSubjectStore(),  # unlike shiro, yosai defaults
-                 subject_factory=DefaultSubjectFactory()):  # unlike shiro, yosai defaults
+                 subject_store=DefaultSubjectStore(),
+                 subject_factory=DefaultSubjectFactory()):
 
         self.yosai = yosai
         self.subject_store = subject_store

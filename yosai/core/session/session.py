@@ -599,7 +599,7 @@ class SimpleSessionFactory(session_abcs.SessionFactory):
     def create_session(self, session_context=None):
         return SimpleSession(self.absolute_timeout,
                              self.idle_timeout,
-                             host=getattr(session_context, 'host', None))
+                             host=session_context.get('host'))
 
     def __repr__(self):
         return self.__class__.__name__
