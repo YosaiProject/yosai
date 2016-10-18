@@ -26,7 +26,7 @@ def test_subject_invalid_login(invalid_thedude_username_password_token, yosai):
 
 
 def test_subject_valid_single_factor_login(
-        valid_walter_username_password_token, event_bus, yosai):
+        valid_walter_username_password_token, event_bus, yosai, monkeypatch):
     event_detected = None
 
     def event_listener(identifier=None):
@@ -36,6 +36,11 @@ def test_subject_valid_single_factor_login(
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
+        da = new_subject.security_manager.authenticator
+        monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+        da.init_locking()
+        da.locking_realm.unlock_account('walter')
+
         new_subject.login(valid_walter_username_password_token)
 
     assert event_detected == new_subject.identifiers.primary_identifier
@@ -77,17 +82,18 @@ def test_singlefactor_subject_locks_at_userpass(
         - confirms that a locked account will not authenticate userpass
     """
     lock_event_detected = None
-    fail_event_detected = None
     success_event_detected = None
-    other_success_event_detected = None
 
     def lock_event_listener(identifier=None):
         nonlocal lock_event_detected
         lock_event_detected = identifier
 
-    def fail_event_listener(identifier=None):
-        nonlocal fail_event_detected
-        fail_event_detected = identifier
+    def success_event_listener(identifier=None):
+        nonlocal success_event_detected
+        success_event_detected = identifier
+
+    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -95,7 +101,6 @@ def test_singlefactor_subject_locks_at_userpass(
         monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
         da.init_locking()
         da.locking_realm.unlock_account('walter')
-
         try:
             new_subject.login(invalid_walter_username_password_token)
         except AuthenticationException:
@@ -105,14 +110,69 @@ def test_singlefactor_subject_locks_at_userpass(
                 try:
                     new_subject.login(invalid_walter_username_password_token)
                 except AuthenticationException:
-                    with pytest.raises(LockedAccountException):
+                    try:
                         new_subject.login(invalid_walter_username_password_token)
+                    except LockedAccountException:
+                        try:
+                            event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+                            event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+                            account_id = da.authenticate_account(None, valid_walter_username_password_token)
+                        except LockedAccountException:
+                            assert lock_event_detected == 'walter'
+                            assert success_event_detected is None
 
         da.locking_realm.unlock_account('walter')
 
 
-# def test_singlefactor_subject_locks_at_totp
-# def test_mfa_subject_locks_at_userpass
+def test_mfa_subject_locks_at_userpass(
+        invalid_thedude_username_password_token, valid_thedude_username_password_token,
+        yosai, event_bus, monkeypatch):
+    """
+        - locks an account after N attempts during totp authc
+        - confirms that a locked account will not authenticate totp
+    """
+    lock_event_detected = None
+    success_event_detected = None
+
+    def lock_event_listener(identifier=None):
+        nonlocal lock_event_detected
+        lock_event_detected = identifier
+
+    def success_event_listener(identifier=None):
+        nonlocal success_event_detected
+        success_event_detected = identifier
+
+    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+        da = new_subject.security_manager.authenticator
+        monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+        da.init_locking()
+        da.locking_realm.unlock_account('thedude')
+
+        try:
+            new_subject.login(invalid_thedude_username_password_token)
+        except AuthenticationException:
+            try:
+                new_subject.login(invalid_thedude_username_password_token)
+            except AuthenticationException:
+                try:
+                    new_subject.login(invalid_thedude_username_password_token)
+                except AuthenticationException:
+                    try:
+                        new_subject.login(invalid_thedude_username_password_token)
+                    except LockedAccountException:
+                        try:
+                            new_subject.login(valid_thedude_username_password_token)
+                        except LockedAccountException:
+                            pass
+
+        assert lock_event_detected == 'thedude'
+        assert success_event_detected is None
+
+        da.locking_realm.unlock_account('thedude')
 
 def test_mfa_subject_locks_at_totp(
         valid_thedude_username_password_token, yosai,

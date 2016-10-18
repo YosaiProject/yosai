@@ -269,15 +269,15 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         else:
             account = self.authenticate_multi_realm_account(self.realms, authc_token)
 
+        cred_type = authc_token.token_info['cred_type']
+        attempts = account['authc_info'][cred_type].get('failed_attempts', [])
+        self.validate_locked(authc_token, attempts)
+
         # the following condition verifies whether the account uses MFA:
         if len(account['authc_info']) > authc_token.token_info['tier']:
             # the token authenticated but additional authentication is required
             self.notify_progress(authc_token.identifier)
             raise AdditionalAuthenticationRequired(account['account_id'])
-
-        cred_type = authc_token.token_info['cred_type']
-        attempts = account['authc_info'][cred_type].get('failed_attempts', [])
-        self.validate_locked(authc_token, attempts)
 
         return account
     # --------------------------------------------------------------------------

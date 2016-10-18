@@ -42,40 +42,58 @@ def jackie_username_password_token():
 
 @pytest.fixture(scope='function')  # because successful login clears password
 def valid_walter_username_password_token(cache_handler):
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='walter')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
+
     yield UsernamePasswordToken(username='walter',
                                  password='letsgobowling',
                                  remember_me=False,
                                  host='127.0.0.1')
 
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='walter')
-
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
 @pytest.fixture(scope='function')  # because successful login clears password
-def invalid_walter_username_password_token(cache_handler):
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='walter')
+def invalid_walter_username_password_token(cache_handler, yosai, monkeypatch):
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+        da = new_subject.security_manager.authenticator
+        monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+        da.init_locking()
+        da.locking_realm.unlock_account('walter')
     yield UsernamePasswordToken(username='walter',
                                  password='letsgobowlinggggg',
                                  remember_me=False,
                                  host='127.0.0.1')
 
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='walter')
-
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+        da = new_subject.security_manager.authenticator
+        monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+        da.init_locking()
+        da.locking_realm.unlock_account('walter')
 
 @pytest.fixture(scope='function')
 def valid_thedude_username_password_token(cache_handler):
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='thedude')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
+
     yield UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
                                  remember_me=False,
                                  host='127.0.0.1')
 
-    cache_handler.delete(domain=domain, identifier='thedude')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
 @pytest.fixture(scope='function')
 def thedude_totp_key():
@@ -83,29 +101,43 @@ def thedude_totp_key():
 
 @pytest.fixture(scope='function')
 def valid_thedude_totp_token(thedude_totp_key, cache_handler):
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='thedude')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
     token = int(TOTP(key=thedude_totp_key, digits=6).generate().token)
     yield TOTPToken(totp_token=token)
 
-    cache_handler.delete(domain=domain, identifier='thedude')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
 @pytest.fixture(scope='function')
-def invalid_thedude_totp_token(cache_handler):
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='thedude')
+def invalid_thedude_totp_token(cache_handler, yosai, monkeypatch):
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
     token = int(TOTP(key='AYAGB3C5RPYX5375L5VY2ULKZXMXWLZF', digits=6).generate().token)
     yield TOTPToken(totp_token=token)
 
-    cache_handler.delete(domain=domain, identifier='thedude')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
+
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+        da = new_subject.security_manager.authenticator
+        monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+        da.init_locking()
+        da.locking_realm.unlock_account('thedude')
 
 
 @pytest.fixture(scope='function')  # because successful login clears password
 def remembered_valid_username_password_token(cache_handler):
-    domain = 'authentication:AccountStoreRealm'
-    cache_handler.delete(domain=domain, identifier='thedude')
+    keys = cache_handler.keys('*authentication*')
+    for key in keys:
+        cache_handler.cache_region.delete(key)
 
     yield UsernamePasswordToken(username='thedude',
                                  password='letsgobowling',
@@ -117,11 +149,17 @@ def remembered_valid_username_password_token(cache_handler):
 
 
 @pytest.fixture(scope='function')
-def invalid_thedude_username_password_token():
-    return UsernamePasswordToken(username='thedude',
+def invalid_thedude_username_password_token(yosai, monkeypatch):
+    yield UsernamePasswordToken(username='thedude',
                                  password='never_use__password__',
                                  remember_me=False,
                                  host='127.0.0.1')
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+        da = new_subject.security_manager.authenticator
+        monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
+        da.init_locking()
+        da.locking_realm.unlock_account('thedude')
 
 
 @pytest.fixture(scope='function')
