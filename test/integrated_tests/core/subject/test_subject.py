@@ -3,7 +3,6 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationException,
     ExpiredSessionException,
-    IdentifiersNotSetException,
     IllegalStateException,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
@@ -259,7 +258,7 @@ def test_authenticated_subject_is_permitted(
 
         new_subject.logout()
 
-        with pytest.raises(IdentifiersNotSetException):
+        with pytest.raises(ValueError):
             new_subject.is_permitted(tp['perms'])
 
 
@@ -282,7 +281,7 @@ def test_authenticated_subject_is_permitted_collective(
 
         new_subject.logout()
 
-        with pytest.raises(IdentifiersNotSetException):
+        with pytest.raises(ValueError):
             new_subject.is_permitted_collective(tp['perms'], any)
 
 

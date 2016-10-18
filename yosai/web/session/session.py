@@ -29,7 +29,6 @@ from yosai.core import (
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
-    SessionCreationException,
     SessionEventHandler,
     SimpleSession,
     session_abcs,
@@ -174,7 +173,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
 
         if not new_session_id:
             msg = 'Failed to re-create a sessionid for:' + str(session_key)
-            raise SessionCreationException(msg)
+            raise ValueError(msg)
 
         self.session_handler.on_recreate_session(new_session_id, session_key)
 
@@ -241,7 +240,7 @@ class DefaultWebSessionManager(DefaultNativeSessionManager):
         sessionid = self.session_handler.create_session(session)
         if not sessionid:  # new to yosai
             msg = 'Failed to obtain a sessionid while creating session.'
-            raise SessionCreationException(msg)
+            raise ValueError(msg)
 
         return session
 
@@ -329,20 +328,10 @@ class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
     the parent class ``DefaultSessionStorageEvaluator`` but additionally checks
     for a request-specific flag that may enable or disable session access.
 
-    This implementation usually works in conjunction with the
-    ``NoSessionCreationFilter``:  If the ``NoSessionCreationFilter``
-    is configured in a filter chain, that filter will set a specific
-    ``WSGIRequest`` attribute indicating that session creation should be
-    disabled.
-
     This ``DefaultWebSessionStorageEvaluator`` will then inspect this attribute,
     and if it has been set, will return ``False`` from the
     ``is_session_storage_enabled(subject)`` method, thereby preventing
     Yosai from creating a session for the purpose of storing subject state.
-
-    If the request attribute has not been set (i.e. the ``NoSessionCreationFilter``
-    is not configured or has been disabled), this class does nothing and
-    delegates to the parent class for existing behavior.
     """
 
     def __init__(self):

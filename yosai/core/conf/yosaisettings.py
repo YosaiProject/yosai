@@ -31,10 +31,6 @@ import logging
 from pathlib import Path
 import yaml
 import os
-from yosai.core import (
-    FileNotFoundException,
-    MisconfiguredException,
-)
 
 empty = object()
 logger = logging.getLogger(__name__)
@@ -96,7 +92,7 @@ class LazySettings:
                    "Since no config filepath can be obtained, a default config "
                    "will be used.")
             logger.error(msg)
-            raise FileNotFoundException(msg)
+            raise OSError(msg)
 
         self._wrapped = Settings(settings_file)
 
@@ -113,7 +109,7 @@ class Settings:
                 config = yaml.load(stream)
 
         else:
-            raise FileNotFoundException('could not locate: ' + str(filepath))
+            raise OSError('could not locate: ' + str(filepath))
         return config
 
     def load_config(self, filepath):
@@ -123,5 +119,5 @@ class Settings:
             tempdict.update(self.__dict__)
             tempdict.update(config)
             self.__dict__ = tempdict
-        except (TypeError, ValueError):
-            raise MisconfiguredException('Settings failed to load attrs')
+        except (TypeError, ValueError) as exc:
+            raise exc.__class__('Settings failed to load attrs')

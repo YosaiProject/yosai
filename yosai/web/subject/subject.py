@@ -25,11 +25,8 @@ from yosai.core import (
     DefaultSubjectContext,
     DelegatingSubject,
     ExpiredSessionException,
-    IdentifiersNotSetException,
-    IllegalStateException,
     Yosai,
     ThreadStateManager,
-    YosaiContextException,
     global_yosai_context,
     global_subject_context,
     memoized_property,
@@ -160,11 +157,6 @@ class WebYosai(Yosai):
                               with the web application's request and response APIs
 
         :returns: the Subject currently accessible to the calling code
-        :raises IllegalStateException: if no Subject instance or SecurityManager
-                                       instance is available to obtain a Subject
-                                       (such an setup is considered an invalid
-                                        application configuration because a Subject
-                                        should *always* be available to the caller)
         """
         web_registry = WebYosai.get_current_webregistry()
         subject_context = DefaultWebSubjectContext(yosai=self,
@@ -177,7 +169,7 @@ class WebYosai(Yosai):
                    "was not a WebSubject implementation.  Please ensure a "
                    "Web-enabled SecurityManager has been configured and made"
                    "available to this builder.")
-            raise IllegalStateException(msg)
+            raise AttributeError(msg)
 
         return subject
 
@@ -203,7 +195,7 @@ class WebYosai(Yosai):
             return global_webregistry_context.stack[-1]
         except IndexError:
             msg = 'A yosai instance does not exist in the global context.'
-            raise YosaiContextException(msg)
+            raise IndexError(msg)
 
     @staticmethod
     def get_current_subject():
@@ -330,7 +322,7 @@ class WebYosai(Yosai):
                 try:
                     subject.check_permission(permission_s, logical_operator)
 
-                except IdentifiersNotSetException:
+                except ValueError:
                     msg = ("Attempting to perform a user-only operation.  The "
                            "current Subject is NOT a user (they haven't been "
                            "authenticated or remembered from a previous login). "
@@ -385,7 +377,7 @@ class WebYosai(Yosai):
                 try:
                     subject.check_permission(newperms, logical_operator)
 
-                except IdentifiersNotSetException:
+                except ValueError:
                     msg = ("Attempting to perform a user-only operation.  The "
                            "current Subject is NOT a user (they haven't been "
                            "authenticated or remembered from a previous login). "
@@ -430,7 +422,7 @@ class WebYosai(Yosai):
                 try:
                     subject.check_role(role_s, logical_operator)
 
-                except IdentifiersNotSetException:
+                except ValueError:
                     msg = ("Attempting to perform a user-only operation.  The "
                            "current Subject is NOT a user (they haven't been "
                            "authenticated or remembered from a previous login). "

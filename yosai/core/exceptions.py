@@ -21,48 +21,7 @@ class YosaiException(Exception):
     pass
 
 
-class YosaiContextException(YosaiException):
-    pass
-
-
-class FileNotFoundException(YosaiException):
-    pass
-
-
-class GenericException(YosaiException):
-    pass
-
-
 class IdentifierMismatchException(YosaiException):
-    pass
-
-
-class InvalidArgumentException(YosaiException):
-    """
-    When None is passed as an argument, it is considered a more extreme
-    issue than one where an argument of an unexpected type is passed, raising
-    an InvalidArgumentException instead.
-    """
-    pass
-
-
-class IllegalStateException(YosaiException):
-    pass
-
-
-class UnavailableSecurityManagerException(YosaiException):
-    pass
-
-
-class MisconfiguredException(YosaiException):
-    pass
-
-
-class AbstractMethodException(YosaiException):
-    pass
-
-
-class MissingMethodException(YosaiException):
     pass
 
 
@@ -98,10 +57,6 @@ class AccountException(AuthenticationException):
     pass
 
 
-class ConcurrentAccessException(AccountException):
-    pass
-
-
 class CredentialsNotFoundException(AuthenticationException):
     pass
 
@@ -111,14 +66,6 @@ class CredentialsException(AuthenticationException):
 
 
 class CryptContextException(YosaiException):
-    pass
-
-
-class DisabledAccountException(AccountException):
-    pass
-
-
-class ExcessiveAttemptsException(AccountException):
     pass
 
 
@@ -381,14 +328,6 @@ class AbsoluteExpiredSessionException(ExpiredSessionException):
     pass
 
 
-class UnknownSessionException(InvalidSessionException):
-    pass
-
-
-class SessionCreationException(SessionException):
-    pass
-
-
 class SessionDeleteException(SessionException):
     pass
 
@@ -406,29 +345,5 @@ class SubjectException(YosaiException):
     pass
 
 
-class IdentifiersNotSetException(SubjectException):
-    pass
-
-
-class SecurityManagerNotSetException(SubjectException):
-    pass
-
-
-class ExecutionException(SubjectException):
-    pass
-
-
-class DisabledSessionException(SubjectException):
-    pass
-
-
 class SubjectContextException(SubjectException):
-    pass
-
-
-class UnrecognizedIdentifierException(SubjectException):
-    pass
-
-
-class UnsupportedOperationException(SubjectException):
     pass

@@ -34,9 +34,7 @@ from yosai.core import(
     DefaultSubjectContext,
     DefaultSubjectStore,
     DeleteSubjectException,
-    InvalidArgumentException,
     InvalidSessionException,
-    MisconfiguredException,
     ModularRealmAuthorizer,
     RememberMeSettings,
     SaveSubjectException,
@@ -187,7 +185,7 @@ class AbstractRememberMeManager(mgt_abcs.RememberMeManager):
             identifiers = self.get_identity_to_remember(subject, account_id)
         except AttributeError:
             msg = "Neither account_id nor identifier arguments passed"
-            raise InvalidArgumentException(msg)
+            raise AttributeError(msg)
         encrypted = self.convert_identifiers_to_bytes(identifiers)
         self.remember_encrypted_identity(subject, encrypted)
 
@@ -518,7 +516,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
     def create_subject_context(self, existing_subject):
         if not hasattr(self, 'yosai'):
             msg = "SecurityManager has no Yosai attribute set."
-            raise MisconfiguredException(msg)
+            raise AttributeError(msg)
         return DefaultSubjectContext(self.yosai, self)
 
     def create_subject(self,
@@ -781,7 +779,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         except AttributeError:
             msg = 'subject_context is invalid'
-            raise InvalidArgumentException(msg)
+            raise AttributeError(msg)
 
         return subject_context
 
@@ -902,7 +900,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         """
         if (subject is None):
             msg = "Subject argument cannot be None."
-            raise InvalidArgumentException(msg)
+            raise ValueError(msg)
 
         self.before_logout(subject)
 

@@ -20,7 +20,6 @@ import collections
 import logging
 
 from yosai.core import (
-    InvalidArgumentException,
     serialize_abcs,
     subject_abcs,
 )
@@ -96,7 +95,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
             self.source_identifiers.update(new_source_identifiers)
         except AttributeError:
             msg = "Invalid identifier collection passed as argument"
-            raise InvalidArgumentException(msg)
+            raise AttributeError(msg)
 
     # yosai.core.consolidates one_by_type with by_type:
     def by_type(self, identifier_class):

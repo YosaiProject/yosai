@@ -21,8 +21,6 @@ import logging
 
 from yosai.core import (
     AuthorizationEventException,
-    InvalidArgumentException,
-    IllegalStateException,
     PermissionIndexingException,
     SerializationManager,
     UnauthorizedException,
@@ -149,14 +147,14 @@ class WildcardPermission(serialize_abcs.Serializable):
         if (not wildcard_string):
             msg = ("Wildcard string cannot be None or empty. Make sure "
                    "permission strings are properly formatted.")
-            raise InvalidArgumentException(msg)
+            raise ValueError(msg)
 
         wildcard_string = wildcard_string.strip()
 
         if not any(x != self.PART_DIVIDER_TOKEN for x in wildcard_string):
             msg = ("Wildcard string cannot contain JUST dividers. Make "
                    "sure permission strings are properly formatted.")
-            raise InvalidArgumentException(msg)
+            raise ValueError(msg)
 
         if (not self.case_sensitive):
             wildcard_string = wildcard_string.lower()
@@ -170,7 +168,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                 msg = ("Wildcard string cannot contain parts consisting JUST "
                        "of sub-part dividers or nothing at all. Ensure that "
                        "permission strings are properly formatted.")
-                raise InvalidArgumentException(msg)
+                raise ValueError(msg)
 
             myindex = part_indices.get(index)
 
@@ -429,7 +427,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             msg = ("Configuration error:  No realms have been configured! "
                    "One or more realms must be present to execute an "
                    "authorization operation.")
-            raise IllegalStateException(msg)
+            raise ValueError(msg)
 
     # Yosai refactors isPermitted and hasRole extensively, making use of
     # generators and sub-generators so as to optimize processing w/ each realm

@@ -587,9 +587,6 @@ class Subject(metaclass=ABCMeta):
         :param identifiers: the identity to 'run as', aka the identity to
                             *assume* indefinitely
         :type identifiers:  subject_abcs.IdentifierCollection
-
-        :raises IllegalStateException: if this Subject does not yet have an
-                                       identity of its own (hasn't authenticated)
         """
         pass
 

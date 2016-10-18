@@ -30,14 +30,10 @@ from yosai.core import (
     DefaultSessionSettings,
     ExpiredSessionException,
     IdleExpiredSessionException,
-    InvalidArgumentException,
-    IllegalStateException,
     InvalidSessionException,
     SessionCacheException,
-    SessionCreationException,
     SessionEventException,
     StoppedSessionException,
-    UnknownSessionException,
     cache_abcs,
     serialize_abcs,
     session_abcs,
@@ -79,7 +75,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
             return sha256(sha512(urandom(20)).digest()).hexdigest()
         except AttributeError:
             msg = "session_id_generator attribute has not been configured"
-            raise IllegalStateException(msg)
+            raise AttributeError(msg)
 
     def create(self, session):
         session_id = self._do_create(session)
@@ -90,13 +86,13 @@ class AbstractSessionStore(session_abcs.SessionStore):
         if (session_id is None):
             msg = ("session_id returned from do_create implementation "
                    "is None. Please verify the implementation.")
-            raise IllegalStateException(msg)
+            raise ValueError(msg)
 
     def read(self, session_id):
         session = self._do_read(session_id)
         if session is None:
             msg = "There is no session with id [" + str(session_id) + "]"
-            raise UnknownSessionException(msg)
+            raise ValueError(msg)
         return session
 
     @abstractmethod
@@ -141,7 +137,7 @@ class MemorySessionStore(AbstractSessionStore):
             self.sessions.pop(sessionid)
         except AttributeError:
             msg = 'MemorySessionStore.delete None param passed'
-            raise InvalidArgumentException(msg)
+            raise AttributeError(msg)
         except KeyError:
             msg = ('MemorySessionStore could not delete ', str(sessionid),
                    'because it does not exist in memory!')
@@ -152,7 +148,7 @@ class MemorySessionStore(AbstractSessionStore):
         # session (as default) otherwise
         if session_id is None or session is None:
             msg = 'MemorySessionStore.store_session invalid param passed'
-            raise InvalidArgumentException(msg)
+            raise ValueError(msg)
 
         return self.sessions.setdefault(session_id, session)
 
@@ -424,7 +420,7 @@ class SimpleSession(session_abcs.ValidatingSession,
                        self.__class__.__name__ +
                        " implementation and ensure self value will be set "
                        "(perhaps in the constructor?)")
-                raise IllegalStateException(msg)
+                raise ValueError(msg)
 
             """
              Calculate at what time a session would have been last accessed
@@ -820,7 +816,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
             # session ID was provided, meaning one is expected to be found,
             # but we couldn't find one:
             msg2 = "Could not find session with ID [{0}]".format(session_id)
-            raise UnknownSessionException(msg2)
+            raise ValueError(msg2)
 
         return session
 
@@ -857,7 +853,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
                    ".do_validate(Session) method to validate.").\
                 format(self.__class__.__name__, 'ValidatingSession')
 
-            raise IllegalStateException(msg)
+            raise AttributeError(msg)
 
         except ExpiredSessionException as ese:
             self.on_expiration(session, ese, session_key)
@@ -927,7 +923,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
         # Yosai adds this exception handling
         else:
             msg = "on_exception takes either 1 argument or 3 arguments"
-            raise InvalidArgumentException(msg)
+            raise ValueError(msg)
 
     def after_expired(self, session):
         if (self.delete_invalid_sessions):
@@ -1067,7 +1063,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
         sessionid = self.session_handler.create_session(session)
         if not sessionid:  # new to yosai
             msg = 'Failed to obtain a sessionid while creating session.'
-            raise SessionCreationException(msg)
+            raise ValueError(msg)
 
         return session
 
@@ -1104,7 +1100,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
         if (not session):
             msg = ("Unable to locate required Session instance based "
                    "on session_key [" + str(key) + "].")
-            raise UnknownSessionException(msg)
+            raise ValueError(msg)
         return session
 
     # -------------------------------------------------------------------------

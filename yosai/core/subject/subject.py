@@ -22,21 +22,14 @@ from contextlib import contextmanager
 
 from yosai.core import (
     DefaultSessionStorageEvaluator,
-    DisabledSessionException,
-    IdentifiersNotSetException,
-    InvalidArgumentException,
-    IllegalStateException,
     LazySettings,
     SecurityManagerInitException,
-    SecurityManagerNotSetException,
     SecurityManagerSettings,
     SerializationManager,
     SessionException,
     SimpleSession,
     ThreadStateManager,
     UnauthenticatedException,
-    UnavailableSecurityManagerException,
-    YosaiContextException,
     mgt_abcs,
     session_abcs,
     subject_abcs,
@@ -80,8 +73,7 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
 
             try:
                 security_manager = self.yosai.security_manager
-            except UnavailableSecurityManagerException:
-
+            except AttributeError:
                 msg = ("DefaultSubjectContext.resolve_security_manager cannot "
                        "obtain security_manager! No SecurityManager available "
                        "via Yosai.  Heuristics exhausted.")
@@ -236,7 +228,7 @@ class DelegatingSubject(subject_abcs.Subject):
     def check_security_manager(self):
         if self.security_manager is None:
             msg = "DelegatingSubject requires that a SecurityManager be set"
-            raise SecurityManagerNotSetException(msg)
+            raise ValueError(msg)
 
     @property
     def has_identifiers(self):
@@ -274,7 +266,7 @@ class DelegatingSubject(subject_abcs.Subject):
                 identifiers is None):
             self._identifiers = identifiers
         else:
-            raise InvalidArgumentException('must use IdentifierCollection')
+            raise ValueError('must use IdentifierCollection')
 
     def is_permitted(self, permission_s):
         """
@@ -290,7 +282,7 @@ class DelegatingSubject(subject_abcs.Subject):
                     self.identifiers, permission_s))
 
         msg = 'Cannot check permission when identifiers aren\'t set!'
-        raise IdentifiersNotSetException(msg)
+        raise ValueError(msg)
 
     # refactored is_permitted_all:
     def is_permitted_collective(self, permission_s, logical_operator=all):
@@ -310,7 +302,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                               logical_operator)
 
         msg = 'Cannot check permission when identifiers aren\'t set!'
-        raise IdentifiersNotSetException(msg)
+        raise ValueError(msg)
 
     def assert_authz_check_possible(self):
         if not self.identifiers:
@@ -348,7 +340,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                                    logical_operator)
         else:
             msg = 'Cannot check permission when identifiers aren\'t set!'
-            raise IdentifiersNotSetException(msg)
+            raise ValueError(msg)
 
     def has_role(self, role_s):
         """
@@ -361,7 +353,7 @@ class DelegatingSubject(subject_abcs.Subject):
         if self.authorized:
             return self.security_manager.has_role(self.identifiers, role_s)
         msg = 'Cannot check roles when identifiers aren\'t set!'
-        raise IdentifiersNotSetException(msg)
+        raise ValueError(msg)
 
     # refactored has_all_roles:
     def has_role_collective(self, role_s, logical_operator=all):
@@ -381,7 +373,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                                               logical_operator)
         else:
             msg = 'Cannot check roles when identifiers aren\'t set!'
-            raise IdentifiersNotSetException(msg)
+            raise ValueError(msg)
 
     def check_role(self, role_ids, logical_operator=all):
         """
@@ -400,7 +392,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                              logical_operator)
         else:
             msg = 'Cannot check roles when identifiers aren\'t set!'
-            raise IdentifiersNotSetException(msg)
+            raise ValueError(msg)
 
     def login(self, authc_token):
         """
@@ -428,7 +420,7 @@ class DelegatingSubject(subject_abcs.Subject):
             msg = ("Identifiers returned from security_manager.login(authc_token" +
                    ") returned None or empty value. This value must be" +
                    " non-None and populated with one or more elements.")
-            raise IllegalStateException(msg)
+            raise ValueError(msg)
 
         self._identifiers = identifiers
         self.authenticated = True
@@ -473,7 +465,7 @@ class DelegatingSubject(subject_abcs.Subject):
                        "it should never be used) or that Yosai's "
                        "configuration needs to be adjusted to allow "
                        "Sessions to be created for the current Subject.")
-                raise DisabledSessionException(msg)
+                raise ValueError(msg)
 
             msg = ("Starting session for host ", str(self.host))
             logger.debug(msg)
@@ -527,7 +519,7 @@ class DelegatingSubject(subject_abcs.Subject):
                    "first, or using the DelegatingSubject.Builder "
                    "to build ad hoc Subject instances with identities as "
                    "necessary.")
-            raise IllegalStateException(msg)
+            raise ValueError(msg)
         self.push_identity(identifiers)
 
     @property
@@ -576,7 +568,7 @@ class DelegatingSubject(subject_abcs.Subject):
         if (not identifiers):
             msg = ("Specified Subject identifiers cannot be None or empty "
                    "for 'run as' functionality.")
-            raise InvalidArgumentException(msg)
+            raise ValueError(msg)
 
         stack = self.get_run_as_identifiers_stack()
 
@@ -836,11 +828,6 @@ class Yosai:
         depending on runtime environment.
 
         :returns: the Subject currently accessible to the calling code
-        :raises IllegalStateException: if no Subject instance or SecurityManager
-                                       instance is available to obtain a Subject
-                                       (such an setup is considered an invalid
-                                        application configuration because a Subject
-                                        should *always* be available to the caller)
         """
         subject_context = DefaultSubjectContext(yosai=self,
                                                 security_manager=self.security_manager)
@@ -886,7 +873,7 @@ class Yosai:
             return global_yosai_context.stack[-1]
         except IndexError:
             msg = 'A yosai instance does not exist in the global context.'
-            raise YosaiContextException(msg)
+            raise IndexError(msg)
 
     @staticmethod
     def requires_authentication(fn):

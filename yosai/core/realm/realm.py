@@ -23,7 +23,6 @@ from yosai.core import (
     AccountException,
     AuthzInfoNotFoundException,
     CredentialsNotFoundException,
-    InvalidArgumentException,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
     LockedAccountException,
@@ -213,7 +212,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             identifier = authc_token.identifier
         except AttributeError:
             msg = 'Failed to obtain authc_token.identifiers'
-            raise InvalidArgumentException(msg)
+            raise AttributeError(msg)
 
         account = self.get_authentication_info(identifier)
 

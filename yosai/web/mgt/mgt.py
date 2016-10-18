@@ -22,7 +22,6 @@ import logging
 from yosai.core import (
     AbstractRememberMeManager,
     DefaultSubjectStore,
-    MisconfiguredException,
     NativeSecurityManager,
 )
 

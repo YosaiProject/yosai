@@ -225,7 +225,7 @@ class SessionFactory(metaclass=ABCMeta):
 
         :param init_data: the initialization data to be used during
                           Session creation.
-        :type init_data: dict 
+        :type init_data: dict
         :returns: a new Session instance
         """
         pass
@@ -638,8 +638,6 @@ class SessionStore(metaclass=ABCMeta):
         :param session_id: the system-wide unique identifier of the Session
                            object to retrieve from the EIS
         :returns: the persisted session in the EIS identified by session_id
-        :raises UnknownSessionException: if there is no EIS record for any
-                 session with the specified session_id
         """
         pass
 
@@ -650,14 +648,9 @@ class SessionStore(metaclass=ABCMeta):
         the EIS identified by session.session_id.  This effectively propagates
         the data in the argument to the EIS record previously saved.
 
-        In addition to UnknownSessionException, implementations are free to
-        raise any other exceptions that might occur due to integrity violation
-        constraints or other EIS related errors.
-
         :param session: the Session to update
-        :raises UnknownSessionException: if no existing EIS session record
-                                         exists with the identifier of
-                                         session.session_id
+        :raises ValueError: if no existing EIS session record
+                             exists with the identifier of session.session_id
         """
         pass
 
