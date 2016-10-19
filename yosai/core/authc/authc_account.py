@@ -19,7 +19,6 @@ under the License.
 from collections import defaultdict
 
 from yosai.core import (
-    RealmAttributesException,
     authc_abcs,
 )
 
@@ -104,9 +103,9 @@ class DefaultCompositeAccount(authc_abcs.CompositeAccount):
 
         try:
             self._realm_attrs[realm_name].update(realm_attributes)
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as exc:
             msg = 'Could not update realm_attrs using ' + str(realm_attributes)
-            raise RealmAttributesException(msg)
+            raise exc.__class__(msg)
 
         # attributes is a dict:
         for attribute_key, attribute_value in realm_attributes.items():

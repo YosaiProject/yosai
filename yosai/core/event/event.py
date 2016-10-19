@@ -38,9 +38,6 @@ from pubsub.core import (
 )
 
 from yosai.core import (
-    EventBusTopicException,
-    EventBusMessageDataException,
-    EventBusSubscriptionException,
     event_abcs,
 )
 
@@ -64,14 +61,7 @@ class DefaultEventBus(event_abcs.EventBus):
         # self._event_bus.addTopicDefnProvider( kwargs_topics, pub.TOPIC_TREE_FROM_CLASS )
 
     def is_registered(self, listener, topic_name):
-        try:
-            return self.event_bus.isSubscribed(listener, topic_name)
-        except TopicNameError:
-            msg = "TopicNameError: Unrecognized topic naming convention"
-            raise EventBusTopicException(msg)
-        except TopicDefnError:
-            msg = "TopicDefnError: Unregistered topic name"
-            raise EventBusTopicException(msg)
+        return self.event_bus.isSubscribed(listener, topic_name)
 
     def publish(self, topic_name, **kwargs):
         """
@@ -81,18 +71,7 @@ class DefaultEventBus(event_abcs.EventBus):
         :type topic_name: dotted-string or tuple
         :param kwargs: message data (must satisfy the topic’s MetadataService)
         """
-        try:
-            self.event_bus.sendMessage(topic_name, **kwargs)
-        except SenderMissingReqdMsgDataError:
-            msg = "SenderMissingReqdMsgDataError: can't send message"
-            raise EventBusMessageDataException(msg)
-        except SenderUnknownMsgDataError:
-            msg = ("SenderUnknownMsgDataError: One of the keyword arguments "
-                   "is not part of MDS")
-            raise EventBusMessageDataException(msg)
-        except TopicDefnError:
-            msg = "TopicDefnError: Sending message to an unregistered topic name"
-            raise EventBusTopicException(msg)
+        self.event_bus.sendMessage(topic_name, **kwargs)
         return True
 
     def register(self, _callable, topic_name):
@@ -111,33 +90,10 @@ class DefaultEventBus(event_abcs.EventBus):
         subscribed_listener = None
         success = None
 
-        try:
-            subscribed_listener, success =\
-                self.event_bus.subscribe(_callable, topic_name)
-
-        except ListenerMismatchError:
-            msg = ("ListenerMismatchError: Invalid Listener -- callable does "
-                   "not have a signature (call protocol) compatible with the "
-                   "MDS of topic: {0}".format(topic_name))
-            raise EventBusSubscriptionException(msg)
-        except TopicDefnError:
-            msg = "TopicDefnError: Unregistered topic name"
-            raise EventBusTopicException(msg)
-        else:  # return only if no exception raised
-            return subscribed_listener, success
+        return = self.event_bus.subscribe(_callable, topic_name)
 
     def unregister(self, listener, topic_name):
-        try:
-            unsubscribed_listener = self.event_bus.unsubscribe(
-                listener, topic_name)
-        except TopicNameError:
-            msg = "TopicNameError: Unrecognized eventbus topic naming convention"
-            raise EventBusTopicException(msg)
-        except TopicDefnError:
-            msg = "TopicDefnError: Unregistered topic name"
-            raise EventBusTopicException(msg)
-        else:
-            return unsubscribed_listener
+        return self.event_bus.unsubscribe(listener, topic_name)
 
     def unregister_all(self):
         """
@@ -147,8 +103,7 @@ class DefaultEventBus(event_abcs.EventBus):
         Note: this method will generate one 'unsubcribe' notification message
         for each listener unsubscribed
         """
-        unsubscribed_listeners = self.event_bus.unsubAll()
-        return unsubscribed_listeners
+        return self.event_bus.unsubAll()
 
 
 class EventLogger:

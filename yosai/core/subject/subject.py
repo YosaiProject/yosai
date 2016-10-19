@@ -23,7 +23,6 @@ from contextlib import contextmanager
 from yosai.core import (
     DefaultSessionStorageEvaluator,
     LazySettings,
-    SecurityManagerInitException,
     SecurityManagerSettings,
     SerializationManager,
     SessionException,
@@ -1082,9 +1081,9 @@ class SecurityManagerCreator:
             return tuple(realm(account_store=account_store(settings=settings), **verifiers)
                          for realm, account_store, verifiers in realms)
 
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as exc:
             msg = 'Failed to initialize realms during SecurityManager Setup'
-            raise SecurityManagerInitException(msg)
+            raise exc.__class__(msg)
 
     def init_cache_handler(self, settings, cache_handler, serialization_manager):
         try:

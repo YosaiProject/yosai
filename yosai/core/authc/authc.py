@@ -23,14 +23,10 @@ from yosai.core import (
     AccountException,
     AdditionalAuthenticationRequired,
     AuthenticationException,
-    AuthenticationEventException,
     AuthenticationSettings,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
-    InvalidTokenException,
     LockedAccountException,
-    UnknownAccountException,
-    UnsupportedTokenException,
     authc_abcs,
     serialize_abcs,
     FirstRealmSuccessfulStrategy,
@@ -70,7 +66,7 @@ class UsernamePasswordToken(authc_abcs.AuthenticationToken):
     @identifier.setter
     def identifier(self, identifier):
         if not identifier:
-            raise InvalidTokenException('Username must be defined')
+            raise ValueError('Username must be defined')
 
         self._identifier = identifier
 
@@ -85,7 +81,7 @@ class UsernamePasswordToken(authc_abcs.AuthenticationToken):
         if isinstance(credentials, str):
             self._credentials = bytes(credentials, 'utf-8')
         else:
-            raise InvalidTokenException('Password must be a str or bytes')
+            raise ValueError('Password must be a str or bytes')
 
     def clear(self):
         self._identifier = None
@@ -97,7 +93,7 @@ class UsernamePasswordToken(authc_abcs.AuthenticationToken):
                     self._credentials[index] = 0  # DG:  this equals 0x00
         except TypeError:
             msg = 'expected credentials to be a bytearray'
-            raise InvalidTokenException(msg)
+            raise TypeError(msg)
 
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(
@@ -127,9 +123,9 @@ class TOTPToken(authc_abcs.AuthenticationToken):
         try:
             assert credentials >= 100000 and credentials < 1000000
             self._credentials = credentials
-        except (TypeError, AssertionError):
+        except (TypeError, AssertionError) as exc:
             msg = 'TOTPToken must be a 6-digit int. Got: ', str(credentials)
-            raise InvalidTokenException(msg)
+            raise exc.__class__(msg)
 
 # the verify field corresponds to the human intelligible name of the credential type,
 # stored in the database (this design is TBD)
@@ -224,7 +220,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                         "submitted authentication token [{0}]".
                         format(authc_token))
 
-                raise UnknownAccountException(msg2)
+                raise AccountException(msg2)
 
         except AdditionalAuthenticationRequired as exc:
             self.notify_progress(authc_token.identifier)
@@ -263,7 +259,10 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         :raises AdditionalAuthenticationRequired: when additional tokens are required,
                                                   passing the account object
         """
-        realms = self.token_realm_resolver[authc_token.__class__]
+        try:
+            realms = self.token_realm_resolver[authc_token.__class__]
+        except KeyError:
+            raise KeyError('Unsupported Token Type Provided: ', authc_token.__class__.__name__)
 
         if (len(self.realms) == 1):
             account = self.authenticate_single_realm_account(realms[0], authc_token)
@@ -315,7 +314,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                                    identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.ACCOUNT_LOCKED event"
-            raise AuthenticationEventException(msg)
+            raise AttributeError(msg)
 
     def notify_progress(self, identifier):
         try:
@@ -323,7 +322,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                                    identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.PROGRESS event"
-            raise AuthenticationEventException(msg)
+            raise AttributeError(msg)
 
     def notify_success(self, identifier):
         try:
@@ -331,7 +330,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                                    identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
-            raise AuthenticationEventException(msg)
+            raise AttributeError(msg)
 
     def notify_failure(self, identifier):
         try:
@@ -339,7 +338,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                                    identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.FAILED event"
-            raise AuthenticationEventException(msg)
+            raise AttributeError(msg)
 
     def validate_locked(self, authc_token, failed_attempts):
         """
@@ -359,7 +358,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                                    identifier=identifier)
         except AttributeError:
             msg = "Could not publish AUTHENTICATION.ACCOUNT_NOT_FOUND event"
-            raise AuthenticationEventException(msg)
+            raise AttributeError(msg)
 
     def __repr__(self):
         return "<DefaultAuthenticator(event_bus={0}, strategy={0})>".\

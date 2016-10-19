@@ -16,51 +16,17 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
+from collections import namedtuple
 
 from yosai.core import (
     AuthenticationStrategyMissingRealmException,
     IncorrectCredentialsException,
-    InvalidAuthenticationTokenException,
-    InvalidAuthcAttemptRealmsArgumentException,
     MultiRealmAuthenticationException,
     authc_abcs,
 )
 
-
-class DefaultAuthenticationAttempt(authc_abcs.AuthenticationAttempt):
-    """
-    DG:  this deviates slightly from Shiro's implementation in that it
-         validates the authc_token, justifiying the existence of this class
-         as something more than a simple collection
-    """
-    def __init__(self, authc_token, realms):
-        """
-        :type authc_token:  AuthenticationToken
-        :type realms: a Tuple of realm objects (e.g. AccountStoreRealm)
-        """
-        self.authentication_token = authc_token
-        self.realms = realms
-
-    @property
-    def authentication_token(self):
-        return self._authentication_token
-
-    @authentication_token.setter
-    def authentication_token(self, token):
-        if not isinstance(token, authc_abcs.AuthenticationToken):
-            raise InvalidAuthenticationTokenException
-        self._authentication_token = token
-
-    @property
-    def realms(self):
-        return self._realms
-
-    @realms.setter
-    def realms(self, realms):
-        if not isinstance(realms, tuple):
-            raise InvalidAuthcAttemptRealmsArgumentException
-        self._realms = realms
-
+DefaultAuthenticationAttempt = namedtuple('DefaultAuthenticationAttempt',
+                                          'authentication_token, realms')
 
 class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
 
@@ -68,27 +34,23 @@ class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         token = authc_attempt.authentication_token
 
         # realm is an AccountStoreRealm:
-        try:
-            for realm in authc_attempt.realms:
-                if (realm.supports(token)):
+        for realm in authc_attempt.realms:
+            if (realm.supports(token)):
 
-                    """
-                    If the realm raises an exception, the loop will short
-                    circuit, propagating the IncorrectCredentialsException
-                    further up the stack.  As an 'all successful' strategy, if
-                    there is even a single exception thrown by any of the
-                    supported realms, the authentication attempt is
-                    unsuccessful.  This particular implementation also favors
-                    short circuiting immediately (instead of trying
-                    all realms and then aggregating all potential exceptions)
-                    because continuing to access additional account stores is
-                    likely to incur unnecessary / undesirable I/O for most apps
-                    """
-                    # an IncorrectCredentialsException halts the loop:
-                    account = realm.authenticate_account(token)
-
-        except TypeError:
-            raise AuthenticationStrategyMissingRealmException
+                """
+                If the realm raises an exception, the loop will short
+                circuit, propagating the IncorrectCredentialsException
+                further up the stack.  As an 'all successful' strategy, if
+                there is even a single exception thrown by any of the
+                supported realms, the authentication attempt is
+                unsuccessful.  This particular implementation also favors
+                short circuiting immediately (instead of trying
+                all realms and then aggregating all potential exceptions)
+                because continuing to access additional account stores is
+                likely to incur unnecessary / undesirable I/O for most apps
+                """
+                # an IncorrectCredentialsException halts the loop:
+                account = realm.authenticate_account(token)
 
         return account
 
@@ -100,22 +62,18 @@ class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         :rtype:  Account
         """
         authc_token = authc_attempt.authentication_token
-        realm_errors = {}
+        realm_errors = []
 
-        try:
-            for realm in authc_attempt.realms:
-                if (realm.supports(authc_token)):
-                    realm_name = realm.name
-                    account = None  # required
+        for realm in authc_attempt.realms:
+            if (realm.supports(authc_token)):
+                realm_name = realm.name
+                account = None  # required
 
-                    try:
-                        account = realm.authenticate_account(authc_token)
-                    # failed authentication raises an exception:
-                    except IncorrectCredentialsException as ex:
-                        realm_errors[realm_name] = ex
-
-        except (TypeError):
-            raise AuthenticationStrategyMissingRealmException
+                try:
+                    account = realm.authenticate_account(authc_token)
+                # failed authentication raises an exception:
+                except IncorrectCredentialsException as ex:
+                    realm_errors.append(ex)
 
         if (realm_errors):  # if no successful authentications
             raise MultiRealmAuthenticationException(realm_errors)
@@ -147,34 +105,21 @@ class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
         :returns:  Account
         """
         authc_token = authc_attempt.authentication_token
-        realm_errors = {}
+        realm_errors = []
         account = None
-        try:
-            for realm in authc_attempt.realms:
-                if (realm.supports(authc_token)):
-                    try:
-                        account = realm.authenticate_account(authc_token)
-                    except Exception as ex:
-                        realm_errors[realm.name] = ex
-                        # current realm failed - try the next one:
-                    else:
-                        if (account):
-                            # successfully acquired an account
-                            # -- stop iterating, return immediately:
-                            return account
-        except (TypeError):
-            raise AuthenticationStrategyMissingRealmException
+        for realm in authc_attempt.realms:
+            if (realm.supports(authc_token)):
+                try:
+                    account = realm.authenticate_account(authc_token)
+                except Exception as ex:
+                    realm_errors.append(ex)
+                if (account):
+                        return account
 
         if (realm_errors):
             if (len(realm_errors) == 1):
-                exc = next(iter(realm_errors.values()))
-                if (isinstance(exc, IncorrectCredentialsException)):
-                    raise IncorrectCredentialsException(
-                        "Unable to authenticate realm account.", exc)
-                else:
-                    raise exc
+                raise realm_errors[0]
 
-            #  else more than one throwable encountered:
             else:
                 raise MultiRealmAuthenticationException(realm_errors)
 

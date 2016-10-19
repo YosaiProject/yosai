@@ -24,10 +24,7 @@ from passlib.totp import OTPContext, TokenError, TOTP
 from yosai.core import (
     AuthenticationSettings,
     IncorrectCredentialsException,
-    InsufficientAuthcInfoException,
-    PasswordMatchException,
     TOTPToken,
-    UnsupportedTokenException,
     UsernamePasswordToken,
     authc_abcs,
 )
@@ -71,7 +68,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
 
         except KeyError:
             msg = "{0} is required but unavailable from authc_info".format(cred_type)
-            raise InsufficientAuthcInfoException(msg)
+            raise KeyError(msg)
 
     def create_password_crypt_context(self, authc_settings):
         context = dict(schemes=[authc_settings.preferred_algorithm])

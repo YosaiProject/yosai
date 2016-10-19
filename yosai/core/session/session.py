@@ -31,8 +31,6 @@ from yosai.core import (
     ExpiredSessionException,
     IdleExpiredSessionException,
     InvalidSessionException,
-    SessionCacheException,
-    SessionEventException,
     StoppedSessionException,
     cache_abcs,
     serialize_abcs,
@@ -292,7 +290,7 @@ class CachingSessionStore(AbstractSessionStore):
                                    value=session)
         except AttributeError:
             msg = "Cannot cache without a cache_handler."
-            raise SessionCacheException(msg)
+            raise AttributeError(msg)
 
     def _uncache(self, session):
 
@@ -315,7 +313,7 @@ class CachingSessionStore(AbstractSessionStore):
 
         except AttributeError:
             msg = "Cannot uncache without a cache_handler."
-            raise SessionCacheException(msg)
+            raise AttributeError(msg)
 
     # intended for write-through caching:
     def _do_read(self, session_id):
@@ -742,7 +740,7 @@ class SessionEventHandler:
             self.event_bus.publish('SESSION.START', session_id=session.session_id)
         except AttributeError:
             msg = "Could not publish SESSION.START event"
-            raise SessionEventException(msg)
+            raise AttributeError(msg)
 
     def notify_stop(self, session_tuple):
         """
@@ -752,7 +750,7 @@ class SessionEventHandler:
             self.event_bus.publish('SESSION.STOP', items=session_tuple)
         except AttributeError:
             msg = "Could not publish SESSION.STOP event"
-            raise SessionEventException(msg)
+            raise AttributeError(msg)
 
     def notify_expiration(self, session_tuple):
         """
@@ -763,7 +761,7 @@ class SessionEventHandler:
             self.event_bus.publish('SESSION.EXPIRE', items=session_tuple)
         except AttributeError:
             msg = "Could not publish SESSION.EXPIRE event"
-            raise SessionEventException(msg)
+            raise AttributeError(msg)
 
 
 # 5 monopoly dollars to the person who helps me rename this:

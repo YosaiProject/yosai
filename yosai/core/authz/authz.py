@@ -20,8 +20,6 @@ import itertools
 import logging
 
 from yosai.core import (
-    AuthorizationEventException,
-    PermissionIndexingException,
     SerializationManager,
     UnauthorizedException,
     authz_abcs,
@@ -690,7 +688,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.RESULTS event"
-            raise AuthorizationEventException(msg)
+            raise AttributeError(msg)
 
     def notify_success(self, identifiers, items, logical_operator):
         """
@@ -710,7 +708,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.GRANTED event"
-            raise AuthorizationEventException(msg)
+            raise AttributeError(msg)
 
     def notify_failure(self, identifiers, items, logical_operator):
         """
@@ -730,7 +728,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
         except AttributeError:
             msg = "Could not publish AUTHORIZATION.DENIED event"
-            raise AuthorizationEventException(msg)
+            raise AttributeError(msg)
 
     # --------------------------------------------------------------------------
 
@@ -877,13 +875,13 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         """
         Ensures that all permission_s passed were indexed.
 
-        :raises PermissionIndexingException: when the permission_index fails to
-                                             index every permission provided
+        :raises ValueError: when the permission_index fails to
+                            index every permission provided
         """
         if not (permission_s <= self.permissions):
             perms = ','.join(str(perm) for perm in permission_s)
             msg = "Failed to Index All Permissions: " + perms
-            raise PermissionIndexingException(msg)
+            raise ValueError(msg)
 
     def __len__(self):
         return len(self.permissions) + len(self.roles)

@@ -21,8 +21,6 @@ from uuid import uuid4
 import time
 from yosai.core import (
     AccountException,
-    AuthzInfoNotFoundException,
-    CredentialsNotFoundException,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
     LockedAccountException,
@@ -146,6 +144,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         return self.token_resolver.keys()
 
+    def supports(self, token):
+        return token.__class__ in self.token_resolver
+
     def get_authentication_info(self, identifier):
         """
         The default authentication caching policy is to cache an account's
@@ -174,7 +175,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
 
             if account_info is None:
                 msg = "Could not get stored credentials for {0}".format(identifier)
-                raise CredentialsNotFoundException(msg)
+                raise ValueError(msg)
 
             return account_info
 
@@ -192,7 +193,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         except AttributeError:
             # this means the cache_handler isn't configured
             account_info = query_authc_info(self)
-        except CredentialsNotFoundException:
+        except ValueError:
             msg3 = ("No account credentials found for identifiers [{0}].  "
                     "Returning None.".format(identifier))
             logger.warning(msg3)
@@ -291,7 +292,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             account_info = self.account_store.get_authz_info(identifier)
             if account_info is None:
                 msg = "Could not get authz_info for {0}".format(identifier)
-                raise AuthzInfoNotFoundException(msg)
+                raise ValueError(msg)
             return account_info
 
         try:
@@ -307,7 +308,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             # this means the cache_handler isn't configured
             account_info = query_authz_info(self)
 
-        except AuthzInfoNotFoundException:
+        except ValueError:
             msg3 = ("No account authz_info found for identifier [{0}].  "
                     "Returning None.".format(identifier))
             logger.warning(msg3)

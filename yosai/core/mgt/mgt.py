@@ -33,11 +33,9 @@ from yosai.core import(
     DefaultSessionKey,
     DefaultSubjectContext,
     DefaultSubjectStore,
-    DeleteSubjectException,
     InvalidSessionException,
     ModularRealmAuthorizer,
     RememberMeSettings,
-    SaveSubjectException,
     SimpleSession,
     SerializationManager,
     mgt_abcs,
@@ -737,7 +735,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
             self.subject_store.save(subject)
         except AttributeError:
             msg = "no subject_store is defined, so cannot save subject"
-            raise SaveSubjectException(msg)
+            raise AttributeError(msg)
 
     def delete(self, subject):
         """
@@ -752,7 +750,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
             self.subject_store.delete(subject)
         except AttributeError:
             msg = "no subject_store is defined, so cannot delete subject"
-            raise DeleteSubjectException(msg)
+            raise AttributeError(msg)
 
     def ensure_security_manager(self, subject_context):
         """

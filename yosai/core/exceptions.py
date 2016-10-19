@@ -18,10 +18,9 @@ under the License.
 """
 
 class YosaiException(Exception):
-    pass
-
-
-class IdentifierMismatchException(YosaiException):
+    """
+    The master root exception that all other exceptions are sub-classed from
+    """
     pass
 
 
@@ -30,50 +29,29 @@ class IdentifierMismatchException(YosaiException):
 # ---------------------------------------------------------------------------
 
 class AdditionalAuthenticationRequired(YosaiException):
+    """
+    Raises when prior authentication succeeds and more authentication is
+    required (implies second factor authentication)
+    """
     def __init__(self, account_id=None):
         self.account_id = account_id
 
+
 class AuthenticationException(YosaiException):
-    pass
-
-
-class AuthenticationConfigException(YosaiException):
-    pass
-
-
-class AuthenticationStrategyMissingRealmException(AuthenticationException):
-    pass
-
-
-class AccountStoreRealmAuthenticationException(AuthenticationException):
-    pass
-
-
-class AuthenticationSettingsContextException(AuthenticationException):
+    """
+    A sub-root exception type
+    """
     pass
 
 
 class AccountException(AuthenticationException):
+    """
+    Raises when no account is returned for a given authentication token
+    """
     pass
 
 
-class CredentialsNotFoundException(AuthenticationException):
-    pass
-
-
-class CredentialsException(AuthenticationException):
-    pass
-
-
-class CryptContextException(YosaiException):
-    pass
-
-
-class ExpiredCredentialsException(CredentialsException):
-    pass
-
-
-class IncorrectCredentialsException(CredentialsException):
+class IncorrectCredentialsException(AuthenticationException):
     def __init__(self, failed_attempts=None):
         """
         a list of unix epoch timestampts of recently failed attempts for user
@@ -81,39 +59,15 @@ class IncorrectCredentialsException(CredentialsException):
         self.failed_attempts = failed_attempts
 
 
-class InsufficientAuthcInfoException(AuthenticationException):
-    pass
-
-
-class InvalidAuthenticationTokenException(AuthenticationException):
-    pass
-
-
-class InvalidAuthcAttemptRealmsArgumentException(AuthenticationException):
-    pass
-
-
 class InvalidAuthenticationSequenceException(AuthenticationException):
-    pass
-
-
-class InvalidTokenException(AuthenticationException):
+    """
+    Raises when authentication is attempted out of sequence, usually when
+    a tier-2 token is authenticated prior to a tier-1.
+    """
     pass
 
 
 class LockedAccountException(YosaiException):
-    pass
-
-
-class MissingHashAlgorithmException(YosaiException):
-    pass
-
-
-class MissingCredentialsException(AuthenticationException):
-    pass
-
-
-class MissingPrivateSaltException(YosaiException):
     pass
 
 
@@ -129,171 +83,31 @@ class MultiRealmAuthenticationException(AuthenticationException):
     def get_realm_exceptions(self):
         return self.realm_errors
 
-
-class PasswordMatchException(AuthenticationException):
-    pass
-
-
-class PreparePasswordException(YosaiException):
-    pass
-
-
-class RealmAttributesException(AuthenticationException):
-    pass
-
-
-class UnknownAccountException(AccountException):
-    pass
-
-
-class UnsupportedTokenException(YosaiException):
-    pass
-
 # ---------------------------------------------------------------------------
 # ---- Authorization Exceptions
 # ---------------------------------------------------------------------------
 
 
 class AuthorizationException(YosaiException):
+    """
+    A sub-root exception type
+    """
     pass
 
 
-class AuthzInfoNotFoundException(AuthorizationException):
-    pass
-
-
-class PermissionIndexingException(AuthorizationException):
-    pass
-
-
-class UnauthenticatedException(AuthorizationException):  # DG:  s/b Authen..
+class UnauthenticatedException(AuthorizationException):
+    """
+    Raises when a subject that isn't authenticated attempts to authorize
+    """
     pass
 
 
 class UnauthorizedException(AuthorizationException):
+    """
+    Raises when a subject isn't authorized to perform a behavior
+    """
     pass
 
-
-class HostUnauthorizedException(UnauthorizedException):
-    pass
-
-
-# ---------------------------------------------------------------------------
-# ----  Cache Exceptions
-# ---------------------------------------------------------------------------
-
-
-class CacheException(YosaiException):
-    pass
-
-
-class CacheInitializationException(CacheException):
-    pass
-
-# ---------------------------------------------------------------------------
-# ----  EventBus Exceptions
-# ---------------------------------------------------------------------------
-
-class EventBusException(YosaiException):
-    pass
-
-
-class EventBusTopicException(EventBusException):
-    pass
-
-
-class EventBusMessageDataException(EventBusException):
-    pass
-
-
-class EventBusSubscriptionException(EventBusException):
-    pass
-
-
-# ---------------------------------------------------------------------------
-# ----  Event Exceptions
-# ---------------------------------------------------------------------------
-
-
-class EventException(YosaiException):
-    pass
-
-
-class AuthorizationEventException(EventException):
-    pass
-
-
-class AuthenticationEventException(EventException):
-    pass
-
-
-class LogoutEventException(EventException):
-    pass
-
-
-class SessionEventException(EventException):
-    pass
-
-
-class EventRegistrationException(EventException):
-    pass
-
-
-# ---------------------------------------------------------------------------
-# ----  Logging Exceptions
-# ---------------------------------------------------------------------------
-
-
-class LoggingException(YosaiException):
-    pass
-
-
-class LoggingSetupException(LoggingException):
-    pass
-
-
-# ---------------------------------------------------------------------------
-# ---- Security Management Exceptions
-# ---------------------------------------------------------------------------
-
-class SecurityManagerException(YosaiException):
-    pass
-
-
-class SecurityManagerInitException(SecurityManagerException):
-    pass
-
-
-class SaveSubjectException(SecurityManagerException):
-    pass
-
-
-class DeleteSubjectException(SecurityManagerException):
-    pass
-
-
-class IncorrectAttributeException(YosaiException):
-    pass
-
-
-class UnrecognizedAttributeException(YosaiException):
-    pass
-
-
-# ---------------------------------------------------------------------------
-# ----  Serialization Exceptions
-# ---------------------------------------------------------------------------
-
-class SerializationException(YosaiException):
-    pass
-
-
-class DeserializationException(SerializationException):
-    pass
-
-
-class InvalidSerializationFormatException(SerializationException):
-    pass
 
 # ---------------------------------------------------------------------------
 # ---- Session Management Exceptions
@@ -301,10 +115,9 @@ class InvalidSerializationFormatException(SerializationException):
 
 
 class SessionException(YosaiException):
-    pass
-
-
-class SessionCacheException(YosaiException):
+    """
+    A sub-root exception type
+    """
     pass
 
 
@@ -325,25 +138,4 @@ class IdleExpiredSessionException(ExpiredSessionException):
 
 
 class AbsoluteExpiredSessionException(ExpiredSessionException):
-    pass
-
-
-class SessionDeleteException(SessionException):
-    pass
-
-
-class UncacheSessionException(SessionException):
-    pass
-
-
-# ---------------------------------------------------------------------------
-# ----  Subject Exceptions
-# ---------------------------------------------------------------------------
-
-
-class SubjectException(YosaiException):
-    pass
-
-
-class SubjectContextException(SubjectException):
     pass
