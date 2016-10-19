@@ -19,7 +19,6 @@ under the License.
 from collections import namedtuple
 
 from yosai.core import (
-    AuthenticationStrategyMissingRealmException,
     IncorrectCredentialsException,
     MultiRealmAuthenticationException,
     authc_abcs,

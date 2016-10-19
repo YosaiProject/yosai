@@ -3,13 +3,11 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationException,
     ExpiredSessionException,
-    IllegalStateException,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
     LockedAccountException,
     UnauthorizedException,
     UnauthenticatedException,
-    UnknownSessionException,
     Yosai,
 )
 import datetime
@@ -450,7 +448,7 @@ def test_run_as_raises(walter_identifier, yosai):
         new_subject = Yosai.get_current_subject()
         # a login is required , so this should raise:
         new_subject.logout()
-        with pytest.raises(IllegalStateException):
+        with pytest.raises(ValueError):
             new_subject.run_as(walter_identifier)
 
 
@@ -601,7 +599,7 @@ def test_absolute_expired_session(
         # when time has reached the TTL, the cache entry is removed:
         cache_handler.delete('session', identifier=session.session_id)
 
-        with pytest.raises(UnknownSessionException):
+        with pytest.raises(ValueError):
             new_subject.is_permitted(tp['perms'])
 
 

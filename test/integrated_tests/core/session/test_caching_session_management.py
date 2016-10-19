@@ -8,7 +8,6 @@ from yosai.core import (
     ExpiredSessionException,
     InvalidSessionException,
     SimpleIdentifierCollection,
-    UnknownSessionException,
 )
 
 
@@ -126,7 +125,7 @@ def test_session_handler_delete(session_handler, cache_handler, session, capsys)
     sessionid = sh.create_session(session)
     sh.delete(session)
 
-    with pytest.raises(UnknownSessionException):
+    with pytest.raises(ValueError):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
         out, err = capsys.readouterr()
@@ -271,7 +270,7 @@ def test_session_manager_stop(
 
     sm.stop(session.session_key, 'random')
 
-    with pytest.raises(UnknownSessionException):
+    with pytest.raises(ValueError):
         sh.do_get_session(DefaultSessionKey(sessionid))
 
         out, err = capsys.readouterr()

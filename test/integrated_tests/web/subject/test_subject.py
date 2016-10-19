@@ -5,7 +5,6 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationException,
     ExpiredSessionException,
-    IllegalStateException,
 )
 
 from yosai.web import WebYosai
@@ -113,7 +112,7 @@ def test_run_as_raises(web_yosai, mock_web_registry, walter_identifier):
     with WebYosai.context(web_yosai, mock_web_registry):
         new_web_subject = WebYosai.get_current_subject()
         # a login is required , so this should raise:
-        with pytest.raises(IllegalStateException):
+        with pytest.raises(ValueError):
             new_web_subject.run_as(walter_identifier)
 
 

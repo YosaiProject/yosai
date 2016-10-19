@@ -87,10 +87,7 @@ class DefaultEventBus(event_abcs.EventBus):
                                                   is already subscribed
 
         """
-        subscribed_listener = None
-        success = None
-
-        return = self.event_bus.subscribe(_callable, topic_name)
+        return self.event_bus.subscribe(_callable, topic_name)
 
     def unregister(self, listener, topic_name):
         return self.event_bus.unsubscribe(listener, topic_name)
