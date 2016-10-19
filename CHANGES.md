@@ -29,7 +29,7 @@ v0.3
 - refactored SessionKey and WebSessionKey from class to namedtuple
 - refactored SessionContext to a dict
 - refactored away session and subject factories
-- refactored exception handling, reducing by 75%
+- refactored exception handling, reducing by 85%
 - replaced DefaultAuthenticationAttempt with a namedtuple
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
