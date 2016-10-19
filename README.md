@@ -130,11 +130,19 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
-The latest release for Yosai, v0.2, was made 09/01/2016. 
-Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/) 
-for details about this major release.
+Yosai v0.3 is well under way.  This release includes: 
+1) Configurable account locking
+2) General support for second factor authentication (2FA)
+3) A complete time-based one time password authentication solution (TOTP)
+4) Significant refactoring to achieve pythonic design
 
-yosai.core coverage stats (ao 09/01/2016):
+See the master branch for detail.
+
+The latest pypi release for Yosai, v0.2, was made 09/01/2016. 
+Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/) 
+for details about that release.
+
+v0.2 test coverage stats (ao 09/01/2016):
 
 |Name                                        |Stmt|Miss |Cover |
 |:-------------------------------------------|:----:|:-----:|:------:|
