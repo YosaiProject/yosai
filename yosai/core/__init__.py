@@ -18,7 +18,7 @@ under the License.
 """
 __license__ = 'Apache 2.0'
 __author__ = 'Darin Gordon'
-__credits__ = ['Apache Shiro']
+__credits__ = ['Michael, Alex, Marcel ']
 __maintainer__ = 'Darin Gordon'
 __email__ = 'dkcdkg@gmail.com'
 __status__ = 'Development'
