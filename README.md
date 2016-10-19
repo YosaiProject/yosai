@@ -8,7 +8,7 @@
 # What is Yosai
 
 Yosai is a "security framework" that features authentication, authorization, and session
-management from a common, intuitive API.  
+management from a common, intuitive API.
 
 ![authc_authz_sess](/doc/docs/img/authc_authz_sess.png)
 
@@ -22,7 +22,7 @@ Yosai is based on Apache Shiro, written in Java and widely used today.
 It is a framework that is is designed in such a way that it can be used to secure
 a variety of python applications, not just web applications.  This is accomplished
 by completely decoupling security-related services from the rest of an application
-and writing adapters for each specific type of client.  
+and writing adapters for each specific type of client.
 
 
 # Key Features
@@ -97,7 +97,7 @@ def issue_prescription(patient, prescription):
 
 Note how the authorization policy is declared using yosai's authorization
 decorators.  These global decorators are associated with the yosai instance
-when the yosai instance is used as a context manager.  
+when the yosai instance is used as a context manager.
 
 ```Python
 
@@ -130,11 +130,19 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
-The latest release for Yosai, v0.2, was made 09/01/2016. 
-Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/) 
-for details about this major release.
+Yosai v0.3 is well under way.  This release includes:
+1) Configurable account locking
+2) General support for second factor authentication (2FA)
+3) A complete time-based one time password authentication solution (TOTP)
+4) Significant refactoring to achieve pythonic design
 
-yosai.core coverage stats (ao 09/01/2016):
+See the master branch for detail.
+
+The latest pypi release for Yosai, v0.2, was made 09/01/2016.
+Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/)
+for details about that release.
+
+v0.2 test coverage stats (ao 09/01/2016):
 
 |Name                                        |Stmt|Miss |Cover |
 |:-------------------------------------------|:----:|:-----:|:------:|
@@ -184,8 +192,7 @@ If you would like to get involved, please contact me by:
 
 
 # LICENSE
-Licensed under the Apache License, Version 2.0 (the "License"); you may not 
-use any portion of Yosai except in compliance with the License. 
-Contributors agree to license their work under the same License. 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use any portion of Yosai except in compliance with the License.
+Contributors agree to license their work under the same License.
 You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-
