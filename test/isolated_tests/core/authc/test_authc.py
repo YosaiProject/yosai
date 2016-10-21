@@ -5,12 +5,13 @@ import collections
 from yosai.core import (
     AccountException,
     AccountStoreRealm,
-    AuthenticationException,
+    AdditionalAuthenticationRequired,
     DefaultAuthenticator,
     DefaultAuthenticationAttempt,
     DefaultEventBus,
+    IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
-    MultiRealmAuthenticationException,
+    LockedAccountException,
     SimpleIdentifierCollection,
     UsernamePasswordToken,
     TOTPToken,
@@ -161,156 +162,167 @@ def test_da_authenticate_account_succeeds(da_daa, da_ns, default_authenticator):
     assert result == mock_identifiers
 
 
-    #assert authc_token.identifier == 'test_identifiers'
-    # assert authc_token.token_info == {'tier': 1, 'cred_type': 'password'}
-
-    #da = default_authenticator
-#def test_da_authenticate_account_catches_additional(default_authenticator):
-    #da = default_authenticator
-#def test_da_authenticate_account_catches_accountexc(default_authenticator):
-    #da = default_authenticator
-#def test_da_authenticate_account_catches_lockedexc(default_authenticator):
-    #da = default_authenticator
-#def test_da_authenticate_account_catches_incorrectexc(default_authenticator):
-    #da = default_authenticator
-
-
-
-
-def test_da_authc_acct_authentication_fails(
-        default_authenticator, username_password_token, monkeypatch):
-    """
-    unit tested:  authenticate_account
-
-    when None is returned from do_authenticate_account, it means that
-    something other than authentication failed, and so an exception is
-    raised
-    """
+@mock.patch.object(DefaultAuthenticator, 'notify_progress')
+@mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
+def test_da_authenticate_account_catches_additional(
+        da_daa, da_np, default_authenticator, monkeypatch):
+    da_daa.side_effect = AdditionalAuthenticationRequired
     da = default_authenticator
-    token = username_password_token
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+    mock_challenger = mock.MagicMock()
+    monkeypatch.setattr(da, 'mfa_challenger', mock_challenger, raising=False)
 
-    def do_nothing(x, y):
-        pass
+    with pytest.raises(AdditionalAuthenticationRequired):
+        da.authenticate_account(None, mock_token)
 
-    monkeypatch.setattr(da, 'do_authenticate_account', do_nothing)
-    monkeypatch.setattr(da, 'notify_failure', do_nothing)
-    monkeypatch.setattr(da, 'notify_success', do_nothing)
-
-    with pytest.raises(AuthenticationException):
-        da.authenticate_account(token)
+    da_np.assert_called_once_with('user123')
+    da_daa.assert_called_once_with(mock_token)
+    mock_challenger.send_challenge.assert_called_once_with('user123')
 
 
-def test_da_authc_acct_authentication_raises_unknown_exception(
-        default_authenticator, username_password_token, monkeypatch):
-    """
-    unit tested:  authenticate_account
-
-    an unexpected exception will be wrapped by an AuthenticationException
-    """
+@mock.patch.object(DefaultAuthenticator, 'notify_account_not_found')
+@mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
+def test_da_authenticate_account_catches_accountexc(
+        da_daa, da_nanf, default_authenticator, monkeypatch):
+    da_daa.side_effect = AccountException
     da = default_authenticator
-    token = username_password_token
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
 
-    def raise_typeerror():
-        raise TypeError
+    with pytest.raises(AccountException):
+        da.authenticate_account(None, mock_token)
 
-    def do_nothing(x, y):
-        pass
-
-    monkeypatch.setattr(da, 'do_authenticate_account', raise_typeerror)
-    monkeypatch.setattr(da, 'notify_failure', do_nothing)
-    monkeypatch.setattr(da, 'notify_success', do_nothing)
-
-    with pytest.raises(AuthenticationException) as exc_info:
-        da.authenticate_account(token)
-
-    assert 'unexpected' in str(exc_info.value)
+    da_nanf.assert_called_once_with('user123')
+    da_daa.assert_called_once_with(mock_token)
 
 
-def test_da_authc_acct_authentication_succeeds(
-        default_authenticator, username_password_token, monkeypatch,
-        full_mock_account):
-    """
-    unit tested:  authenticate_account
-
-    when an Account is returned from do_authenticate_account, it means that
-    authentication succeeded
-    """
+@mock.patch.object(DefaultAuthenticator, 'notify_locked')
+@mock.patch.object(DefaultAuthenticator, 'notify_failure')
+@mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
+def test_da_authenticate_account_catches_lockedexc(
+        da_daa, da_nf, da_nl, default_authenticator, monkeypatch):
+    da_daa.side_effect = LockedAccountException
     da = default_authenticator
-    token = username_password_token
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
 
-    def get_mock_account(self, x=None):
-        return full_mock_account
+    with pytest.raises(LockedAccountException):
+        da.authenticate_account(None, mock_token)
 
-    monkeypatch.setattr(da, 'do_authenticate_account', get_mock_account)
-    monkeypatch.setattr(da, 'notify_failure', lambda x: None)
-    monkeypatch.setattr(da, 'notify_success', lambda x: None)
-
-    result = da.authenticate_account(token)
-
-    assert isinstance(result, full_mock_account.__class__)
+    da_nl.assert_called_once_with('user123')
+    da_nf.assert_called_once_with('user123')
+    da_daa.assert_called_once_with(mock_token)
 
 
-
-def test_da_do_authc_acct_with_realm(
-        default_authenticator, username_password_token,
-        one_accountstorerealm_succeeds, monkeypatch):
-    """
-    unit tested:  authenticate_account
-
-    when the DefaultAuthenticator is missing a realms attribute, an
-    exception will raise in do_authenticate_account
-    """
-
+@mock.patch.object(DefaultAuthenticator, 'validate_locked')
+@mock.patch.object(DefaultAuthenticator, 'notify_failure')
+@mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
+def test_da_authenticate_account_catches_incorrectexc(
+        da_daa, da_nf, da_vl, default_authenticator, monkeypatch):
+    da_daa.side_effect = IncorrectCredentialsException(failed_attempts=5)
     da = default_authenticator
-    token = username_password_token
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
 
-    da.realms = one_accountstorerealm_succeeds
+    with pytest.raises(IncorrectCredentialsException):
+        da.authenticate_account(None, mock_token)
 
-    def say_nothing(x, y):
-        return 'nothing'
-
-    monkeypatch.setattr(da, 'authenticate_single_realm_account', say_nothing)
-    result = da.do_authenticate_account(token)
-    assert result == 'nothing'
+    da_vl.assert_called_once_with(mock_token, 5)
+    da_nf.assert_called_once_with('user123')
+    da_daa.assert_called_once_with(mock_token)
 
 
-def test_da_do_authc_acct_with_realms(
-        default_authenticator, username_password_token,
-        two_accountstorerealms_succeeds, monkeypatch):
-    """
-    unit tested:  authenticate_account
-    """
+@mock.patch.object(DefaultAuthenticator, 'validate_locked')
+@mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
+def test_da_do_authc_acct_sra_succeeds(
+        da_asra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
+    monkeypatch.delitem(sample_acct_info['authc_info'], 'totp')
+    da_asra.return_value = sample_acct_info
     da = default_authenticator
-    token = username_password_token
 
-    da.realms = two_accountstorerealms_succeeds
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+    mock_token.token_info = {'tier': 1, 'cred_type': 'password'}
 
-    def say_something(self, x=None, y=None):
-        return 'something'
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    token_realm_resolver = {UsernamePasswordToken: (faux_authc_realm,)}
+    monkeypatch.setattr(da, 'token_realm_resolver', token_realm_resolver)
+    monkeypatch.setattr(da, 'realms', (faux_authc_realm,))
 
-    monkeypatch.setattr(da, 'authenticate_multi_realm_account', say_something)
-    result = da.do_authenticate_account(token)
-    assert result == 'something'
+    da.do_authenticate_account(mock_token)
+
+    da_vl.assert_called_once_with(mock_token, [1477077663111])
+    da_asra.assert_called_once_with(faux_authc_realm, mock_token)
 
 
-def test_da_do_authc_acct_without_realm(
-        default_authenticator, username_password_token):
-    """
-    unit tested:  authenticate_account
-
-    when the DefaultAuthenticator is missing a realms attribute, an
-    exception will raise in do_authenticate_account
-    """
-
+def test_da_do_authc_acct_resolver_raises(default_authenticator, monkeypatch):
     da = default_authenticator
-    token = username_password_token
 
-    with pytest.raises(AuthenticationException):
-        da.do_authenticate_account(token)
+    mock_token = mock.create_autospec(TOTPToken)
+    mock_token.identifier = 'user123'
+    mock_token.token_info = {'tier': 2, 'cred_type': 'totp'}
+
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    token_realm_resolver = {UsernamePasswordToken: (faux_authc_realm,)}
+    monkeypatch.setattr(da, 'token_realm_resolver', token_realm_resolver)
+    monkeypatch.setattr(da, 'realms', (faux_authc_realm,))
+
+    with pytest.raises(KeyError):
+        da.do_authenticate_account(mock_token)
+
+
+@mock.patch.object(DefaultAuthenticator, 'validate_locked')
+@mock.patch.object(DefaultAuthenticator, 'authenticate_multi_realm_account')
+def test_da_do_authc_acct_multi_realm(
+        da_amra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
+    monkeypatch.delitem(sample_acct_info['authc_info'], 'totp')
+    da_amra.return_value = sample_acct_info
+    da = default_authenticator
+
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+    mock_token.token_info = {'tier': 1, 'cred_type': 'password'}
+
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    faux_authc_realm2 = mock.create_autospec(AccountStoreRealm)
+    token_realm_resolver = {UsernamePasswordToken: (faux_authc_realm,)}
+    monkeypatch.setattr(da, 'token_realm_resolver', token_realm_resolver)
+    monkeypatch.setattr(da, 'realms', (faux_authc_realm, faux_authc_realm2))
+
+    da.do_authenticate_account(mock_token)
+
+    da_vl.assert_called_once_with(mock_token, [1477077663111])
+    da_amra.assert_called_once_with(da.realms, mock_token)
+
+
+@mock.patch.object(DefaultAuthenticator, 'notify_progress')
+@mock.patch.object(DefaultAuthenticator, 'validate_locked')
+@mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
+def test_da_do_authc_acct_req_additional(
+        da_asra, da_vl, da_np, default_authenticator, sample_acct_info, monkeypatch):
+    da_asra.return_value = sample_acct_info
+    da = default_authenticator
+
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+    mock_token.token_info = {'tier': 1, 'cred_type': 'password'}
+
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    token_realm_resolver = {UsernamePasswordToken: (faux_authc_realm,)}
+    monkeypatch.setattr(da, 'token_realm_resolver', token_realm_resolver)
+    monkeypatch.setattr(da, 'realms', (faux_authc_realm,))
+
+    with pytest.raises(AdditionalAuthenticationRequired):
+        da.do_authenticate_account(mock_token)
+
+    da_vl.assert_called_once_with(mock_token, [1477077663111])
+    da_asra.assert_called_once_with(faux_authc_realm, mock_token)
+    da_np.assert_called_once_with(mock_token.identifier)
 
 
 def test_da_clear_cache(
-        default_authenticator, simple_identifier_collection, full_mock_account):
+        default_authenticator, simple_identifier_collection, monkeypatch):
     sic = simple_identifier_collection
     da = default_authenticator
 
@@ -318,13 +330,37 @@ def test_da_clear_cache(
         'session_tuple', ['identifiers', 'session_key'])
     st = session_tuple(sic, 'sessionkey123')
 
-    with mock.patch.object(AccountStoreRealm, 'clear_cached_credentials') as ccc:
-        ccc.return_value = None
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    faux_authc_realm.name = 'AccountStoreRealm'
+    monkeypatch.setattr(da, 'realms', (faux_authc_realm,))
 
-        da.clear_cache(items=st)
+    da.clear_cache(items=st)
 
-        ccc.assert_called_once_with(sic.from_source('AccountStoreRealm'))
+    faux_authc_realm.clear_cached_authc_info.\
+        assert_called_once_with(sic.from_source('AccountStoreRealm'))
 
+
+def test_da_clear_cache_raises(
+        default_authenticator, simple_identifier_collection, monkeypatch, caplog):
+    sic = simple_identifier_collection
+    da = default_authenticator
+
+    session_tuple = collections.namedtuple(
+        'session_tuple', ['identifiers', 'session_key'])
+    st = session_tuple(sic, 'sessionkey123')
+
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    faux_authc_realm.name = 'AccountStoreRealm'
+    faux_authc_realm.clear_cached_authc_info.side_effect = AttributeError
+    monkeypatch.setattr(da, 'realms', (faux_authc_realm,))
+
+    da.clear_cache(items=st)
+
+    faux_authc_realm.clear_cached_authc_info.\
+        assert_called_once_with(sic.from_source('AccountStoreRealm'))
+
+    assert 'Could not clear authc_info' in caplog.text
+    
 
 def test_da_register_cache_clear_listener(default_authenticator, event_bus):
     da = default_authenticator

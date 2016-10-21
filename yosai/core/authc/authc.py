@@ -279,8 +279,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         """
         try:
             for realm in self.realms:
-                identifiers = items.identifiers
-                identifier = identifiers.from_source(realm.name)
+                identifier = items.identifiers.from_source(realm.name)
                 if identifier:
                     realm.clear_cached_authc_info(identifier)
         except AttributeError:

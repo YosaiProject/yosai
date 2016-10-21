@@ -107,3 +107,18 @@ def modular_realm_authorizer_patched(
     monkeypatch.setattr(a, '_realms', authz_realms_collection)
     monkeypatch.setattr(a, '_event_bus', event_bus)
     return a
+
+
+@pytest.fixture(scope='function')
+def sample_authc_info():
+    return {'password': {'credential': '$2a$12$Gf.YpcTN8r5vQydvLl9o1O8KoTbeFrYCkR22NaJawMFFfceiQ0XOi',
+                         'failed_attempts': [1477077663111]},
+            'totp': {'credential': 'ZOYHBEXJEFUUGFCPGLJWCZDR3Y6CD43EJQZIGAHB3NRWJYXWY3HQ',
+                     'failed_attempts': []}}
+
+
+@pytest.fixture(scope='function')
+def sample_acct_info(sample_authc_info, simple_identifier_collection):
+    return dict(account_id=simple_identifier_collection,
+                account_locked=None,
+                authc_info=sample_authc_info)
