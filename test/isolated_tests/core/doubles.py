@@ -1,5 +1,4 @@
 from yosai.core import (
-    Credential,
     DelegatingSubject,
     account_abcs,
     authc_abcs,
@@ -12,208 +11,17 @@ from yosai.core import (
     subject_abcs,
 )
 
-from marshmallow import fields, Schema, post_load
 import datetime
 
 
 class MockSession(session_abcs.ValidatingSession):
-
-    def __init__(self):
-        self.attributes = {'attr1': 1, 'attr2': 2, 'attr3': 3}
-        self._internal_attributes = {}
-        self._idle_timeout = datetime.timedelta(minutes=15)
-        self._absolute_timeout = datetime.timedelta(minutes=60)
-        self._isvalid = True  # only used for testing
-        self._session_id = 'MockSession12345'
-        self._start_timestamp = None 
-        self._stop_timestamp = None 
-        self._last_access_time = None
-        self._internal_attribute_keys = None
-        self._attribute_keys = None
-
-    @property
-    def host(self):
-        return '127.0.0.1'
-
-    @property
-    def is_valid(self):
-        return self._isvalid
-
-    def validate(self, session):
-        pass
-
-    @property
-    def session_id(self):
-        return self._session_id
-
-    @property
-    def last_access_time(self):
-        return self._last_access_time 
-
-    @last_access_time.setter
-    def last_access_time(self, lat):
-        self._last_access_time = lat
-
-    @property
-    def start_timestamp(self):
-        return self._start_timestamp 
-    
-    @property
-    def stop_timestamp(self):
-        return self._stop_timestamp 
-
-    @stop_timestamp.setter
-    def stop_timestamp(self, st):
-        self._stop_timestamp = st
-
-    @property
-    def idle_timeout(self):
-        return self._idle_timeout
-
-    @idle_timeout.setter
-    def idle_timeout(self, idle_timeout):
-        self._idle_timeout = idle_timeout
-
-    @property
-    def absolute_timeout(self):
-        return self._absolute_timeout
-
-    @absolute_timeout.setter
-    def absolute_timeout(self, absolute_timeout):
-        self._absolute_timeout = absolute_timeout
-
-    @property
-    def attribute_keys(self):
-        return self._attribute_keys  # dirty hack
-    
-    @property
-    def internal_attribute_keys(self):
-        return self._internal_attribute_keys  # dirty hack
-
-    def get_attribute(self, key):
-        return self.attributes.get(key)
-
-    def remove_attribute(self, key):
-        return self.attributes.pop(key, None)
-
-    def set_attribute(self, key, value):
-        self.attributes[key] = value
-
-    def get_internal_attribute(self, key):
-        pass
-
-    def remove_internal_attribute(self, key):
-        pass 
-
-    def set_internal_attribute(self, key, value):
-        pass
-
-    def stop(self):
-        pass
-
-    def touch(self):
-        pass
-
-    def validate(self):
-        pass
-
-    def __repr__(self):
-        attrs = ','.join([str(key) + ':' + str(value) for key, value in
-                          self.attributes.items()])
-        return "MockSession(" + attrs + ")"
-
+    pass
 
 class MockToken(authc_abcs.AuthenticationToken):
-
-    @property
-    def identifier(self):
-        pass
-
-    @property
-    def credentials(self):
-        pass
-
-
-class MockAccount(account_abcs.Account,
-                  serialize_abcs.Serializable):
-
-    def __init__(self, account_id, credentials={}, attributes={},
-                 authz_info=None):
-        self._account_id = account_id
-        self._credentials = credentials
-        self._attributes = attributes 
-
-    @property
-    def account_id(self):
-        return self._account_id
-
-    @account_id.setter
-    def account_id(self, aid):
-        self._account_id = aid
-
-    @property
-    def attributes(self):
-        return self._attributes
-
-    @property
-    def authz_info(self):
-        pass
-
-    @property
-    def credentials(self):
-        return self._credentials
-
-    def __eq__(self, other):
-        try:
-            result = (self._account_id == other._account_id and
-                      self.credentials == other.credentials and
-                      self.attributes == other.attributes)
-        except Exception:
-            return False
-        return result
-
-    def __repr__(self):
-        return "<MockAccount(id={0}, credentials={1}, attributes={2})>".\
-            format(self.account_id, self.credentials, self.attributes)
-
-    @classmethod
-    def serialization_schema(cls):
-        class SerializationSchema(Schema):
-            account_id = fields.Str()
-            credentials = fields.Nested(Credential.serialization_schema())
-            attributes = fields.Nested(cls.AccountAttributesSchema)
-
-            @post_load
-            def make_account(self, data):
-                mycls = MockAccount
-                instance = mycls.__new__(cls)
-                instance.__dict__.update(data)
-                return instance
-
-        return SerializationSchema
-
-    class AccountAttributesSchema(Schema):
-        givenname = fields.Str()
-        surname = fields.Str()
-        email = fields.Email()
-        username = fields.Str()
-        api_key_id = fields.Str()
-
-        @post_load
-        def make_acct_attributes(self, data):
-            return dict(data)
-
+    pass
 
 class MockAccountStore(account_abcs.AccountStore):
-
-    def __init__(self, account=MockAccount(account_id='MAS123')):
-        self.account = account
-
-    def get_account(self, request):
-        return self.account  # always returns the initialized account
-
-    def get_authz_info(self, identifiers):
-        pass
+    pass
 
 class MockPubSub:
 
@@ -239,18 +47,10 @@ class MockPubSub:
 class MockSubject(DelegatingSubject):
 
     def __init__(self):
-        self._identifiers = type('DumbCollection', (object,), {})()
-        self._identifiers.primary_identifier = 'attribute1'
+        self.identifiers = type('DumbCollection', (object,), {})()
+        self.identifiers.primary_identifier = 'attribute1'
         self.host = 'host'
-        self._authenticated = None
-
-    @property
-    def identifiers(self):
-        return None
-
-    @property
-    def identifiers(self):
-        return self._identifiers
+        self.authenticated = None
 
     def is_permitted(self, permissions):
         pass
@@ -349,25 +149,6 @@ class MockSecurityManager(mgt_abcs.SecurityManager):
         return "MockSecurityManager()"
 
 
-class MockThreadContext:
-
-    def __init__(self):
-        self.subject = 'threadcontextsubject'
-        self.security_manager = 'security_manager'
-
-    def bind(self, subject):
-        pass
-
-
-class MockSubjectBuilder:
-
-    def __init__(self, security_utils, security_manager):
-        pass
-
-    def build_subject(self):
-        return 'subjectbuildersubject'
-
-
 class MockCacheHandler(cache_abcs.CacheHandler):
 
     def get(self, key, identifier):
@@ -381,10 +162,4 @@ class MockCacheHandler(cache_abcs.CacheHandler):
 
     def delete(self, key, identifier):
         pass
-
-
-class MockSecUtil:
-
-    def __init__(self):
-        self.subject = MockSubject()
 

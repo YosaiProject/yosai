@@ -3,104 +3,178 @@ from unittest import mock
 import collections
 
 from yosai.core import (
+    AccountException,
     AccountStoreRealm,
     AuthenticationException,
-    AuthenticationEventException,
-    DefaultEventBus,
-    InvalidTokenPasswordException,
-    MultiRealmAuthenticationException,
-    UnsupportedTokenException,
     DefaultAuthenticator,
-    DefaultCompositeAccount,
-    UnauthenticatedException,
+    DefaultAuthenticationAttempt,
+    DefaultEventBus,
+    InvalidAuthenticationSequenceException,
+    MultiRealmAuthenticationException,
+    SimpleIdentifierCollection,
     UsernamePasswordToken,
+    TOTPToken,
+    realm_abcs,
 )
 
 # -----------------------------------------------------------------------------
 # UsernamePasswordToken Tests
 # -----------------------------------------------------------------------------
-def test_upt_clear_existing_passwords_succeeds(username_password_token):
-    """ clear a password bytearray equal to 'secret' """
-    upt = username_password_token
-    upt.clear()
-    assert upt.password == bytearray(b'\x00\x00\x00\x00\x00\x00')
 
-def test_upt_clear_existing_passwords_fails(
-        username_password_token, monkeypatch):
-    """ clear a password string equal to 'secret' raises an exception """
-    upt = username_password_token
-    monkeypatch.setattr(upt, '_password', 'secret')
-    with pytest.raises(InvalidTokenPasswordException):
-        upt.clear()
+
+def test_upt_identifier_raises(username_password_token):
+    with pytest.raises(ValueError):
+        username_password_token.identifier = None
+
+
+def test_upt_credentials_setting_raise(username_password_token):
+    with pytest.raises(ValueError):
+        username_password_token.credentials = 12345
+
+
+# -----------------------------------------------------------------------------
+# TOTPToken Tests
+# -----------------------------------------------------------------------------
+
+@pytest.mark.parametrize('credential, exc_class', [(1234, AssertionError),
+                                                   ('123456', TypeError)])
+def test_totp_credentials_raises(totp_token, credential, exc_class):
+    with pytest.raises(exc_class):
+        totp_token.credentials = credential
 
 
 # -----------------------------------------------------------------------------
 # DefaultAuthenticator Tests
 # -----------------------------------------------------------------------------
 
-def test_da_realms_setter(default_authenticator, default_accountstorerealm):
+@mock.patch.object(DefaultAuthenticator, 'init_locking')
+@mock.patch.object(DefaultAuthenticator, 'register_cache_clear_listener')
+@mock.patch.object(DefaultAuthenticator, 'init_token_resolution')
+def test_da_init_realms(da_itr, da_rccl, da_il, default_authenticator):
+    da = default_authenticator
     faux_realm = type('FauxRealm', (object,), {})()
-    asr = default_accountstorerealm
+    faux_authc_realm = mock.create_autospec(AccountStoreRealm)
+    da.init_realms((faux_realm, faux_authc_realm))
+    da_itr.assert_called_once_with()
+    da_rccl.assert_called_once_with()
+    da_il.assert_called_once_with()
+    assert da.realms == (faux_authc_realm,)
+
+
+def test_da_init_locking(monkeypatch, default_authenticator):
     da = default_authenticator
-    da.realms = (faux_realm, asr)
-    assert da._realms == (asr,)
 
-def test_da_auth_sra_unsupported_token(
-        default_authenticator, mock_token, default_accountstorerealm):
-    """
-    unit tested:  authenticate_single_realm_account
+    monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 5)
+    monkeypatch.setattr(da, 'locate_locking_realm', lambda: 'locking_realm')
+    da.init_locking()
 
-    An AuthenticationToken of a type unsupported by the Realm raises an
-    exception
-    """
+    assert da.locking_realm == 'locking_realm'
+    assert da.locking_limit == 5
+
+
+def test_da_init_token_resolution(default_authenticator, monkeypatch):
     da = default_authenticator
-    realm = default_accountstorerealm
-    token = mock_token
-    with pytest.raises(UnsupportedTokenException):
-        da.authenticate_single_realm_account(realm, token)
 
-def test_da_authc_sra_supported_token(
-        default_authenticator, first_accountstorerealm_succeeds,
-        username_password_token):
-    """
-    unit tested:  authenticate_single_realm_account
+    faux_realm1 = mock.create_autospec(AccountStoreRealm)
+    faux_realm1.supported_authc_tokens = (UsernamePasswordToken,)
+    faux_realm2 = mock.create_autospec(AccountStoreRealm)
+    faux_realm2.supported_authc_tokens = (UsernamePasswordToken, TOTPToken)
 
-    a successful authentication returns an account
-    """
+    realms = (faux_realm1, faux_realm2)
+    monkeypatch.setattr(da, 'realms', realms)
 
+    result = da.init_token_resolution()
+    expected = collections.defaultdict(list)
+    expected[UsernamePasswordToken] = [faux_realm1, faux_realm2]
+    expected[TOTPToken] = [faux_realm2]
+
+    assert result == expected
+
+
+def test_da_locate_locking_realm(default_authenticator, monkeypatch):
     da = default_authenticator
-    realm = first_accountstorerealm_succeeds
-    token = username_password_token
-    assert da.authenticate_single_realm_account(realm, token)
+
+    faux_realm1 = type('FauxRealm', (object,), {})()
+    faux_realm2 = type('FauxRealm', (object,), {'lock_account': lambda x: 'yes'})()
+
+    realms = (faux_realm1, faux_realm2)
+    monkeypatch.setattr(da, 'realms', realms)
+    result = da.locate_locking_realm()
+    assert result == faux_realm2
 
 
-def test_da_autc_mra_succeeds(
-        default_authenticator, two_accountstorerealms_succeeds,
-        username_password_token):
+def test_da_authc_sra(default_authenticator):
+    da = default_authenticator
+    faux_realm = mock.create_autospec(AccountStoreRealm)
+    da.authenticate_single_realm_account(faux_realm, 'authc_token')
+    faux_realm.authenticate_account.assert_called_once_with('authc_token')
+
+
+def test_da_autc_mra(default_authenticator, monkeypatch):
     """
     unit tested:  authenticate_multi_realm_account
     """
-
     da = default_authenticator
-    realms = two_accountstorerealms_succeeds
-    token = username_password_token
-    result = da.authenticate_multi_realm_account(realms, token)
-    assert (result.__class__.__name__ == 'MockAccount')
+    monkeypatch.setattr(da.authentication_strategy, 'execute', lambda x: x)
+
+    result = da.authenticate_multi_realm_account(('realm1', 'realm2'), 'authc_token')
+
+    assert result == DefaultAuthenticationAttempt('authc_token', ('realm1', 'realm2'))
 
 
-def test_da_autc_mra_fails(
-        default_authenticator, two_accountstorerealms_fails,
-        username_password_token):
-    """
-    unit tested:  authenticate_multi_realm_account
-    """
-
+def test_da_authenticate_account_no_authc_identifier_raises(default_authenticator):
     da = default_authenticator
-    realms = two_accountstorerealms_fails
-    token = username_password_token
 
-    with pytest.raises(MultiRealmAuthenticationException):
-        da.authenticate_multi_realm_account(realms, token)
+    with pytest.raises(InvalidAuthenticationSequenceException):
+        da.authenticate_account(None, 'mock_token')
+
+
+@mock.patch.object(DefaultAuthenticator, 'notify_account_not_found')
+def test_da_authenticate_account_no_authc_identifier_assigns_raisesaccount(
+        da_nanf, default_authenticator, monkeypatch):
+    da = default_authenticator
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_identifiers = mock.create_autospec(SimpleIdentifierCollection)
+    mock_identifiers.primary_identifier = 'test_identifiers'
+    mock_token.identifier = None
+    monkeypatch.setattr(da, 'do_authenticate_account', lambda x: None)
+
+    with pytest.raises(AccountException):
+        da.authenticate_account(mock_identifiers, mock_token)
+    mock_token.identifier = 'test_identifiers'
+    da_nanf.assert_called_once_with(mock_token.identifier)
+
+
+@mock.patch.object(DefaultAuthenticator, 'notify_success')
+@mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
+def test_da_authenticate_account_succeeds(da_daa, da_ns, default_authenticator):
+    da = default_authenticator
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+    mock_identifiers = mock.create_autospec(SimpleIdentifierCollection)
+    mock_identifiers.primary_identifier = 'test_identifiers'
+    da_daa.return_value = {'account_id': mock_identifiers}
+    result = da.authenticate_account(None, mock_token)
+
+    da_ns.assert_called_once_with('test_identifiers')
+    da_daa.assert_called_once_with(mock_token)
+    assert result == mock_identifiers
+
+
+    #assert authc_token.identifier == 'test_identifiers'
+    # assert authc_token.token_info == {'tier': 1, 'cred_type': 'password'}
+
+    #da = default_authenticator
+#def test_da_authenticate_account_catches_additional(default_authenticator):
+    #da = default_authenticator
+#def test_da_authenticate_account_catches_accountexc(default_authenticator):
+    #da = default_authenticator
+#def test_da_authenticate_account_catches_lockedexc(default_authenticator):
+    #da = default_authenticator
+#def test_da_authenticate_account_catches_incorrectexc(default_authenticator):
+    #da = default_authenticator
+
+
 
 
 def test_da_authc_acct_authentication_fails(
@@ -174,6 +248,7 @@ def test_da_authc_acct_authentication_succeeds(
     result = da.authenticate_account(token)
 
     assert isinstance(result, full_mock_account.__class__)
+
 
 
 def test_da_do_authc_acct_with_realm(
@@ -300,7 +375,7 @@ def test_da_notify_success_raises(
 
     monkeypatch.setattr(da, '_event_bus', None)
 
-    with pytest.raises(AuthenticationEventException):
+    with pytest.raises(ValueError):
         da.notify_success(full_mock_account)
 
 
@@ -336,5 +411,20 @@ def test_da_notify_falure_raises(default_authenticator, monkeypatch):
 
     monkeypatch.setattr(da, '_event_bus', None)
 
-    with pytest.raises(AuthenticationEventException):
+    with pytest.raises(ValueError):
         da.notify_failure('token', 'throwable')
+
+
+# -----------------------------------------------------------------------------
+# AuthenticationSettings Tests
+# -----------------------------------------------------------------------------
+
+def test_init_algorithms(authc_settings, monkeypatch, authc_config):
+    monkeypatch.setattr(authc_settings, 'authc_config', authc_config)
+    result = authc_settings.init_algorithms()
+    assert result == {"bcrypt_sha256": {},
+                      "sha256_crypt": {
+                      "sha256_crypt__default_rounds": 110000,
+                      "sha256_crypt__max_rounds": 1000000,
+                      "sha256_crypt__min_rounds": 1000,
+                      "sha256_crypt__salt_size": 16}}

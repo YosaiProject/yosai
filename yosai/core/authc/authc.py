@@ -22,15 +22,13 @@ import logging
 from yosai.core import (
     AccountException,
     AdditionalAuthenticationRequired,
-    AuthenticationException,
     AuthenticationSettings,
+    DefaultAuthenticationAttempt,
+    FirstRealmSuccessfulStrategy,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
     LockedAccountException,
     authc_abcs,
-    serialize_abcs,
-    FirstRealmSuccessfulStrategy,
-    DefaultAuthenticationAttempt,
     realm_abcs,
 )
 
@@ -83,18 +81,6 @@ class UsernamePasswordToken(authc_abcs.AuthenticationToken):
         else:
             raise ValueError('Password must be a str or bytes')
 
-    def clear(self):
-        self._identifier = None
-        self._host = None
-
-        try:
-            if (self._credentials):
-                for index in range(len(self._credentials)):
-                    self._credentials[index] = 0  # DG:  this equals 0x00
-        except TypeError:
-            msg = 'expected credentials to be a bytearray'
-            raise TypeError(msg)
-
     def __repr__(self):
         result = "{0} - {1}, remember_me={2}".format(
             self.__class__.__name__, self.identifier, self.is_remember_me)
@@ -121,7 +107,7 @@ class TOTPToken(authc_abcs.AuthenticationToken):
     @credentials.setter
     def credentials(self, credentials):
         try:
-            assert credentials >= 100000 and credentials < 1000000
+            assert 99999 < credentials < 1000000
             self._credentials = credentials
         except (TypeError, AssertionError) as exc:
             msg = 'TOTPToken must be a 6-digit int. Got: ', str(credentials)
@@ -131,6 +117,7 @@ class TOTPToken(authc_abcs.AuthenticationToken):
 # stored in the database (this design is TBD)
 token_info = {UsernamePasswordToken: {'tier': 1, 'cred_type': 'password'},
               TOTPToken: {'tier': 2, 'cred_type': 'totp_key'}}
+
 
 class DefaultAuthenticator(authc_abcs.Authenticator):
 
@@ -156,7 +143,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         :type realms: Tuple
         """
         self.realms = tuple(realm for realm in realms
-                             if isinstance(realm, realm_abcs.AuthenticatingRealm))
+                            if isinstance(realm, realm_abcs.AuthenticatingRealm))
         self.register_cache_clear_listener()
         self.token_realm_resolver = self.init_token_resolution()
         self.init_locking()
@@ -229,7 +216,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             except AttributeError:
                 # implies no multi-factor authc challenger is set
                 pass
-            raise exc # the security_manager saves subject identifiers
+            raise exc  # the security_manager saves subject identifiers
 
         except AccountException:
             self.notify_account_not_found(authc_token.identifier)
@@ -344,13 +331,12 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         """
         :param failed_attempts:  the failed attempts for this type of credential
         """
-        if self.locking_limit:  # implies account locking is enabled
-            if len(failed_attempts) > self.locking_limit:
-                msg = ('Authentication attempts breached threshold.  Account'
-                       ' is now locked for: ' + str(authc_token.identifier))
-                self.locking_realm.lock_account(authc_token.identifier)
-                self.notify_locked(authc_token.identifier)
-                raise LockedAccountException(msg)
+        if self.locking_limit and len(failed_attempts) > self.locking_limit:
+            msg = ('Authentication attempts breached threshold.  Account'
+                   ' is now locked for: ' + str(authc_token.identifier))
+            self.locking_realm.lock_account(authc_token.identifier)
+            self.notify_locked(authc_token.identifier)
+            raise LockedAccountException(msg)
 
     def notify_account_not_found(self, identifier):
         try:

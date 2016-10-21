@@ -2,6 +2,7 @@ from yosai.core import (
     maybe_resolve,
 )
 
+
 class AuthenticationSettings:
     """
     AuthenticationSettings is a settings proxy.  It is new for Yosai.
@@ -22,20 +23,12 @@ class AuthenticationSettings:
         self.mfa_challenger = maybe_resolve(self.authc_config.get('mfa_challenger'))
 
     def init_algorithms(self):
-        algorithms = self.authc_config.get('hash_algorithms', None)
+        algorithms = self.authc_config.get('hash_algorithms')
         if algorithms:
             return {alg: {"{0}__{1}".format(alg, key): value
                           for key, value in vals.items()}
                     for alg, vals in algorithms.items()}
         return None
-
-    def get_config(self, algo):
-        """
-        obtains a dict of the underlying authc_config for an algorithm
-        """
-        if self.algorithms:
-            return self.algorithms.get(algo, {})
-        return {}
 
     def __repr__(self):
         return ("AuthenticationSettings(preferred_algorithm={0}, algorithms={1},"

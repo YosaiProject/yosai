@@ -8,27 +8,17 @@ from yosai.core import (
 
 from yosai.web import (
     CookieRememberMeManager,
-    DefaultWebSessionContext,
     DefaultWebSessionManager,
     DefaultWebSessionStorageEvaluator,
     DefaultWebSubjectContext,
-    DefaultWebSubjectFactory,
     WebCachingSessionStore,
     WebDelegatingSession,
     WebDelegatingSubject,
-    WebProxiedSession,
     WebSecurityManager,
-    WebSessionFactory,
     WebSessionHandler,
     WebSessionKey,
     WebSimpleSession,
-    WebSubjectBuilder,
 )
-
-
-@pytest.fixture(scope='function')
-def web_subject_factory():
-    return DefaultWebSubjectFactory()
 
 
 @pytest.fixture(scope='function')
@@ -92,11 +82,6 @@ def web_subject_context(web_yosai, mock_web_registry):
 
 
 @pytest.fixture(scope='function')
-def web_subject_builder(web_yosai):
-    return WebSubjectBuilder(web_yosai, web_yosai.security_manager)
-
-
-@pytest.fixture(scope='function')
 def cookie_rmm(settings):
     return CookieRememberMeManager(settings)
 
@@ -139,11 +124,6 @@ def web_simple_session(web_simple_session_state):
 
 
 @pytest.fixture(scope='function')
-def web_session_factory(settings):
-    return WebSessionFactory(settings)
-
-
-@pytest.fixture(scope='function')
 def web_session_handler():
     mock_session_event_handler = mock.create_autospec(SessionEventHandler)
     return WebSessionHandler(mock_session_event_handler, True)
@@ -166,11 +146,6 @@ def web_delegating_session(web_session_manager, web_session_key):
 
 
 @pytest.fixture(scope='function')
-def web_proxied_session(web_delegating_session):
-    return WebProxiedSession(web_delegating_session)
-
-
-@pytest.fixture(scope='function')
 def web_caching_session_store():
     return WebCachingSessionStore()
 
@@ -182,7 +157,4 @@ def web_session_storage_evaluator():
 
 @pytest.fixture(scope='function')
 def mock_session_context(mock_web_registry):
-    sc = mock.create_autospec(DefaultWebSessionContext)
-    sc.host = '123.45.6789'
-    sc.web_registry = mock_web_registry
-    return sc
+    return {'host': '123.45.6789', 'web_registry': mock_web_registry}

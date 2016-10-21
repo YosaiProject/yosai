@@ -1076,7 +1076,7 @@ class Yosai:
 # new to yosai
 class SecurityManagerCreator:
 
-    def init_realms(self, settings, realms):
+    def _init_realms(self, settings, realms):
         try:
             return tuple(realm(account_store=account_store(settings=settings), **verifiers)
                          for realm, account_store, verifiers in realms)
@@ -1085,14 +1085,14 @@ class SecurityManagerCreator:
             msg = 'Failed to initialize realms during SecurityManager Setup'
             raise exc.__class__(msg)
 
-    def init_cache_handler(self, settings, cache_handler, serialization_manager):
+    def _init_cache_handler(self, settings, cache_handler, serialization_manager):
         try:
             return cache_handler(settings=settings,
                                  serialization_manager=serialization_manager)
         except TypeError:
             return None
 
-    def init_session_attributes(self, session_attributes, attributes):
+    def _init_session_attributes(self, session_attributes, attributes):
         if session_attributes:
             return session_attributes
 
@@ -1113,9 +1113,9 @@ class SecurityManagerCreator:
         mgr_settings = SecurityManagerSettings(settings)
         attributes = mgr_settings.attributes
 
-        realms = self.init_realms(settings, attributes['realms'])
+        realms = self._init_realms(settings, attributes['realms'])
 
-        session_attributes = self.init_session_attributes(session_attributes, attributes)
+        session_attributes = self._init_session_attributes(session_attributes, attributes)
 
         serialization_manager =\
             SerializationManager(session_attributes,
@@ -1123,9 +1123,9 @@ class SecurityManagerCreator:
 
         # the cache_handler doesn't initialize a cache_realm until it gets
         # a serialization manager, which is assigned within the SecurityManager
-        cache_handler = self.init_cache_handler(settings,
-                                                attributes['cache_handler'],
-                                                serialization_manager)
+        cache_handler = self._init_cache_handler(settings,
+                                                 attributes['cache_handler'],
+                                                 serialization_manager)
 
         manager = mgr_settings.security_manager(yosai,
                                                 settings,

@@ -27,6 +27,7 @@ from yosai.core import (
 DefaultAuthenticationAttempt = namedtuple('DefaultAuthenticationAttempt',
                                           'authentication_token, realms')
 
+
 class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
 
     def execute(self, authc_attempt):

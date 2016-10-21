@@ -67,6 +67,17 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         self.cache_handler = None
         self.token_resolver = self.init_token_resolution()
 
+    @property
+    def supported_authc_tokens(self):
+        """
+        :rtype: list
+        :returns: a list of authentication token classes supported by the realm
+        """
+        return self.token_resolver.keys()
+
+    def supports(self, token):
+        return token.__class__ in self.token_resolver
+
     def init_token_resolution(self):
         # M:1 between token class and verifier within a realm
         token_resolver = {}
@@ -136,17 +147,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
     # Authentication
     # --------------------------------------------------------------------------
 
-    @property
-    def supported_authc_tokens(self):
-        """
-        :rtype: list
-        :returns: a list of authentication token classes supported by the realm
-        """
-        return self.token_resolver.keys()
-
-    def supports(self, token):
-        return token.__class__ in self.token_resolver
-
     def get_authentication_info(self, identifier):
         """
         The default authentication caching policy is to cache an account's
@@ -215,6 +215,12 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             msg = 'Failed to obtain authc_token.identifiers'
             raise AttributeError(msg)
 
+        tc = authc_token.__class__
+        try:
+            verifier = self.token_resolver[tc]
+        except KeyError:
+            raise TypeError('realm does not support token type: ', tc.__name__)
+
         account = self.get_authentication_info(identifier)
 
         try:
@@ -227,7 +233,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 msg = "Could not obtain account credentials for: " + str(identifier)
                 raise AccountException(msg)
 
-        self.assert_credentials_match(authc_token, account)
+        self.assert_credentials_match(verifier, authc_token, account)
 
         return account
 
@@ -243,8 +249,9 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                                value=account)
         return account
 
-    def assert_credentials_match(self, authc_token, account):
+    def assert_credentials_match(self, verifier, authc_token, account):
         """
+        :type verifier: authc_abcs.CredentialsVerifier
         :type authc_token: authc_abcs.AuthenticationToken
         :type account:  account_abcs.Account
         :returns: account_abcs.Account
@@ -252,7 +259,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                                                 including unix epoch timestamps
                                                 of recently failed attempts
         """
-        verifier = self.token_resolver[authc_token.__class__]
         try:
             verifier.verify_credentials(authc_token, account['authc_info'])
         except IncorrectCredentialsException:

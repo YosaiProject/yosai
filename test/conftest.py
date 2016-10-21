@@ -11,12 +11,12 @@ from yosai.core import (
     PasslibVerifier,
     SerializationManager,
     SimpleRoleVerifier,
+    TOTPToken,
     UsernamePasswordToken,
     Yosai,
 )
 
 from yosai.web import (
-    WebSecurityManager,
     WebYosai,
 )
 
@@ -85,6 +85,11 @@ def username_password_token():
                                  password='secret',
                                  remember_me=False,
                                  host='127.0.0.1')
+
+
+@pytest.fixture(scope='function')
+def totp_token():
+    return TOTPToken(123456)
 
 
 @pytest.fixture(scope='function')
