@@ -210,7 +210,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 raise AccountException(msg2)
 
         except AdditionalAuthenticationRequired as exc:
-            self.notify_progress(authc_token.identifier)
+            self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
             try:
                 self.mfa_challenger.send_challenge(authc_token.identifier)
             except AttributeError:
@@ -219,21 +219,23 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             raise exc  # the security_manager saves subject identifiers
 
         except AccountException:
-            self.notify_account_not_found(authc_token.identifier)
+            self.notify_event(authc_token.identifier,
+                              'AUTHENTICATION.ACCOUNT_NOT_FOUND')
             raise
 
         except LockedAccountException:
-            self.notify_failure(authc_token.identifier)
-            self.notify_locked(authc_token.identifier)
+            self.notify_event(authc_token.identifier, 'AUTHENTICATION.FAILED')
+            self.notify_event(authc_token.identifier, 'AUTHENTICATION.ACCOUNT_LOCKED')
             raise
 
         except IncorrectCredentialsException as exc:
-            self.notify_failure(authc_token.identifier)
+            self.notify_event(authc_token.identifier, 'AUTHENTICATION.FAILED')
             self.validate_locked(authc_token, exc.failed_attempts)
             # this won't be called if the Account is locked:
             raise IncorrectCredentialsException
 
-        self.notify_success(account['account_id'].primary_identifier)
+        self.notify_event(account['account_id'].primary_identifier,
+                          'AUTHENTICATION.SUCCEEDED')
 
         return account['account_id']
 
@@ -263,7 +265,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         # the following condition verifies whether the account uses MFA:
         if len(account['authc_info']) > authc_token.token_info['tier']:
             # the token authenticated but additional authentication is required
-            self.notify_progress(authc_token.identifier)
+            self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
             raise AdditionalAuthenticationRequired(account['account_id'])
 
         return account
@@ -294,36 +296,11 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             self.event_bus.register(self.clear_cache, 'SESSION.STOP')
             self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
 
-    def notify_locked(self, identifier):
+    def notify_event(self, identifier, topic):
         try:
-            self.event_bus.publish('AUTHENTICATION.ACCOUNT_LOCKED',
-                                   identifier=identifier)
+            self.event_bus.publish(topic, identifier=identifier)
         except AttributeError:
-            msg = "Could not publish AUTHENTICATION.ACCOUNT_LOCKED event"
-            raise AttributeError(msg)
-
-    def notify_progress(self, identifier):
-        try:
-            self.event_bus.publish('AUTHENTICATION.PROGRESS',
-                                   identifier=identifier)
-        except AttributeError:
-            msg = "Could not publish AUTHENTICATION.PROGRESS event"
-            raise AttributeError(msg)
-
-    def notify_success(self, identifier):
-        try:
-            self.event_bus.publish('AUTHENTICATION.SUCCEEDED',
-                                   identifier=identifier)
-        except AttributeError:
-            msg = "Could not publish AUTHENTICATION.SUCCEEDED event"
-            raise AttributeError(msg)
-
-    def notify_failure(self, identifier):
-        try:
-            self.event_bus.publish('AUTHENTICATION.FAILED',
-                                   identifier=identifier)
-        except AttributeError:
-            msg = "Could not publish AUTHENTICATION.FAILED event"
+            msg = "Could not publish {} event".format(topic)
             raise AttributeError(msg)
 
     def validate_locked(self, authc_token, failed_attempts):
@@ -334,16 +311,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             msg = ('Authentication attempts breached threshold.  Account'
                    ' is now locked for: ' + str(authc_token.identifier))
             self.locking_realm.lock_account(authc_token.identifier)
-            self.notify_locked(authc_token.identifier)
+            self.notify_event(authc_token.identifier, 'AUTHENTICATION.ACCOUNT_LOCKED')
             raise LockedAccountException(msg)
-
-    def notify_account_not_found(self, identifier):
-        try:
-            self.event_bus.publish('AUTHENTICATION.ACCOUNT_NOT_FOUND',
-                                   identifier=identifier)
-        except AttributeError:
-            msg = "Could not publish AUTHENTICATION.ACCOUNT_NOT_FOUND event"
-            raise AttributeError(msg)
 
     def __repr__(self):
         return "<DefaultAuthenticator(event_bus={0}, strategy={0})>".\

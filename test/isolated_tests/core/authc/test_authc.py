@@ -360,10 +360,12 @@ def test_da_clear_cache_raises(
         assert_called_once_with(sic.from_source('AccountStoreRealm'))
 
     assert 'Could not clear authc_info' in caplog.text
-    
 
-def test_da_register_cache_clear_listener(default_authenticator, event_bus):
+
+def test_da_register_cache_clear_listener(
+        default_authenticator, event_bus, monkeypatch):
     da = default_authenticator
+    monkeypatch.setattr(da, 'event_bus', event_bus)
 
     with mock.patch.object(event_bus, 'register') as eb_r:
         eb_r.return_value = None
@@ -379,77 +381,28 @@ def test_da_register_cache_clear_listener(default_authenticator, event_bus):
             eb_ir.assert_has_calls(calls)
 
 
-def test_da_notify_success(default_authenticator, full_mock_account, event_bus):
+def test_da_notify_event(default_authenticator, sample_acct_info, monkeypatch):
     """
-    unit tested:  notify_success
+    unit tested:  notify_event
 
     test case:
     creates an Event and publishes it to the event_bus
     """
     da = default_authenticator
-    fma = full_mock_account
+    mock_event_bus = mock.create_autospec(DefaultEventBus)
+    monkeypatch.setattr(da, 'event_bus', mock_event_bus)
 
-    with mock.patch.object(event_bus, 'publish') as eb_pub:
-        eb_pub.return_value = None
+    da.notify_event('identifier', 'SOMETHING HAPPENED')
 
-        da.notify_success(fma)
-
-        assert eb_pub.call_args == mock.call('AUTHENTICATION.SUCCEEDED',
-                                             identifiers=fma.account_id)
+    mock_event_bus.publish.assert_called_with('SOMETHING HAPPENED',
+                                              identifier='identifier')
 
 
-def test_da_notify_success_raises(
-        default_authenticator, monkeypatch, full_mock_account):
-    """
-    unit tested:  notify_success
-
-    test case:
-    creates an Event, tries publishes it to the event_bus,
-    but fails and so raises an exception
-    """
+def test_da_notify_event_raises(default_authenticator, sample_acct_info, monkeypatch):
     da = default_authenticator
 
-    monkeypatch.setattr(da, '_event_bus', None)
-
-    with pytest.raises(ValueError):
-        da.notify_success(full_mock_account)
-
-
-def test_da_notify_failure(
-        default_authenticator, username_password_token, monkeypatch):
-    """
-    unit tested:  notify_failure
-
-    test case:
-    creates an Event and publishes it to the event_bus
-    """
-    da = default_authenticator
-    authc_token = username_password_token
-
-    with mock.patch.object(DefaultEventBus, 'publish') as eb_pub:
-        eb_pub.return_value = None
-
-        da.notify_failure(authc_token, 'throwable')
-
-        assert eb_pub.call_args == mock.call('AUTHENTICATION.FAILED',
-                                             username=authc_token.username)
-
-
-def test_da_notify_falure_raises(default_authenticator, monkeypatch):
-    """
-    unit tested:  notify_failure
-
-    test case:
-    creates an Event, tries publishes it to the event_bus,
-    but fails and so raises an exception
-    """
-    da = default_authenticator
-
-    monkeypatch.setattr(da, '_event_bus', None)
-
-    with pytest.raises(ValueError):
-        da.notify_failure('token', 'throwable')
-
+    with pytest.raises(AttributeError):
+        da.notify_event('identifier', 'bla')
 
 # -----------------------------------------------------------------------------
 # AuthenticationSettings Tests
