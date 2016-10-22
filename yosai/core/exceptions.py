@@ -17,6 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 
+
 class YosaiException(Exception):
     """
     The master root exception that all other exceptions are sub-classed from
@@ -74,14 +75,7 @@ class LockedAccountException(YosaiException):
 class MultiRealmAuthenticationException(AuthenticationException):
 
     def __init__(self, realm_errors):
-        msg = ("Multiple authentication problems across various realms.  "
-               "Only the first discovered exception will be shown as the cause"
-               "; call get_realm_exceptions() to access all of them.")
-        super().__init__(msg, next(iter(realm_errors.values())))
-        self.realm_errors = realm_errors
-
-    def get_realm_exceptions(self):
-        return self.realm_errors
+        self.realm_errors = realm_errors[0]
 
 # ---------------------------------------------------------------------------
 # ---- Authorization Exceptions

@@ -29,7 +29,7 @@ DefaultAuthenticationAttempt = namedtuple('DefaultAuthenticationAttempt',
 
 def all_realms_successful_strategy(authc_attempt):
     token = authc_attempt.authentication_token
-
+    account = None
     for realm in authc_attempt.realms:
         if (realm.supports(token)):
             """
@@ -53,10 +53,9 @@ def at_least_one_realm_successful_strategy(authc_attempt):
 
     authc_token = authc_attempt.authentication_token
     realm_errors = []
-
+    account = None
     for realm in authc_attempt.realms:
         if (realm.supports(authc_token)):
-            account = None
             try:
                 account = realm.authenticate_account(authc_token)
             except IncorrectCredentialsException as ex:

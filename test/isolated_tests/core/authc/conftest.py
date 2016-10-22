@@ -1,25 +1,13 @@
 import pytest
+from unittest import mock
 
 from yosai.core import (
-    AccountStoreRealm,
     IncorrectCredentialsException,
-    AllRealmsSuccessfulStrategy,
-    AtLeastOneRealmSuccessfulStrategy,
     AuthenticationSettings,
     DefaultAuthenticationAttempt,
 )
 
 from passlib.context import CryptContext
-
-
-@pytest.fixture(scope="function")
-def all_realms_successful_strategy():
-    return AllRealmsSuccessfulStrategy()
-
-
-@pytest.fixture(scope="function")
-def alo_realms_successful_strategy():
-    return AtLeastOneRealmSuccessfulStrategy()
 
 
 @pytest.fixture(scope="function")
@@ -42,7 +30,7 @@ def authc_config():
                 "secrets_path": None,
                 "secrets": {
                     1476123156: '0X6b7Zi2D9mNUzYJcPK4bKe5JSE6BSvrgseSKG9iXoO'
-                    }
+                }
             }
         }
     }
@@ -67,7 +55,7 @@ def accountstorerealm_succeeds(account_store_realm, monkeypatch, sample_acct_inf
 
 @pytest.fixture(scope='function')
 def accountstorerealm_fails(account_store_realm, monkeypatch):
-    def raiser(self, token):
+    def raiser(authc_token):
         raise IncorrectCredentialsException
     monkeypatch.setattr(account_store_realm, 'authenticate_account', raiser)
     return account_store_realm
@@ -117,7 +105,8 @@ def realmless_authc_attempt(username_password_token):
 
 
 @pytest.fixture(scope='function')
-def mock_token_attempt(mock_token, one_accountstorerealm_succeeds):
+def mock_token_attempt(one_accountstorerealm_succeeds):
+    mock_token = mock.MagicMock()
     return DefaultAuthenticationAttempt(mock_token, one_accountstorerealm_succeeds)
 
 

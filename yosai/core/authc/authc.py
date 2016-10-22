@@ -24,7 +24,7 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationSettings,
     DefaultAuthenticationAttempt,
-    first_realm_successful_strategy
+    first_realm_successful_strategy,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
     LockedAccountException,

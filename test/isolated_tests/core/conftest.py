@@ -6,7 +6,6 @@ from yosai.core import (
     DefaultAuthenticator,
     DefaultEventBus,
     DefaultSubjectContext,
-    FirstRealmSuccessfulStrategy,
     ModularRealmAuthorizer,
     SimpleIdentifierCollection,
     UsernamePasswordToken,
@@ -44,11 +43,6 @@ def patched_event_bus(mock_pubsub, monkeypatch):
     eb = DefaultEventBus()
     monkeypatch.setattr(eb, '_event_bus', mock_pubsub)
     return eb
-
-
-@pytest.fixture(scope="function")
-def first_realm_successful_strategy():
-    return FirstRealmSuccessfulStrategy()
 
 
 @pytest.fixture(scope='function')
