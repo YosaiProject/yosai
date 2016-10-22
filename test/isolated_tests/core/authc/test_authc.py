@@ -130,9 +130,9 @@ def test_da_authenticate_account_no_authc_identifier_raises(default_authenticato
         da.authenticate_account(None, 'mock_token')
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_account_not_found')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 def test_da_authenticate_account_no_authc_identifier_assigns_raisesaccount(
-        da_nanf, default_authenticator, monkeypatch):
+        da_ne, default_authenticator, monkeypatch):
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
     mock_identifiers = mock.create_autospec(SimpleIdentifierCollection)
@@ -143,12 +143,12 @@ def test_da_authenticate_account_no_authc_identifier_assigns_raisesaccount(
     with pytest.raises(AccountException):
         da.authenticate_account(mock_identifiers, mock_token)
     mock_token.identifier = 'test_identifiers'
-    da_nanf.assert_called_once_with(mock_token.identifier)
+    da_ne.assert_called_once_with(mock_token.identifier, 'AUTHENTICATION.ACCOUNT_NOT_FOUND')
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_success')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
-def test_da_authenticate_account_succeeds(da_daa, da_ns, default_authenticator):
+def test_da_authenticate_account_succeeds(da_daa, da_ne, default_authenticator):
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
     mock_token.identifier = 'user123'
@@ -157,15 +157,15 @@ def test_da_authenticate_account_succeeds(da_daa, da_ns, default_authenticator):
     da_daa.return_value = {'account_id': mock_identifiers}
     result = da.authenticate_account(None, mock_token)
 
-    da_ns.assert_called_once_with('test_identifiers')
+    da_ne.assert_called_once_with('test_identifiers', 'AUTHENTICATION.SUCCEEDED')
     da_daa.assert_called_once_with(mock_token)
     assert result == mock_identifiers
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_progress')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
 def test_da_authenticate_account_catches_additional(
-        da_daa, da_np, default_authenticator, monkeypatch):
+        da_daa, da_ne, default_authenticator, monkeypatch):
     da_daa.side_effect = AdditionalAuthenticationRequired
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
@@ -176,15 +176,15 @@ def test_da_authenticate_account_catches_additional(
     with pytest.raises(AdditionalAuthenticationRequired):
         da.authenticate_account(None, mock_token)
 
-    da_np.assert_called_once_with('user123')
+    da_ne.assert_called_once_with('user123', 'AUTHENTICATION.PROGRESS')
     da_daa.assert_called_once_with(mock_token)
     mock_challenger.send_challenge.assert_called_once_with('user123')
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_account_not_found')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
 def test_da_authenticate_account_catches_accountexc(
-        da_daa, da_nanf, default_authenticator, monkeypatch):
+        da_daa, da_ne, default_authenticator, monkeypatch):
     da_daa.side_effect = AccountException
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
@@ -193,15 +193,14 @@ def test_da_authenticate_account_catches_accountexc(
     with pytest.raises(AccountException):
         da.authenticate_account(None, mock_token)
 
-    da_nanf.assert_called_once_with('user123')
+    da_ne.assert_called_once_with('user123', 'AUTHENTICATION.ACCOUNT_NOT_FOUND')
     da_daa.assert_called_once_with(mock_token)
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_locked')
-@mock.patch.object(DefaultAuthenticator, 'notify_failure')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
 def test_da_authenticate_account_catches_lockedexc(
-        da_daa, da_nf, da_nl, default_authenticator, monkeypatch):
+        da_daa, da_ne, default_authenticator, monkeypatch):
     da_daa.side_effect = LockedAccountException
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
@@ -210,16 +209,17 @@ def test_da_authenticate_account_catches_lockedexc(
     with pytest.raises(LockedAccountException):
         da.authenticate_account(None, mock_token)
 
-    da_nl.assert_called_once_with('user123')
-    da_nf.assert_called_once_with('user123')
+    notify_events = [mock.call('user123', 'AUTHENTICATION.FAILED'),
+                     mock.call('user123', 'AUTHENTICATION.ACCOUNT_LOCKED')]
+    da_ne.assert_has_calls(notify_events)
     da_daa.assert_called_once_with(mock_token)
 
 
 @mock.patch.object(DefaultAuthenticator, 'validate_locked')
-@mock.patch.object(DefaultAuthenticator, 'notify_failure')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
 def test_da_authenticate_account_catches_incorrectexc(
-        da_daa, da_nf, da_vl, default_authenticator, monkeypatch):
+        da_daa, da_ne, da_vl, default_authenticator, monkeypatch):
     da_daa.side_effect = IncorrectCredentialsException(failed_attempts=5)
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
@@ -229,7 +229,7 @@ def test_da_authenticate_account_catches_incorrectexc(
         da.authenticate_account(None, mock_token)
 
     da_vl.assert_called_once_with(mock_token, 5)
-    da_nf.assert_called_once_with('user123')
+    da_ne.assert_called_once_with('user123', 'AUTHENTICATION.FAILED')
     da_daa.assert_called_once_with(mock_token)
 
 
@@ -296,11 +296,11 @@ def test_da_do_authc_acct_multi_realm(
     da_amra.assert_called_once_with(da.realms, mock_token)
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_progress')
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'validate_locked')
 @mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
 def test_da_do_authc_acct_req_additional(
-        da_asra, da_vl, da_np, default_authenticator, sample_acct_info, monkeypatch):
+        da_asra, da_vl, da_ne, default_authenticator, sample_acct_info, monkeypatch):
     da_asra.return_value = sample_acct_info
     da = default_authenticator
 
@@ -318,7 +318,7 @@ def test_da_do_authc_acct_req_additional(
 
     da_vl.assert_called_once_with(mock_token, [1477077663111])
     da_asra.assert_called_once_with(faux_authc_realm, mock_token)
-    da_np.assert_called_once_with(mock_token.identifier)
+    da_ne.assert_called_once_with(mock_token.identifier, 'AUTHENTICATION.PROGRESS')
 
 
 def test_da_clear_cache(
@@ -403,6 +403,22 @@ def test_da_notify_event_raises(default_authenticator, sample_acct_info, monkeyp
 
     with pytest.raises(AttributeError):
         da.notify_event('identifier', 'bla')
+
+
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
+def test_validate_locked(da_ne, default_authenticator, monkeypatch):
+    da = default_authenticator
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+    mock_realm = mock.create_autospec(AccountStoreRealm)
+    monkeypatch.setattr(da, 'locking_limit', 3)
+    monkeypatch.setattr(da, 'locking_realm', mock_realm)
+
+    with pytest.raises(LockedAccountException):
+        da.validate_locked(mock_token, [1, 2, 3, 4])
+        
+    mock_realm.lock_account.assert_called_once_with('user123')
+    da_ne.assert_called_once_with('user123', 'AUTHENTICATION.ACCOUNT_LOCKED')
 
 # -----------------------------------------------------------------------------
 # AuthenticationSettings Tests
