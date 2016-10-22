@@ -60,55 +60,37 @@ def patched_authc_settings(authc_config, monkeypatch, core_settings):
 
 
 @pytest.fixture(scope='function')
-def first_accountstorerealm_succeeds(core_settings, monkeypatch):
-    account_info = None # TBD
-    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', lambda x: account_info)
-    return AccountStoreRealm(core_settings, name='AccountStoreRealm1')
+def accountstorerealm_succeeds(account_store_realm, monkeypatch, sample_acct_info):
+    monkeypatch.setattr(account_store_realm, 'authenticate_account', lambda x: sample_acct_info)
+    return account_store_realm
 
 
 @pytest.fixture(scope='function')
-def first_accountstorerealm_fails(monkeypatch, core_settings):
-    def mock_return(self, token):
+def accountstorerealm_fails(account_store_realm, monkeypatch):
+    def raiser(self, token):
         raise IncorrectCredentialsException
-    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
-    return AccountStoreRealm(core_settings, name='AccountStoreRealm1')
+    monkeypatch.setattr(account_store_realm, 'authenticate_account', raiser)
+    return account_store_realm
 
 
 @pytest.fixture(scope='function')
-def second_accountstorerealm_fails(monkeypatch, core_settings):
-    def mock_return(self, token):
-        raise IncorrectCredentialsException
-    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', mock_return)
-    return AccountStoreRealm(core_settings, name='AccountStoreRealm2')
+def one_accountstorerealm_succeeds(accountstorerealm_succeeds):
+    return tuple([accountstorerealm_succeeds])
 
 
 @pytest.fixture(scope='function')
-def second_accountstorerealm_succeeds(monkeypatch, core_settings):
-    account_info = None  # TBD
-    monkeypatch.setattr(AccountStoreRealm, 'authenticate_account', account_info)
-    return AccountStoreRealm(core_settings, name='AccountStoreRealm2')
+def one_accountstorerealm_fails(accountstorerealm_fails):
+    return tuple([accountstorerealm_fails])
 
 
 @pytest.fixture(scope='function')
-def one_accountstorerealm_succeeds(first_accountstorerealm_succeeds):
-    return tuple([first_accountstorerealm_succeeds])
+def two_accountstorerealms_succeeds(accountstorerealm_succeeds):
+    return tuple([accountstorerealm_succeeds, accountstorerealm_succeeds])
 
 
 @pytest.fixture(scope='function')
-def one_accountstorerealm_fails(first_accountstorerealm_fails):
-    return tuple([first_accountstorerealm_fails])
-
-
-@pytest.fixture(scope='function')
-def two_accountstorerealms_succeeds(first_accountstorerealm_succeeds,
-                                    second_accountstorerealm_succeeds):
-    return tuple([first_accountstorerealm_succeeds, second_accountstorerealm_succeeds])
-
-
-@pytest.fixture(scope='function')
-def two_accountstorerealms_fails(first_accountstorerealm_fails,
-                                 second_accountstorerealm_fails):
-    return tuple([first_accountstorerealm_fails, second_accountstorerealm_fails])
+def two_accountstorerealms_fails(accountstorerealm_fails):
+    return tuple([accountstorerealm_fails, accountstorerealm_fails])
 
 
 @pytest.fixture(scope='function')

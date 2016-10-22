@@ -2,31 +2,14 @@ import pytest
 
 from yosai.core import (
     IncorrectCredentialsException,
-    InvalidAuthenticationTokenException,
-    InvalidAuthcAttemptRealmsArgumentException,
     MultiRealmAuthenticationException,
     account_abcs,
 )
 
 # -----------------------------------------------------------------------------
-# DefaultAuthenticationAttempt Tests
-# -----------------------------------------------------------------------------
-def test_authc_attempt_invalid_authc_token(default_authc_attempt):
-    invalid_token = {'username': 'dummy', 'password': 'blaurgh'}
-    with pytest.raises(InvalidAuthenticationTokenException):
-        default_authc_attempt.authentication_token = invalid_token
-
-def test_authc_attempt_invalid_realms(default_authc_attempt, monkeypatch):
-    """
-    realms must be an OrderedSet, passing anything else raises an exception
-    """
-    invalid_realm = {'dumbdict': 'dumb'}
-    with pytest.raises(InvalidAuthcAttemptRealmsArgumentException):
-        monkeypatch.setattr(default_authc_attempt, 'realms', invalid_realm)
-
-# -----------------------------------------------------------------------------
 # FirstRealmSuccessfulStrategy Tests
 # -----------------------------------------------------------------------------
+
 def test_first_realmssuccessful_first_success(first_realm_successful_strategy,
                                               default_authc_attempt):
     """ The default_authc_attempt fixture contains a set with only one
@@ -37,7 +20,8 @@ def test_first_realmssuccessful_first_success(first_realm_successful_strategy,
         within execute, and consequently the first_account will return
     """
     result = first_realm_successful_strategy.execute(default_authc_attempt)
-    assert (isinstance(result, account_abcs.Account) and (result.account_id == 12345))
+    assert result['account_id'] == 12345
+
 
 def test_first_realmssuccessful_fails_no_realm(first_realm_successful_strategy,
                                                realmless_authc_attempt):

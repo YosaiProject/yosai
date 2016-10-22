@@ -24,7 +24,7 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationSettings,
     DefaultAuthenticationAttempt,
-    FirstRealmSuccessfulStrategy,
+    first_realm_successful_strategy
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
     LockedAccountException,
@@ -124,7 +124,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
     # Unlike Shiro, Yosai injects the strategy and the eventbus
     def __init__(self,
                  settings,
-                 strategy=FirstRealmSuccessfulStrategy()):
+                 strategy=first_realm_successful_strategy):
 
         self.authc_settings = AuthenticationSettings(settings)
         self.authentication_strategy = strategy
@@ -177,7 +177,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
 
     def authenticate_multi_realm_account(self, realms, authc_token):
         attempt = DefaultAuthenticationAttempt(authc_token, realms)
-        return self.authentication_strategy.execute(attempt)
+        return self.authentication_strategy(attempt)
 
     def authenticate_account(self, identifiers, authc_token):
         """

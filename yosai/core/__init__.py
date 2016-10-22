@@ -148,9 +148,9 @@ from yosai.core.subject.subject import(
 
 from yosai.core.authc.strategy import (
     DefaultAuthenticationAttempt,
-    AllRealmsSuccessfulStrategy,
-    AtLeastOneRealmSuccessfulStrategy,
-    FirstRealmSuccessfulStrategy,
+    all_realms_successful_strategy,
+    at_least_one_realm_successful_strategy,
+    first_realm_successful_strategy,
 )
 
 from yosai.core.authc.authc import (

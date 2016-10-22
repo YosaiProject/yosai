@@ -21,68 +21,54 @@ from collections import namedtuple
 from yosai.core import (
     IncorrectCredentialsException,
     MultiRealmAuthenticationException,
-    authc_abcs,
 )
 
 DefaultAuthenticationAttempt = namedtuple('DefaultAuthenticationAttempt',
                                           'authentication_token, realms')
 
 
-class AllRealmsSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
+def all_realms_successful_strategy(authc_attempt):
+    token = authc_attempt.authentication_token
 
-    def execute(self, authc_attempt):
-        token = authc_attempt.authentication_token
-
-        # realm is an AccountStoreRealm:
-        for realm in authc_attempt.realms:
-            if (realm.supports(token)):
-
-                """
-                If the realm raises an exception, the loop will short
-                circuit, propagating the IncorrectCredentialsException
-                further up the stack.  As an 'all successful' strategy, if
-                there is even a single exception thrown by any of the
-                supported realms, the authentication attempt is
-                unsuccessful.  This particular implementation also favors
-                short circuiting immediately (instead of trying
-                all realms and then aggregating all potential exceptions)
-                because continuing to access additional account stores is
-                likely to incur unnecessary / undesirable I/O for most apps
-                """
-                # an IncorrectCredentialsException halts the loop:
-                account = realm.authenticate_account(token)
-
-        return account
+    for realm in authc_attempt.realms:
+        if (realm.supports(token)):
+            """
+            If the realm raises an exception, the loop will short
+            circuit, propagating the IncorrectCredentialsException
+            further up the stack.  As an 'all successful' strategy, if
+            there is even a single exception thrown by any of the
+            supported realms, the authentication attempt is
+            unsuccessful.  This particular implementation also favors
+            short circuiting immediately (instead of trying
+            all realms and then aggregating all potential exceptions)
+            because continuing to access additional account stores is
+            likely to incur unnecessary / undesirable I/O for most apps
+            """
+            # an IncorrectCredentialsException halts the loop:
+            account = realm.authenticate_account(token)
+    return account
 
 
-class AtLeastOneRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
+def at_least_one_realm_successful_strategy(authc_attempt):
 
-    def execute(self, authc_attempt):
-        """
-        :rtype:  Account
-        """
-        authc_token = authc_attempt.authentication_token
-        realm_errors = []
+    authc_token = authc_attempt.authentication_token
+    realm_errors = []
 
-        for realm in authc_attempt.realms:
-            if (realm.supports(authc_token)):
-                realm_name = realm.name
-                account = None  # required
+    for realm in authc_attempt.realms:
+        if (realm.supports(authc_token)):
+            account = None
+            try:
+                account = realm.authenticate_account(authc_token)
+            except IncorrectCredentialsException as ex:
+                realm_errors.append(ex)
 
-                try:
-                    account = realm.authenticate_account(authc_token)
-                # failed authentication raises an exception:
-                except IncorrectCredentialsException as ex:
-                    realm_errors.append(ex)
+    if (realm_errors):  # if no successful authentications
+        raise MultiRealmAuthenticationException(realm_errors)
 
-        if (realm_errors):  # if no successful authentications
-            raise MultiRealmAuthenticationException(realm_errors)
-
-        return account
+    return account
 
 
-class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
-
+def first_realm_successful_strategy(authc_attempt):
     """
      The FirstRealmSuccessfulStrategy will iterate over the available realms
      and invoke Realm.authenticate_account(authc_token) on each one. The moment
@@ -98,29 +84,27 @@ class FirstRealmSuccessfulStrategy(authc_abcs.AuthenticationStrategy):
            MultiRealmAuthenticationException and that exception is thrown.
          * If no exceptions were thrown, None is returned, indicating to the
            calling Authenticator that no Account was found (for that token)
+
+    :type authc_attempt:  AuthenticationAttempt
+    :returns:  Account
     """
-    def execute(self, authc_attempt):
-        """
-        :type authc_attempt:  AuthenticationAttempt
-        :returns:  Account
-        """
-        authc_token = authc_attempt.authentication_token
-        realm_errors = []
-        account = None
-        for realm in authc_attempt.realms:
-            if (realm.supports(authc_token)):
-                try:
-                    account = realm.authenticate_account(authc_token)
-                except Exception as ex:
-                    realm_errors.append(ex)
-                if (account):
-                        return account
+    authc_token = authc_attempt.authentication_token
+    realm_errors = []
+    account = None
+    for realm in authc_attempt.realms:
+        if (realm.supports(authc_token)):
+            try:
+                account = realm.authenticate_account(authc_token)
+            except Exception as ex:
+                realm_errors.append(ex)
+            if (account):
+                    return account
 
-        if (realm_errors):
-            if (len(realm_errors) == 1):
-                raise realm_errors[0]
+    if (realm_errors):
+        if (len(realm_errors) == 1):
+            raise realm_errors[0]
 
-            else:
-                raise MultiRealmAuthenticationException(realm_errors)
+        else:
+            raise MultiRealmAuthenticationException(realm_errors)
 
-        return None  # implies account was not found for token
+    return None  # implies account was not found for token
