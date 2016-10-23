@@ -18,6 +18,8 @@ from yosai.core import (
     realm_abcs,
 )
 
+from passlib.totp import TOTP
+
 # -----------------------------------------------------------------------------
 # UsernamePasswordToken Tests
 # -----------------------------------------------------------------------------
@@ -116,7 +118,7 @@ def test_da_autc_mra(default_authenticator, monkeypatch):
     unit tested:  authenticate_multi_realm_account
     """
     da = default_authenticator
-    monkeypatch.setattr(da.authentication_strategy, 'execute', lambda x: x)
+    monkeypatch.setattr(da, 'authentication_strategy', lambda x: x)
 
     result = da.authenticate_multi_realm_account(('realm1', 'realm2'), 'authc_token')
 
