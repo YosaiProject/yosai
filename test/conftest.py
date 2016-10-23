@@ -118,8 +118,13 @@ def role_verifier():
 
 
 @pytest.fixture(scope='function')
-def authc_verifiers(settings):
-    return (PasslibVerifier(settings),)
+def passlib_verifier(settings):
+    return PasslibVerifier(settings)
+
+
+@pytest.fixture(scope='function')
+def authc_verifiers(passlib_verifier):
+    return (passlib_verifier,)
 
 
 @pytest.fixture(scope='function')

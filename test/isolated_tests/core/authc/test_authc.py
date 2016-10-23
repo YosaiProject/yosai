@@ -416,7 +416,7 @@ def test_validate_locked(da_ne, default_authenticator, monkeypatch):
 
     with pytest.raises(LockedAccountException):
         da.validate_locked(mock_token, [1, 2, 3, 4])
-        
+
     mock_realm.lock_account.assert_called_once_with('user123')
     da_ne.assert_called_once_with('user123', 'AUTHENTICATION.ACCOUNT_LOCKED')
 
@@ -433,3 +433,46 @@ def test_init_algorithms(authc_settings, monkeypatch, authc_config):
                       "sha256_crypt__max_rounds": 1000000,
                       "sha256_crypt__min_rounds": 1000,
                       "sha256_crypt__salt_size": 16}}
+
+
+# -----------------------------------------------------------------------------
+# PasslibVerifier Tests
+# -----------------------------------------------------------------------------
+
+
+def test_verify_userpass_credentials(
+        passlib_verifier, username_password_token, monkeypatch):
+    pv = passlib_verifier
+    mock_service = mock.MagicMock()
+    mock_token_resolver = {username_password_token.__class__: mock_service}
+    monkeypatch.setattr(pv, 'cc_token_resolver', mock_token_resolver)
+    monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: 'stored')
+
+    pv.verify_credentials(username_password_token, 'authc_info')
+
+    mock_service.verify.assert_called_once_with(username_password_token.credentials, 'stored')
+
+
+def test_verify_totp_credentials(passlib_verifier, totp_token, monkeypatch):
+    pv = passlib_verifier
+    monkeypatch.setattr(pv, 'cc_token_resolver', {totp_token.__class__: None})
+    key = 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+    monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: key)
+
+    with mock.patch.object(TOTP, 'verify') as totp_verify:
+        pv.verify_credentials(totp_token, 'authc_info')
+
+        totp_verify.assert_called_once_with(totp_token.credentials)
+
+
+def test_verify_credentials_noresult_raises_incorrect(
+        passlib_verifier, username_password_token, monkeypatch):
+    pv = passlib_verifier
+    mock_service = mock.MagicMock()
+    mock_service.verify.side_effect = IncorrectCredentialsException
+    mock_token_resolver = {username_password_token.__class__: mock_service}
+    monkeypatch.setattr(pv, 'cc_token_resolver', mock_token_resolver)
+    monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: 'stored')
+
+    with pytest.raises(IncorrectCredentialsException):
+        pv.verify_credentials(username_password_token, 'authc_info')
