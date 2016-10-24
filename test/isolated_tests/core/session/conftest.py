@@ -9,7 +9,6 @@ from yosai.core import (
     DelegatingSession,
     # ExecutorServiceSessionValidationScheduler,
     MemorySessionStore,
-    SessionEventHandler,
     SimpleSession,
 )
 
@@ -71,20 +70,6 @@ def memory_session_store():
 def default_session_storage_evaluator():
     return DefaultSessionStorageEvaluator()
 
-
-@pytest.fixture(scope='function')
-def caching_session_store():
-    return CachingSessionStore()
-
-
-@pytest.fixture(scope='function')
-def session_event_handler(event_bus):
-    return SessionEventHandler(event_bus)
-
-
-@pytest.fixture(scope='function')
-def session_handler(session_event_handler):
-    return NativeSessionHandler(session_event_handler=session_event_handler)
 
 
 @pytest.fixture(scope='function')

@@ -83,6 +83,7 @@ class WebSimpleSession(SimpleSession):
         flash_messages.update(state['internal_attributes']['flash_messages'])
         self.internal_attributes['flash_messages'] = flash_messages
 
+
 class WebSessionHandler(NativeSessionHandler):
 
     def __init__(self, delete_invalid_sessions=True):

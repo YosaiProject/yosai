@@ -9,24 +9,8 @@ from yosai.core import (
 
 
 @pytest.fixture(scope='function')
-def session_store(cache_handler):
-    css = CachingSessionStore()
-    css.cache_handler = cache_handler
-    return css
-
-
-
-@pytest.fixture(scope='function')
 def session_key(session):
     return DefaultSessionKey(session.session_id)
-
-
-@pytest.fixture(scope='function')
-def session_handler(session_store, event_bus):
-    handler = NativeSessionHandler()
-    handler.session_store = session_store
-    handler.event_bus = event_bus
-    return handler
 
 
 @pytest.fixture(scope='function')

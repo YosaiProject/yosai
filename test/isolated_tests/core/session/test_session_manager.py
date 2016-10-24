@@ -1,182 +1,36 @@
 import pytest
 from unittest import mock
-import datetime
-import pytz
 import collections
-from ..doubles import (
-    MockSession,
-)
 
 from yosai.core import (
     CachingSessionStore,
+    DefaultSessionKey,
     DelegatingSession,
     ExpiredSessionException,
     NativeSessionHandler,
+    SimpleSession,
     StoppedSessionException,
     InvalidSessionException,
 )
-
-# ----------------------------------------------------------------------------
-# SessionEventHandler
-# ----------------------------------------------------------------------------
-
-
-def test_seh_notify_start_publishes(mock_session):
-    """
-    unit tested:  notify_start
-
-    """
-    seh = session_event_handler
-    event_topic = 'SESSION.START'
-
-    with mock.patch.object(seh.event_bus, 'publish') as event_publish:
-        event_publish.return_value = None
-        seh.notify_start(mock_session)
-        event_publish.assert_called_with(event_topic,
-                                         session_id=mock_session.session_id)
-
-
-def test_seh_notify_start_raises(session_event_handler, mock_session, monkeypatch):
-    seh = session_event_handler
-    monkeypatch.delattr(mock_session, '_session_id')
-
-    with pytest.raises(ValueError):
-        seh.notify_start(mock_session)
-
-
-def test_seh_notify_stop_publishes(session_event_handler, mock_session):
-    """
-    unit tested:  notify_stop
-    """
-    seh = session_event_handler
-    event_topic = 'SESSION.STOP'
-
-    with mock.patch.object(seh.event_bus, 'publish') as event_publish:
-        event_publish.return_value = None
-        seh.notify_stop('sessiontuple')
-        event_publish.assert_called_with(event_topic, items='sessiontuple')
-
-
-def test_seh_notify_stop_raises(session_event_handler, mock_session, monkeypatch):
-    seh = session_event_handler
-    monkeypatch.delattr(seh, '_event_bus')
-
-    with pytest.raises(ValueError):
-        seh.notify_stop(mock_session)
-
-
-def test_seh_notify_expiration_publishes(session_event_handler, mock_session):
-    """
-    unit tested:  notify_expiration
-    """
-    seh = session_event_handler
-    event_topic = 'SESSION.EXPIRE'
-
-    with mock.patch.object(seh.event_bus, 'publish') as event_publish:
-        event_publish.return_value = None
-        seh.notify_expiration('sessiontuple')
-        event_publish.assert_called_with(event_topic, items='sessiontuple')
-
-
-def test_seh_notify_expiration_raises(session_event_handler, mock_session, monkeypatch):
-    seh = session_event_handler
-    monkeypatch.delattr(seh, '_event_bus')
-
-    with pytest.raises(ValueError):
-        seh.notify_expiration(mock_session)
 
 
 # ----------------------------------------------------------------------------
 # NativeSessionHandler
 # ----------------------------------------------------------------------------
 
-def test_sh_set_sessionstore(session_handler, mock_cache_handler, monkeypatch):
-    """
-    unit tested:  session_store.setter
 
-    test case:
-    the session_store property sets the attribute and calls a method
-    """
+def test_sh_create_session(session_handler, monkeypatch):
     sh = session_handler
-    monkeypatch.setattr(session_handler, 'cache_handler', mock_cache_handler)
-    with mock.patch.object(NativeSessionHandler,
-                           'apply_cache_handler_to_session_store') as achss:
-        achss.return_value = None
-
-        sh.session_store = 'sessionstore'
-
-        achss.assert_called_once_with()
-
-
-def test_sh_set_cache_handler(session_handler):
-    """
-    unit tested:  cache_handler.setter
-
-    test case:
-    the cache_handler property sets the attribute and calls a method
-    """
-    sh = session_handler
-
-    with mock.patch.object(NativeSessionHandler,
-                           'apply_cache_handler_to_session_store') as achss:
-        achss.return_value = None
-
-        sh.cache_handler = 'cache_handler'
-
-        achss.assert_called_once_with()
-
-
-def test_sh_achtsd(
-        session_handler, monkeypatch, caching_session_store):
-    """
-    unit tested:  apply_cache_handler_to_session_store
-
-    test case:
-    when a sessionStore is configured, the sessionStore sets the cachehandler
-    """
-    sh = session_handler
-
-    monkeypatch.setattr(sh, '_cache_handler', 'cachehandler')
-    monkeypatch.setattr(sh, '_session_store', caching_session_store)
-    sh.apply_cache_handler_to_session_store()
-    assert sh.session_store.cache_handler == 'cachehandler'
-
-
-def test_sh_achtsd_raises(
-        session_handler, monkeypatch, caching_session_store):
-    """
-    unit tested:  apply_cache_handler_to_session_store
-
-    test case:
-    if no sessionStore configured, will return gracefully
-    """
-    sh = session_handler
-    monkeypatch.setattr(sh, '_cache_handler', 'cachehandler')
-    monkeypatch.delattr(caching_session_store, '_cache_handler')
-    monkeypatch.setattr(sh, '_session_store', caching_session_store)
-    sh.apply_cache_handler_to_session_store()
-
-
-def test_sh_eventbus_passthrough_setter(session_handler):
-    sh = session_handler
-    sh.event_bus = 'event_bus'
-    assert (sh.session_event_handler.event_bus == 'event_bus'
-            and sh.event_bus == sh.session_event_handler.event_bus)
-
-
-def test_sh_create_session(
-        session_handler, monkeypatch, caching_session_store):
-    sh = session_handler
-    monkeypatch.setattr(caching_session_store, 'create', lambda x: x)
-    monkeypatch.setattr(sh, '_session_store', caching_session_store)
-    result = sh.create_session('session')
-    assert result == 'session'
+    session_store = mock.create_autospec(CachingSessionStore)
+    monkeypatch.setattr(sh, 'session_store', session_store)
+    sh.create_session('session')
+    session_store.create.assert_called_once_with('session')
 
 
 def test_sh_delete(
-        session_handler, monkeypatch, caching_session_store):
+        session_handler, monkeypatch, session_store):
     sh = session_handler
-    monkeypatch.setattr(sh, '_session_store', caching_session_store)
+    monkeypatch.setattr(sh, 'session_store', session_store)
     with mock.patch.object(CachingSessionStore, 'delete') as css_del:
         css_del.return_value = None
         sh.delete('session')
@@ -184,7 +38,7 @@ def test_sh_delete(
 
 
 def test_sh_retrieve_session_w_sessionid_raising(
-        session_handler, monkeypatch, caching_session_store, session_key):
+        session_handler, monkeypatch, session_store, session_key):
     """
     unit tested:  retrieve_session
 
@@ -193,17 +47,17 @@ def test_sh_retrieve_session_w_sessionid_raising(
     an exception is raised
     """
     sh = session_handler
-    css = caching_session_store
+    css = session_store
 
     monkeypatch.setattr(css, 'read', lambda x: None)
-    monkeypatch.setattr(sh, '_session_store', css)
+    monkeypatch.setattr(sh, 'session_store', css)
 
     with pytest.raises(ValueError):
         sh._retrieve_session(session_key)
 
 
 def test_sh_retrieve_session_withsessionid_returning(
-        session_handler, monkeypatch, caching_session_store, session_key):
+        session_handler, monkeypatch, session_store, session_key):
     """
     unit tested:  retrieve_session
 
@@ -212,17 +66,17 @@ def test_sh_retrieve_session_withsessionid_returning(
     and returns it
     """
     sh = session_handler
-    css = caching_session_store
+    css = session_store
 
     monkeypatch.setattr(css, 'read', lambda x: x)
-    monkeypatch.setattr(sh, '_session_store', css)
+    monkeypatch.setattr(sh, 'session_store', css)
 
     result = sh._retrieve_session(session_key)
     assert result == 'sessionid123'
 
 
 def test_sh_retrieve_session_withoutsessionid(
-        session_handler, monkeypatch, caching_session_store, session_key):
+        session_handler, monkeypatch, session_store):
     """
     unit tested:  retrieve_session
 
@@ -230,8 +84,7 @@ def test_sh_retrieve_session_withoutsessionid(
     fails to obtain a session_id value from the sessionkey, returning None
     """
     sh = session_handler
-
-    monkeypatch.setattr(session_key, 'session_id', None)
+    session_key = DefaultSessionKey(None)
 
     result = sh._retrieve_session(session_key)
     assert result is None
@@ -274,8 +127,7 @@ def test_sh_dogetsession_notouch(session_handler, monkeypatch, session_key):
         assert result == 'session'
 
 
-def test_sh_validate_succeeds(session_handler, mock_session, monkeypatch,
-                              session_key):
+def test_sh_validate_succeeds(session_handler, monkeypatch, mock_session, session_key):
     """
     unit test:  validate
 
@@ -344,10 +196,10 @@ def test_sh_on_stop(session_handler, mock_session, monkeypatch):
     updated last_access_time and calls on_change
     """
     sh = session_handler
-    monkeypatch.setattr(mock_session, '_last_access_time', 'anything')
-    monkeypatch.setattr(mock_session, '_stop_timestamp', None, raising=False)
-    monkeypatch.setattr(mock_session, '_stop_timestamp',
-                        datetime.datetime.now(pytz.utc))
+
+    mock_session = mock.create_autospec(SimpleSession)
+    mock_session.stop_timestamp = 1234567
+
     with mock.patch.object(sh, 'on_change') as mock_onchange:
         sh.on_stop(mock_session, 'session_key')
         mock_onchange.assert_called_with(mock_session)
@@ -401,7 +253,7 @@ def test_sh_on_expiration_onenotset(session_handler, ese, session_key):
                          session_key=session_key)
 
 
-def test_sh_on_expiration_allset(session_handler, mock_session, monkeypatch):
+def test_sh_on_expiration_allset(session_handler, monkeypatch, mock_session):
     """
     unit tested:  on_expiration
 
@@ -412,12 +264,12 @@ def test_sh_on_expiration_allset(session_handler, mock_session, monkeypatch):
     sh = session_handler
 
     session_tuple = collections.namedtuple(
-        'session_tuple', ['identifiers', 'session_key'])
+        'session_tuple', ['identifiers', 'session_id'])
     mysession = session_tuple('identifiers', 'sessionkey123')
-    monkeypatch.setattr(mock_session, 'get_internal_attribute',
-                        lambda x: 'identifiers')
+    mock_session.get_internal_attribute.return_value = 'identifiers'
+    mock_session.session_id = 'session123'
 
-    with mock.patch.object(sh.session_event_handler, 'notify_expiration') as sh_ne:
+    with mock.patch.object(sh, 'notify_event') as sh_ne:
         sh_ne.return_value = None
         with mock.patch.object(sh, 'after_expired') as sh_ae:
             sh_ae.return_value = None
@@ -426,9 +278,9 @@ def test_sh_on_expiration_allset(session_handler, mock_session, monkeypatch):
 
                 sh.on_expiration(session=mock_session,
                                  expired_session_exception='ExpiredSessionException',
-                                 session_key='sessionkey123')
+                                 session_key=DefaultSessionKey('sessionkey123'))
 
-                sh_ne.assert_called_once_with(mysession)
+                sh_ne.assert_called_once_with(mysession, 'SESSION.EXPIRE')
                 sh_ae.assert_called_once_with(mock_session)
                 sh_oc.assert_called_once_with(mock_session)
 
@@ -466,8 +318,7 @@ def test_sh_on_invalidation_esetype(session_handler, mock_session):
         mock_oe.assert_called_with
 
 
-def test_sh_on_invalidation_isetype(
-        session_handler, mock_session, monkeypatch):
+def test_sh_on_invalidation_isetype(session_handler, mock_session, monkeypatch):
     """
     unit tested:  on_invalidation
 
@@ -478,7 +329,7 @@ def test_sh_on_invalidation_isetype(
     """
     sh = session_handler
     ise = StoppedSessionException('testing')
-    session_key = 'sessionkey123'
+    session_key = DefaultSessionKey('sessionkey123')
 
     session_tuple = collections.namedtuple(
         'session_tuple', ['identifiers', 'session_key'])
@@ -490,8 +341,7 @@ def test_sh_on_invalidation_isetype(
     with mock.patch.object(sh, 'on_stop') as mock_onstop:
         mock_onstop.return_value = None
 
-        with mock.patch.object(sh.session_event_handler,
-                               'notify_stop') as mock_ns:
+        with mock.patch.object(sh, 'notify_event') as mock_ns:
             mock_ns.return_value = None
 
             with mock.patch.object(sh, 'after_stopped') as mock_as:
@@ -501,12 +351,12 @@ def test_sh_on_invalidation_isetype(
                                    ise=ise,
                                    session_key=session_key)
 
-                mock_onstop.assert_called_once_with(mock_session, 'sessionkey123')
-                mock_ns.assert_called_once_with(mysession)
+                mock_onstop.assert_called_once_with(mock_session, DefaultSessionKey('sessionkey123'))
+                mock_ns.assert_called_once_with(mysession, 'SESSION.STOP')
                 mock_as.assert_called_once_with(mock_session)
 
 
-def test_sh_on_change(session_handler, monkeypatch, caching_session_store):
+def test_sh_on_change(session_handler, monkeypatch, session_store):
     """
     unit tested:  on_change
 
@@ -514,45 +364,34 @@ def test_sh_on_change(session_handler, monkeypatch, caching_session_store):
     passthrough call to session_store.update
     """
     sh = session_handler
-    monkeypatch.setattr(sh, '_session_store', caching_session_store)
-    with mock.patch.object(sh._session_store, 'update') as ss_up:
+    monkeypatch.setattr(sh, 'session_store', session_store)
+    with mock.patch.object(sh.session_store, 'update') as ss_up:
         ss_up.return_value = None
 
         sh.on_change('session')
 
-        ss_up.assert_called_once_with('session', False)
+        ss_up.assert_called_once_with('session')
 
 
 # ------------------------------------------------------------------------------
 # NativeSessionManager
 # ------------------------------------------------------------------------------
 
-def test_nsm_sessioneventhandler_setter(
-        default_native_session_manager, session_event_handler):
-    """
-    test case:
-    setting the session_event_handler attribute and setter-injecting it into
-    the session_handler attribute
-    """
+
+def test_nsm_apply_ch(default_native_session_manager):
     nsm = default_native_session_manager
-    nsm.session_event_handler = session_event_handler
-    assert nsm.session_handler.session_event_handler == session_event_handler
+    nsm.apply_cache_handler('cachehandler')
+    assert nsm.session_handler.session_store.cache_handler == 'cachehandler'
 
 
-def test_nsm_eventbus_setter(
-        default_native_session_manager, session_event_handler):
-    """
-    test case:
-    setting the event_bus attribute and setter-injecting it into
-    the session_handler attribute
-    """
+def test_nsm_apply_eventbus(default_native_session_manager):
     nsm = default_native_session_manager
-    nsm.event_bus = 'event_bus1'
-    assert (nsm._event_bus == 'event_bus1' and
-            nsm.session_handler.session_event_handler.event_bus == 'event_bus1')
+    nsm.apply_event_bus('eventbus')
+    assert nsm.event_bus == 'eventbus'
+    assert nsm.session_handler.event_bus == 'eventbus'
 
 
-def test_nsm_start(default_native_session_manager, monkeypatch):
+def test_nsm_start(default_native_session_manager, monkeypatch, mock_session):
     """
     unit tested:  start
 
@@ -560,19 +399,22 @@ def test_nsm_start(default_native_session_manager, monkeypatch):
     verify that start calls other methods
     """
     nsm = default_native_session_manager
-    dumbsession = type('DumbSession', (object,), {'session_id': '1234'})()
-    monkeypatch.setattr(nsm, '_create_session', lambda x: dumbsession)
-    monkeypatch.setattr(nsm, 'create_exposed_session', lambda session=None, context=None: dumbsession)
+    monkeypatch.setattr(nsm, '_create_session', lambda x: mock_session)
+    monkeypatch.setattr(nsm, 'create_exposed_session',
+                        lambda session=None, context=None: (session, context))
 
     with mock.patch.object(nsm.session_handler, 'on_start') as mock_os:
         mock_os.return_value = None
-        with mock.patch.object(nsm.session_event_handler, 'notify_start') as ns:
+        with mock.patch.object(nsm, 'notify_event') as ns:
             ns.return_value = None
             result = nsm.start('session_context')
 
-            mock_os.assert_called_once_with(dumbsession, 'session_context')
-            ns.assert_called_once_with(dumbsession)
-            assert result == dumbsession
+            session_tuple = collections.namedtuple('session_tuple',
+                                                   ['identifiers', 'session_id'])
+
+            mock_os.assert_called_once_with(mock_session, 'session_context')
+            ns.assert_called_once_with(session_tuple(None, 'sessionid123'), 'SESSION.START')
+            assert result == (mock_session, 'session_context')
 
 
 def test_nsm_stop(
@@ -586,28 +428,26 @@ def test_nsm_stop(
     nsm = default_native_session_manager
 
     session_tuple = collections.namedtuple(
-        'session_tuple', ['identifiers', 'session_key'])
+        'session_tuple', ['identifiers', 'session_id'])
     mysession = session_tuple('identifiers', 'sessionkey123')
     monkeypatch.setattr(mock_session, 'get_internal_attribute',
                         lambda x: 'identifiers')
 
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
 
-    with mock.patch.object(MockSession, 'stop') as stop:
-        stop.return_value = None
-        with mock.patch.object(nsm.session_handler, 'on_stop') as on_stop:
-            on_stop.return_value = None
-            with mock.patch.object(nsm.session_event_handler, 'notify_stop') as notify_stop:
-                notify_stop.return_value = None
-                with mock.patch.object(nsm.session_handler, 'after_stopped') as after_stopped:
-                    after_stopped.return_value = None
+    with mock.patch.object(nsm.session_handler, 'on_stop') as on_stop:
+        on_stop.return_value = None
+        with mock.patch.object(nsm, 'notify_event') as notify_stop:
+            notify_stop.return_value = None
+            with mock.patch.object(nsm.session_handler, 'after_stopped') as after_stopped:
+                after_stopped.return_value = None
 
-                    nsm.stop('sessionkey123', 'identifiers')
+                nsm.stop(DefaultSessionKey('sessionkey123'), 'identifiers')
 
-                    stop.assert_called_with()
-                    on_stop.assert_called_with(mock_session, 'sessionkey123')
-                    notify_stop.assert_called_with(mysession)
-                    after_stopped.assert_called_with(mock_session)
+                mock_session.stop.assert_called_with()
+                on_stop.assert_called_with(mock_session, DefaultSessionKey('sessionkey123'))
+                notify_stop.assert_called_with(mysession, 'SESSION.STOP')
+                after_stopped.assert_called_with(mock_session)
 
 
 def test_nsm_stop_raises(
@@ -621,38 +461,37 @@ def test_nsm_stop_raises(
     nsm = default_native_session_manager
 
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
-    with mock.patch.object(MockSession, 'stop') as stop:
-        stop.side_effect = InvalidSessionException
-        with mock.patch.object(nsm.session_handler,
-                               'after_stopped') as after_stopped:
-            with pytest.raises(InvalidSessionException):
-                nsm.stop('sessionkey123', 'identifiers')
-                after_stopped.assert_called_with(mock_session)
+    mock_session.stop.side_effect = InvalidSessionException
+    with mock.patch.object(nsm.session_handler, 'after_stopped') as after_stopped:
+        with pytest.raises(InvalidSessionException):
+            nsm.stop('sessionkey123', 'identifiers')
+            after_stopped.assert_called_with(mock_session)
 
 
+@mock.patch('yosai.core.session.session.SimpleSession')
 def test_nsm_create_session(
-        default_native_session_manager, monkeypatch, mock_session):
+        mock_ss, default_native_session_manager, monkeypatch, mock_session):
+    mock_ss.return_value = mock_session
     nsm = default_native_session_manager
-
-    monkeypatch.setattr(nsm.session_factory, 'create_session', lambda x: mock_session)
     monkeypatch.setattr(nsm.session_handler, 'create_session', lambda x: 'sessionid123')
 
-    result = nsm._create_session('sessioncontext')
+    result = nsm._create_session({'bla': 'bla'})
     assert result == mock_session
 
 
+@mock.patch('yosai.core.session.session.SimpleSession')
 def test_nsm_create_session_raises(
-        default_native_session_manager, monkeypatch, mock_session):
-    nsm = default_native_session_manager
+        mock_ss, default_native_session_manager, monkeypatch, mock_session):
 
-    monkeypatch.setattr(nsm.session_factory, 'create_session', lambda x: mock_session)
+    mock_ss.return_value = mock_session
+    nsm = default_native_session_manager
     monkeypatch.setattr(nsm.session_handler, 'create_session', lambda x: None)
 
     with pytest.raises(ValueError):
-        nsm._create_session('sessioncontext')
+        nsm._create_session({'bla': 'bla'})
 
 
-def test_nsm_create_exposed_session(default_native_session_manager):
+def test_nsm_create_exposed_session(default_native_session_manager, mock_session):
     """
     unit tested:  create_exposed_session
 
@@ -660,8 +499,7 @@ def test_nsm_create_exposed_session(default_native_session_manager):
     basic codepath exercise
     """
     nsm = default_native_session_manager
-    dumbsession = type('DumbSession', (object,), {'session_id': '1234'})()
-    result = nsm.create_exposed_session(dumbsession)
+    result = nsm.create_exposed_session(mock_session)
     assert isinstance(result, DelegatingSession)
 
 
@@ -781,22 +619,22 @@ def test_nsm_get_start_timestamp(
     basic code exercise, passes through and returns
     """
     nsm = default_native_session_manager
-    monkeypatch.setattr(mock_session, '_start_timestamp', 'starttime')
+    mock_session.start_timestamp = 'starttime'
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     results = nsm.get_start_timestamp('sessionkey')
     assert results == mock_session.start_timestamp
 
 
-def test_nsm_get_last_access_time(
+def test_nsm_getlast_access_time(
         default_native_session_manager, monkeypatch, mock_session):
     """
-    unit tested:  get_last_access_time
+    unit tested:  getlast_access_time
 
     test case:
     basic code exercise, passes through and returns
     """
     nsm = default_native_session_manager
-    monkeypatch.setattr(mock_session, '_last_access_time', 'lasttime')
+    mock_session.last_access_time = 'lasttime'
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     results = nsm.get_last_access_time('sessionkey')
     assert results == mock_session.last_access_time
@@ -811,7 +649,7 @@ def test_nsm_get_absolute_timeout(
     basic code exercise, passes through and returns
     """
     nsm = default_native_session_manager
-    monkeypatch.setattr(mock_session, '_absolute_timeout', 'abstimeout')
+    mock_session.absolute_timeout = 'abstimeout'
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     results = nsm.get_absolute_timeout(mock_session)
     assert results == 'abstimeout'
@@ -826,7 +664,7 @@ def test_nsm_get_idle_timeout(
     basic code exercise, passes through and returns
     """
     nsm = default_native_session_manager
-    monkeypatch.setattr(mock_session, '_idle_timeout', 'idletimeout')
+    mock_session.idle_timeout = 'idletimeout'
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     results = nsm.get_idle_timeout(mock_session)
     assert results == 'idletimeout'
@@ -880,10 +718,9 @@ def test_nsm_touch(default_native_session_manager, mock_session, monkeypatch):
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     with mock.patch.object(nsm.session_handler, 'on_change') as mocky:
         mocky.return_value = None
-        with mock.patch.object(MockSession, 'touch') as touchy:
-            nsm.touch('sessionkey123')
-            touchy.assert_called_once_with()
-            mocky.assert_called_once_with(mock_session)
+        nsm.touch('sessionkey123')
+        mock_session.touch.assert_called_once_with()
+        mocky.assert_called_once_with(mock_session)
 
 
 def test_nsm_get_host(default_native_session_manager, mock_session, monkeypatch):
@@ -894,6 +731,7 @@ def test_nsm_get_host(default_native_session_manager, mock_session, monkeypatch)
     basic code exercise, passes through and returns host
     """
     nsm = default_native_session_manager
+    mock_session.host = '127.0.0.1'
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     with mock.patch.object(nsm.session_handler, 'on_change') as mocky:
         mocky.return_value = None
@@ -910,8 +748,7 @@ def test_nsm_get_internal_attribute_keys_results(
     basic code exercise, passes through and returns a tuple contains 3 mock items
     """
     nsm = default_native_session_manager
-    monkeypatch.setattr(mock_session, '_internal_attribute_keys',
-                        ['one', 'two'], raising=False)
+    mock_session.internal_attribute_keys = ['one', 'two']
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     result = nsm.get_internal_attribute_keys('sessionkey123')
     assert result == tuple(['one', 'two'])
@@ -966,7 +803,7 @@ def test_nsm_set_internal_attribute(
                                        attribute_key='attr321', value=321)
 
             sia.assert_called_once_with('attr321', 321)
-            mocky.assert_called_once_with(mock_session, update_identifiers_map=True)
+            mocky.assert_called_once_with(mock_session)
 
 
 def test_nsm_remove_internal_attribute(
@@ -999,6 +836,7 @@ def test_nsm_remove_internal_attribute_nothing(
     removing an internal_attribute that doesn't exist returns None
     """
     nsm = default_native_session_manager
+    mock_session.remove_internal_attribute.return_value = None
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     with mock.patch.object(nsm.session_handler, 'on_change') as mocky:
         mocky.return_value = None
@@ -1018,8 +856,7 @@ def test_nsm_get_attribute_keys_results(
     basic code exercise, passes through and returns a tuple contains 3 mock items
     """
     nsm = default_native_session_manager
-    monkeypatch.setattr(mock_session, '_attribute_keys',
-                        ['one', 'two'], raising=False)
+    mock_session.attribute_keys = ['one', 'two']
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     result = nsm.get_attribute_keys('sessionkey123')
     assert result == tuple(['one', 'two'])
@@ -1122,6 +959,7 @@ def test_nsm_remove_attribute_nothing(
     removing an attribute that doesn't exist returns None
     """
     nsm = default_native_session_manager
+    mock_session.remove_attribute.return_value = None
     monkeypatch.setattr(nsm, '_lookup_required_session', lambda x: mock_session)
     with mock.patch.object(nsm.session_handler, 'on_change') as mocky:
         mocky.return_value = None

@@ -2,12 +2,14 @@ import pytest
 
 from yosai.core import (
     AccountStoreRealm,
+    CachingSessionStore,
     DefaultEventBus,
     DefaultPermission,
     IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
     LazySettings,
     NativeSecurityManager,
+    NativeSessionHandler,
     PasslibVerifier,
     SerializationManager,
     SimpleRoleVerifier,
@@ -199,3 +201,20 @@ def web_yosai(session_attributes):
 @pytest.fixture(scope='function')
 def mock_web_registry():
     return MockWebRegistry()
+
+
+@pytest.fixture(scope='function')
+def session_store(cache_handler):
+    css = CachingSessionStore()
+    css.cache_handler = cache_handler
+    return css
+
+
+@pytest.fixture(scope='function')
+def session_handler(session_store, event_bus):
+    handler = NativeSessionHandler()
+    handler.session_store = session_store
+    handler.event_bus = event_bus
+    return handler
+
+

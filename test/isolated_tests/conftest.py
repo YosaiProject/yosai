@@ -2,7 +2,6 @@ import pytest
 from unittest import mock
 
 from yosai.core import (
-    SessionEventHandler,
     SimpleIdentifierCollection,
 )
 
@@ -124,9 +123,10 @@ def web_simple_session(web_simple_session_state):
 
 
 @pytest.fixture(scope='function')
-def web_session_handler():
-    mock_session_event_handler = mock.create_autospec(SessionEventHandler)
-    return WebSessionHandler(mock_session_event_handler, True)
+def web_session_handler(event_bus):
+    sh = WebSessionHandler(True)
+    sh.event_bus = event_bus
+    return sh
 
 
 @pytest.fixture(scope='function')

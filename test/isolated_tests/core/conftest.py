@@ -9,7 +9,6 @@ from yosai.core import (
     ModularRealmAuthorizer,
     SimpleIdentifierCollection,
     SimpleSession,
-    UsernamePasswordToken,
 )
 
 from .doubles import (
@@ -67,7 +66,9 @@ def mock_subject():
 
 @pytest.fixture(scope='function')
 def mock_session():
-   return mock.create_autospec(SimpleSession)
+    ms = mock.create_autospec(SimpleSession)
+    ms.session_id = 'sessionid123'
+    return ms
 
 
 @pytest.fixture(scope='function')

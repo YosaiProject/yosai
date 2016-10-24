@@ -977,7 +977,7 @@ class NativeSessionManager(session_abcs.NativeSessionManager):
                                 host=session_context.get('host'))
         msg = "Creating session. "
         logger.debug(msg)
-
+        
         msg = ("Creating new EIS record for new session instance [{0}]".
                format(session))
         logger.debug(msg)

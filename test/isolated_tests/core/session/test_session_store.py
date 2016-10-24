@@ -217,14 +217,14 @@ def test_msd_delete_raises_ae(memory_session_store):
 # CachingSessionStore
 # -----------------------------------------------------------------------------
 
-def test_csd_create(caching_session_store):
+def test_csd_create(session_store):
     """
     unit tested:  create
 
     test case:
     calls two methods and returns sessionid
     """
-    csd = caching_session_store
+    csd = session_store
     with mock.patch.object(AbstractSessionStore, 'create') as mock_asdc:
         mock_asdc.return_value = 'sessionid123'
         with mock.patch.object(CachingSessionStore, '_cache') as csdc:
@@ -239,7 +239,7 @@ def test_csd_create(caching_session_store):
 
 
 def test_csd_read_session_exists(
-        caching_session_store, monkeypatch, mock_session):
+        session_store, monkeypatch, mock_session):
     """
     unit tested:  read
 
@@ -247,20 +247,20 @@ def test_csd_read_session_exists(
     _get_cached_session returns a session, which in turn is returned by
     read
     """
-    csd = caching_session_store
+    csd = session_store
     monkeypatch.setattr(csd, '_get_cached_session', lambda x: mock_session)
     result = csd.read('sessionid123')
     assert result == mock_session
 
 
-def test_csd_update_isvalid(caching_session_store, mock_session):
+def test_csd_update_isvalid(session_store, mock_session):
     """
     unit tested:  update
 
     test case:
     when a valid session is passed, cache is called
     """
-    csd = caching_session_store
+    csd = session_store
 
     with mock.patch.object(csd, '_cache') as mock_cache_handler:
         mock_cache_handler.return_value = None
@@ -278,7 +278,7 @@ def test_csd_update_isvalid(caching_session_store, mock_session):
 
 
 def test_csd_update_isnotvalid(
-        caching_session_store, mock_session, monkeypatch):
+        session_store, mock_session, monkeypatch):
     """
     unit tested:  update
 
@@ -286,7 +286,7 @@ def test_csd_update_isnotvalid(
     when a validating session is passed, and the session is invalid,
     uncache is called
     """
-    csd = caching_session_store
+    csd = session_store
     monkeypatch.setattr(mock_session, '_isvalid', False)
     with mock.patch.object(csd, '_uncache') as mock_uncache:
         mock_uncache.return_value = None
@@ -296,14 +296,14 @@ def test_csd_update_isnotvalid(
         mock_uncache.assert_called_once_with(mock_session)
 
 
-def test_csd_delete(caching_session_store):
+def test_csd_delete(session_store):
     """
     unit tested:  delete
 
     test case:
     basic code path exercise
     """
-    csd = caching_session_store
+    csd = session_store
     with mock.patch.object(csd, '_uncache') as mock_uncache:
         mock_uncache.return_value = None
         csd.delete('session')
@@ -311,7 +311,7 @@ def test_csd_delete(caching_session_store):
 
 
 def test_csd_getcachedsession_returns(
-        caching_session_store, mock_cache_handler, monkeypatch):
+        session_store, mock_cache_handler, monkeypatch):
     """
     unit tested:  _get_cached_session
 
@@ -319,7 +319,7 @@ def test_csd_getcachedsession_returns(
         when no cache param is passed, the cache is obtained by method call
         and then used to get the sessionid
     """
-    csd = caching_session_store
+    csd = session_store
     monkeypatch.setattr(mock_cache_handler, 'get',
                         lambda domain, identifier: 'session_123')
     monkeypatch.setattr(csd, 'cache_handler', mock_cache_handler)
@@ -328,23 +328,23 @@ def test_csd_getcachedsession_returns(
 
 
 def test_csd_getcachedsession_none_default(
-        caching_session_store, mock_cache_handler, monkeypatch):
+        session_store, mock_cache_handler, monkeypatch):
     """
     unit tested:  get_cached_session
 
     test case:
         when cache param is passed, it is used to get the sessionid
     """
-    csd = caching_session_store
+    csd = session_store
     result = csd._get_cached_session(sessionid='sessionid123')
     assert result is None
 
 
 def test_csd_cache_identifiers_to_key_map_w_idents(
-        caching_session_store, mock_cache_handler, mock_session, monkeypatch,
+        session_store, mock_cache_handler, mock_session, monkeypatch,
         simple_identifier_collection):
     sic = simple_identifier_collection
-    csd = caching_session_store
+    csd = session_store
     monkeypatch.setattr(csd, 'cache_handler', mock_cache_handler)
     monkeypatch.setattr(mock_session, 'get_internal_attribute', lambda x: sic)
 
@@ -359,10 +359,10 @@ def test_csd_cache_identifiers_to_key_map_w_idents(
 
 
 def test_csd_cache_identifiers_to_key_map_wo_idents(
-        caching_session_store, mock_cache_handler, mock_session, monkeypatch,
+        session_store, mock_cache_handler, mock_session, monkeypatch,
         capsys):
 
-    csd = caching_session_store
+    csd = session_store
     monkeypatch.setattr(csd, 'cache_handler', mock_cache_handler)
     with mock.patch.object(mock_cache_handler, 'set') as mock_set:
         mock_set.return_value = None
@@ -371,14 +371,14 @@ def test_csd_cache_identifiers_to_key_map_wo_idents(
 
 
 def test_csd_cache_with_cachehandler(
-        caching_session_store, mock_cache_handler, monkeypatch, mock_session):
+        session_store, mock_cache_handler, monkeypatch, mock_session):
     """
     unit tested:  cache
 
     test case:
     uses cache_handler to set session entry
     """
-    csd = caching_session_store
+    csd = session_store
     monkeypatch.setattr(csd, 'cache_handler', mock_cache_handler)
 
     with mock.patch.object(mock_cache_handler, 'set') as ch_set:
@@ -390,20 +390,20 @@ def test_csd_cache_with_cachehandler(
 
 
 def test_csd_cache_without_cache_handler(
-        caching_session_store, mock_cache_handler, monkeypatch, mock_session):
+        session_store, mock_cache_handler, monkeypatch, mock_session):
     """
     unit tested:  cache
 
     test case:
     gets active session cache and puts session away
     """
-    csd = caching_session_store
+    csd = session_store
     with pytest.raises(ValueError):
         csd._cache(mock_session, 'sessionid123')
 
 
 def test_csd_uncache(
-        caching_session_store, mock_cache_handler, mock_session, monkeypatch,
+        session_store, mock_cache_handler, mock_session, monkeypatch,
         simple_identifier_collection):
     """
     unit tested:  uncache
@@ -411,7 +411,7 @@ def test_csd_uncache(
     test case:
     session is removed by sessionid
     """
-    csd = caching_session_store
+    csd = session_store
     sic = simple_identifier_collection
     monkeypatch.setattr(csd, 'cache_handler', mock_cache_handler)
     monkeypatch.setattr(mock_session, 'get_internal_attribute', lambda x: sic)
@@ -423,14 +423,14 @@ def test_csd_uncache(
         mock_remove.assert_has_calls(calls)
 
 
-def test_csd_uncache_raises(caching_session_store):
+def test_csd_uncache_raises(session_store):
     """
     unit tested:  uncache
 
     test case:
     cannot obtain cache, resulting in returned execution
     """
-    csd = caching_session_store
+    csd = session_store
 
     with pytest.raises(ValueError):
         csd._uncache('session')
