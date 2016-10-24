@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 DefaultSessionKey = collections.namedtuple('DefaultSessionKey', 'session_id')
 
 session_tuple = collections.namedtuple(
-    'session_tuple', ['identifiers', 'session_key'])
+    'session_tuple', ['identifiers', 'session_id'])
 
 
 class AbstractSessionStore(session_abcs.SessionStore):
@@ -221,7 +221,6 @@ class CachingSessionStore(AbstractSessionStore):
         """
         sessionid = super().create(session)  # calls _do_create and verify
         self._cache(session, sessionid)
-        self._cache_identifiers_to_key_map(session, sessionid)
         return sessionid
 
     def read(self, sessionid):
@@ -233,7 +232,7 @@ class CachingSessionStore(AbstractSessionStore):
 
         return session
 
-    def update(self, session, update_identifiers_map):
+    def update(self, session):
 
         # for write-through caching:
         # self._do_update(session)
@@ -241,8 +240,6 @@ class CachingSessionStore(AbstractSessionStore):
         if (session.is_valid):
             self._cache(session, session.session_id)
 
-            if update_identifiers_map:
-                self._cache_identifiers_to_key_map(session, session.session_id)
         else:
             self._uncache(session)
 
@@ -264,59 +261,15 @@ class CachingSessionStore(AbstractSessionStore):
 
         return None
 
-    def _cache_identifiers_to_key_map(self, session, session_id):
-        """
-        When a session is associated with a user, it will have an identifiers
-        attribute.  This method creates a cache entry within a user's cache space
-        that is used to identify the active session associated with the user.
-
-        using the primary identifier within the key is new to yosai
-        """
-        isk = 'identifiers_session_key'
-        identifiers = session.get_internal_attribute(isk)
-
-        try:
-            self.cache_handler.set(domain='session',
-                                   identifier=identifiers.primary_identifier,
-                                   value=session_id)
-        except AttributeError:
-            msg = "Could not cache identifiers_session_key."
-            if not identifiers:
-                msg += '  \'identifiers\' internal attribute not set.'
-            logger.debug(msg)
-
     def _cache(self, session, session_id):
-
-        try:
-            self.cache_handler.set(domain='session',
-                                   identifier=session_id,
-                                   value=session)
-        except AttributeError:
-            msg = "Cannot cache without a cache_handler."
-            raise AttributeError(msg)
+        self.cache_handler.set(domain='session',
+                               identifier=session_id,
+                               value=session)
 
     def _uncache(self, session):
-
-        try:
-            sessionid = session.session_id
-
-            # delete the serialized session object:
-            self.cache_handler.delete(domain='session',
-                                      identifier=sessionid)
-
-            try:
-                identifiers = session.get_internal_attribute('identifiers_session_key')
-                primary_id = identifiers.primary_identifier
-                # delete the mapping between a user and session id:
-                self.cache_handler.delete(domain='session',
-                                          identifier=primary_id)
-            except AttributeError:
-                msg = '_uncache: Could not obtain identifiers from session'
-                logger.warn(msg)
-
-        except AttributeError:
-            msg = "Cannot uncache without a cache_handler."
-            raise AttributeError(msg)
+        sessionid = session.session_id
+        self.cache_handler.delete(domain='session',
+                                  identifier=sessionid)
 
     # intended for write-through caching:
     def _do_read(self, session_id):
@@ -337,8 +290,8 @@ class SimpleSession(session_abcs.ValidatingSession,
     def __init__(self, absolute_timeout, idle_timeout, host=None):
         self.attributes = {}
         self.internal_attributes = {'run_as_identifiers_session_key': None,
-                                     'authenticated_session_key': None,
-                                     'identifiers_session_key': None}
+                                    'authenticated_session_key': None,
+                                    'identifiers_session_key': None}
         self.is_expired = None
         self.session_id = None
 
@@ -545,7 +498,8 @@ class SimpleSession(session_abcs.ValidatingSession,
                     self.idle_timeout == other.idle_timeout and
                     self.absolute_timeout == other.absolute_timeout and
                     self.start_timestamp == other.start_timestamp and
-                    self.attributes == other.attributes)
+                    self.attributes == other.attributes and
+                    self.internal_attributes == other.internal_attributes)
         return False
 
     def __repr__(self):
@@ -730,14 +684,14 @@ class DelegatingSession(session_abcs.Session):
                                              self.session_id)
 
 
-# 5 monopoly dollars to the person who helps me rename this:
-class DefaultNativeSessionHandler(session_abcs.SessionHandler):
+class NativeSessionHandler(session_abcs.SessionHandler):
 
     def __init__(self,
                  session_store=CachingSessionStore(),
                  delete_invalid_sessions=True):
         self.delete_invalid_sessions = delete_invalid_sessions
         self.session_store = session_store
+        self.event_bus = None
 
     # -------------------------------------------------------------------------
     # Session Creation Methods
@@ -871,7 +825,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
 
                 identifiers = session.get_internal_attribute('identifiers_session_key')
 
-                mysession = session_tuple(identifiers, session_key)
+                mysession = session_tuple(identifiers, session_key.session_id)
 
                 self.notify_event(mysession, 'SESSION.EXPIRE')
             except:
@@ -903,7 +857,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
             self.on_stop(session, session_key)
             identifiers = session.get_internal_attribute('identifiers_session_key')
 
-            mysession = session_tuple(identifiers, session_key)
+            mysession = session_tuple(identifiers, session_key.session_id)
 
             self.notify_event(mysession, 'SESSION.STOP')
         except:
@@ -912,8 +866,8 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
         finally:
             self.after_stopped(session)
 
-    def on_change(self, session, update_identifiers_map=False):
-        self.session_store.update(session, update_identifiers_map)
+    def on_change(self, session):
+        self.session_store.update(session)
 
     def notify_event(self, session_info, topic):
         """
@@ -926,9 +880,9 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
             raise AttributeError(msg)
 
 
-class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
+class NativeSessionManager(session_abcs.NativeSessionManager):
     """
-    Yosai's DefaultNativeSessionManager represents a massive refactoring of Shiro's
+    Yosai's NativeSessionManager represents a massive refactoring of Shiro's
     SessionManager object model.  The refactoring is an ongoing effort to
     replace a confusing inheritance-based mixin object graph with a compositional
     design.  This compositional design continues to evolve.  Event handling can be
@@ -947,7 +901,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
     something else must call the touch() method to ensure the session
     validation logic functions correctly.
     """
-    def __init__(self, settings, session_handler=DefaultNativeSessionHandler()):
+    def __init__(self, settings, session_handler=NativeSessionHandler()):
 
         # timeouts are use during session construction:
         session_settings = DefaultSessionSettings(settings)
@@ -993,6 +947,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
             logger.debug(msg)
 
             session.stop()
+
             self.session_handler.on_stop(session, session_key)
 
             idents = session.get_internal_attribute('identifiers_session_key')
@@ -1000,7 +955,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
             if not idents:
                 idents = identifiers
 
-            mysession = session_tuple(idents, session_key)
+            mysession = session_tuple(idents, session_key.session_id)
 
             self.notify_event(mysession, 'SESSION.STOP')
 
@@ -1136,18 +1091,14 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
     def set_internal_attribute(self, session_key, attribute_key, value=None):
         session = self._lookup_required_session(session_key)
         session.set_internal_attribute(attribute_key, value)
-
-        # if it's an internal attribute that is set, map the cached session
-        # to the user id
-        self.session_handler.on_change(session, update_identifiers_map=True)
+        self.session_handler.on_change(session)
 
     def set_internal_attributes(self, session_key, key_values):
         session = self._lookup_required_session(session_key)
         session.set_internal_attributes(key_values)
-        self.session_handler.on_change(session, update_identifiers_map=True)
+        self.session_handler.on_change(session)
 
     def remove_internal_attribute(self, session_key, attribute_key):
-        # unless orphaned session/useridentifier map cache entries become an issue.. TBD
         session = self._lookup_required_session(session_key)
         removed = session.remove_internal_attribute(attribute_key)
 

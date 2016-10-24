@@ -11,7 +11,7 @@ from yosai.core import (
     CachingSessionStore,
     DelegatingSession,
     ExpiredSessionException,
-    DefaultNativeSessionHandler,
+    NativeSessionHandler,
     StoppedSessionException,
     InvalidSessionException,
 )
@@ -87,7 +87,7 @@ def test_seh_notify_expiration_raises(session_event_handler, mock_session, monke
 
 
 # ----------------------------------------------------------------------------
-# DefaultNativeSessionHandler
+# NativeSessionHandler
 # ----------------------------------------------------------------------------
 
 def test_sh_set_sessionstore(session_handler, mock_cache_handler, monkeypatch):
@@ -99,7 +99,7 @@ def test_sh_set_sessionstore(session_handler, mock_cache_handler, monkeypatch):
     """
     sh = session_handler
     monkeypatch.setattr(session_handler, 'cache_handler', mock_cache_handler)
-    with mock.patch.object(DefaultNativeSessionHandler,
+    with mock.patch.object(NativeSessionHandler,
                            'apply_cache_handler_to_session_store') as achss:
         achss.return_value = None
 
@@ -117,7 +117,7 @@ def test_sh_set_cache_handler(session_handler):
     """
     sh = session_handler
 
-    with mock.patch.object(DefaultNativeSessionHandler,
+    with mock.patch.object(NativeSessionHandler,
                            'apply_cache_handler_to_session_store') as achss:
         achss.return_value = None
 
@@ -266,7 +266,7 @@ def test_sh_dogetsession_notouch(session_handler, monkeypatch, session_key):
 
     monkeypatch.setattr(sh, '_retrieve_session', lambda x: 'session')
 
-    with mock.patch.object(DefaultNativeSessionHandler, 'validate') as sh_validate:
+    with mock.patch.object(NativeSessionHandler, 'validate') as sh_validate:
         sh_validate.return_value = None
 
         result = sh.do_get_session(session_key)
@@ -302,7 +302,7 @@ def test_sh_validate_expired(session_handler, mock_session, monkeypatch,
 
     with mock.patch.object(mock_session, 'validate') as ms_dv:
         ms_dv.side_effect = ExpiredSessionException
-        with mock.patch.object(DefaultNativeSessionHandler, 'on_expiration') as sh_oe:
+        with mock.patch.object(NativeSessionHandler, 'on_expiration') as sh_oe:
             sh_oe.return_value = None
             with pytest.raises(ExpiredSessionException):
 
@@ -325,7 +325,7 @@ def test_sh_validate_invalid(session_handler, mock_session, monkeypatch,
 
     with mock.patch.object(mock_session, 'validate') as ms_dv:
         ms_dv.side_effect = StoppedSessionException
-        with mock.patch.object(DefaultNativeSessionHandler, 'on_invalidation') as sh_oe:
+        with mock.patch.object(NativeSessionHandler, 'on_invalidation') as sh_oe:
             sh_oe.return_value = None
             with pytest.raises(InvalidSessionException):
 
@@ -524,7 +524,7 @@ def test_sh_on_change(session_handler, monkeypatch, caching_session_store):
 
 
 # ------------------------------------------------------------------------------
-# DefaultNativeSessionManager
+# NativeSessionManager
 # ------------------------------------------------------------------------------
 
 def test_nsm_sessioneventhandler_setter(

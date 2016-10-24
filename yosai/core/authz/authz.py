@@ -643,8 +643,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         :type items: namedtuple
         """
         try:
-            identifiers = items.identifiers
-            identifier = identifiers.primary_identifier
+            identifier = items.identifier
             for realm in self.realms:
                 realm.clear_cached_authorization_info(identifier)
         except AttributeError:

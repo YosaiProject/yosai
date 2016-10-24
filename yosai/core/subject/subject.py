@@ -159,7 +159,7 @@ class DelegatingSubject(subject_abcs.Subject):
     """
     A ``DelegatingSubject`` delegates method calls to an underlying ``SecurityManager``
     instance for security checks.  It is essentially a ``SecurityManager`` proxy,
-    just as ``DelegatingSession`` is to ``DefaultNativeSessionManager``.
+    just as ``DelegatingSession`` is to ``NativeSessionManager``.
 
     This implementation does not maintain security-related state such as roles and
     permissions. Instead, it asks the underlying SecurityManager to check
@@ -685,7 +685,7 @@ class DefaultSubjectStore:
                   not created).
         """
         if (self.is_session_storage_enabled(subject)):
-            self.save_to_session(subject)
+            self.merge_identity(subject)
         else:
             msg = ("Session storage of subject state for Subject [{0}] has "
                    "been disabled: identity and authentication state are "
@@ -694,25 +694,6 @@ class DefaultSubjectStore:
             logger.debug(msg)
 
         return subject
-
-    def save_to_session(self, subject):
-
-        """
-        Saves the subject's state (it's identifying attributes (identifier) and
-        authentication state) to its session.  The session can be retrieved at
-        a later time (typically from a ``SessionManager``) and used to re-create
-        the Subject instance.
-
-        :param subject: the subject for which state will be persisted to a
-                        session
-        :type subject:  subject_abcs.Subject
-        """
-        # performs merge logic, only updating the Subject's session if it
-        # does not match the current state.  This process can be refactored
-        # and made more efficient by consolidating both requests and updates (TBD)
-
-        # unlike shiro, yosai merges identifiers and authentication state at once
-        self.merge_identity(subject)
 
     # yosai consolidates merge_principals and merge_authentication_state
     def merge_identity(self, subject):
@@ -791,7 +772,7 @@ class DefaultSubjectStore:
             if to_remove:
                 session.remove_internal_attributes(to_remove)
 
-    def remove_from_session(self, subject):
+    def delete(self, subject):
         """
         :type subject:  subject_abcs.Subject
         """
@@ -799,9 +780,6 @@ class DefaultSubjectStore:
         if (session):
             session.remove_internal_attribute(self.dsc_ask)
             session.remove_internal_attribute(self.dsc_isk)
-
-    def delete(self, subject):
-        self.remove_from_session(subject)
 
 
 # moved from its own yosai module so as to avoid circular importing:

@@ -16,26 +16,10 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
-"""
-I'm unsure as to how long I will use pypubsub for inter-application event
-messaging.  So, I'm creating a proxy, EventBus, between pypubsub and
-my application, allowing me to swap out the event bus implementation later
-without impacting my core application modules.  The core application modules
-know WHAT needs to be communicated with the bus but now HOW (EventBus
-knows HOW).
-"""
+import functools
 import logging
 
 from pubsub import pub
-
-from pubsub.core import (
-    ListenerMismatchError,
-    SenderMissingReqdMsgDataError,
-    SenderUnknownMsgDataError,
-    TopicDefnError,
-    TopicNameError,
-)
 
 from yosai.core import (
     event_abcs,
@@ -87,6 +71,7 @@ class DefaultEventBus(event_abcs.EventBus):
                                                   is already subscribed
 
         """
+        #new_callable = functools.partial(_callable, topic=self.event_bus.AUTO_TOPIC_OBJ)
         return self.event_bus.subscribe(_callable, topic_name)
 
     def unregister(self, listener, topic_name):
@@ -102,7 +87,8 @@ class DefaultEventBus(event_abcs.EventBus):
         """
         return self.event_bus.unsubAll()
 
-# TODO:  this can be refactored / simplified
+
+# TODO:  this can be refactored / simplified once the pypubsub author fixes a bug
 class EventLogger:
     def __init__(self, event_bus):
         self.event_bus = event_bus
@@ -137,35 +123,29 @@ class EventLogger:
     def log_session_start(self, items=None):
         topic = 'SESSION.START'
         try:
-            # a session of a user who hasn't authenticated won't have idents
-            idents = items.identifiers.__getstate__()
+            identifier = items.identifiers.primary_identifier
         except AttributeError:
-            idents = None
-        session_id = items.session_key.session_id
-        logger.info(topic, extra={'identifiers': idents,
-                                  'session_id': session_id})
+            identifier = None
+        logger.info(topic, extra={'identifier': identifier,
+                                  'session_id': items.session_id})
 
     def log_session_stop(self, items=None):
         topic = 'SESSION.STOP'
         try:
-            # a session of a user who hasn't authenticated won't have idents
-            idents = items.identifiers.__getstate__()
+            identifier = items.identifiers.primary_identifier
         except AttributeError:
-            idents = None
-        session_id = items.session_key.session_id
-        logger.info(topic, extra={'identifiers': idents,
-                                  'session_id': session_id})
+            identifier = None
+        logger.info(topic, extra={'identifier': identifier,
+                                  'session_id': items.session_id})
 
     def log_session_expire(self, items=None):
         topic = 'SESSION.EXPIRE'
         try:
-            # a session of a user who hasn't authenticated won't have idents
-            idents = items.identifiers.__getstate__()
+            identifier = items.identifiers.primary_identifier
         except AttributeError:
-            idents = None
-        session_id = items.session_key.session_id
-        logger.info(topic, extra={'identifiers': idents,
-                                  'session_id': session_id})
+            identifier = None
+        logger.info(topic, extra={'identifier': identifier,
+                                  'session_id': items.session_id})
 
     def log_authz_granted(self, identifiers=None, items=None, logical_operator=None):
         topic = 'AUTHORIZATION.GRANTED'

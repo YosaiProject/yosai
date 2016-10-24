@@ -2,8 +2,8 @@ import pytest
 
 from yosai.core import (
     CachingSessionStore,
-    DefaultNativeSessionHandler,
-    DefaultNativeSessionManager,
+    NativeSessionHandler,
+    NativeSessionManager,
     DefaultSessionKey,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
@@ -14,7 +14,7 @@ from yosai.core import (
 )
 
 from .doubles import (
-    MockDefaultNativeSessionManager,
+    MockNativeSessionManager,
     MockAbstractSessionStore,
     MockSessionManager,
 )
@@ -44,7 +44,7 @@ def patched_delegating_session():
 
 @pytest.fixture(scope='function')
 def default_native_session_manager(core_settings, event_bus):
-    nsm = DefaultNativeSessionManager(core_settings)
+    nsm = NativeSessionManager(core_settings)
     nsm.event_bus = event_bus
     return nsm
 
@@ -84,7 +84,7 @@ def session_event_handler(event_bus):
 
 @pytest.fixture(scope='function')
 def session_handler(session_event_handler):
-    return DefaultNativeSessionHandler(session_event_handler=session_event_handler)
+    return NativeSessionHandler(session_event_handler=session_event_handler)
 
 
 @pytest.fixture(scope='function')

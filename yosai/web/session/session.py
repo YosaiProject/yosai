@@ -24,12 +24,10 @@ import copy
 
 from yosai.core import (
     CachingSessionStore,
-    DefaultNativeSessionHandler,
-    DefaultNativeSessionManager,
-    DefaultSessionKey,
+    NativeSessionHandler,
+    NativeSessionManager,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
-    SessionEventHandler,
     SimpleSession,
     session_abcs,
 )
@@ -85,7 +83,7 @@ class WebSimpleSession(SimpleSession):
         flash_messages.update(state['internal_attributes']['flash_messages'])
         self.internal_attributes['flash_messages'] = flash_messages
 
-class WebSessionHandler(DefaultNativeSessionHandler):
+class WebSessionHandler(NativeSessionHandler):
 
     def __init__(self, delete_invalid_sessions=True):
         super().__init__(session_store=WebCachingSessionStore(),
@@ -155,7 +153,7 @@ class WebSessionHandler(DefaultNativeSessionHandler):
         del web_registry.session_id
 
 
-class DefaultWebSessionManager(DefaultNativeSessionManager):
+class DefaultWebSessionManager(NativeSessionManager):
     """
     Web-application capable SessionManager implementation
     """

@@ -21,7 +21,7 @@ from yosai.core import (
 )
 
 from ..session.doubles import (
-    MockDefaultNativeSessionManager,
+    MockNativeSessionManager,
 )
 
 from .doubles import (
@@ -408,7 +408,7 @@ def test_nsm_start(
     nsm = native_security_manager
     mnsm = mock_default_session_manager
     monkeypatch.setattr(nsm, 'session_manager', mnsm)
-    with mock.patch.object(MockDefaultNativeSessionManager, 'start') as mnsm_start:
+    with mock.patch.object(MockNativeSessionManager, 'start') as mnsm_start:
         mnsm_start.return_value = None
         nsm.start('session_context')
         mnsm_start.assert_called_once_with('session_context')
@@ -424,7 +424,7 @@ def test_nsm_get_session(
     nsm = native_security_manager
     mnsm = mock_default_session_manager
     monkeypatch.setattr(nsm, 'session_manager', mnsm)
-    with mock.patch.object(MockDefaultNativeSessionManager, 'get_session') as mnsm_gs:
+    with mock.patch.object(MockNativeSessionManager, 'get_session') as mnsm_gs:
         mnsm_gs.return_value = None
         nsm.get_session('sessionkey123')
         mnsm_gs.assert_called_once_with('sessionkey123')

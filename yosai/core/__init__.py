@@ -118,14 +118,13 @@ from yosai.core.subject.identifier import (
 
 from yosai.core.session.session import (
     AbstractSessionStore,
-    SessionEventHandler,
     CachingSessionStore,
     DefaultSessionKey,
-    DefaultNativeSessionManager,
+    NativeSessionManager,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
     MemorySessionStore,
-    DefaultNativeSessionHandler,
+    NativeSessionHandler,
     SimpleSession,
 )
 

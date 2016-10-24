@@ -29,7 +29,7 @@ from yosai.core import(
     DefaultEventBus,
     DelegatingSubject,
     EventLogger,
-    DefaultNativeSessionManager,
+    NativeSessionManager,
     DefaultSessionKey,
     DefaultSubjectContext,
     DefaultSubjectStore,
@@ -364,7 +364,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         self.remember_me_manager = remember_me_manager
 
         if not session_manager:
-            session_manager = DefaultNativeSessionManager(settings)
+            session_manager = NativeSessionManager(settings)
         self.session_manager = session_manager
 
         self.authorizer = authorizer
@@ -904,16 +904,12 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         identifiers = copy.copy(subject.identifiers)   # copy is new to yosai
         if (identifiers):
-
             msg = ("Logging out subject with primary identifier {0}".format(
                    identifiers.primary_identifier))
             logger.debug(msg)
 
-            # yosai excludes call to authenticator's on_logout as shiro's observer
-            # pattern has been replaced by the event bus interaction and
-            # logout results in session expire event transmission, which is tracked
-            # by the authenticator
         try:
+            # this removes two internal attributes from the session:
             self.delete(subject)
         except Exception:
             msg = "Unable to cleanly unbind Subject.  Ignoring (logging out)."
@@ -921,7 +917,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         finally:
             try:
-                # passing identifiers is new to yosai:
                 self.stop_session(subject, identifiers)
             except Exception:
                 msg2 = ("Unable to cleanly stop Session for Subject. "

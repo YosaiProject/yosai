@@ -2,7 +2,7 @@ from unittest import mock
 import pytest
 
 from yosai.core import (
-    DefaultNativeSessionHandler,
+    NativeSessionHandler,
     SessionCreationException,
 )
 
@@ -84,7 +84,7 @@ def test_web_session_handler_on_recreate_session(
     assert web_session_key.web_registry.current_session_id == 'newsessionid345'
 
 
-@mock.patch.object(DefaultNativeSessionHandler, 'on_stop')
+@mock.patch.object(NativeSessionHandler, 'on_stop')
 def test_web_session_handler_on_stop(
         mock_nsh_os, mock_web_simple_session, web_session_key, web_session_handler):
     web_session_handler.on_stop(mock_web_simple_session, web_session_key)
@@ -93,7 +93,7 @@ def test_web_session_handler_on_stop(
             web_session_key.web_registry.session_id_history == [('DELETE', None)])
 
 
-@mock.patch.object(DefaultNativeSessionHandler, 'on_expiration')
+@mock.patch.object(NativeSessionHandler, 'on_expiration')
 @mock.patch.object(WebSessionHandler, 'on_invalidation')
 def test_web_session_handler_on_expiration(wsh_oi, dsh_oe, web_session_handler):
     web_session_handler.on_expiration('session', 'ese', 'web_session_key')
@@ -101,7 +101,7 @@ def test_web_session_handler_on_expiration(wsh_oi, dsh_oe, web_session_handler):
     wsh_oi.assert_called_once_with('web_session_key')
 
 
-@mock.patch.object(DefaultNativeSessionHandler, 'on_invalidation')
+@mock.patch.object(NativeSessionHandler, 'on_invalidation')
 def test_web_session_handler_on_invalidation(
         mock_nsh_oi, web_session_key, web_session_handler):
     web_session_handler.on_invalidation(web_session_key, 'session', 'ise')
@@ -112,7 +112,7 @@ def test_web_session_handler_on_invalidation(
             web_session_key.web_registry.session_id_history == [('DELETE', None)])
 
 
-@mock.patch.object(DefaultNativeSessionHandler, 'on_invalidation')
+@mock.patch.object(NativeSessionHandler, 'on_invalidation')
 def test_web_session_handler_on_invalidation_wo_session(
         mock_nsh_oi, web_session_key, web_session_handler):
     web_session_handler.on_invalidation(web_session_key, None, 'ise')
@@ -220,7 +220,7 @@ def test_web_session_mgr_create_session(
     mock_wsf_cs.assert_called_once_with('csrftoken', 'session_context')
 
 
-@mock.patch.object(DefaultNativeSessionHandler, 'create_session', return_value=None)
+@mock.patch.object(NativeSessionHandler, 'create_session', return_value=None)
 @mock.patch.object(WebSessionFactory, 'create_session', return_value='session')
 def test_web_session_mgr_create_session_raises(
         mock_wsf_cs, mock_sh_cs, web_session_manager, monkeypatch):

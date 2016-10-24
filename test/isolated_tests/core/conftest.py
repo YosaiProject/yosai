@@ -20,7 +20,7 @@ from .doubles import (
 )
 
 from .session.doubles import (
-    MockDefaultNativeSessionManager,
+    MockNativeSessionManager,
 )
 
 from .authz.doubles import (
@@ -52,7 +52,7 @@ def default_authenticator(core_settings):
 
 @pytest.fixture(scope='function')
 def mock_default_session_manager(core_settings):
-    return MockDefaultNativeSessionManager(core_settings)
+    return MockNativeSessionManager(core_settings)
 
 
 @pytest.fixture(scope='function')

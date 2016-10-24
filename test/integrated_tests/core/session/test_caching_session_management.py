@@ -56,38 +56,6 @@ def test_delete_cached_session(session_store, session, cache_handler):
     assert cached_session is None
     assert cached_session_token is None
 
-# can't test notify_start without conflicting with other listeners
-
-def test_seh_notify_stop(session_event_handler, session_key, thedude_identifier, event_bus):
-    seh = session_event_handler
-    event_detected = None
-
-    def event_listener(items=None):
-        nonlocal event_detected
-        event_detected = items
-
-    event_bus.register(event_listener, 'SESSION.STOP')
-
-    mysession = session_tuple(thedude_identifier, session_key)
-    seh.notify_stop(mysession)
-    assert event_detected.session_key == mysession.session_key
-
-
-def test_seh_notify_expiration(session_event_handler, session_key,
-                               thedude_identifier, event_bus):
-
-    seh = session_event_handler
-    event_detected = None
-
-    def event_listener(items=None):
-        nonlocal event_detected
-        event_detected = items
-    event_bus.register(event_listener, 'SESSION.EXPIRE')
-
-    mysession = session_tuple(thedude_identifier, session_key)
-    seh.notify_expiration(mysession)
-    assert event_detected.session_key == mysession.session_key
-
 
 def test_session_handler_create_dgs(session_handler, cache_handler, session):
     """
@@ -231,9 +199,9 @@ def test_session_manager_start(
 
     event_detected = None
 
-    def event_listener(session_id=None):
+    def event_listener(items=None):
         nonlocal event_detected
-        event_detected = session_id
+        event_detected = items 
 
     event_bus.register(event_listener, 'SESSION.START')
 

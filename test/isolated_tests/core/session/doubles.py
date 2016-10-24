@@ -1,6 +1,6 @@
 import datetime
 from yosai.core import (
-    DefaultNativeSessionManager,
+    NativeSessionManager,
     AbstractSessionStore,
     session_abcs,
 )
@@ -61,7 +61,7 @@ class MockSessionManager:
         pass
 
 
-class MockDefaultNativeSessionManager(DefaultNativeSessionManager):
+class MockNativeSessionManager(NativeSessionManager):
 
     def __init__(self, settings):
         super().__init__(settings)

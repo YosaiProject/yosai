@@ -82,7 +82,7 @@ class WebDelegatingSubject(DelegatingSubject):
     """
     A ``WebDelegatingSubject`` delegates method calls to an underlying ``WebSecurityManager``
     instance for security checks.  It is essentially a ``WebSecurityManager`` proxy,
-    just as ``DelegatingSession`` is to ``DefaultNativeSessionManager``.
+    just as ``DelegatingSession`` is to ``NativeSessionManager``.
 
     This implementation does not maintain security-related state such as roles and
     permissions. Instead, it asks the underlying ``WebSecurityManager`` to check
