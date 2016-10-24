@@ -102,7 +102,7 @@ class DefaultEventBus(event_abcs.EventBus):
         """
         return self.event_bus.unsubAll()
 
-
+# TODO:  this can be refactored / simplified
 class EventLogger:
     def __init__(self, event_bus):
         self.event_bus = event_bus
@@ -134,9 +134,16 @@ class EventLogger:
         topic = 'AUTHENTICATION.FAILED'
         logger.info(topic, extra={'identifier': identifier})
 
-    def log_session_start(self, session_id=None):
+    def log_session_start(self, items=None):
         topic = 'SESSION.START'
-        logger.info(topic, extra={'session_id': session_id})
+        try:
+            # a session of a user who hasn't authenticated won't have idents
+            idents = items.identifiers.__getstate__()
+        except AttributeError:
+            idents = None
+        session_id = items.session_key.session_id
+        logger.info(topic, extra={'identifiers': idents,
+                                  'session_id': session_id})
 
     def log_session_stop(self, items=None):
         topic = 'SESSION.STOP'

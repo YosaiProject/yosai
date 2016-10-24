@@ -21,7 +21,7 @@ from yosai.core import (
 # ----------------------------------------------------------------------------
 
 
-def test_seh_notify_start_publishes(session_event_handler, mock_session):
+def test_seh_notify_start_publishes(mock_session):
     """
     unit tested:  notify_start
 
