@@ -72,11 +72,7 @@ class AbstractSessionStore(session_abcs.SessionStore):
         :param session: the new session instance for which an ID will be
                         generated and then assigned
         """
-        try:
-            return sha256(sha512(urandom(20)).digest()).hexdigest()
-        except AttributeError:
-            msg = "session_id_generator attribute has not been configured"
-            raise AttributeError(msg)
+        return sha256(sha512(urandom(20)).digest()).hexdigest()
 
     def create(self, session):
         session_id = self._do_create(session)
@@ -977,7 +973,7 @@ class NativeSessionManager(session_abcs.NativeSessionManager):
                                 host=session_context.get('host'))
         msg = "Creating session. "
         logger.debug(msg)
-        
+
         msg = ("Creating new EIS record for new session instance [{0}]".
                format(session))
         logger.debug(msg)
