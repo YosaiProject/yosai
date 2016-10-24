@@ -1,6 +1,5 @@
 import pytest
 import time
-import pytz
 from unittest import mock
 import datetime
 
@@ -8,22 +7,12 @@ from .doubles import (
     MockSessionManager,
 )
 
-from ..doubles import (
-    MockSession,
-)
-
 from yosai.core import (
     DefaultSessionSettings,
     DefaultSessionKey,
-    DelegatingSession,
     ExpiredSessionException,
     StoppedSessionException,
-    IllegalStateException,
-    InvalidSessionException,
     SimpleSession,
-    RandomSessionIDGenerator,
-    UUIDSessionIDGenerator,
-    SimpleSessionFactory,
 )
 
 # ----------------------------------------------------------------------------
@@ -48,110 +37,6 @@ def test_create_session_settings(core_settings):
 def test_default_session_settings(attr, core_settings):
     dss = DefaultSessionSettings(core_settings)
     assert getattr(dss, attr) is not None
-
-
-# ----------------------------------------------------------------------------
-# ProxiedSession
-# ----------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    'field', ['session_id', 'start_timestamp', 'last_access_time',
-              'idle_timeout', 'absolute_timeout', 'host', 'attribute_keys'])
-def test_ps_getter_confirm(mock_session, default_proxied_session, field):
-    """
-    unit tested:  ProxiedSession:  every accessor (property)
-
-    test case:
-    confirm that the proxying to delegate is working for every attribute
-    """
-    ms = mock_session
-    dps = default_proxied_session
-    assert getattr(dps, field) == getattr(ms, field)
-
-
-def test_ps_get_attribute(default_proxied_session):
-    """
-    unit tested:  ProxiedSession.get_attribute
-
-    test case:
-    confirm that the proxying to delegate is working for get_attribute
-    """
-    dps = default_proxied_session
-    with mock.patch.object(dps._delegate, 'get_attribute') as ms_ga:
-        ms_ga.return_value = None
-        result = dps.get_attribute('serializable')
-        ms_ga.assert_called_once_with('serializable')
-
-
-def test_ps_set_attribute(default_proxied_session):
-    """
-    unit tested:  ProxiedSession.set_attribute
-
-    test case:
-    confirm that the proxying to delegate is working for set_attribute
-    """
-    dps = default_proxied_session
-    with mock.patch.object(dps._delegate, 'set_attribute') as ms_sa:
-        ms_sa.return_value = None
-        dps.set_attribute('attrX', 'X')
-        ms_sa.assert_called_once_with('attrX', 'X')
-
-
-def test_ps_remove_attribute(default_proxied_session):
-    """
-    unit tested:  ProxiedSession.remove_attribute
-
-    test case:
-    confirm that the proxying to delegate is working for remove_attribute
-    """
-    dps = default_proxied_session
-    with mock.patch.object(dps._delegate, 'remove_attribute') as ms_ra:
-        ms_ra.return_value = None
-        dps.remove_attribute('attr1')
-        ms_ra.assert_called_once_with('attr1')
-
-
-def test_ps_get_internal_attribute(default_proxied_session):
-    """
-    unit tested:  ProxiedSession.get_internal_attribute
-
-    test case:
-    confirm that the proxying to delegate is working for get_attribute
-    """
-    dps = default_proxied_session
-    with mock.patch.object(dps._delegate, 'get_internal_attribute') as ms_ga:
-        ms_ga.return_value = None
-        dps.get_internal_attribute('identifiers_session_key')
-        ms_ga.assert_called_once_with('identifiers_session_key')
-
-
-def test_ps_set_internal_attribute(default_proxied_session):
-    """
-    unit tested:  ProxiedSession.set_internal_attribute
-
-    test case:
-    confirm that the proxying to delegate is working for set_internal_attribute
-    """
-    dps = default_proxied_session
-    with mock.patch.object(dps._delegate, 'set_internal_attribute') as ms_sa:
-        ms_sa.return_value = None
-        dps.set_internal_attribute('identifiers_session_key', 'X')
-        ms_sa.assert_called_once_with('identifiers_session_key', 'X')
-
-
-def test_ps_remove_internal_attribute(default_proxied_session):
-    """
-    unit tested:  ProxiedSession.remove_internal_attribute
-
-    test case:
-    confirm that the proxying to delegate is working
-    """
-    dps = default_proxied_session
-    with mock.patch.object(dps._delegate, 'remove_internal_attribute') as ms_ra:
-        ms_ra.return_value = None
-        dps.remove_internal_attribute('identifiers_session_key')
-        ms_ra.assert_called_once_with('identifiers_session_key')
 
 
 # ----------------------------------------------------------------------------
@@ -211,8 +96,8 @@ def test_ss_is_valid(
     I arbitrarily assign a bool to the stop_timestamp since it suffices
     """
     ss = simple_session
-    monkeypatch.setattr(ss, '_stop_timestamp', is_stopped)
-    monkeypatch.setattr(ss, '_is_expired', is_expired)
+    monkeypatch.setattr(ss, 'stop_timestamp', is_stopped)
+    monkeypatch.setattr(ss, 'is_expired', is_expired)
     assert ss.is_valid == check
 
 
@@ -258,11 +143,11 @@ def test_ss_is_timed_out(
     """
     ss = simple_session
 
-    monkeypatch.setattr(ss, '_is_expired', is_expired)
-    monkeypatch.setattr(ss, '_absolute_timeout', absolute_timeout)
-    monkeypatch.setattr(ss, '_idle_timeout', idle_timeout)
-    monkeypatch.setattr(ss, '_last_access_time', last_access_time)
-    monkeypatch.setattr(ss, '_start_timestamp', start_timestamp)
+    monkeypatch.setattr(ss, 'is_expired', is_expired)
+    monkeypatch.setattr(ss, 'absolute_timeout', absolute_timeout)
+    monkeypatch.setattr(ss, 'idle_timeout', idle_timeout)
+    monkeypatch.setattr(ss, 'last_access_time', last_access_time)
+    monkeypatch.setattr(ss, 'start_timestamp', start_timestamp)
 
     assert ss.is_timed_out() == timedout
 
@@ -277,13 +162,13 @@ def test_ss_is_timed_out_raises(
         monkeypatch):
 
     ss = simple_session
-    monkeypatch.setattr(ss, '_is_expired', is_expired)
-    monkeypatch.setattr(ss, '_absolute_timeout', absolute_timeout)
-    monkeypatch.setattr(ss, '_idle_timeout', idle_timeout)
-    monkeypatch.setattr(ss, '_last_access_time', last_access_time)
-    monkeypatch.setattr(ss, '_start_timestamp', start_timestamp)
+    monkeypatch.setattr(ss, 'is_expired', is_expired)
+    monkeypatch.setattr(ss, 'absolute_timeout', absolute_timeout)
+    monkeypatch.setattr(ss, 'idle_timeout', idle_timeout)
+    monkeypatch.setattr(ss, 'last_access_time', last_access_time)
+    monkeypatch.setattr(ss, 'start_timestamp', start_timestamp)
 
-    with pytest.raises(IllegalStateException):
+    with pytest.raises(ValueError):
         ss.is_timed_out()
 
 
@@ -295,7 +180,7 @@ def test_ss_validate_stopped(simple_session, monkeypatch):
     a stopped session raises an exception in validate
     """
     ss = simple_session
-    monkeypatch.setattr(ss, '_stop_timestamp', datetime.datetime.utcnow())
+    monkeypatch.setattr(ss, 'stop_timestamp', datetime.datetime.utcnow())
 
     with pytest.raises(StoppedSessionException):
         ss.validate()
@@ -428,17 +313,17 @@ def test_ss_eq_clone():
     start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
     s1 = SimpleSession(absolute_timeout, idle_timeout)
-    s1._is_expired = False
+    s1.is_expired = False
     s1.session_id = 'sessionid123'
-    s1._last_access_time = last_access_time
-    s1._start_timestamp = start_timestamp
+    s1.last_access_time = last_access_time
+    s1.start_timestamp = start_timestamp
     s1._host = '127.0.0.1'
 
     s2 = SimpleSession(absolute_timeout, idle_timeout)
     s2.session_id = 'sessionid123'
-    s2._is_expired = False
-    s2._last_access_time = last_access_time
-    s2._start_timestamp = start_timestamp
+    s2.is_expired = False
+    s2.last_access_time = last_access_time
+    s2.start_timestamp = start_timestamp
     s2._host = '127.0.0.1'
 
     assert s1 == s2
@@ -457,17 +342,17 @@ def test_ss_eq_different_values():
     start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
     s1 = SimpleSession(absolute_timeout, idle_timeout)
-    s1._is_expired = False
+    s1.is_expired = False
     s1.session_id = 'sessionid1234567'
-    s1._last_access_time = last_access_time
-    s1._start_timestamp = start_timestamp
+    s1.last_access_time = last_access_time
+    s1.start_timestamp = start_timestamp
     s1._host = '127.0.0.1'
 
     s2 = SimpleSession(absolute_timeout, idle_timeout)
     s2.session_id = 'sessionid123'
-    s2._is_expired = False
-    s2._last_access_time = last_access_time
-    s2._start_timestamp = start_timestamp
+    s2.is_expired = False
+    s2.last_access_time = last_access_time
+    s2.start_timestamp = start_timestamp
     s2._host = '127.0.0.1'
 
     assert not s1 == s2
@@ -496,75 +381,22 @@ def test_ss_eq_different_attributes():
     assert not s1 == s2
 
 # ----------------------------------------------------------------------------
-# SimpleSessionFactory
-# ----------------------------------------------------------------------------
-
-@pytest.mark.parametrize(
-    'context,expected',
-    [(type('SessionContext', (object,), {'host': '123.456.789.10'})(),
-      '123.456.789.10'),
-     (type('SessionContext', (object,), {})(), None), (None, None)])
-def test_ssf_create_session(context, expected, simple_session_factory):
-    """
-    unit tested:  create_session
-
-    test case:
-      I) a context with a host
-     II) a context without a host
-    III) no context
-    """
-    ssf = simple_session_factory
-    session = ssf.create_session(session_context=context)
-    assert session.host == expected
-
-# ----------------------------------------------------------------------------
-# UUIDSessionIdGenerator
-# ----------------------------------------------------------------------------
-
-def test_uuid_sig_generates():
-    """
-    unit tested: generate_id
-
-    test case:
-    calling generate_id returns a string
-    """
-    sid_gen = UUIDSessionIDGenerator
-    result = sid_gen.generate_id()
-    assert len(result) == 36
-
-# ----------------------------------------------------------------------------
-# RandomSessionIdGenerator
-# ----------------------------------------------------------------------------
-
-def test_random_sig_generates():
-    """
-    unit tested: generate_id
-
-    test case:
-    calling generate_id returns a string
-    """
-    sid_gen = RandomSessionIDGenerator
-    result = sid_gen.generate_id()
-    assert len(result) == 64
-
-
-# ----------------------------------------------------------------------------
 # DelegatingSession
 # ----------------------------------------------------------------------------
 
-def test_ds_start_timestamp_not_exists(patched_delegating_session):
+def test_dsstart_timestamp_not_exists(patched_delegating_session):
     """
     unit tested:  start_timestamp
 
     test case:  since there is no start_timestamp set, it delegates to the sm
     """
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'get_start_timestamp') as msm:
+    with mock.patch.object(MockSessionManager, 'getstart_timestamp') as msm:
         msm.return_value = None
         pds.start_timestamp
         msm.assert_called_once_with(pds.session_key)
 
-def test_ds_start_timestamp_exists(
+def test_dsstart_timestamp_exists(
         patched_delegating_session, monkeypatch):
     """
     unit tested:  start_timestamp
@@ -575,10 +407,10 @@ def test_ds_start_timestamp_exists(
     pds = patched_delegating_session
 
     now = round(time.time() * 1000)
-    monkeypatch.setattr(pds, '_start_timestamp', now)
+    monkeypatch.setattr(pds, 'start_timestamp', now)
     assert pds.start_timestamp == now
 
-def test_ds_last_access_time(patched_delegating_session):
+def test_dslast_access_time(patched_delegating_session):
     """
     unit tested:  last_access_time
 
@@ -591,7 +423,7 @@ def test_ds_last_access_time(patched_delegating_session):
     assert result == 1472291665100
 
 
-def test_ds_get_idle_timeout(patched_delegating_session):
+def test_ds_getidle_timeout(patched_delegating_session):
     """
     unit tested: idle_timeout
 
@@ -601,20 +433,20 @@ def test_ds_get_idle_timeout(patched_delegating_session):
     result = pds.idle_timeout
     assert result == (10 * 60 * 1000)
 
-def test_ds_set_idle_timeout(patched_delegating_session):
+def test_ds_setidle_timeout(patched_delegating_session):
     """
     unit tested: idle_timeout
 
     test case: delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'set_idle_timeout') as msm_sit:
+    with mock.patch.object(MockSessionManager, 'setidle_timeout') as msm_sit:
         msm_sit.return_value = None
         now = (5 * 60 * 1000)
         pds.idle_timeout = now
         msm_sit.assert_called_once_with(pds.session_key, now)
 
-def test_ds_get_absolute_timeout(patched_delegating_session):
+def test_ds_getabsolute_timeout(patched_delegating_session):
     """
     unit tested: absolute_timeout
 
@@ -624,7 +456,7 @@ def test_ds_get_absolute_timeout(patched_delegating_session):
     result = pds.absolute_timeout
     assert result == (60 * 60 * 1000)
 
-def test_ds_set_absolute_timeout(patched_delegating_session):
+def test_ds_setabsolute_timeout(patched_delegating_session):
     """
     unit tested: absolute_timeout
 
@@ -632,7 +464,7 @@ def test_ds_set_absolute_timeout(patched_delegating_session):
     """
 
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'set_absolute_timeout') as msm_sit:
+    with mock.patch.object(MockSessionManager, 'setabsolute_timeout') as msm_sit:
         msm_sit.return_value = None
         now = round(time.time() * 1000)
         pds.absolute_timeout = now

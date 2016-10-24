@@ -10,17 +10,10 @@ from ..doubles import (
 from yosai.core import (
     CachingSessionStore,
     DelegatingSession,
-    # ExecutorServiceSessionValidationScheduler,
     ExpiredSessionException,
-    InvalidArgumentException,
-    SessionEventException,
     DefaultNativeSessionHandler,
-    SessionCreationException,
-    StoppableScheduledExecutor,
     StoppedSessionException,
-    IllegalStateException,
     InvalidSessionException,
-    UnknownSessionException,
 )
 
 # ----------------------------------------------------------------------------
@@ -47,7 +40,7 @@ def test_seh_notify_start_raises(session_event_handler, mock_session, monkeypatc
     seh = session_event_handler
     monkeypatch.delattr(mock_session, '_session_id')
 
-    with pytest.raises(SessionEventException):
+    with pytest.raises(ValueError):
         seh.notify_start(mock_session)
 
 
@@ -68,7 +61,7 @@ def test_seh_notify_stop_raises(session_event_handler, mock_session, monkeypatch
     seh = session_event_handler
     monkeypatch.delattr(seh, '_event_bus')
 
-    with pytest.raises(SessionEventException):
+    with pytest.raises(ValueError):
         seh.notify_stop(mock_session)
 
 
@@ -89,7 +82,7 @@ def test_seh_notify_expiration_raises(session_event_handler, mock_session, monke
     seh = session_event_handler
     monkeypatch.delattr(seh, '_event_bus')
 
-    with pytest.raises(SessionEventException):
+    with pytest.raises(ValueError):
         seh.notify_expiration(mock_session)
 
 
@@ -205,7 +198,7 @@ def test_sh_retrieve_session_w_sessionid_raising(
     monkeypatch.setattr(css, 'read', lambda x: None)
     monkeypatch.setattr(sh, '_session_store', css)
 
-    with pytest.raises(UnknownSessionException):
+    with pytest.raises(ValueError):
         sh._retrieve_session(session_key)
 
 
@@ -402,7 +395,7 @@ def test_sh_on_expiration_onenotset(session_handler, ese, session_key):
     """
     sh = session_handler
 
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(ValueError):
         sh.on_expiration(session='testsession',
                          expired_session_exception=ese,
                          session_key=session_key)
@@ -655,7 +648,7 @@ def test_nsm_create_session_raises(
     monkeypatch.setattr(nsm.session_factory, 'create_session', lambda x: mock_session)
     monkeypatch.setattr(nsm.session_handler, 'create_session', lambda x: None)
 
-    with pytest.raises(SessionCreationException):
+    with pytest.raises(ValueError):
         nsm._create_session('sessioncontext')
 
 
@@ -731,7 +724,7 @@ def test_nsm_lookup_required_session_failstolocate(
     nsm = default_native_session_manager
 
     monkeypatch.setattr(nsm.session_handler, 'do_get_session', lambda x: None)
-    with pytest.raises(UnknownSessionException):
+    with pytest.raises(ValueError):
         nsm._lookup_required_session('key')
 
 

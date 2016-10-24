@@ -726,43 +726,6 @@ class DelegatingSession(session_abcs.Session):
         return "{0}(session_id: {1})".format(self.__class__.__name__,
                                              self.session_id)
 
-# yosai.core.refactor:
-class SessionEventHandler:
-
-    def __init__(self, event_bus=None):
-        self.event_bus = event_bus
-
-    def notify_start(self, session):
-        """
-        :type session:  SimpleSession
-        """
-        try:
-            self.event_bus.publish('SESSION.START', session_id=session.session_id)
-        except AttributeError:
-            msg = "Could not publish SESSION.START event"
-            raise AttributeError(msg)
-
-    def notify_stop(self, session_tuple):
-        """
-        :type identifiers:  SimpleIdentifierCollection
-        """
-        try:
-            self.event_bus.publish('SESSION.STOP', items=session_tuple)
-        except AttributeError:
-            msg = "Could not publish SESSION.STOP event"
-            raise AttributeError(msg)
-
-    def notify_expiration(self, session_tuple):
-        """
-        :type identifiers:  SimpleIdentifierCollection
-        """
-
-        try:
-            self.event_bus.publish('SESSION.EXPIRE', items=session_tuple)
-        except AttributeError:
-            msg = "Could not publish SESSION.EXPIRE event"
-            raise AttributeError(msg)
-
 
 # 5 monopoly dollars to the person who helps me rename this:
 class DefaultNativeSessionHandler(session_abcs.SessionHandler):
@@ -772,7 +735,6 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
                  delete_invalid_sessions=True):
         self.delete_invalid_sessions = delete_invalid_sessions
         self.session_store = session_store
-        self.session_event_handler = None
 
     # -------------------------------------------------------------------------
     # Session Creation Methods
@@ -910,7 +872,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
                     'session_tuple', ['identifiers', 'session_key'])
                 mysession = session_tuple(identifiers, session_key)
 
-                self.session_event_handler.notify_expiration(mysession)
+                self.notify_expiration(mysession)
             except:
                 raise
             finally:
@@ -944,7 +906,7 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
                 'session_tuple', ['identifiers', 'session_key'])
             mysession = session_tuple(identifiers, session_key)
 
-            self.session_event_handler.notify_stop(mysession)
+            self.notify_stop(mysession)
         except:
             raise
         # DG:  this results in a redundant delete operation (from shiro):
@@ -953,6 +915,26 @@ class DefaultNativeSessionHandler(session_abcs.SessionHandler):
 
     def on_change(self, session, update_identifiers_map=False):
         self.session_store.update(session, update_identifiers_map)
+
+    def notify_expiration(self, session_tuple):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
+        try:
+            self.event_bus.publish('SESSION.EXPIRE', items=session_tuple)
+        except AttributeError:
+            msg = "Could not publish SESSION.EXPIRE event"
+            raise AttributeError(msg)
+
+    def notify_stop(self, session_tuple):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
+        try:
+            self.event_bus.publish('SESSION.STOP', items=session_tuple)
+        except AttributeError:
+            msg = "Could not publish SESSION.STOP event"
+            raise AttributeError(msg)
 
 
 class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
@@ -989,10 +971,9 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
         # no need for a local instance, just pass through
         self.session_handler.session_store.cache_handler = cachehandler
 
-    def apply_event_bus(self, eventbus):
-        event_handler = SessionEventHandler(eventbus)
-        self.session_handler.session_event_handler = event_handler
-        self.session_event_handler = event_handler
+    def apply_event_bus(self, event_bus):
+        self.session_handler.event_bus = event_bus
+        self.event_bus = event_bus
 
     # -------------------------------------------------------------------------
     # Session Lifecycle Methods
@@ -1009,7 +990,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
 
         self.session_handler.on_start(session, session_context)
 
-        self.session_event_handler.notify_start(session)
+        self.notify_start(session)
 
         # Don't expose the EIS-tier Session object to the client-tier, but
         # rather a DelegatingSession:
@@ -1033,7 +1014,7 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
                 'session_tuple', ['identifiers', 'session_key'])
             mysession = session_tuple(idents, session_key)
 
-            self.session_event_handler.notify_stop(mysession)
+            self.notify_stop(mysession)
 
         except InvalidSessionException:
             raise
@@ -1245,6 +1226,26 @@ class DefaultNativeSessionManager(session_abcs.NativeSessionManager):
         if removed:
             self.session_handler.on_change(session)
         return removed
+
+    def notify_stop(self, session_tuple):
+        """
+        :type identifiers:  SimpleIdentifierCollection
+        """
+        try:
+            self.event_bus.publish('SESSION.STOP', items=session_tuple)
+        except AttributeError:
+            msg = "Could not publish SESSION.STOP event"
+            raise AttributeError(msg)
+
+    def notify_start(self, session):
+        """
+        :type session:  SimpleSession
+        """
+        try:
+            self.event_bus.publish('SESSION.START', session_id=session.session_id)
+        except AttributeError:
+            msg = "Could not publish SESSION.START event"
+            raise AttributeError(msg)
 
 
 class DefaultSessionStorageEvaluator:

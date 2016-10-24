@@ -5,15 +5,12 @@ from yosai.core import (
     DefaultNativeSessionHandler,
     DefaultNativeSessionManager,
     DefaultSessionKey,
-    DefaultSessionSettings,
     DefaultSessionStorageEvaluator,
     DelegatingSession,
     # ExecutorServiceSessionValidationScheduler,
     MemorySessionStore,
-    ProxiedSession,
     SessionEventHandler,
     SimpleSession,
-    SimpleSessionFactory,
 )
 
 from .doubles import (
@@ -31,10 +28,6 @@ from ..doubles import (
 def mock_cache_handler():
     return MockCacheHandler()
 
-
-@pytest.fixture(scope='function')
-def default_proxied_session(mock_session):
-    return ProxiedSession(mock_session)
 
 
 @pytest.fixture(scope='function')
@@ -86,9 +79,7 @@ def caching_session_store():
 
 @pytest.fixture(scope='function')
 def session_event_handler(event_bus):
-    seh = SessionEventHandler()
-    seh.event_bus = event_bus
-    return seh
+    return SessionEventHandler(event_bus)
 
 
 @pytest.fixture(scope='function')
@@ -99,8 +90,3 @@ def session_handler(session_event_handler):
 @pytest.fixture(scope='function')
 def session_key():
     return DefaultSessionKey('sessionid123')
-
-
-@pytest.fixture(scope='function')
-def simple_session_factory(core_settings):
-    return SimpleSessionFactory(core_settings)

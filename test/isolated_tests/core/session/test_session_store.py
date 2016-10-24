@@ -4,12 +4,6 @@ from yosai.core import (
     AbstractSessionStore,
     CachingSessionStore,
     DefaultSessionKey,
-    InvalidArgumentException,
-    IllegalStateException,
-    RandomSessionIDGenerator,
-    SessionCacheException,
-    UnknownSessionException,
-    UUIDSessionIDGenerator,
 )
 
 # -----------------------------------------------------------------------------
@@ -17,10 +11,7 @@ from yosai.core import (
 # -----------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('sessiongen', [UUIDSessionIDGenerator,
-                                        RandomSessionIDGenerator])
-def test_asd_generate_session_id_succeeds(
-        mock_abstract_session_store, sessiongen, monkeypatch):
+def test_asd_generate_session_id_succeeds(mock_abstract_session_store, monkeypatch):
     """
     unit tested:  generate_session_id
 
@@ -44,7 +35,7 @@ def test_asd_generate_session_id_raises(mock_abstract_session_store):
     masd = mock_abstract_session_store
     with mock.patch.object(RandomSessionIDGenerator, 'generate_id') as mock_gen:
         mock_gen.side_effect = AttributeError
-        with pytest.raises(IllegalStateException):
+        with pytest.raises(ValueError):
             masd.generate_session_id()
 
 
@@ -57,7 +48,7 @@ def test_asd_create_raises(mock_abstract_session_store, monkeypatch):
     """
     masd = mock_abstract_session_store
     monkeypatch.setattr(masd, 'do_create', lambda x: None)
-    with pytest.raises(IllegalStateException):
+    with pytest.raises(ValueError):
         masd.create(session='arbitrarysession')
 
 
@@ -85,7 +76,7 @@ def test_asd_verify_session_id_raises(mock_abstract_session_store):
     calling method with a None value raises and exception
     """
     masd = mock_abstract_session_store
-    with pytest.raises(IllegalStateException):
+    with pytest.raises(ValueError):
         masd.verify_session_id(session_id=None)
 
 
@@ -110,7 +101,7 @@ def test_asd_read_raises(mock_abstract_session_store, monkeypatch):
     """
     masd = mock_abstract_session_store
     monkeypatch.setattr(masd, '_do_read', lambda x: None)
-    with pytest.raises(UnknownSessionException):
+    with pytest.raises(ValueError):
         masd.read('sessionid123')
 
 
@@ -176,7 +167,7 @@ def test_msd_store_session_raises(memory_session_store, session_id, session):
     if either session_id or session are not set, an exception will raise
     """
     msd = memory_session_store
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(ValueError):
         msd.store_session(session_id, session)
 
 
@@ -218,7 +209,7 @@ def test_msd_delete_raises_ae(memory_session_store):
     raise an AttributeError
     """
     msd = memory_session_store
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(ValueError):
         msd.delete(session='dumbsession')
 
 
@@ -407,7 +398,7 @@ def test_csd_cache_without_cache_handler(
     gets active session cache and puts session away
     """
     csd = caching_session_store
-    with pytest.raises(SessionCacheException):
+    with pytest.raises(ValueError):
         csd._cache(mock_session, 'sessionid123')
 
 
@@ -441,5 +432,5 @@ def test_csd_uncache_raises(caching_session_store):
     """
     csd = caching_session_store
 
-    with pytest.raises(SessionCacheException):
+    with pytest.raises(ValueError):
         csd._uncache('session')

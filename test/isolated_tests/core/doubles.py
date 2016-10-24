@@ -14,9 +14,6 @@ from yosai.core import (
 import datetime
 
 
-class MockSession(session_abcs.ValidatingSession):
-    pass
-
 class MockToken(authc_abcs.AuthenticationToken):
     pass
 
