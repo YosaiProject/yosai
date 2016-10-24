@@ -8,6 +8,7 @@ from yosai.core import (
     ExpiredSessionException,
     InvalidSessionException,
     SimpleIdentifierCollection,
+    SimpleSession,
 )
 
 
@@ -33,9 +34,8 @@ def test_create_cache_session(session_store, session, cache_handler):
     sessionid = css.create(session)
 
     cached_session = css.read(sessionid)
-    cached_session_token = css.cache_handler.get('session', 'user12345678')
-    assert (DefaultSessionKey(cached_session_token) == DefaultSessionKey(sessionid) and
-            cached_session == session)
+    assert isinstance(cached_session, SimpleSession)
+
 
 def test_delete_cached_session(session_store, session, cache_handler):
     """
@@ -201,7 +201,7 @@ def test_session_manager_start(
 
     def event_listener(items=None):
         nonlocal event_detected
-        event_detected = items 
+        event_detected = items
 
     event_bus.register(event_listener, 'SESSION.START')
 
