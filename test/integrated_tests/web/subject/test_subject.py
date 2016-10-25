@@ -72,7 +72,7 @@ def test_has_role(web_yosai, mock_web_registry, thedude_testroles, event_bus,
     def event_listener(identifiers=None, items=None):
         nonlocal event_detected
         event_detected = items
-    event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
+    event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')
 
     with WebYosai.context(web_yosai, mock_web_registry):
         new_web_subject = WebYosai.get_current_subject()

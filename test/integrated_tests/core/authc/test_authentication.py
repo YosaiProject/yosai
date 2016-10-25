@@ -17,10 +17,10 @@ def test_single_factor_authc_userpass_using_accountstore_success(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     account_id = da.authenticate_account(None, valid_walter_username_password_token)
     out = caplog.text
@@ -46,12 +46,12 @@ def test_multi_factor_authc_using_accountstore_success(
     def progress_event_listener(identifier=None):
         nonlocal progress_event_detected
         progress_event_detected = identifier
-    event_bus.register(progress_event_listener, 'AUTHENTICATION.PROGRESS')
+    event_bus.subscribe(progress_event_listener, 'AUTHENTICATION.PROGRESS')
 
     def success_event_listener(identifier=None):
         nonlocal success_event_detected
         success_event_detected = identifier
-    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     try:
         account_id = da.authenticate_account(None, valid_thedude_username_password_token)
@@ -71,10 +71,10 @@ def test_single_factor_authc_userpass_using_cache_success(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     try:
         # first authentication fails, intentionally, but caches results
@@ -95,10 +95,10 @@ def test_single_factor_authc_userpass_using_accountstore_failure(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.FAILED')
 
     with pytest.raises(AuthenticationException):
         account_id = da.authenticate_account(None, invalid_walter_username_password_token)
@@ -115,10 +115,10 @@ def test_single_factor_authc_userpass_using_cache_failure(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.FAILED')
 
     cred = 'letsgobowlingggggg'
     cache_handler.set(domain='credentials', identifier='thedude', value=cred)
@@ -137,10 +137,10 @@ def test_single_factor_authc_userpass_using_accountstore_user_not_found(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.ACCOUNT_NOT_FOUND')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.ACCOUNT_NOT_FOUND')
 
     dumb_token = UsernamePasswordToken(username='dumb',
                                        password='token',
@@ -185,7 +185,7 @@ def test_single_factor_locks_account(
     monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
     da.init_locking()
 
-    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     da.locking_realm.unlock_account('walter')
     account_id = da.authenticate_account(None, valid_walter_username_password_token)
@@ -204,9 +204,9 @@ def test_single_factor_locks_account(
                     account_id = da.authenticate_account(None, invalid_walter_username_password_token)
                 except LockedAccountException:
                     try:
-                        event_bus.register(fail_event_listener, 'AUTHENTICATION.FAILED')
-                        event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-                        event_bus.register(other_success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+                        event_bus.subscribe(fail_event_listener, 'AUTHENTICATION.FAILED')
+                        event_bus.subscribe(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+                        event_bus.subscribe(other_success_event_listener, 'AUTHENTICATION.SUCCEEDED')
                         account_id = da.authenticate_account(None, valid_walter_username_password_token)
                     except LockedAccountException:
                         assert lock_event_detected == fail_event_detected == 'walter'
@@ -234,8 +234,8 @@ def test_multi_factor_locks_account(
         nonlocal success_event_detected
         success_event_detected = identifier
 
-    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
     monkeypatch.setattr(da.authc_settings, 'account_lock_threshold', 3)
     da.init_locking()
     da.locking_realm.unlock_account('thedude')

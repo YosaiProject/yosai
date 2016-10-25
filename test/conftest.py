@@ -3,7 +3,6 @@ import pytest
 from yosai.core import (
     AccountStoreRealm,
     CachingSessionStore,
-    DefaultEventBus,
     DefaultPermission,
     IndexedAuthorizationInfo,
     IndexedPermissionVerifier,
@@ -16,6 +15,7 @@ from yosai.core import (
     TOTPToken,
     UsernamePasswordToken,
     Yosai,
+    event_bus, 
 )
 
 from yosai.web import (
@@ -143,7 +143,7 @@ def account_store_realm(cache_handler, alchemy_store, authc_verifiers,
 
 @pytest.fixture(scope='session')
 def event_bus():
-    return DefaultEventBus()
+    return event_bus 
 
 
 @pytest.fixture(scope='function')

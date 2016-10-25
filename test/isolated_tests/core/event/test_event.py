@@ -46,7 +46,7 @@ def test_is_registered_raises_topicdefnerror(
 def test_publish_succeeds(patched_event_bus):
     peb = patched_event_bus
 
-    result = peb.publish('topic_name', arg1='arg1', arg2='arg2')
+    result = peb.sendMessage('topic_name', arg1='arg1', arg2='arg2')
 
     assert result
 
@@ -58,7 +58,7 @@ def test_publish_raises_message_missing_data_error(
     monkeypatch.setattr(peb._event_bus, 'sendMessage', mock_error) 
 
     with pytest.raises(EventBusMessageDataException):
-        peb.publish('topic_name', arg1='anything')  # dumb args 
+        peb.sendMessage('topic_name', arg1='anything')  # dumb args 
 
 def test_publish_raises_unknown_message_data_error(
         monkeypatch, patched_event_bus, send_unknown_msgdata_error):
@@ -68,7 +68,7 @@ def test_publish_raises_unknown_message_data_error(
     monkeypatch.setattr(peb._event_bus, 'sendMessage', mock_error) 
 
     with pytest.raises(EventBusMessageDataException):
-        peb.publish('topic_name', arg1='anything')  # dumb args 
+        peb.sendMessage('topic_name', arg1='anything')  # dumb args 
 
 def test_publish_raises_topicdefnerror(
         monkeypatch, patched_event_bus, topic_defn_error): 
@@ -78,13 +78,13 @@ def test_publish_raises_topicdefnerror(
     monkeypatch.setattr(peb._event_bus, 'sendMessage', mock_error) 
 
     with pytest.raises(EventBusTopicException):
-        peb.publish('topic_name', arg1='anything')  # dumb args 
+        peb.sendMessage('topic_name', arg1='anything')  # dumb args 
 
 def test_register_succeeds(patched_event_bus):
 
     peb = patched_event_bus
 
-    result1, result2 = peb.register('callable', 'topic_name')
+    result1, result2 = peb.subscribe('callable', 'topic_name')
 
     assert (result1 and result2)
 
@@ -96,7 +96,7 @@ def test_register_raises_listener_mismatch_error(
     monkeypatch.setattr(peb._event_bus, 'subscribe', mock_error) 
 
     with pytest.raises(EventBusSubscriptionException):
-        peb.register('callable', 'topic_name')  # dumb args 
+        peb.subscribe('callable', 'topic_name')  # dumb args 
 
 def test_register_raises_topicdefnerror(
         monkeypatch, patched_event_bus, topic_defn_error): 
@@ -106,12 +106,12 @@ def test_register_raises_topicdefnerror(
     monkeypatch.setattr(peb._event_bus, 'subscribe', mock_error) 
 
     with pytest.raises(EventBusTopicException):
-        peb.register('callable', 'topic_name')  # dumb args 
+        peb.subscribe('callable', 'topic_name')  # dumb args 
 
 def test_unregister_succeeds(patched_event_bus):
 
     peb = patched_event_bus
-    result = peb.unregister('listener', 'topic_name')
+    result = peb.unsubscribe('listener', 'topic_name')
     assert result
 
 def test_unregister_raises_topicnameerror(
@@ -122,7 +122,7 @@ def test_unregister_raises_topicnameerror(
     monkeypatch.setattr(peb._event_bus, 'unsubscribe', mock_error) 
 
     with pytest.raises(EventBusTopicException):
-        peb.unregister('listener', 'topic_name')  # dumb args 
+        peb.unsubscribe('listener', 'topic_name')  # dumb args 
 
 def test_unregister_raises_topicdefn_error(
         monkeypatch, patched_event_bus, topic_defn_error): 
@@ -132,7 +132,7 @@ def test_unregister_raises_topicdefn_error(
     monkeypatch.setattr(peb._event_bus, 'unsubscribe', mock_error) 
 
     with pytest.raises(EventBusTopicException):
-        peb.unregister('listener', 'topic_name')  # dumb args 
+        peb.unsubscribe('listener', 'topic_name')  # dumb args 
 
 def test_unregister_all(patched_event_bus):
 

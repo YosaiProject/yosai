@@ -46,6 +46,13 @@ from .exceptions import (
     YosaiException,
 )
 
+
+from yosai.core.event.event import (
+    EVENT_TOPIC,
+    EventLogger,
+    event_bus,
+)
+
 from yosai.core.serialize import abcs as serialize_abcs
 from yosai.core.event import abcs as event_abcs
 from yosai.core.account import abcs as account_abcs
@@ -97,12 +104,6 @@ from yosai.core.logging.slogging import (
 
 from yosai.core.account.account import (
     Account,
-)
-
-
-from yosai.core.event.event import (
-    DefaultEventBus,
-    EventLogger,
 )
 
 

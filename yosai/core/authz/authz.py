@@ -20,6 +20,7 @@ import itertools
 import logging
 
 from yosai.core import (
+    EVENT_TOPIC,
     SerializationManager,
     UnauthorizedException,
     authz_abcs,
@@ -405,9 +406,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
     :type realms:  Tuple
     """
     def __init__(self):
-        """
-        :type realms: tuple
-        """
         self.realms = None
         self.event_bus = None
 
@@ -488,7 +486,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             results[permission] = results[permission] or is_permitted
 
         if log_results:
-            self.notify_results(identifiers, list(results.items()))  # before freezing
+            self.notify_event(identifiers,
+                              list(results.items()),
+                              'AUTHORIZATION.RESULTS')
 
         results = frozenset(results.items())
         return results
@@ -519,9 +519,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                                    in interim_results)
 
         if results:
-            self.notify_success(identifiers, permission_s, logical_operator)
+            self.notify_event(identifiers,
+                              permission_s,
+                              'AUTHORIZATION.GRANTED',
+                              logical_operator)
         else:
-            self.notify_failure(identifiers, permission_s, logical_operator)
+            self.notify_event(identifiers,
+                              permission_s,
+                              'AUTHORIZATION.DENIED',
+                              logical_operator)
 
         return results
 
@@ -580,7 +586,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             results[role] = results[role] or has_role
 
         if log_results:
-            self.notify_results(identifiers, list(results.items()))  # before freezing
+            self.notify_results(identifiers,
+                                list(results.items()),
+                                'AUTHORIZATION.RESULTS')  # before freezing
         results = frozenset(results.items())
         return results
 
@@ -607,9 +615,15 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                                    in interim_results)
 
         if results:
-            self.notify_success(identifiers, role_s, logical_operator)
+            self.notify_event(identifiers,
+                              role_s,
+                              'AUTHORIZATION.GRANTED',
+                              logical_operator)
         else:
-            self.notify_failure(identifiers, role_s, logical_operator)
+            self.notify_event(identifiers,
+                              role_s,
+                              'AUTHORIZATION.DENIED',
+                              logical_operator)
 
         return results
 
@@ -638,10 +652,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
     # Event Communication
     # --------------------------------------------------------------------------
 
-    def session_clears_cache(self, items=None):
-        """
-        :type items: namedtuple
-        """
+    def session_clears_cache(self, items=None, topic=EVENT_TOPIC):
         try:
             identifier = items.identifier
             for realm in self.realms:
@@ -651,10 +662,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                    'items: ' + str(items))
             logger.warn(msg)
 
-    def authc_clears_cache(self, identifier=None):
-        """
-        :type items: namedtuple
-        """
+    def authc_clears_cache(self, identifier=None, topic=EVENT_TOPIC):
         try:
             for realm in self.realms:
                 realm.clear_cached_authorization_info(identifier)
@@ -664,69 +672,28 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             logger.warn(msg)
 
     def register_cache_clear_listener(self):
-        if self.event_bus:
-            self.event_bus.register(self.session_clears_cache, 'SESSION.STOP')
-            self.event_bus.is_registered(self.session_clears_cache, 'SESSION.STOP')
-            self.event_bus.register(self.session_clears_cache, 'SESSION.EXPIRE')
-            self.event_bus.is_registered(self.session_clears_cache, 'SESSION.EXPIRE')
-            self.event_bus.register(self.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')
-            self.event_bus.is_registered(self.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')
 
-    # notify_results is intended for audit trail
-    def notify_results(self, identifiers, items):
-        """
-        :type identifiers:  subject_abcs.IdentifierCollection
-
-        :param items:  either  a collection of 1..N Role identifiers or
-                       a collection of 1..N permissions
-        """
         try:
-            self.event_bus.publish('AUTHORIZATION.RESULTS',
-                                   identifiers=identifiers,
-                                   items=items)
+            self.event_bus.subscribe(self.session_clears_cache, 'SESSION.STOP')
+            self.event_bus.isSubscribed(self.session_clears_cache, 'SESSION.STOP')
+            self.event_bus.subscribe(self.session_clears_cache, 'SESSION.EXPIRE')
+            self.event_bus.isSubscribed(self.session_clears_cache, 'SESSION.EXPIRE')
+            self.event_bus.subscribe(self.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')
+            self.event_bus.isSubscribed(self.authc_clears_cache, 'AUTHENTICATION.SUCCEEDED')
 
         except AttributeError:
-            msg = "Could not publish AUTHORIZATION.RESULTS event"
-            raise AttributeError(msg)
+            msg = "Authorizer failed to register listeners to event bus"
+            logger.debug(msg)
 
-    def notify_success(self, identifiers, items, logical_operator):
-        """
-        :type identifiers:  subject_abcs.IdentifierCollection
-
-        :param items:  either  a collection of 1..N Role identifiers or
-                       a collection of 1..N permissions
-
-        :param logical_operator:  any or all
-        :type logical_operator:  function  (stdlib)
-        """
+    def notify_event(self, identifiers, items, topic, logical_operator=None):
         try:
-            self.event_bus.publish('AUTHORIZATION.GRANTED',
-                                   identifiers=identifiers,
-                                   items=items,
-                                   logical_operator=logical_operator)
+            self.event_bus.sendMessage(topic,
+                                       identifiers=identifiers,
+                                       items=items,
+                                       logical_operator=logical_operator)
 
         except AttributeError:
-            msg = "Could not publish AUTHORIZATION.GRANTED event"
-            raise AttributeError(msg)
-
-    def notify_failure(self, identifiers, items, logical_operator):
-        """
-        :param items:  either  a collection of 1..N Role identifiers or
-                       a collection of 1..N permissions
-
-        :type identifiers:  subject_abcs.IdentifierCollection
-
-        :param logical_operator:  any or all
-        :type logical_operator:  function  (stdlib)
-        """
-        try:
-            self.event_bus.publish('AUTHORIZATION.DENIED',
-                                   identifiers=identifiers,
-                                   items=items,
-                                   logical_operator=logical_operator)
-
-        except AttributeError:
-            msg = "Could not publish AUTHORIZATION.DENIED event"
+            msg = "Could not publish {} event".format(topic)
             raise AttributeError(msg)
 
     # --------------------------------------------------------------------------

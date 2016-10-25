@@ -22,11 +22,10 @@ import copy
 from cryptography.fernet import Fernet
 from abc import abstractmethod
 
-from yosai.core import(
+from yosai.core import (
     AdditionalAuthenticationRequired,
     AuthenticationException,
     DefaultAuthenticator,
-    DefaultEventBus,
     DelegatingSubject,
     EventLogger,
     NativeSessionManager,
@@ -36,12 +35,8 @@ from yosai.core import(
     InvalidSessionException,
     ModularRealmAuthorizer,
     RememberMeSettings,
-    SimpleSession,
-    SerializationManager,
+    event_bus,
     mgt_abcs,
-    authc_abcs,
-    authz_abcs,
-    cache_abcs,
 )
 
 logger = logging.getLogger(__name__)
@@ -376,7 +371,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         if serialization_manager and self.remember_me_manager:
             self.remember_me_manager.serialization_manager = serialization_manager
 
-        event_bus = DefaultEventBus()
         self.event_logger = EventLogger(event_bus)
         self.apply_event_bus(event_bus)
 
@@ -390,10 +384,10 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         if hasattr(self.session_manager, 'apply_cache_handler'):
             self.session_manager.apply_cache_handler(cache_handler)
 
-    def apply_event_bus(self, event_bus):
-        self.authenticator.event_bus = event_bus
-        self.authorizer.event_bus = event_bus
-        self.session_manager.apply_event_bus(event_bus)
+    def apply_event_bus(self, eventbus):
+        self.authenticator.event_bus = eventbus
+        self.authorizer.event_bus = eventbus
+        self.session_manager.apply_event_bus(eventbus)
 
     def apply_realms(self):
         """

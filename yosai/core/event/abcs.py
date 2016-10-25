@@ -35,7 +35,7 @@ class EventBus(metaclass=ABCMeta):
     -----------------
     If a component wishes to publish events to other components:::
 
-        event_bus.publish(topic, *kwargs)
+        event_bus.sendMessage(topic, *kwargs)
 
     The event bus dispatches the event 'message' to components that wish to receive
     events of that type (known as subscribers).
@@ -48,18 +48,18 @@ class EventBus(metaclass=ABCMeta):
     that will be called when an specific type of event is communicated across
     the event bus.  Register the callback with the event_bus:::
 
-       event_bus.register(topic, callback)
+       event_bus.subscribe(topic, callback)
 
     """
 
     @abstractmethod
-    def publish(self, topic_name, **kwargs):
+    def sendMessage(self, topic_name, **kwargs):
         pass
 
     @abstractmethod
-    def register(self, _callable, topic_name):
+    def subscribe(self, _callable, topic_name):
         pass
 
     @abstractmethod
-    def unregister(self, listener, topic_name):
+    def unsubscribe(self, listener, topic_name):
         pass

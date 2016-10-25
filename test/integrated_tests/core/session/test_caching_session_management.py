@@ -117,7 +117,7 @@ def test_sh_idle_expired_session(
         nonlocal event_detected
         event_detected = items
 
-    event_bus.register(event_listener, 'SESSION.EXPIRE')
+    event_bus.subscribe(event_listener, 'SESSION.EXPIRE')
 
     session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
                                    'user12345678')
@@ -166,7 +166,7 @@ def test_sh_stopped_session(
         nonlocal event_detected
         event_detected = items
 
-    event_bus.register(event_listener, 'SESSION.STOP')
+    event_bus.subscribe(event_listener, 'SESSION.STOP')
 
     session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
                                    'user12345678')
@@ -203,7 +203,7 @@ def test_session_manager_start(
         nonlocal event_detected
         event_detected = items
 
-    event_bus.register(event_listener, 'SESSION.START')
+    event_bus.subscribe(event_listener, 'SESSION.START')
 
     session = sm.start(session_context)
 
@@ -231,7 +231,7 @@ def test_session_manager_stop(
         nonlocal event_detected
         event_detected = items
 
-    event_bus.register(event_listener, 'SESSION.STOP')
+    event_bus.subscribe(event_listener, 'SESSION.STOP')
 
     session = sm.start(session_context)  # a DelegatingSession
     sessionid = session.session_id

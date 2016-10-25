@@ -22,6 +22,7 @@ from passlib.context import CryptContext
 from passlib.totp import OTPContext, TokenError, TOTP
 
 from yosai.core import (
+    EVENT_TOPIC,
     AccountException,
     AdditionalAuthenticationRequired,
     AuthenticationSettings,
@@ -275,7 +276,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
     # Event Communication
     # --------------------------------------------------------------------------
 
-    def clear_cache(self, items=None):
+    def clear_cache(self, items=None, topic=EVENT_TOPIC):
         """
         expects event object to be in the format of a session-stop or
         session-expire event, whose results attribute is a
@@ -292,15 +293,19 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
             logger.warn(msg)
 
     def register_cache_clear_listener(self):
-        if self.event_bus:
-            self.event_bus.register(self.clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.is_registered(self.clear_cache, 'SESSION.EXPIRE')
-            self.event_bus.register(self.clear_cache, 'SESSION.STOP')
-            self.event_bus.is_registered(self.clear_cache, 'SESSION.STOP')
+        try:
+            self.event_bus.subscribe(self.clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.isSubscribed(self.clear_cache, 'SESSION.EXPIRE')
+            self.event_bus.subscribe(self.clear_cache, 'SESSION.STOP')
+            self.event_bus.isSubscribed(self.clear_cache, 'SESSION.STOP')
+
+        except AttributeError:
+            msg = "Authenticator failed to register listeners to event bus"
+            logger.debug(msg)
 
     def notify_event(self, identifier, topic):
         try:
-            self.event_bus.publish(topic, identifier=identifier)
+            self.event_bus.sendMessage(topic, identifier=identifier)
         except AttributeError:
             msg = "Could not publish {} event".format(topic)
             raise AttributeError(msg)

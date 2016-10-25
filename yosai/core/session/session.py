@@ -870,7 +870,7 @@ class NativeSessionHandler(session_abcs.SessionHandler):
         :type identifiers:  SimpleIdentifierCollection
         """
         try:
-            self.event_bus.publish(topic, items=session_info)
+            self.event_bus.sendMessage(topic, items=session_info)
         except AttributeError:
             msg = "Could not publish {} event".format(topic)
             raise AttributeError(msg)
@@ -1167,7 +1167,7 @@ class NativeSessionManager(session_abcs.NativeSessionManager):
         :type identifiers:  SimpleIdentifierCollection
         """
         try:
-            self.event_bus.publish(topic, items=session_tuple)
+            self.event_bus.sendMessage(topic, items=session_tuple)
         except AttributeError:
             msg = "Could not publish {} event".format(topic)
             raise AttributeError(msg)

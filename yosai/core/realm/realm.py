@@ -127,7 +127,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         """
         msg = "Clearing cached authz_info for [{0}]".format(identifier)
         logger.debug(msg)
-
         self.cache_handler.delete('authorization:' + self.name, identifier)
 
     def lock_account(self, identifier):

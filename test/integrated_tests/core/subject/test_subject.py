@@ -29,7 +29,7 @@ def test_subject_valid_single_factor_login(
     def event_listener(identifier=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -51,7 +51,7 @@ def test_subject_invalid_single_factor_login(
     def event_listener(identifier=None):
         nonlocal event_detected
         event_detected = identifier
-    event_bus.register(event_listener, 'AUTHENTICATION.FAILED')
+    event_bus.subscribe(event_listener, 'AUTHENTICATION.FAILED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -89,8 +89,8 @@ def test_singlefactor_subject_locks_at_userpass(
         nonlocal success_event_detected
         success_event_detected = identifier
 
-    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -111,8 +111,8 @@ def test_singlefactor_subject_locks_at_userpass(
                         new_subject.login(invalid_walter_username_password_token)
                     except LockedAccountException:
                         try:
-                            event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-                            event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+                            event_bus.subscribe(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+                            event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
                             account_id = da.authenticate_account(None, valid_walter_username_password_token)
                         except LockedAccountException:
                             assert lock_event_detected == 'walter'
@@ -139,8 +139,8 @@ def test_mfa_subject_locks_at_userpass(
         nonlocal success_event_detected
         success_event_detected = identifier
 
-    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -190,8 +190,8 @@ def test_mfa_subject_locks_at_totp(
         nonlocal success_event_detected
         success_event_detected = identifier
 
-    event_bus.register(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
-    event_bus.register(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+    event_bus.subscribe(lock_event_listener, 'AUTHENTICATION.ACCOUNT_LOCKED')
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -293,7 +293,7 @@ def test_authenticated_subject_check_permission_succeeds(
     def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
         event_detected = items
-    event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
+    event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -323,7 +323,7 @@ def test_check_permission_raises(
     def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
         event_detected = items
-    event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
+    event_bus.subscribe(event_listener, 'AUTHORIZATION.DENIED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -349,7 +349,7 @@ def test_has_role(valid_thedude_username_password_token, thedude_testroles,
     def event_listener(identifiers=None, items=None):
         nonlocal event_detected
         event_detected = items
-    event_bus.register(event_listener, 'AUTHORIZATION.RESULTS')
+    event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -398,7 +398,7 @@ def test_check_role_succeeds(
     def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
         event_detected = items
-    event_bus.register(event_listener, 'AUTHORIZATION.GRANTED')
+    event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
@@ -425,7 +425,7 @@ def test_check_role_raises(
     def event_listener(identifiers=None, items=None, logical_operator=None):
         nonlocal event_detected
         event_detected = items
-    event_bus.register(event_listener, 'AUTHORIZATION.DENIED')
+    event_bus.subscribe(event_listener, 'AUTHORIZATION.DENIED')
 
     with Yosai.context(yosai):
         new_subject = Yosai.get_current_subject()
