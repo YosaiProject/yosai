@@ -2,6 +2,7 @@
 import pytest
 
 from yosai.core import (
+    EVENT_TOPIC,
     AdditionalAuthenticationRequired,
     AuthenticationException,
     ExpiredSessionException,
@@ -69,7 +70,7 @@ def test_has_role(web_yosai, mock_web_registry, thedude_testroles, event_bus,
     tr = thedude_testroles
     event_detected = None
 
-    def event_listener(identifiers=None, items=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')

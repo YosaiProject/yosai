@@ -15,8 +15,9 @@ from yosai.core import (
     TOTPToken,
     UsernamePasswordToken,
     Yosai,
-    event_bus, 
 )
+
+from yosai.core import event_bus as eventbus
 
 from yosai.web import (
     WebYosai,
@@ -143,7 +144,7 @@ def account_store_realm(cache_handler, alchemy_store, authc_verifiers,
 
 @pytest.fixture(scope='session')
 def event_bus():
-    return event_bus 
+    return eventbus 
 
 
 @pytest.fixture(scope='function')

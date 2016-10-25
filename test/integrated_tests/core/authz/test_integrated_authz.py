@@ -5,6 +5,7 @@ from yosai.core import (
     DefaultPermission,
     SimpleIdentifierCollection,
     UnauthorizedException,
+    EVENT_TOPIC,
 )
 
 def test_is_permitted(modular_realm_authorizer, thedude_testpermissions,
@@ -17,7 +18,7 @@ def test_is_permitted(modular_realm_authorizer, thedude_testpermissions,
     tp = thedude_testpermissions
     event_detected = None
 
-    def event_listener(identifiers=None, items=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')
@@ -44,7 +45,7 @@ def test_check_permission_succeeds(
     tp = thedude_testpermissions
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
@@ -61,7 +62,7 @@ def test_check_permission_raises(
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.DENIED')
@@ -83,7 +84,7 @@ def test_has_role(modular_realm_authorizer, thedude_identifier, event_bus):
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')
@@ -111,7 +112,7 @@ def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier, event
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
@@ -128,7 +129,7 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.DENIED')
@@ -163,7 +164,7 @@ def test_is_permitted_account_doesnt_exist(
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')

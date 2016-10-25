@@ -9,6 +9,7 @@ from yosai.core import (
     UnauthorizedException,
     UnauthenticatedException,
     Yosai,
+    EVENT_TOPIC,
 )
 import datetime
 
@@ -26,7 +27,7 @@ def test_subject_valid_single_factor_login(
         valid_walter_username_password_token, event_bus, yosai, monkeypatch):
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.SUCCEEDED')
@@ -48,7 +49,7 @@ def test_subject_invalid_single_factor_login(
 
     event_detected = None
 
-    def event_listener(identifier=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.FAILED')
@@ -81,11 +82,11 @@ def test_singlefactor_subject_locks_at_userpass(
     lock_event_detected = None
     success_event_detected = None
 
-    def lock_event_listener(identifier=None):
+    def lock_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal lock_event_detected
         lock_event_detected = identifier
 
-    def success_event_listener(identifier=None):
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal success_event_detected
         success_event_detected = identifier
 
@@ -131,11 +132,11 @@ def test_mfa_subject_locks_at_userpass(
     lock_event_detected = None
     success_event_detected = None
 
-    def lock_event_listener(identifier=None):
+    def lock_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal lock_event_detected
         lock_event_detected = identifier
 
-    def success_event_listener(identifier=None):
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal success_event_detected
         success_event_detected = identifier
 
@@ -182,11 +183,11 @@ def test_mfa_subject_locks_at_totp(
     lock_event_detected = None
     success_event_detected = None
 
-    def lock_event_listener(identifier=None):
+    def lock_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal lock_event_detected
         lock_event_detected = identifier
 
-    def success_event_listener(identifier=None):
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal success_event_detected
         success_event_detected = identifier
 
@@ -290,7 +291,7 @@ def test_authenticated_subject_check_permission_succeeds(
     tp = thedude_testpermissions
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
@@ -320,7 +321,7 @@ def test_check_permission_raises(
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.DENIED')
@@ -346,7 +347,7 @@ def test_has_role(valid_thedude_username_password_token, thedude_testroles,
     tr = thedude_testroles
     event_detected = None
 
-    def event_listener(identifiers=None, items=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')
@@ -395,7 +396,7 @@ def test_check_role_succeeds(
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
@@ -422,7 +423,7 @@ def test_check_role_raises(
 
     event_detected = None
 
-    def event_listener(identifiers=None, items=None, logical_operator=None):
+    def event_listener(identifiers=None, items=None, logical_operator=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.DENIED')

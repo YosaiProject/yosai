@@ -586,9 +586,9 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             results[role] = results[role] or has_role
 
         if log_results:
-            self.notify_results(identifiers,
-                                list(results.items()),
-                                'AUTHORIZATION.RESULTS')  # before freezing
+            self.notify_event(identifiers,
+                             list(results.items()),
+                             'AUTHORIZATION.RESULTS')  # before freezing
         results = frozenset(results.items())
         return results
 

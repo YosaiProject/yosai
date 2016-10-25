@@ -1,5 +1,6 @@
 import pytest
 from yosai.core import (
+    EVENT_TOPIC,
     AdditionalAuthenticationRequired,
     AuthenticationException,
     InvalidAuthenticationSequenceException,
@@ -17,7 +18,7 @@ def test_single_factor_authc_userpass_using_accountstore_success(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None, topic=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.SUCCEEDED')
@@ -43,12 +44,12 @@ def test_multi_factor_authc_using_accountstore_success(
     success_event_detected = None
     progress_event_detected = None
 
-    def progress_event_listener(identifier=None):
+    def progress_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal progress_event_detected
         progress_event_detected = identifier
     event_bus.subscribe(progress_event_listener, 'AUTHENTICATION.PROGRESS')
 
-    def success_event_listener(identifier=None):
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal success_event_detected
         success_event_detected = identifier
     event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
@@ -71,7 +72,7 @@ def test_single_factor_authc_userpass_using_cache_success(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None, topic=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.SUCCEEDED')
@@ -95,7 +96,7 @@ def test_single_factor_authc_userpass_using_accountstore_failure(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None, topic=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.FAILED')
@@ -115,7 +116,7 @@ def test_single_factor_authc_userpass_using_cache_failure(
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None, topic=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.FAILED')
@@ -132,12 +133,13 @@ def test_single_factor_authc_userpass_using_cache_failure(
 
     cache_handler.delete(domain='credentials', identifier='thedude')
 
+
 def test_single_factor_authc_userpass_using_accountstore_user_not_found(
         default_authenticator, event_bus):
     da = default_authenticator
     event_detected = None
 
-    def event_listener(identifier=None, topic=None):
+    def event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal event_detected
         event_detected = identifier
     event_bus.subscribe(event_listener, 'AUTHENTICATION.ACCOUNT_NOT_FOUND')
@@ -166,19 +168,19 @@ def test_single_factor_locks_account(
     success_event_detected = None
     other_success_event_detected = None
 
-    def lock_event_listener(identifier=None):
+    def lock_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal lock_event_detected
         lock_event_detected = identifier
 
-    def fail_event_listener(identifier=None):
+    def fail_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal fail_event_detected
         fail_event_detected = identifier
 
-    def success_event_listener(identifier=None):
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal success_event_detected
         success_event_detected = identifier
 
-    def other_success_event_listener(identifier=None):
+    def other_success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal other_success_event_detected
         other_success_event_detected = identifier
 
@@ -226,11 +228,11 @@ def test_multi_factor_locks_account(
     success_event_detected = None
     da = default_authenticator
 
-    def lock_event_listener(identifier=None):
+    def lock_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal lock_event_detected
         lock_event_detected = identifier
 
-    def success_event_listener(identifier=None):
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
         nonlocal success_event_detected
         success_event_detected = identifier
 

@@ -57,7 +57,7 @@ class EventLogger:
         try:
             # Permission objects are serializable
             new_items = [(item[0].__getstate__(), item[1]) for item in items]
-        except AttributeError:
+        except (TypeError, AttributeError):
             # presumably a set of role strings
             new_items = list(items)
 
