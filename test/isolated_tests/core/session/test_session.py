@@ -11,6 +11,7 @@ from yosai.core import (
     DefaultSessionSettings,
     DefaultSessionKey,
     ExpiredSessionException,
+    NativeSessionManager,
     StoppedSessionException,
     SimpleSession,
 )
@@ -367,8 +368,6 @@ def test_ss_eq_different_attributes():
    """
     idle_timeout = (10 * 60 * 1000)
     absolute_timeout = (60 * 60 * 1000)
-    last_access_time = round(time.time() * 1000) - (5 * 60 * 1000)
-    start_timestamp = round(time.time() * 1000) - (8 * 60 * 1000)
 
     s1 = SimpleSession(absolute_timeout, idle_timeout)
     s2 = SimpleSession(absolute_timeout, idle_timeout)
@@ -384,17 +383,18 @@ def test_ss_eq_different_attributes():
 # DelegatingSession
 # ----------------------------------------------------------------------------
 
-def test_dsstart_timestamp_not_exists(patched_delegating_session):
+
+def test_dsstart_timestamp_not_exists(patched_delegating_session, monkeypatch):
     """
     unit tested:  start_timestamp
 
     test case:  since there is no start_timestamp set, it delegates to the sm
     """
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'getstart_timestamp') as msm:
-        msm.return_value = None
-        pds.start_timestamp
-        msm.assert_called_once_with(pds.session_key)
+    monkeypatch.setattr(pds.session_manager, 'get_start_timestamp', lambda x: 12345)
+    result = pds.start_timestamp
+    assert result == 12345
+
 
 def test_dsstart_timestamp_exists(
         patched_delegating_session, monkeypatch):
@@ -405,82 +405,85 @@ def test_dsstart_timestamp_exists(
     since the start_timestamp is set for the pds, it is used
     """
     pds = patched_delegating_session
+    assert pds._start_timestamp is None
+    monkeypatch.setattr(pds.session_manager, 'get_start_timestamp', lambda x: 12345)
+    pds.start_timestamp
+    assert pds._start_timestamp == 12345
 
-    now = round(time.time() * 1000)
-    monkeypatch.setattr(pds, 'start_timestamp', now)
-    assert pds.start_timestamp == now
 
-def test_dslast_access_time(patched_delegating_session):
+def test_dslast_access_time(patched_delegating_session, monkeypatch):
     """
     unit tested:  last_access_time
 
     test case:  delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
+    monkeypatch.setattr(pds.session_manager, 'get_last_access_time', lambda x: 1234)
     result = pds.last_access_time
-
-    # verifeis a pre-defined result from the mock
-    assert result == 1472291665100
+    assert result == 1234
 
 
-def test_ds_getidle_timeout(patched_delegating_session):
+def test_ds_getidle_timeout(patched_delegating_session, monkeypatch):
     """
     unit tested: idle_timeout
 
     test case: delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
+    monkeypatch.setattr(pds.session_manager, 'get_idle_timeout', lambda x: 1234)
     result = pds.idle_timeout
-    assert result == (10 * 60 * 1000)
+    assert result == 1234
 
-def test_ds_setidle_timeout(patched_delegating_session):
+
+def test_ds_setidle_timeout(patched_delegating_session, monkeypatch):
     """
     unit tested: idle_timeout
 
     test case: delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'setidle_timeout') as msm_sit:
-        msm_sit.return_value = None
-        now = (5 * 60 * 1000)
-        pds.idle_timeout = now
-        msm_sit.assert_called_once_with(pds.session_key, now)
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+    pds.idle_timeout = 1234
+    mock_sm.set_idle_timeout.assert_called_once_with(pds.session_key, 1234)
 
-def test_ds_getabsolute_timeout(patched_delegating_session):
+
+def test_ds_getabsolute_timeout(patched_delegating_session, monkeypatch):
     """
     unit tested: absolute_timeout
 
     test case: delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
+    monkeypatch.setattr(pds.session_manager, 'get_absolute_timeout', lambda x: 1234)
     result = pds.absolute_timeout
-    assert result == (60 * 60 * 1000)
+    assert result == 1234
 
-def test_ds_setabsolute_timeout(patched_delegating_session):
+
+def test_ds_setabsolute_timeout(patched_delegating_session, monkeypatch):
     """
     unit tested: absolute_timeout
 
     test case: delegates the request to the MockSessionManager
     """
-
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'setabsolute_timeout') as msm_sit:
-        msm_sit.return_value = None
-        now = round(time.time() * 1000)
-        pds.absolute_timeout = now
-        msm_sit.assert_called_once_with(pds.session_key, now)
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+    pds.absolute_timeout = 1234
+    mock_sm.set_absolute_timeout.assert_called_once_with(pds.session_key, 1234)
 
-def test_ds_host_not_exists(patched_delegating_session):
+
+def test_ds_host_not_exists(patched_delegating_session, monkeypatch):
     """
     unit tested:  host
 
     test case:  there is no host set, so delegates to the sm
     """
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'get_host') as msm_gh:
-        msm_gh.return_value = None
-        pds.host
-        msm_gh.assert_called_once_with(pds.session_key)
+    monkeypatch.setattr(pds.session_manager, 'get_host', lambda x: 1234)
+    result = pds.host
+    assert result == 1234
+
 
 def test_ds_host_exists(
         patched_delegating_session, monkeypatch):
@@ -496,20 +499,21 @@ def test_ds_host_exists(
     monkeypatch.setattr(pds, '_host', dumbhost)
     assert pds.host == dumbhost
 
-def test_ds_touch(patched_delegating_session):
+
+def test_ds_touch(patched_delegating_session, monkeypatch):
     """
     unit tested: touch
 
     test case: delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'touch') as msm_touch:
-        msm_touch.return_value = None
-        pds.touch()
-        msm_touch.assert_called_once_with(pds.session_key)
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+    pds.touch()
+    mock_sm.touch.assert_called_once_with(pds.session_key)
 
 
-def test_ds_stop(patched_delegating_session):
+def test_ds_stop(patched_delegating_session, monkeypatch):
     """
     unit tested:  stop
 
@@ -517,14 +521,18 @@ def test_ds_stop(patched_delegating_session):
     delegates the request to the MockSessionManager
     """
     pds = patched_delegating_session
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+    mock_callback = mock.MagicMock()
+    monkeypatch.setattr(pds, 'stop_session_callback', mock_callback)
 
-    with mock.patch.object(MockSessionManager, 'stop') as msm_stop:
-        msm_stop.return_value = None
-        pds.stop('identifiers')
-        msm_stop.assert_called_once_with(pds.session_key, 'identifiers')
+    pds.stop('identifiers')
+
+    mock_sm.stop.assert_called_once_with(pds.session_key, 'identifiers')
+    mock_callback.assert_called_once_with()
 
 
-def test_ds_attribute_keys(patched_delegating_session):
+def test_ds_attribute_keys(patched_delegating_session, monkeypatch):
     """
     unit tested:  attribute_keys
 
@@ -533,60 +541,65 @@ def test_ds_attribute_keys(patched_delegating_session):
     """
 
     pds = patched_delegating_session
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
 
-    with mock.patch.object(MockSessionManager, 'get_attribute_keys') as gak:
-        gak.return_value = None
-        pds.attribute_keys
-        gak.assert_called_once_with(pds.session_key)
+    pds.attribute_keys
+
+    mock_sm.get_attribute_keys.assert_called_once_with(pds.session_key)
 
 
-def test_ds_get_attribute(patched_delegating_session):
+def test_ds_get_attribute(patched_delegating_session, monkeypatch):
     """
     unit tested:  get_attribute
 
     test case:
     delegates the request to the MockSessionManager
     """
-
     pds = patched_delegating_session
 
-    with mock.patch.object(MockSessionManager, 'get_attribute') as ga:
-        ga.return_value = None
-        result = pds.get_attribute('serializable')
-        ga.assert_called_once_with(pds.session_key, 'serializable')
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+
+    result = pds.get_attribute('serializable')
+
+    mock_sm.get_attribute.assert_called_once_with(pds.session_key, 'serializable')
 
 
-def test_ds_set_attribute_delegates(patched_delegating_session):
+def test_ds_set_attribute_delegates(patched_delegating_session, monkeypatch):
     """
     unit tested:  set_attribute
 
     test case:
     delegates to the MockSessionManager
     """
-
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'set_attribute') as msm_sa:
-        msm_sa.return_value = None
-        pds.set_attribute('attributekey', 'value')
-        msm_sa.assert_called_once_with(pds.session_key, 'attributekey', 'value')
+
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+
+    pds.set_attribute('attributekey', 'value')
+
+    mock_sm.set_attribute.assert_called_once_with(pds.session_key, 'attributekey', 'value')
 
 
-def test_ds_remove_attribute_delegates(patched_delegating_session):
+def test_ds_remove_attribute_delegates(patched_delegating_session, monkeypatch):
     """
     unit tested:  remove_attribute
 
     test case:
     delegates to the MockSessionManager
     """
-
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'remove_attribute') as msm_ra:
-        msm_ra.return_value = None
-        pds.remove_attribute('attributekey')
-        msm_ra.assert_called_once_with(pds.session_key, 'attributekey')
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+
+    pds.remove_attribute('attributekey')
+
+    mock_sm.remove_attribute.assert_called_once_with(pds.session_key, 'attributekey')
 
 
-def test_ds_internal_attribute_keys(patched_delegating_session):
+def test_ds_internal_attribute_keys(patched_delegating_session, monkeypatch):
     """
     unit tested:  internal_attribute_keys
 
@@ -596,44 +609,47 @@ def test_ds_internal_attribute_keys(patched_delegating_session):
 
     pds = patched_delegating_session
 
-    with mock.patch.object(MockSessionManager, 'get_internal_attribute_keys') as gak:
-        gak.return_value = None
-        pds.internal_attribute_keys
-        gak.assert_called_once_with(pds.session_key)
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+    pds.internal_attribute_keys
+    mock_sm.get_internal_attribute_keys.assert_called_once_with(pds.session_key)
 
 
-def test_ds_get_internal_attribute(patched_delegating_session):
+def test_ds_get_internal_attribute(patched_delegating_session, monkeypatch):
     """
     unit tested:  get_internal_attribute
 
     test case:
     delegates the request to the MockSessionManager
     """
-
     pds = patched_delegating_session
 
-    with mock.patch.object(MockSessionManager, 'get_internal_attribute') as ga:
-        ga.return_value = None
-        pds.get_internal_attribute('internal_attribute_key')
-        ga.assert_called_once_with(pds.session_key, 'internal_attribute_key')
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+
+    pds.get_internal_attribute('internal_attribute_key')
+
+    mock_sm.get_internal_attribute.assert_called_once_with(pds.session_key, 'internal_attribute_key')
 
 
-def test_ds_set_internal_attribute_delegates(patched_delegating_session):
+def test_ds_set_internal_attribute_delegates(patched_delegating_session, monkeypatch):
     """
     unit tested:  set_internal_attribute
 
     test case:
     delegates to the MockSessionManager
     """
-
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'set_internal_attribute') as msm_sa:
-        msm_sa.return_value = None
-        pds.set_internal_attribute('internal_attribute_key', 'value')
-        msm_sa.assert_called_once_with(pds.session_key, 'internal_attribute_key', 'value')
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+
+    pds.set_internal_attribute('internal_attribute_key', 'value')
+
+    mock_sm.set_internal_attribute.assert_called_once_with(
+        pds.session_key, 'internal_attribute_key', 'value')
 
 
-def test_ds_remove_internal_attribute_delegates(patched_delegating_session):
+def test_ds_remove_internal_attribute_delegates(patched_delegating_session, monkeypatch):
     """
     unit tested:  remove_internal_attribute
 
@@ -642,10 +658,13 @@ def test_ds_remove_internal_attribute_delegates(patched_delegating_session):
     """
 
     pds = patched_delegating_session
-    with mock.patch.object(MockSessionManager, 'remove_internal_attribute') as msm_ra:
-        msm_ra.return_value = None
-        pds.remove_internal_attribute('internal_attribute_key')
-        msm_ra.assert_called_once_with(pds.session_key, 'internal_attribute_key')
+    mock_sm = mock.create_autospec(NativeSessionManager)
+    monkeypatch.setattr(pds, 'session_manager', mock_sm)
+
+    pds.remove_internal_attribute('internal_attribute_key')
+
+    mock_sm.remove_internal_attribute.assert_called_once_with(
+        pds.session_key, 'internal_attribute_key')
 
 
 # ----------------------------------------------------------------------------
@@ -683,6 +702,7 @@ def test_dsse_isse_wo_subject(default_session_storage_evaluator):
     result = dsse.is_session_storage_enabled()
     assert result is True
 
+
 def test_dsse_isse_w_subject(default_session_storage_evaluator, monkeypatch):
     """
     unit tested:  is_session_storage_enabled
@@ -696,6 +716,6 @@ def test_dsse_isse_w_subject(default_session_storage_evaluator, monkeypatch):
             return None
 
     dsse = default_session_storage_evaluator
-    monkeypatch.setattr(dsse, '_session_storage_enabled', False)
+    monkeypatch.setattr(dsse, 'session_storage_enabled', False)
     result = dsse.is_session_storage_enabled(subject=MockSubject())
     assert result is False

@@ -8,7 +8,6 @@ from yosai.core import (
     AdditionalAuthenticationRequired,
     DefaultAuthenticator,
     DefaultAuthenticationAttempt,
-    DefaultEventBus,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
     LockedAccountException,
@@ -16,6 +15,7 @@ from yosai.core import (
     UsernamePasswordToken,
     TOTPToken,
     realm_abcs,
+    event_bus,
 )
 
 from passlib.totp import TOTP
@@ -369,9 +369,9 @@ def test_da_register_cache_clear_listener(
     da = default_authenticator
     monkeypatch.setattr(da, 'event_bus', event_bus)
 
-    with mock.patch.object(event_bus, 'register') as eb_r:
+    with mock.patch.object(event_bus, 'subscribe') as eb_r:
         eb_r.return_value = None
-        with mock.patch.object(event_bus, 'is_registered') as eb_ir:
+        with mock.patch.object(event_bus, 'isSubscribed') as eb_ir:
             eb_ir.return_value = None
 
             da.register_cache_clear_listener()
@@ -391,13 +391,13 @@ def test_da_notify_event(default_authenticator, sample_acct_info, monkeypatch):
     creates an Event and publishes it to the event_bus
     """
     da = default_authenticator
-    mock_event_bus = mock.create_autospec(DefaultEventBus)
+    mock_event_bus = mock.create_autospec(event_bus)
     monkeypatch.setattr(da, 'event_bus', mock_event_bus)
 
     da.notify_event('identifier', 'SOMETHING HAPPENED')
 
-    mock_event_bus.publish.assert_called_with('SOMETHING HAPPENED',
-                                              identifier='identifier')
+    mock_event_bus.sendMessage.assert_called_with('SOMETHING HAPPENED',
+                                                  identifier='identifier')
 
 
 def test_da_notify_event_raises(default_authenticator, sample_acct_info, monkeypatch):

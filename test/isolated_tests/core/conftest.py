@@ -4,7 +4,6 @@ from unittest import mock
 from yosai.core import (
     AccountStoreRealm,
     DefaultAuthenticator,
-    DefaultEventBus,
     DefaultSubjectContext,
     ModularRealmAuthorizer,
     SimpleIdentifierCollection,
@@ -35,13 +34,6 @@ def mock_account_store():
 @pytest.fixture(scope='function')
 def mock_pubsub():
     return MockPubSub()
-
-
-@pytest.fixture(scope='function')
-def patched_event_bus(mock_pubsub, monkeypatch):
-    eb = DefaultEventBus()
-    monkeypatch.setattr(eb, '_event_bus', mock_pubsub)
-    return eb
 
 
 @pytest.fixture(scope='function')
