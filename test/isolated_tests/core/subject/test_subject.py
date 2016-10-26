@@ -5,7 +5,6 @@ from unittest import mock
 from yosai.core import (
     AuthenticationException,
     AccountStoreRealm,
-    DefaultSessionContext,
     DefaultSessionStorageEvaluator,
     DefaultSubjectContext,
     DefaultSubjectStore,
@@ -756,7 +755,7 @@ def test_create_session_context_without_host(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'host', None)
     result = ds.create_session_context()
-    assert isinstance(result, DefaultSessionContext) and result.host is None
+    assert result['host'] is None
 
 
 def test_create_session_context_with_host(delegating_subject, monkeypatch):
@@ -768,8 +767,7 @@ def test_create_session_context_with_host(delegating_subject, monkeypatch):
     """
     ds = delegating_subject
     result = ds.create_session_context()
-    assert (isinstance(result, DefaultSessionContext) and
-            result.host == ds.host)
+    assert (result['host'] == ds.host)
 
 
 def test_clear_run_as_identities_internal_with_warning(

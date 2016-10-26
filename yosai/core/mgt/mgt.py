@@ -725,11 +725,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         Saves the subject's state to a persistent location for future reference.
         This implementation merely delegates saving to the internal subject_store.
         """
-        try:
-            self.subject_store.save(subject)
-        except AttributeError:
-            msg = "no subject_store is defined, so cannot save subject"
-            raise AttributeError(msg)
+        self.subject_store.save(subject)
 
     def delete(self, subject):
         """
@@ -740,11 +736,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         :param subject: the subject for which state will be removed
         """
-        try:
-            self.subject_store.delete(subject)
-        except AttributeError:
-            msg = "no subject_store is defined, so cannot delete subject"
-            raise AttributeError(msg)
+        self.subject_store.delete(subject)
 
     def ensure_security_manager(self, subject_context):
         """
@@ -756,22 +748,17 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
                                 SecurityManager instance
         :returns: the SubjectContext
         """
-        try:
-            if (subject_context.resolve_security_manager() is not None):
-                msg = ("Subject Context resolved a security_manager "
-                       "instance, so not re-assigning.  Returning.")
-                logger.debug(msg)
-                return subject_context
-
-            msg = ("No security_manager found in context.  Adding self "
-                   "reference.")
+        if (subject_context.resolve_security_manager() is not None):
+            msg = ("Subject Context resolved a security_manager "
+                   "instance, so not re-assigning.  Returning.")
             logger.debug(msg)
+            return subject_context
 
-            subject_context.security_manager = self
+        msg = ("No security_manager found in context.  Adding self "
+               "reference.")
+        logger.debug(msg)
 
-        except AttributeError:
-            msg = 'subject_context is invalid'
-            raise AttributeError(msg)
+        subject_context.security_manager = self
 
         return subject_context
 
@@ -859,8 +846,6 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         return subject_context
 
-    # DG:  it's not clear to me why this method exists, as it doesn't seem to be
-    # called (TBD)
     def create_session_context(self, subject_context):
         session_context = {}
 
@@ -911,16 +896,16 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
 
         finally:
             try:
-                self.stop_session(subject, identifiers)
+                self.stop_session(subject)
             except Exception:
                 msg2 = ("Unable to cleanly stop Session for Subject. "
                         "Ignoring (logging out).")
                 logger.debug(msg2, exc_info=True)
 
-    def stop_session(self, subject, identifiers):
+    def stop_session(self, subject):
         session = subject.get_session(False)
         if (session):
-            session.stop(identifiers)
+            session.stop(subject.identifiers)
 
     def get_remembered_identity(self, subject_context):
         """

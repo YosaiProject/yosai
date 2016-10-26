@@ -69,10 +69,6 @@ def mock_security_manager():
 
 
 @pytest.fixture(scope='function')
-def mock_thread_context():
-    return MockThreadContext()
-
-@pytest.fixture(scope='function')
 def simple_identifier_collection():
     return SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                       identifier='identifier')
