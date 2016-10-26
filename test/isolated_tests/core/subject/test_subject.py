@@ -4,33 +4,18 @@ from unittest import mock
 
 from yosai.core import (
     AuthenticationException,
-    AccountStoreRealm,
     DefaultSessionStorageEvaluator,
-    DefaultSubjectContext,
     DefaultSubjectStore,
     DelegatingSession,
     DelegatingSubject,
-    DisabledSessionException,
-    IdentifiersNotSetException,
-    InvalidArgumentException,
-    IllegalStateException,
     NativeSecurityManager,
-    SecurityManagerInitException,
-    SecurityManagerSettings,
-    SerializationManager,
-    SessionException,
-    SimpleIdentifierCollection,
-    SubjectBuilder,
     UsernamePasswordToken,
     Yosai,
-    thread_local,
     UnauthenticatedException,
 )
 
 from ..doubles import (
     MockSecurityManager,
-    MockSession,
-    MockSubjectBuilder,
 )
 
 # ------------------------------------------------------------------------------
@@ -287,7 +272,7 @@ def test_ds_decorate_type_check(delegating_subject):
     only objects implementing the Session interface may be wrapped by the SAPS
     """
     ds = delegating_subject
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(ValueError):
         ds.decorate('bla')
 
 
@@ -345,7 +330,8 @@ def test_ds_is_permitted_withoutidentifiers(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.is_permitted('anything')")
+    pytest.raises(ValueError, "ds.is_permitted('anything')")
+
 
 def test_ds_is_permitted_collective(delegating_subject):
     """
@@ -377,7 +363,7 @@ def test_ds_is_permitted_collective_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException,
+    pytest.raises(ValueError,
                   "ds.is_permitted_collective('permission_s', all)")
 
 
@@ -420,7 +406,7 @@ def test_ds_check_permission_raises(delegating_subject, monkeypatch):
     monkeypatch.setattr(ds, 'assert_authz_check_possible', lambda: None)
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.check_permission('anything', all)")
+    pytest.raises(ValueError, "ds.check_permission('anything', all)")
 
 
 def test_ds_has_role(delegating_subject, monkeypatch):
@@ -446,7 +432,7 @@ def test_ds_has_role_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.has_role('role123')")
+    pytest.raises(ValueError, "ds.has_role('role123')")
 
 
 def test_has_role_collective(delegating_subject, monkeypatch):
@@ -473,7 +459,7 @@ def test_ds_has_role_collective_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.has_role_collective('role123', any)")
+    pytest.raises(ValueError, "ds.has_role_collective('role123', any)")
 
 
 def test_check_role(delegating_subject):
@@ -501,7 +487,7 @@ def test_check_role_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IdentifiersNotSetException, "ds.check_role('role123', any)")
+    pytest.raises(ValueError, "ds.check_role('role123', any)")
 
 
 def test_ds_login_succeeds(
@@ -584,7 +570,7 @@ def test_ds_login_noidentifiers_raises(
         with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
             mock_smlogin.return_value = mock_subject
 
-            pytest.raises(IllegalStateException, "ds.login('dumb_authc_token')")
+            pytest.raises(ValueError, "ds.login('dumb_authc_token')")
 
 
 def test_ds_login_nohost(
@@ -673,7 +659,7 @@ def test_ds_attribute_type_raises(delegating_subject, attr, monkeypatch):
     any unacceptable type raises an exception
     """
     ds = delegating_subject
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(ValueError):
         setattr(ds, attr, 'wrongvalue')
 
 
@@ -718,7 +704,8 @@ def test_get_session_withoutsessionattribute_raises(
     ds = delegating_subject
     monkeypatch.setattr(ds, 'session', None)
     monkeypatch.setattr(ds, 'session_creation_enabled', False)
-    pytest.raises(DisabledSessionException, "ds.get_session()")
+    with pytest.raises(ValueError):
+        ds.get_session()
 
 
 def test_get_session_withoutsessionattribute_createsnew(
@@ -780,7 +767,7 @@ def test_clear_run_as_identities_internal_with_warning(
     """
     ds = delegating_subject
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities') as mock_cri:
-        mock_cri.side_effect = SessionException
+        mock_cri.side_effect = ValueError
         ds.clear_run_as_identities_internal()
         out = caplog.text
         assert 'Encountered session exception' in out
@@ -832,7 +819,7 @@ def test_ds_run_as_raises(delegating_subject, monkeypatch):
     ds = delegating_subject
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
     monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(IllegalStateException, "ds.run_as('dumb_identifiers')")
+    pytest.raises(ValueError, "ds.run_as('dumb_identifiers')")
 
 
 @pytest.mark.parametrize('stack, expected',
@@ -946,8 +933,7 @@ def test_ds_push_identity_raises(delegating_subject, monkeypatch):
     when no identifiers argument is passed, an exception is raised
     """
     ds = delegating_subject
-    pytest.raises(InvalidArgumentException,
-                  "ds.push_identity(None)")
+    pytest.raises(ValueError, "ds.push_identity(None)")
 
 
 def test_ds_push_identity_withstack(
@@ -1382,7 +1368,7 @@ def test_security_manager_builder_init_realms_raises(
     smb = security_manager_builder
     realms = [(None, 'MockAccountStore')]
 
-    with pytest.raises(SecurityManagerInitException):
+    with pytest.raises(ValueError):
         smb.init_realms('settings', realms)
 
 def test_security_manager_builder_init_cache_handler_succeeds(

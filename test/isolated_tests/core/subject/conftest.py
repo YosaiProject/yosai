@@ -2,12 +2,10 @@ import pytest
 
 from yosai.core import (
     DefaultSubjectContext,
-    DefaultSubjectFactory,
     DefaultSubjectStore,
     DelegatingSubject,
-    SecurityManagerBuilder,
+    SecurityManagerCreator,
     SimpleIdentifierCollection,
-    SubjectBuilder,
 )
 
 
@@ -51,16 +49,7 @@ def subject_builder_context(
                 attribute1='attribute1',
                 attribute2='attribute2')
 
-@pytest.fixture(scope='function')
-def subject_builder(subject_builder_context, yosai):
-    return SubjectBuilder(yosai=yosai, security_manager=yosai.security_manager)
-    
 
 @pytest.fixture(scope='function')
-def default_subject_factory():
-    return DefaultSubjectFactory()
-
-
-@pytest.fixture(scope='function')
-def security_manager_builder():
-    return SecurityManagerBuilder()
+def security_manager_creator():
+    return SecurityManagerCreator()
