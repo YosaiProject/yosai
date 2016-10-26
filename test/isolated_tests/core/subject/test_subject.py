@@ -9,6 +9,7 @@ from yosai.core import (
     DelegatingSession,
     DelegatingSubject,
     NativeSecurityManager,
+    SessionException,
     UsernamePasswordToken,
     Yosai,
     UnauthenticatedException,
@@ -22,23 +23,8 @@ from ..doubles import (
 # DefaultSubjectContext
 # ------------------------------------------------------------------------------
 
-@pytest.mark.parametrize(
-    'attr', ['security_manager', 'session_id', 'subject', 'identifiers',
-             'session', 'session_creation_enabled', 'authentication_token',
-             'host'])
-def test_dsc_property_accessors(attr, subject_context):
-    """
-    unit tested:  every property accessor method, except authenticated
 
-    test case:
-    each property references an underlying context map for its corresponding
-    value
-    """
-    dsc = subject_context
-    assert hasattr(dsc, attr)
-
-
-def test_dsc_resolve_security_manager_exists(subject_context):
+def test_dsc_resolve_security_manager_exists(subject_context, monkeypatch):
     """
     unit tested:  resolve_security_manager
 
@@ -46,8 +32,9 @@ def test_dsc_resolve_security_manager_exists(subject_context):
     resolves first to a security manager that already exists
     """
     dsc = subject_context
+    monkeypatch.setattr(dsc, 'security_manager', 'sm', raising=False)
     result = dsc.resolve_security_manager()
-    assert result == dsc.security_manager and bool(result)
+    assert result == 'sm'
 
 
 def test_dsc_resolve_security_manager_none(
@@ -60,14 +47,12 @@ def test_dsc_resolve_security_manager_none(
     Yosai
     """
     dsc = subject_context
-    monkeypatch.setattr(dsc, 'security_manager', None)
-    monkeypatch.setattr(yosai, '_security_manager', 'mysecuritymanager', raising=False)
+    monkeypatch.setattr(dsc, 'security_manager', None, raising=False)
+    monkeypatch.setattr(yosai, 'security_manager', 'mysecuritymanager', raising=False)
 
-    with Yosai.context(yosai):
-        result = dsc.resolve_security_manager()
-        out = caplog.text
-        assert ("No SecurityManager available" in out and
-                result == 'mysecuritymanager')
+    result = dsc.resolve_security_manager()
+    out = caplog.text
+    assert ("No SecurityManager available" in out and result == 'mysecuritymanager')
 
 
 def test_dsc_resolve_security_manager_none_raises(
@@ -81,13 +66,13 @@ def test_dsc_resolve_security_manager_none_raises(
 
     dsc = subject_context
     monkeypatch.setattr(dsc, 'security_manager', None)
-    monkeypatch.delattr(yosai, '_security_manager', raising=False)
+    monkeypatch.delattr(yosai, 'security_manager', raising=False)
 
-    with Yosai.context(yosai):
-        result = dsc.resolve_security_manager()
-        out = caplog.text
-        assert ("No SecurityManager available in subject context" in out and
-                result is None)
+    result = dsc.resolve_security_manager()
+    out = caplog.text
+    assert ("No SecurityManager available in subject context" in out and
+            result is None)
+
 
 def test_dsc_resolve_identifiers_exists(subject_context, monkeypatch):
     """
@@ -176,7 +161,7 @@ def test_dsc_resolve_authenticated_usingaccount(subject_context, monkeypatch):
     dsc = subject_context
 
     monkeypatch.setattr(dsc, 'authenticated', None)
-    monkeypatch.setattr(dsc, 'account', mock.MagicMock(account_id='id123'))
+    monkeypatch.setattr(dsc, 'account_id', mock.MagicMock(account_id='id123'))
     result = dsc.resolve_authenticated('session')
     assert result is True
 
@@ -194,7 +179,7 @@ def test_dsc_resolve_authenticated_usingsession(
 
     monkeypatch.setattr(mock_session, 'get_internal_attribute', lambda x: True)
     monkeypatch.setattr(dsc, 'resolve_session', lambda: mock_session)
-    monkeypatch.setattr(dsc, 'account', None)
+    monkeypatch.setattr(dsc, 'account_id', None)
     monkeypatch.setattr(dsc, 'authenticated', None)
 
     result = dsc.resolve_authenticated(mock_session)
@@ -252,30 +237,6 @@ def test_dsc_resolve_host_notexists_session(subject_context, monkeypatch):
 # ------------------------------------------------------------------------------
 
 
-def test_ds_init(delegating_subject):
-    """
-    unit tested:  __init__
-
-    test case:
-    a session passed as an argument into init should be wrapped by a SAPS
-    - also exercises the decorate method code path
-    """
-    ds = delegating_subject
-    assert isinstance(ds.session, DelegatingSubject.StoppingAwareProxiedSession)
-
-
-def test_ds_decorate_type_check(delegating_subject):
-    """
-    unit tested: decorate
-
-    test case:
-    only objects implementing the Session interface may be wrapped by the SAPS
-    """
-    ds = delegating_subject
-    with pytest.raises(ValueError):
-        ds.decorate('bla')
-
-
 def test_ds_identifiers_fromstack(delegating_subject, monkeypatch):
     """
     unit tested:  identifiers
@@ -304,7 +265,7 @@ def test_ds_identifiers_fromidentifiers(
     assert result == simple_identifiers_collection
 
 
-def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
+def test_ds_is_permitted_authorized(delegating_subject, monkeypatch):
     """
     unit test:  is_permitted
 
@@ -314,12 +275,13 @@ def test_ds_is_permitted_withidentifiers(delegating_subject, monkeypatch):
     """
 
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'authenticated', True)
     monkeypatch.setattr(ds.security_manager, 'is_permitted', lambda x,y: 'sm_permitted')
     result = ds.is_permitted('permission')
     assert result == 'sm_permitted'
 
 
-def test_ds_is_permitted_withoutidentifiers(delegating_subject, monkeypatch):
+def test_ds_is_permitted_notauthorized(delegating_subject, monkeypatch):
     """
     unit test:  is_permitted
 
@@ -328,23 +290,16 @@ def test_ds_is_permitted_withoutidentifiers(delegating_subject, monkeypatch):
     so an exception raises
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
     pytest.raises(ValueError, "ds.is_permitted('anything')")
 
 
-def test_ds_is_permitted_collective(delegating_subject):
+def test_ds_is_permitted_collective(delegating_subject, monkeypatch):
     """
     unit tested:  is_permitted_collective
-
-    test case:
-        given a DS with identifiers attribute:
-            calls security_manager's method, which is a verified double whose
-            return value is hard coded True
-
-        otherwise, raises
     """
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'authenticated', True)
+    monkeypatch.setattr(ds.security_manager, 'is_permitted_collective', lambda x,y,z: True)
     result = ds.is_permitted_collective('permission_s', all)
     assert result is True
 
@@ -361,10 +316,7 @@ def test_ds_is_permitted_collective_raises(delegating_subject, monkeypatch):
         otherwise, raises
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
-    monkeypatch.setattr(ds, '_identifiers', None)
-    pytest.raises(ValueError,
-                  "ds.is_permitted_collective('permission_s', all)")
+    pytest.raises(ValueError, "ds.is_permitted_collective('permission_s', all)")
 
 
 def test_ds_assert_authz_check_possible(delegating_subject, monkeypatch):
@@ -380,7 +332,8 @@ def test_ds_assert_authz_check_possible(delegating_subject, monkeypatch):
     pytest.raises(UnauthenticatedException, "ds.assert_authz_check_possible()")
 
 
-def test_ds_check_permission(delegating_subject, monkeypatch):
+@mock.patch.object(DelegatingSubject, 'assert_authz_check_possible')
+def test_ds_check_permission(mock_aacp, delegating_subject, monkeypatch):
     """
     unit tested:  check_permission
 
@@ -388,11 +341,12 @@ def test_ds_check_permission(delegating_subject, monkeypatch):
     delegates call to security_manager
     """
     ds = delegating_subject
-    monkeypatch.setattr(ds,'assert_authz_check_possible', lambda: None)
-    with mock.patch.object(MockSecurityManager, 'check_permission') as mock_cp:
-        mock_cp.return_value = None
-        ds.check_permission('arbitrary', all)
-        assert mock_cp.called
+    monkeypatch.setattr(ds, 'authenticated', True)
+    mock_cp = mock.create_autospec(NativeSecurityManager)
+    monkeypatch.setattr(ds.security_manager, 'check_permission', mock_cp)
+    ds.check_permission(['arbitrary'], all)
+    mock_aacp.assert_called_once_with()
+    assert mock_cp.called
 
 
 def test_ds_check_permission_raises(delegating_subject, monkeypatch):
@@ -417,6 +371,7 @@ def test_ds_has_role(delegating_subject, monkeypatch):
     delegates call to security_manager
     """
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'authenticated', True)
     monkeypatch.setattr(ds.security_manager, 'has_role', lambda x,y: 'yup')
     result = ds.has_role('roleid123')
     assert result == 'yup'
@@ -443,6 +398,7 @@ def test_has_role_collective(delegating_subject, monkeypatch):
     has identifiers and so delegates to security_master
     """
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'authenticated', True)
     monkeypatch.setattr(ds.security_manager, 'has_role_collective', lambda x,y,z: 'yup')
     result = ds.has_role_collective('roleid123', any)
     assert result == 'yup'
@@ -462,7 +418,7 @@ def test_ds_has_role_collective_raises(delegating_subject, monkeypatch):
     pytest.raises(ValueError, "ds.has_role_collective('role123', any)")
 
 
-def test_check_role(delegating_subject):
+def test_check_role(delegating_subject, monkeypatch):
     """
     unit tested:  check_role
 
@@ -471,6 +427,7 @@ def test_check_role(delegating_subject):
     security_manager.check_role
     """
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'authenticated', True)
     with mock.patch.object(MockSecurityManager, 'check_role') as mock_cr:
         ds.check_role('roleid123', any)
         assert mock_cr.called
@@ -508,9 +465,10 @@ def test_ds_login_succeeds(
     """
     ds = delegating_subject
     sic = simple_identifiers_collection
-    monkeypatch.setattr(mock_subject, '_identifiers', sic)
+    mock_subject._identifiers = sic
+    mock_subject.host = 'host'
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
-    monkeypatch.setattr(mock_subject, 'get_session', lambda x: mock_session)
+    mock_subject.get_session.return_value = mock_session
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
         mock_crii.return_value = None
@@ -518,17 +476,14 @@ def test_ds_login_succeeds(
         with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
             mock_smlogin.return_value = mock_subject
 
-            with mock.patch.object(DelegatingSubject, 'decorate') as mock_dec:
-                mock_dec.return_value = mock_session
+            ds.login('dumb_authc_token')
 
-                ds.login('dumb_authc_token')
+            mock_smlogin.assert_called_once_with(subject=ds, authc_token='dumb_authc_token')
 
-                mock_smlogin.assert_called_once_with(subject=ds, authc_token='dumb_authc_token')
-                mock_dec.assert_called_once_with(mock_session)
+            assert (ds.session == mock_session and
+                    ds.host == mock_subject.host and
+                    ds._identifiers == simple_identifiers_collection)
 
-                assert (ds.session == mock_session and
-                        ds.host == mock_subject.host and
-                        ds._identifiers == simple_identifiers_collection)
 
 def test_ds_login_raises(delegating_subject, monkeypatch):
     """
@@ -562,7 +517,8 @@ def test_ds_login_noidentifiers_raises(
     - an identitifers attribute is required, so an exception is raised
     """
     ds = delegating_subject
-    monkeypatch.setattr(mock_subject, '_identifiers', None)
+    mock_subject._identifiers = None
+    mock_subject.host = 'host'
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
         mock_crii.return_value = None
@@ -592,8 +548,8 @@ def test_ds_login_nohost(
     """
     ds = delegating_subject
     sic = simple_identifiers_collection
-    monkeypatch.setattr(mock_subject, '_identifiers', sic)
-    monkeypatch.setattr(mock_subject, 'host', None)
+    mock_subject._identifiers = sic
+    mock_subject.host = None
     monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
     monkeypatch.setattr(mock_subject, 'get_session', lambda x: mock_session)
 
@@ -603,18 +559,14 @@ def test_ds_login_nohost(
         with mock.patch.object(MockSecurityManager, 'login') as mock_smlogin:
             mock_smlogin.return_value = mock_subject
 
-            with mock.patch.object(DelegatingSubject, 'decorate') as mock_dec:
-                mock_dec.return_value = mock_session
+            ds.login(username_password_token)
 
-                ds.login(username_password_token)
+            mock_smlogin.assert_called_once_with(subject=ds,
+                                                 authc_token=username_password_token)
 
-                mock_smlogin.assert_called_once_with(subject=ds,
-                                                     authc_token=username_password_token)
-                mock_dec.assert_called_once_with(mock_session)
-
-                assert (ds.session == mock_session and
-                        ds.host == username_password_token.host and
-                        ds._identifiers == simple_identifiers_collection)
+            assert (ds.session == mock_session and
+                    ds.host == username_password_token.host and
+                    ds._identifiers == simple_identifiers_collection)
 
 
 def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
@@ -629,9 +581,10 @@ def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
 
     ds = delegating_subject
     sic = simple_identifiers_collection
-    monkeypatch.setattr(mock_subject, '_identifiers', sic)
-    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda:  None)
-    monkeypatch.setattr(mock_subject, 'get_session', lambda x: None)
+    mock_subject._identifiers = sic
+    mock_subject.host = 'host'
+    monkeypatch.setattr(ds, 'get_run_as_identifiers_stack', lambda: None)
+    mock_subject.get_session.return_value = None
 
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_crii:
         mock_crii.return_value = None
@@ -648,21 +601,6 @@ def test_ds_login_nosession(delegating_subject, monkeypatch, mock_subject,
                     ds._identifiers == simple_identifiers_collection)
 
 
-@pytest.mark.parametrize('attr',
-                         ['security_manager', 'identifiers', 'session',
-                          'authenticated'])
-def test_ds_attribute_type_raises(delegating_subject, attr, monkeypatch):
-    """
-    unit tested:  every property mutator that validates
-
-    test case:
-    any unacceptable type raises an exception
-    """
-    ds = delegating_subject
-    with pytest.raises(ValueError):
-        setattr(ds, attr, 'wrongvalue')
-
-
 def test_get_session_withsessionattribute_succeeds(
         delegating_subject, monkeypatch, mock_session):
     """
@@ -672,10 +610,12 @@ def test_get_session_withsessionattribute_succeeds(
     the DS includes a MockSession attributes and so it is returned
     """
     ds = delegating_subject
+    monkeypatch.setattr(ds, 'session', mock_session)
+
     result = ds.get_session()
 
-    expected = DelegatingSubject.StoppingAwareProxiedSession(mock_session, ds)
-    assert result == expected
+    assert not mock_session.touch.called
+    assert result == mock_session
 
 
 def test_get_session_withoutsessionattribute_createfalse(
@@ -720,16 +660,15 @@ def test_get_session_withoutsessionattribute_createsnew(
     ds = delegating_subject
     monkeypatch.setattr(ds, 'session', None)
     monkeypatch.setattr(ds, 'create_session_context', lambda: 'sessioncontext')
-    with mock.patch.object(MockSecurityManager, 'start') as mock_start:
-        mock_start.return_value = 'startedsession'
-        with mock.patch.object(DelegatingSubject, 'decorate') as mock_decorate:
-            mock_decorate.return_value = mock_session
+    mock_sm = mock.create_autospec(NativeSecurityManager)
+    mock_sm.start.return_value = mock_session
+    monkeypatch.setattr(ds, 'security_manager', mock_sm)
 
-            result = ds.get_session()
+    result = ds.get_session()
 
-            mock_start.assert_called_once_with('sessioncontext')
-            mock_decorate.assert_called_once_with('startedsession')
-            assert result == mock_session
+    mock_sm.start.assert_called_once_with('sessioncontext')
+    assert result == mock_session
+    assert mock_session.stop_session_callback == ds.session_stopped
 
 
 def test_create_session_context_without_host(delegating_subject, monkeypatch):
@@ -767,13 +706,13 @@ def test_clear_run_as_identities_internal_with_warning(
     """
     ds = delegating_subject
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities') as mock_cri:
-        mock_cri.side_effect = ValueError
+        mock_cri.side_effect = SessionException
         ds.clear_run_as_identities_internal()
         out = caplog.text
         assert 'Encountered session exception' in out
 
 
-def test_logout(delegating_subject):
+def test_logout(delegating_subject, monkeypatch):
     """
     unit tested:  logout
 
@@ -781,18 +720,19 @@ def test_logout(delegating_subject):
 
     """
     ds = delegating_subject
+    mock_sm = mock.create_autospec(NativeSecurityManager)
+    monkeypatch.setattr(ds, 'security_manager', mock_sm)
+
     with mock.patch.object(DelegatingSubject, 'clear_run_as_identities_internal') as mock_clear:
         mock_clear.return_value = None
 
-        with mock.patch.object(MockSecurityManager, 'logout') as mocksm_logout:
-            mocksm_logout.return_value = None
+        ds.logout()
 
-            ds.logout()
+        mock_clear.assert_called_once_with()
+        mock_sm.logout.assert_called_once_with(ds)
 
-            mock_clear.assert_called_once_with()
-            mocksm_logout.assert_called_once_with(ds)
-            assert (ds._session is None and ds._identifiers is None and
-                    ds._authenticated == False)
+        assert (ds.session is None and ds._identifiers is None and
+                ds.authenticated == False)
 
 
 def test_ds_run_as(delegating_subject):
@@ -1037,23 +977,6 @@ def test_ds_pop_identity_withmultistack(
     assert result == 'collection1'
 
 
-def test_ds_stoppingawareproxiedsession_stop(delegating_subject, mock_session):
-    """
-    unit tested:  StoppingAwareProxiedSession.stop
-
-    test case:
-    stops a session and notifies the owning subject
-    """
-
-    ds = delegating_subject
-    saps = ds.StoppingAwareProxiedSession(mock_session, ds)
-
-    with mock.patch.object(MockSession, 'stop') as mock_stop:
-        saps.stop('identifiers')
-        mock_stop.assert_called_once_with('identifiers')
-        assert ds.session is None
-
-
 # ------------------------------------------------------------------------------
 # DefaultSubjectStore
 # ------------------------------------------------------------------------------
@@ -1073,19 +996,14 @@ def test_dss_is_sse(default_subject_store, monkeypatch):
         assert result == 'yup'
 
 
-def test_dss_save_with_sse(default_subject_store, monkeypatch):
-    """
-    unit tested:  save
-
-    test case:
-
-    """
+@mock.patch.object(DefaultSubjectStore, 'merge_identity')
+def test_dss_save_with_sse(mock_mi, default_subject_store, monkeypatch):
     dss = default_subject_store
     monkeypatch.setattr(dss, 'is_session_storage_enabled', lambda x: True)
-    with mock.patch.object(DefaultSubjectStore, 'save_to_session') as dss_sts:
-        dss_sts.return_value = None
-        dss.save('dummysubject')
-        dss_sts.assert_called_once_with('dummysubject')
+
+    monkeypatch.setattr(dss, 'merge_identity', mock_mi)
+    dss.save('dummysubject')
+    mock_mi.assert_called_once_with('dummysubject')
 
 
 def test_dss_save_without_sse(default_subject_store, monkeypatch, caplog):
@@ -1097,26 +1015,10 @@ def test_dss_save_without_sse(default_subject_store, monkeypatch, caplog):
     """
     dss = default_subject_store
     monkeypatch.setattr(dss, 'is_session_storage_enabled', lambda x: False)
-    with mock.patch.object(DefaultSubjectStore, 'save_to_session') as dss_sts:
-        dss_sts.return_value = None
-        dss.save('dummysubject')
+    dss.save('dummysubject')
 
-        out = caplog.text
-        assert (not dss_sts.called and
-                'has been disabled' in out)
-
-
-@mock.patch.object(DefaultSubjectStore, 'merge_identity')
-def test_dss_save_to_session(mock_dss_mi, default_subject_store):
-    """
-    unit tested:  save_to_session
-
-    test case:
-    merges identifiers and authentication state
-    """
-    dss = default_subject_store
-    dss.save_to_session('subject')
-    mock_dss_mi.assert_called_once_with('subject')
+    out = caplog.text
+    assert 'has been disabled' in out
 
 
 @mock.patch.object(DefaultSubjectStore, 'merge_identity_with_session')
@@ -1263,25 +1165,7 @@ def test_dss_merge_identity_with_session_case3(
     assert not mock_session.set_internal_attributes.called
 
 
-def test_dss_remove_from_session(
-        default_subject_store, delegating_subject, monkeypatch, mock_session):
-    """
-    unit tested:  remove_from session
-
-    test case:
-        removes both key attributes from the session
-    """
-    dss = default_subject_store
-    ds = delegating_subject
-
-    monkeypatch.setattr(ds, 'get_session', lambda x: mock_session)
-    with mock.patch.object(MockSession, 'remove_internal_attribute') as ms_ra:
-        dss.remove_from_session(ds)
-        calls = [mock.call(dss.dsc_ask), mock.call(dss.dsc_isk)]
-        ms_ra.assert_has_calls(calls, any_order=True)
-
-
-def test_dss_delete(default_subject_store):
+def test_dss_delete(default_subject_store, mock_session, mock_subject, monkeypatch):
     """
     unit tested:  delete
 
@@ -1289,65 +1173,22 @@ def test_dss_delete(default_subject_store):
     calls remove_from_session
     """
     dss = default_subject_store
-    with mock.patch.object(DefaultSubjectStore, 'remove_from_session') as dss_rfs:
-        dss_rfs.return_value = None
-        dss.delete('subject')
-        dss_rfs.assert_called_once_with('subject')
+    mock_subject.get_session.return_value = mock_session
+    dss.delete(mock_subject)
+    calls = [mock.call(dss.dsc_ask), mock.call(dss.dsc_isk)]
+    mock_session.remove_internal_attribute.assert_has_calls(calls)
 
 
-# ------------------------------------------------------------------------------
-# SubjectBuilder
-# ------------------------------------------------------------------------------
-
-
-def test_sb_build_subject(subject_builder, monkeypatch, mock_security_manager,
-                          yosai):
-    """
-    unit tested:  build_subject
-
-    test case:
-    build_subject defers to the security_manager's create_subject
-    """
-    sb = subject_builder
-
-    monkeypatch.setattr(sb, 'security_manager', mock_security_manager)
-    monkeypatch.setattr(sb.security_manager, 'create_subject',
-                        lambda subject_context: 'subject')
-    result = sb.build_subject()
-    assert result == 'subject'
-
-
-# ------------------------------------------------------------------------------
-# DefaultSubjectFactory
-# ------------------------------------------------------------------------------
-
-def test_dsf_create_subject(
-        default_subject_factory, subject_context, mock_security_manager,
-        simple_identifiers_collection, monkeypatch, mock_session):
-    """
-    unit tested:  create_subject
-
-    test case:
-    returns a new DelegatingSubject instance based on the subject_context arg
-    """
-    monkeypatch.setattr(subject_context, 'resolve_session',
-                        lambda: mock_session)
-    subject_context.security_manager = mock_security_manager
-    subject_context.identifiers = simple_identifiers_collection
-    dsf = default_subject_factory
-    result = dsf.create_subject(subject_context)
-    assert isinstance(result, DelegatingSubject)
-
-
-def test_security_manager_builder_init_realms_succeeds(
-        security_manager_builder):
+def test_security_manager_creator_init_realms_succeeds(
+        security_manager_creator, settings):
     """
     successfully creates a tuple of initialized realm instances
     """
-    smb = security_manager_builder
+    smb = security_manager_creator
 
     class MockRealm:
-        def __init__(self, settings, account_store):
+        def __init__(self, account_store,
+                     authc_verifiers=None, permission_verifier=None, role_verifier=None):
             self.settings = settings
             self.account_store = account_store
 
@@ -1355,69 +1196,73 @@ def test_security_manager_builder_init_realms_succeeds(
         def __init__(self, settings):
             self.settings = settings
 
-    realms = [(MockRealm, MockAccountStore)]
-    results = smb.init_realms('settings', realms)
+    verifiers = {'authc_verifiers': [],
+                 'permission_verifier': None,
+                 'role_verifier': None}
+
+    realms = [[MockRealm, MockAccountStore, verifiers]]
+    results = smb._init_realms('settings', realms)
     realm = results[0]
-    assert (isinstance(realm, MockRealm) and
-            isinstance(realm.account_store, MockAccountStore) and
-            realm.settings == 'settings')
+    assert isinstance(realm, MockRealm)
+    assert isinstance(realm.account_store, MockAccountStore)
 
-def test_security_manager_builder_init_realms_raises(
-        security_manager_builder):
 
-    smb = security_manager_builder
+def test_security_manager_creator_init_realms_raises(
+        security_manager_creator):
+
+    smb = security_manager_creator
     realms = [(None, 'MockAccountStore')]
 
     with pytest.raises(ValueError):
-        smb.init_realms('settings', realms)
+        smb._init_realms('settings', realms)
 
-def test_security_manager_builder_init_cache_handler_succeeds(
-        security_manager_builder):
-    smb = security_manager_builder
+def test_security_manager_creator_init_cache_handler_succeeds(
+        security_manager_creator):
+    smb = security_manager_creator
     mock_ch = mock.MagicMock()
-    smb.init_cache_handler('settings', mock_ch, 'sm')
+    smb._init_cache_handler('settings', mock_ch, 'sm')
     mock_ch.assert_called_once_with(settings='settings',
                                     serialization_manager='sm')
 
-def test_security_manager_builder_init_cache_handler_fails(
-        security_manager_builder):
-    smb = security_manager_builder
-    result = smb.init_cache_handler('settings', None, 'sm')
+def test_security_manager_creator_init_cache_handler_fails(
+        security_manager_creator):
+    smb = security_manager_creator
+    result = smb._init_cache_handler('settings', None, 'sm')
     assert result is None
 
 
-def test_security_manager_builder_init_sac_schema(
-        security_manager_builder):
-    smb = security_manager_builder
-    result = smb.init_session_attributes('schema', None)
+def test_security_manager_creator_init_sac_schema(
+        security_manager_creator):
+    smb = security_manager_creator
+    result = smb._init_session_attributes('schema', None)
     assert result == 'schema'
 
 
-def test_security_manager_builder_init_sac_attributes(
-        security_manager_builder):
-    smb = security_manager_builder
+def test_security_manager_creator_init_sac_attributes(
+        security_manager_creator):
+    smb = security_manager_creator
     attributes = {'session_attributes': 'sas'}
-    result = smb.init_session_attributes(None, attributes)
+    result = smb._init_session_attributes(None, attributes)
     assert result == 'sas'
 
 
-def test_security_manager_builder_init_sac_default(
-        security_manager_builder):
-    smb = security_manager_builder
-    result = smb.init_session_attributes(None, None)
+def test_security_manager_creator_init_sac_default(
+        security_manager_creator):
+    smb = security_manager_creator
+    result = smb._init_session_attributes(None, None)
     assert result is None
 
 
 @mock.patch.object(NativeSecurityManager, '__init__', return_value=None)
-def test_security_manager_builder_create_manager(
-        mock_nsm, security_manager_builder, monkeypatch, core_settings,
+def test_security_manager_creator_create_manager(
+        mock_nsm, security_manager_creator, monkeypatch, core_settings,
         session_attributes):
 
-    smb = security_manager_builder
+    smb = security_manager_creator
 
-    monkeypatch.setattr(smb, 'init_realms', lambda x, y: 'realms')
-    monkeypatch.setattr(smb, 'init_session_attributes', lambda x, y: session_attributes)
-    monkeypatch.setattr(smb, 'init_cache_handler', lambda x, y, z: 'cache_handler')
+    monkeypatch.setattr(smb, '_init_realms', lambda x, y: 'realms')
+    monkeypatch.setattr(smb, '_init_session_attributes', lambda x, y: session_attributes)
+    monkeypatch.setattr(smb, '_init_cache_handler', lambda x, y, z: 'cache_handler')
 
     result = smb.create_manager('yosai', core_settings, 'session_attributes')
 

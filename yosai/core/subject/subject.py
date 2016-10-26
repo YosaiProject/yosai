@@ -229,18 +229,12 @@ class DelegatingSubject(subject_abcs.Subject):
     def has_identifiers(self):
         return bool(self.identifiers)
 
-    def get_primary_identifier(self, identifiers):
-        """
-        :type identifiers:  subject_abcs.IdentifierCollection
-        """
-        try:
-            return identifiers.primary_identifier
-        except:
-            return None
-
     @property
     def primary_identifier(self):
-        self.get_primary_identifier(self.identifiers)
+        try:
+            return self.identifiers.primary_identifier
+        except:
+            return None
 
     @property
     def identifiers(self):
@@ -276,7 +270,7 @@ class DelegatingSubject(subject_abcs.Subject):
             return (self.security_manager.is_permitted(
                     self.identifiers, permission_s))
 
-        msg = 'Cannot check permission when identifiers aren\'t set!'
+        msg = 'Cannot check permission when user isn\'t authenticated nor remembered'
         raise ValueError(msg)
 
     # refactored is_permitted_all:
@@ -296,7 +290,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                               permission_s,
                                               logical_operator)
 
-        msg = 'Cannot check permission when identifiers aren\'t set!'
+        msg = 'Cannot check permission when user isn\'t authenticated nor remembered'
         raise ValueError(msg)
 
     def assert_authz_check_possible(self):
@@ -334,7 +328,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                                    permission_s,
                                                    logical_operator)
         else:
-            msg = 'Cannot check permission when identifiers aren\'t set!'
+            msg = 'Cannot check permission when user isn\'t authenticated nor remembered'
             raise ValueError(msg)
 
     def has_role(self, role_s):
@@ -347,7 +341,7 @@ class DelegatingSubject(subject_abcs.Subject):
         """
         if self.authorized:
             return self.security_manager.has_role(self.identifiers, role_s)
-        msg = 'Cannot check roles when identifiers aren\'t set!'
+        msg = 'Cannot check permission when identifiers aren\'t set!'
         raise ValueError(msg)
 
     # refactored has_all_roles:
@@ -367,7 +361,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                                               role_s,
                                                               logical_operator)
         else:
-            msg = 'Cannot check roles when identifiers aren\'t set!'
+            msg = 'Cannot check permission when identifiers aren\'t set!'
             raise ValueError(msg)
 
     def check_role(self, role_ids, logical_operator=all):
@@ -386,7 +380,7 @@ class DelegatingSubject(subject_abcs.Subject):
                                              role_ids,
                                              logical_operator)
         else:
-            msg = 'Cannot check roles when identifiers aren\'t set!'
+            msg = 'Cannot check permission when identifiers aren\'t set!'
             raise ValueError(msg)
 
     def login(self, authc_token):
@@ -494,11 +488,6 @@ class DelegatingSubject(subject_abcs.Subject):
             self.session = None
             self._identifiers = None
             self.authenticated = False
-
-            # Don't set securityManager to None here - the Subject can still be
-            # used, it is just considered anonymous at this point.
-            # The SecurityManager instance is necessary if the subject would
-            # log in again or acquire a new session.
 
     def session_stopped(self):
         self.session = None

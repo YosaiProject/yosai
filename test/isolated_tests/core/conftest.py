@@ -5,6 +5,7 @@ from yosai.core import (
     AccountStoreRealm,
     DefaultAuthenticator,
     DefaultSubjectContext,
+    DelegatingSubject,
     ModularRealmAuthorizer,
     SimpleIdentifierCollection,
     SimpleSession,
@@ -53,7 +54,7 @@ def mock_subject_context():
 
 @pytest.fixture(scope='function')
 def mock_subject():
-    return MockSubject()
+    return mock.create_autospec(DelegatingSubject) 
 
 
 @pytest.fixture(scope='function')

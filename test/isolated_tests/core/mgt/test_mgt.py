@@ -184,7 +184,8 @@ def test_nsm_get_session(
 
 
 def test_nsm_create_subject_context(
-        native_security_manager, mock_default_session_manager, monkeypatch):
+        native_security_manager, mock_default_session_manager, monkeypatch,
+        mock_subject):
     """
     unit tested:  create_subject_context
 
@@ -192,7 +193,6 @@ def test_nsm_create_subject_context(
     returns a new DefaultSubjectContext instance
     """
     nsm = native_security_manager
-    mock_subject = mock.create_autospec(DelegatingSubject)
     result = nsm.create_subject_context(mock_subject)
     assert isinstance(result, DefaultSubjectContext)
 
@@ -402,7 +402,7 @@ def test_nsm_rememberme_logout_warned(
         assert 'threw an exception during on_logout' in out
 
 
-def test_nsm_login_success(native_security_manager, monkeypatch):
+def test_nsm_login_success(native_security_manager, monkeypatch, mock_subject):
     """
     unit tested:  login
 
@@ -411,7 +411,6 @@ def test_nsm_login_success(native_security_manager, monkeypatch):
         on_successful_login is called, and then logged_in is returned
     """
     nsm = native_security_manager
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers = 'identifiers'
     mock_authc = mock.create_autospec(DefaultAuthenticator)
     mock_authc.authenticate_account.return_value = 'accountid'
@@ -434,9 +433,8 @@ def test_nsm_login_success(native_security_manager, monkeypatch):
             assert result == 'logged_in'
 
 
-def test_nsm_login_raises_additional(native_security_manager, monkeypatch):
+def test_nsm_login_raises_additional(native_security_manager, monkeypatch, mock_subject):
     nsm = native_security_manager
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers = 'identifiers'
     mock_authc = mock.create_autospec(DefaultAuthenticator)
     mock_authc.authenticate_account.side_effect = AdditionalAuthenticationRequired
@@ -450,7 +448,7 @@ def test_nsm_login_raises_additional(native_security_manager, monkeypatch):
     assert mock_usi.called
 
 
-def test_nsm_login_raises_then_succeeds(native_security_manager, monkeypatch):
+def test_nsm_login_raises_then_succeeds(native_security_manager, monkeypatch, mock_subject):
     """
     unit tested:  login
 
@@ -462,7 +460,6 @@ def test_nsm_login_raises_then_succeeds(native_security_manager, monkeypatch):
     mock_authc = mock.create_autospec(DefaultAuthenticator)
     mock_authc.authenticate_account.side_effect = AuthenticationException
     monkeypatch.setattr(nsm, 'authenticator', mock_authc)
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers = 'identifiers'
 
     with mock.patch.object(NativeSecurityManager, 'on_failed_login') as nsm_ofl:
@@ -474,7 +471,7 @@ def test_nsm_login_raises_then_succeeds(native_security_manager, monkeypatch):
                 'authc_token', AuthenticationException, 'subject')
 
 
-def test_nsm_login_raises_then_raises(native_security_manager, caplog, monkeypatch):
+def test_nsm_login_raises_then_raises(native_security_manager, caplog, monkeypatch, mock_subject):
     """
     unit tested:  login
 
@@ -487,7 +484,6 @@ def test_nsm_login_raises_then_raises(native_security_manager, caplog, monkeypat
     mock_authc = mock.create_autospec(DefaultAuthenticator)
     mock_authc.authenticate_account.side_effect = AuthenticationException
     monkeypatch.setattr(nsm, 'authenticator', mock_authc)
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers = 'identifiers'
 
     with mock.patch.object(NativeSecurityManager,
@@ -559,8 +555,6 @@ def test_nsm_do_create_subject(mock_ds, native_security_manager, monkeypatch):
     """
     unit tested:  do_create_subject
 
-    test case:
-    passes call onto subject_factory.create_subject
     """
     nsm = native_security_manager
     mock_sc = mock.create_autospec(DefaultSubjectContext)
@@ -869,7 +863,7 @@ def test_nsm_logout_raises(native_security_manager):
         nsm.logout(None)
 
 
-def test_nsm_logout_succeeds(native_security_manager, monkeypatch):
+def test_nsm_logout_succeeds(native_security_manager, monkeypatch, mock_subject):
     """
     unit tested:  logout
 
@@ -879,7 +873,6 @@ def test_nsm_logout_succeeds(native_security_manager, monkeypatch):
     """
     nsm = native_security_manager
 
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers.primary_identifier = 'identifiers'
 
     with mock.patch.object(nsm, 'before_logout') as nsm_bl:
@@ -897,7 +890,7 @@ def test_nsm_logout_succeeds(native_security_manager, monkeypatch):
 
 
 def test_nsm_logout_succeeds_until_delete_raises(
-        native_security_manager, monkeypatch, caplog):
+        native_security_manager, monkeypatch, caplog, mock_subject):
     """
     unit tested:  logout
 
@@ -906,7 +899,6 @@ def test_nsm_logout_succeeds_until_delete_raises(
     authenticator's on_logout method, calls delete and raises
     """
     nsm = native_security_manager
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers.primary_identifier = 'identifiers'
 
     with mock.patch.object(nsm, 'before_logout') as nsm_bl:
@@ -926,7 +918,7 @@ def test_nsm_logout_succeeds_until_delete_raises(
                         'Unable to cleanly stop Session' in out)
 
 
-def test_nsm_stop_session(native_security_manager, monkeypatch):
+def test_nsm_stop_session(native_security_manager, monkeypatch, mock_subject):
     """
     unit tested:  stop_session
 
@@ -934,7 +926,6 @@ def test_nsm_stop_session(native_security_manager, monkeypatch):
     gets a session and calls its stop method
     """
     nsm = native_security_manager
-    mock_subject = mock.create_autospec(DelegatingSubject)
     mock_subject.identifiers.primary_identifier = 'identifiers'
     mock_ds = mock.create_autospec(DelegatingSession)
     mock_subject.get_session.return_value = mock_ds
