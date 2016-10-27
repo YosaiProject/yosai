@@ -223,7 +223,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         account = self.get_authentication_info(identifier)
 
         try:
-            if account['account_locked']:
+            if account.get('account_locked'):
                 msg = "Account Locked:  {0} locked at: {1}".\
                     format(account['account_id'], account['account_locked'])
                 raise LockedAccountException(msg)

@@ -105,4 +105,5 @@ def sample_authc_info():
 def sample_acct_info(sample_authc_info, simple_identifier_collection):
     return dict(account_id=simple_identifier_collection,
                 account_locked=None,
-                authc_info=sample_authc_info)
+                authc_info=sample_authc_info,
+                authz_info='authz_info')
