@@ -251,6 +251,7 @@ class WildcardPermission(serialize_abcs.Serializable):
         self.parts = parts
         self.case_sensitive = state['case_sensitive']
 
+
 class DefaultPermission(WildcardPermission):
     """
     This class is known in Shiro as DomainPermission.  It has been renamed
@@ -445,7 +446,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of Permission object(s) or String(s)
+        :type permission_s: List of permission string(s)
         """
 
         for realm in self.realms:
@@ -464,7 +465,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         :type identifiers:  subject_abcs.IdentifierCollection
 
         :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of Permission object(s) or String(s)
+        :type permission_s: List of permission string(s)
 
         :param log_results:  states whether to log results (True) or allow the
                              calling method to do so instead (False)
@@ -705,10 +706,10 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
 class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
 
-    def get_authzd_permissions(self, authz_info, permission):
+    def get_authzd_permissions(self, authz_info, required_permission):
         """
         :type authz_info:  IndexedAuthorizationInfo
-        :type permission: a Permission object
+        :type required_permission: a Permission object
 
         Queries an indexed collection of permissions in authz_info for
         related permissions (those that potentially imply privilege).  Those
@@ -718,38 +719,30 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
 
         :returns: frozenset
         """
-
-        wildcard_perms = authz_info.get_permission('*')
-
-        requested_domain = next(iter(permission.domain))
-        domain_perms = authz_info.get_permission(requested_domain)
-
-        return frozenset(itertools.chain(wildcard_perms, domain_perms))
+        required_domain = next(iter(required_permission.domain))
+        related_perms = authz_info.get_permissions(required_domain)
+        wildcard_perms = authz_info.get_permissions('*')
+        return frozenset(itertools.chain(wildcard_perms, related_perms))
 
     def is_permitted(self, authz_info, permission_s):
         """
         :type authz_info:  authz_abacs.AuthorizationInfo
 
         :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of Permission object(s) or String(s)
+        :type permission_s: List of permission string(s)
 
         :yields: (Permission, Boolean)
         """
-
-        if isinstance(next(iter(permission_s)), str):
-            requested_perms = {DefaultPermission(perm) for perm in permission_s}
-        else:  # assumption is that it's already a collection of Permissions
-            requested_perms = permission_s
-
-        for reqstd_perm in requested_perms:
+        for required_perm in permission_s:
             is_permitted = False
+            permission = DefaultPermission(required_perm)
             authorized_perms = self.get_authzd_permissions(authz_info,
-                                                           reqstd_perm)
+                                                           permission)
             for authz_perm in authorized_perms:
-                if authz_perm.implies(reqstd_perm):
+                if authz_perm.implies(permission):
                     is_permitted = True
                     break
-            yield (reqstd_perm, is_permitted)
+            yield (required_perm, is_permitted)
 
 
 class SimpleRoleVerifier(authz_abcs.RoleVerifier):
@@ -770,7 +763,6 @@ class SimpleRoleVerifier(authz_abcs.RoleVerifier):
             yield (role, hasrole)
 
 
-# new to yosai.core. deprecates shiro's SimpleAuthorizationInfo
 class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     """
     This is an implementation of the authz_abcs.AuthorizationInfo interface that
@@ -814,40 +806,38 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
 
     def index_permission(self, permission_s):
         """
-        Indexes permissions because indexes can be quickly queried to facilitate
-        is_permitted requests.
+        Indexes permissions so to improve permission request lookup performance
 
-        Indexing is by a Permission's domain attribute.  One limitation of this
-        design is that it requires that Permissions be modeled by domain, one
-        domain per Permission.  This is a generally acceptable limitation.
-
+        :param permission_s: Permissions are indexed by domain attribute.
+                             To facilate this, permission_s attribute is a list
+                             of two-element tuples of which the first is the
+                             domain (the left-most element) and the second is the complete
+                             wildcard-string-formatted permission.  Both elements
+                             are strings:
+            Example: [('prescription', 'prescription:write:*'),
+                      ('prescription', 'prescription:read:*')]
+                ... would index to:
+                  _permissions['prescription'] = {'prescription:write:*',
+                                                  'prescription:read:*'}
         """
         try:
-            for permission in permission_s:
-                domain = next(iter(permission.domain))  # should only be ONE domain
+            for domain, permission in permission_s:
                 self._permissions[domain].add(permission)
-            self.assert_permissions_indexed(permission_s)
 
         except TypeError:
             logger.debug(self.__class__.__name__ + ': No permissions to index.')
 
-    def get_permission(self, domain):
+    def get_permissions(self, domain):
         """
+        A generator that obtains permissions from an underlying index, converting
+        to Permission objects prior to returning
+
         :type domain:  str
+        :returns: a set of Permission objects
         """
-        return self._permissions.get(domain, set())
-
-    def assert_permissions_indexed(self, permission_s):
-        """
-        Ensures that all permission_s passed were indexed.
-
-        :raises ValueError: when the permission_index fails to
-                            index every permission provided
-        """
-        if not (permission_s <= self.permissions):
-            perms = ','.join(str(perm) for perm in permission_s)
-            msg = "Failed to Index All Permissions: " + perms
-            raise ValueError(msg)
+        test = {DefaultPermission(permission) for permission
+                in self._permissions.get(domain, set())}
+        return test
 
     def __len__(self):
         return len(self.permissions) + len(self.roles)

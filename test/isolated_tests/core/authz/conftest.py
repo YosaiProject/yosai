@@ -3,8 +3,6 @@ import pytest
 from yosai.core import (
     DefaultPermission,
     IndexedPermissionVerifier,
-    PermissionResolver,
-    SimpleRole,
     SimpleRoleVerifier,
     WildcardPermission,
 )
@@ -15,10 +13,6 @@ from .doubles import (
     MockPermission,
 )
 
-
-@pytest.fixture(scope='function')
-def populated_simple_role():
-    return SimpleRole('role1')
 
 @pytest.fixture(scope='function')
 def default_wildcard_permission():
@@ -39,7 +33,6 @@ def test_permission_collection():
 @pytest.fixture(scope='function')
 def indexed_permission_verifier():
     ipv = IndexedPermissionVerifier()
-    ipv.permission_resolver = PermissionResolver(DefaultPermission)
     return ipv
 
 @pytest.fixture(scope='function')

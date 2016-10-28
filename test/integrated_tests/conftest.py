@@ -179,10 +179,10 @@ def invalid_thedude_username_password_token(yosai, monkeypatch):
 
 @pytest.fixture(scope='function')
 def thedude_testpermissions():
-    perm1 = DefaultPermission('money:write:bankcheck_19911109069')
-    perm2 = DefaultPermission('money:withdrawal')
-    perm3 = DefaultPermission('leatherduffelbag:transport:theringer')
-    perm4 = DefaultPermission('leatherduffelbag:access:theringer')
+    perm1 = 'money:write:bankcheck_19911109069'
+    perm2 = 'money:withdrawal'
+    perm3 = 'leatherduffelbag:transport:theringer'
+    perm4 = 'leatherduffelbag:access:theringer'
 
     perms = [perm1, perm2, perm3, perm4]
 

@@ -2,8 +2,6 @@ import pytest
 from unittest import mock
 from yosai.core import (
     LazySettings,
-    FileNotFoundException,
-    MisconfiguredException,
     Settings,
 )
 
@@ -54,7 +52,7 @@ def test_del_attr_from_existing_wrapped(lazy_settings):
 
 # Settings Tests
 def test_get_config_file_not_exists_exception(empty_settings):
-    with pytest.raises(FileNotFoundException):
+    with pytest.raises(OSError):
         empty_settings.get_config('nowhere')
 
 def test_get_config_file_exists(settings_file, empty_settings):

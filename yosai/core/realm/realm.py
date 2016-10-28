@@ -333,7 +333,7 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         :param permission_s: a collection of one or more permissions, represented
                              as string-based permissions or Permission objects
                              and NEVER comingled types
-        :type permission_s: list of either String(s) or Permission(s)
+        :type permission_s: list of string(s)
 
         :yields: tuple(Permission, Boolean)
         """

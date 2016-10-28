@@ -4,26 +4,16 @@ from unittest import mock
 
 from yosai.core import (
     AccountStoreRealm,
-    AuthorizationEventException,
     DefaultPermission,
-    DefaultEventBus,
-    IllegalStateException,
     IndexedAuthorizationInfo,
-    IndexedPermissionVerifier,
     ModularRealmAuthorizer,
-    PermissionIndexingException,
-    PermissionResolver,
-    SimpleRole,
     UnauthorizedException,
-    Yosai,
 )
 
-from ..doubles import (
-    MockSubject,
-)
 # -----------------------------------------------------------------------------
 # ModularRealmAuthorizer Tests
 # -----------------------------------------------------------------------------
+
 
 def test_mra_realms_setter(
         modular_realm_authorizer_patched, default_accountstorerealm):
@@ -68,7 +58,7 @@ def test_mra_assert_realms_configured_fail(
     """
     mra = modular_realm_authorizer_patched
     monkeypatch.setattr(mra, '_realms', None)
-    with pytest.raises(IllegalStateException):
+    with pytest.raises(ValueError):
         mra.assert_realms_configured()
 
 
@@ -513,9 +503,9 @@ def test_mra_notify_results_raises(
     but fails and so raises an exception
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, '_event_bus', None)
+    monkeypatch.setattr(mra, 'event_bus', None)
 
-    with pytest.raises(AuthorizationEventException):
+    with pytest.raises(ValueError):
         mra.notify_results('identifiers', 'result')
 
 
@@ -552,9 +542,9 @@ def test_mra_notify_success_raises(
     but fails and so raises an exception
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, '_event_bus', None)
+    monkeypatch.setattr(mra, 'event_bus', None)
 
-    with pytest.raises(AuthorizationEventException):
+    with pytest.raises(ValueError):
         mra.notify_success('identifiers', 'result', any)
 
 
@@ -591,9 +581,9 @@ def test_mra_notify_failure_raises(
     but fails and so raises an exception
     """
     mra = modular_realm_authorizer_patched
-    monkeypatch.setattr(mra, '_event_bus', None)
+    monkeypatch.setattr(mra, 'event_bus', None)
 
-    with pytest.raises(AuthorizationEventException):
+    with pytest.raises(ValueError):
         mra.notify_failure('identifiers', 'result', any)
 
 
@@ -653,8 +643,7 @@ def test_iai_add_role(indexed_authz_info):
     updates the set, roles, with the new role(s)
     """
     info = indexed_authz_info
-    roles = {SimpleRole('roleA'),
-             SimpleRole('roleB')}
+    roles = {'roleA', 'roleB'}
     info.add_role(roles)
     assert roles <= info.roles
 
@@ -727,7 +716,7 @@ def test_iai_assert_permissions_indexed_raises(
     when permissions expected to be indexed aren't, an exception is raised
     """
     info = indexed_authz_info
-    with pytest.raises(PermissionIndexingException):
+    with pytest.raises(ValueError):
         info.assert_permissions_indexed(test_permission_collection)
 
 def test_iai_length(indexed_authz_info, permission_collection, role_collection):
@@ -746,24 +735,6 @@ def test_iai_length(indexed_authz_info, permission_collection, role_collection):
     info._roles = set()
     assert len(info) == 0
 
-# -----------------------------------------------------------------------------
-# SimpleRole Tests
-# -----------------------------------------------------------------------------
-
-def test_simple_role_equals_other(populated_simple_role):
-    psr = populated_simple_role
-    testrole = SimpleRole('role1')
-    assert psr == testrole
-
-def test_simple_role_not_equals_other(populated_simple_role):
-    psr = populated_simple_role
-    testrole = SimpleRole('role2')
-    assert psr != testrole
-
-
-# -----------------------------------------------------------------------------
-# IndexedPermissionVerifier Tests
-# -----------------------------------------------------------------------------
 
 def test_ipv_get_authzd_permissions(
         indexed_permission_verifier, monkeypatch, indexed_authz_info):

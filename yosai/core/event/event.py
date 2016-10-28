@@ -54,16 +54,10 @@ class EventLogger:
 
     def log_authz_event(self, identifiers=None, items=None, logical_operator=None,
                         topic=EVENT_TOPIC):
-        try:
-            # Permission objects are serializable
-            new_items = [(item[0].__getstate__(), item[1]) for item in items]
-        except (TypeError, AttributeError):
-            # presumably a set of role strings
-            new_items = list(items)
 
         idents = identifiers.__getstate__()
         log_op = logical_operator.__class__.__name__
 
         logger.info(topic.getName(), extra={'identifiers': idents,
-                                            'items': new_items,
+                                            'items': items,
                                             'logical_operator': log_op})

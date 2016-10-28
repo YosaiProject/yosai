@@ -88,8 +88,8 @@ def authz_realms_collection():
 def modular_realm_authorizer_patched(
         monkeypatch, authz_realms_collection, event_bus):
     a = ModularRealmAuthorizer()
-    monkeypatch.setattr(a, '_realms', authz_realms_collection)
-    monkeypatch.setattr(a, '_event_bus', event_bus)
+    monkeypatch.setattr(a, 'realms', authz_realms_collection)
+    monkeypatch.setattr(a, 'event_bus', event_bus)
     return a
 
 

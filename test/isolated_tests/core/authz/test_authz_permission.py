@@ -4,13 +4,9 @@ from collections import OrderedDict
 
 from yosai.core import (
     DefaultPermission,
-    InvalidArgumentException,
-    IllegalStateException,
     ModularRealmAuthorizer,
-    SimpleRole,
     UnauthorizedException,
     WildcardPermission,
-    PermissionResolver,
 )
 
 from .doubles import (
@@ -57,7 +53,7 @@ def test_wcp_setparts_raises_illegalargumentexception(
 
     wcp = default_wildcard_permission
 
-    with pytest.raises(InvalidArgumentException):
+    with pytest.raises(ValueError):
         wcp.setparts(wildcard_string=wildcardstring)
 
 def test_wcp_setparts_casesensitive(
@@ -285,22 +281,6 @@ def test_wcp_not_equals_bad_type():
 
     assert not p1 == p2
 
-
-# -----------------------------------------------------------------------------
-# PermissionResolver Tests
-# -----------------------------------------------------------------------------
-@pytest.mark.parametrize('resolver_class',
-                         [WildcardPermission, DefaultPermission])
-def test_pr_returns(resolver_class):
-    """
-    unit tested: resolve
-
-    test case:
-
-    """
-    resolver = PermissionResolver(resolver_class)
-    wcp = resolver.resolve(['domain:action:target'])
-    assert isinstance(next(iter(wcp)), resolver_class)
 
 
 # -----------------------------------------------------------------------------

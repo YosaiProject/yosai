@@ -31,6 +31,10 @@ v0.3
 - refactored away session and subject factories
 - refactored exception handling, reducing by 85%
 - replaced DefaultAuthenticationAttempt with a namedtuple
+- IndexedAuthorizationInfo now stores permission strings rather than Permission instances,
+  instantiating Permission instances on an as-needed basis
+- permission-based authorization checks no longer supports a list of Permission instances
+  as an argument but rather only list of string-typed permissions
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 
