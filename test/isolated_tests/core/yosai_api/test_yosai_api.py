@@ -1,33 +1,34 @@
 import pytest
 from unittest import mock
 from yosai.core.subject.subject import global_subject_context, global_yosai_context
-from yosai.web.subject.subject import global_webregistry_context
 
 from yosai.core import (
     AuthorizationException,
     DelegatingSubject,
-    SubjectBuilder,
-    IdentifiersNotSetException,
-    IllegalStateException,
-    YosaiContextException,
+    NativeSecurityManager,
     Yosai,
 )
 
-from yosai.core.subject.subject import (
-    global_subject_context,
-)
+
+@mock.patch('yosai.core.subject.subject.SecurityManagerCreator', return_value='dsc')
+def test_generate_security_manager(mock_smc, yosai):
+    my_mock = mock.MagicMock()
+    mock_smc.return_value = my_mock
+    yosai.generate_security_manager('settings', None)
+    my_mock.create_manager.assert_called_once_with(yosai, 'settings', None)
 
 
-@mock.patch.object(global_subject_context, 'stack')
-def test_yosai_get_subject_returns_subject(mock_stack, yosai, monkeypatch):
-    mock_sb = mock.create_autospec(SubjectBuilder)
-    mock_sb.build_subject.return_value = 'built'
-    monkeypatch.setattr(yosai, 'subject_builder', mock_sb)
+@mock.patch('yosai.core.subject.subject.global_subject_context')
+@mock.patch('yosai.core.subject.subject.DefaultSubjectContext', return_value='dsc')
+def test_yosai_get_subject_returns_subject(mock_dsc, mock_gsc, yosai, monkeypatch):
+    mock_sm = mock.create_autospec(NativeSecurityManager)
+    mock_sm.create_subject.return_value = 'subject'
+    monkeypatch.setattr(yosai, 'security_manager', mock_sm)
     result = yosai._get_subject()
+    mock_sm.create_subject.assert_called_once_with(subject_context='dsc')
+    mock_gsc.stack.append.assert_called_once_with('subject')
+    assert result == 'subject'
 
-    mock_sb.build_subject.assert_called_once_with()
-    mock_stack.append.assert_called_once_with('built')
-    assert result == 'built'
 
 
 def test_yosai_context(yosai):
@@ -203,7 +204,7 @@ def test_requires_permission_raises_one(monkeypatch):
     @staticmethod
     def mock_gcs():
         m = mock.create_autospec(DelegatingSubject)
-        m.check_permission.side_effect = IdentifiersNotSetException
+        m.check_permission.side_effect = ValueError
 
     monkeypatch.setattr(Yosai, 'get_current_subject', mock_gcs)
 
@@ -261,7 +262,7 @@ def test_requires_dynamic_permission_raises_one(monkeypatch):
     This test verifies that the decorator works as expected.
     """
     mock_ds = mock.create_autospec(DelegatingSubject)
-    mock_ds.check_permission.side_effect = IdentifiersNotSetException
+    mock_ds.check_permission.side_effect = ValueError
 
     @staticmethod
     def mock_gcs():
@@ -327,7 +328,7 @@ def test_requires_role_raises_one(monkeypatch):
     """
 
     mock_ds = mock.create_autospec(DelegatingSubject)
-    mock_ds.check_role.side_effect = IdentifiersNotSetException
+    mock_ds.check_role.side_effect = ValueError
 
     @staticmethod
     def mock_gcs():
