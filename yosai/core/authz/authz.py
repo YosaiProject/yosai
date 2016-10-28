@@ -703,66 +703,6 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         return ("ModularRealmAuthorizer(realms={0})".
                 format(self.realms))
 
-
-class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
-
-    def get_authzd_permissions(self, authz_info, required_permission):
-        """
-        :type authz_info:  IndexedAuthorizationInfo
-        :type required_permission: a Permission object
-
-        Queries an indexed collection of permissions in authz_info for
-        related permissions (those that potentially imply privilege).  Those
-        that are related include:
-            1) permissions with a wildcard domain
-            2) permissions of the same domain as the requested permission
-
-        :returns: frozenset
-        """
-        required_domain = next(iter(required_permission.domain))
-        related_perms = authz_info.get_permissions(required_domain)
-        wildcard_perms = authz_info.get_permissions('*')
-        return frozenset(itertools.chain(wildcard_perms, related_perms))
-
-    def is_permitted(self, authz_info, permission_s):
-        """
-        :type authz_info:  authz_abacs.AuthorizationInfo
-
-        :param permission_s: a collection of 1..N permissions
-        :type permission_s: List of permission string(s)
-
-        :yields: (Permission, Boolean)
-        """
-        for required_perm in permission_s:
-            is_permitted = False
-            permission = DefaultPermission(required_perm)
-            authorized_perms = self.get_authzd_permissions(authz_info,
-                                                           permission)
-            for authz_perm in authorized_perms:
-                if authz_perm.implies(permission):
-                    is_permitted = True
-                    break
-            yield (required_perm, is_permitted)
-
-
-class SimpleRoleVerifier(authz_abcs.RoleVerifier):
-
-    def has_role(self, authz_info, role_s):
-        """
-        Confirms whether a subject is a member of one or more roles.
-
-        :type authz_info:  authz_abacs.AuthorizationInfo
-
-        :param role_s: a collection of 1..N Role identifiers
-        :type role_s: Set of String(s)
-
-        :yields: tuple(role, Boolean)
-        """
-        for role in role_s:
-            hasrole = ({role} <= authz_info.roles)
-            yield (role, hasrole)
-
-
 class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     """
     This is an implementation of the authz_abcs.AuthorizationInfo interface that
@@ -835,12 +775,8 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         :type domain:  str
         :returns: a set of Permission objects
         """
-        test = {DefaultPermission(permission) for permission
+        return {DefaultPermission(permission) for permission
                 in self._permissions.get(domain, set())}
-        return test
-
-    def __len__(self):
-        return len(self.permissions) + len(self.roles)
 
     def __repr__(self):
         perms = ','.join(str(perm) for perm in self.permissions)
@@ -857,7 +793,61 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         self._permissions = {key: set(val) for key, val in state['_permissions'].items()}
 
 
-class AllPermission:
+class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
 
-    def implies(self, permission):
-        return True
+    def get_authzd_permissions(self, authz_info, required_permission):
+        """
+        :type authz_info:  IndexedAuthorizationInfo
+        :type required_permission: a Permission object
+
+        Queries an indexed collection of permissions in authz_info for
+        related permissions (those that potentially imply privilege).  Those
+        that are related include:
+            1) permissions with a wildcard domain
+            2) permissions of the same domain as the requested permission
+
+        :returns: frozenset
+        """
+        required_domain = next(iter(required_permission.domain))
+        # get_permissions returns a set of Permission objects
+        related_perms = authz_info.get_permissions(required_domain)
+        wildcard_perms = authz_info.get_permissions('*')
+        return frozenset(itertools.chain(wildcard_perms, related_perms))
+
+    def is_permitted(self, authz_info, permission_s):
+        """
+        :type authz_info:  authz_abacs.AuthorizationInfo
+
+        :param permission_s: a collection of 1..N permissions
+        :type permission_s: List of permission string(s)
+
+        :yields: (Permission, Boolean)
+        """
+        for required_perm in permission_s:
+            is_permitted = False
+            permission = DefaultPermission(required_perm)
+            authorized_perms = self.get_authzd_permissions(authz_info,
+                                                           permission)
+            for authz_perm in authorized_perms:
+                if authz_perm.implies(permission):
+                    is_permitted = True
+                    break
+            yield (required_perm, is_permitted)
+
+
+class SimpleRoleVerifier(authz_abcs.RoleVerifier):
+
+    def has_role(self, authz_info, role_s):
+        """
+        Confirms whether a subject is a member of one or more roles.
+
+        :type authz_info:  authz_abacs.AuthorizationInfo
+
+        :param role_s: a collection of 1..N Role identifiers
+        :type role_s: Set of String(s)
+
+        :yields: tuple(role, Boolean)
+        """
+        for role in role_s:
+            hasrole = ({role} <= authz_info.roles)
+            yield (role, hasrole)

@@ -8,12 +8,6 @@ from yosai.core import (
 )
 
 
-from .doubles import (
-    MockAuthzAccountStoreRealm,
-    MockPermission,
-)
-
-
 @pytest.fixture(scope='function')
 def default_wildcard_permission():
     return WildcardPermission()
@@ -22,18 +16,16 @@ def default_wildcard_permission():
 def default_permission():
     return DefaultPermission()
 
+
 @pytest.fixture(scope='function')
 def test_permission_collection():
-    perms = {DefaultPermission('domain_a:action_a'),
-             DefaultPermission('domain_b:action_b'),
-             DefaultPermission('domain_c:action_c')}
-    return perms
+    return {'domain_a:action_a', 'domain_b:action_b', 'domain_c:action_c'}
 
 
 @pytest.fixture(scope='function')
 def indexed_permission_verifier():
-    ipv = IndexedPermissionVerifier()
-    return ipv
+    return IndexedPermissionVerifier()
+
 
 @pytest.fixture(scope='function')
 def simple_role_verifier():

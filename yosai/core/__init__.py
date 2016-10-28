@@ -165,7 +165,6 @@ from yosai.core.authc.credential import (
 )
 
 from yosai.core.authz.authz import (
-    AllPermission,
     DefaultPermission,
     ModularRealmAuthorizer,
     IndexedAuthorizationInfo,
