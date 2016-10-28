@@ -206,9 +206,9 @@ def thedude_testroles():
 @pytest.fixture(scope='function')
 def jackie_testpermissions():
 
-    perm1 = DefaultPermission('money:access:ransom')
-    perm2 = DefaultPermission('leatherduffelbag:access:theringer')
-    perm3 = DefaultPermission('money:withdrawal')
+    perm1 = 'money:access:ransom'
+    perm2 = 'leatherduffelbag:access:theringer'
+    perm3 = 'money:withdrawal'
 
     perms = [perm1, perm2, perm3]
 
@@ -221,9 +221,9 @@ def jackie_testpermissions():
 @pytest.fixture(scope='function')
 def walter_testpermissions():
 
-    perm1 = DefaultPermission('leatherduffelbag:transport:theringer')
-    perm2 = DefaultPermission('leatherduffelbag:access:theringer')
-    perm3 = DefaultPermission('*:bowl:*')
+    perm1 = 'leatherduffelbag:transport:theringer'
+    perm2 = 'leatherduffelbag:access:theringer'
+    perm3 = '*:bowl:*'
 
     perms = [perm1, perm2, perm3]
 

@@ -588,8 +588,8 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
         if log_results:
             self.notify_event(identifiers,
-                             list(results.items()),
-                             'AUTHORIZATION.RESULTS')  # before freezing
+                              list(results.items()),
+                              'AUTHORIZATION.RESULTS')  # before freezing
         results = frozenset(results.items())
         return results
 
@@ -617,12 +617,12 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
         if results:
             self.notify_event(identifiers,
-                              role_s,
+                              list(role_s),
                               'AUTHORIZATION.GRANTED',
                               logical_operator)
         else:
             self.notify_event(identifiers,
-                              role_s,
+                              list(role_s),
                               'AUTHORIZATION.DENIED',
                               logical_operator)
 

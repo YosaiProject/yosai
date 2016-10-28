@@ -2,7 +2,6 @@
 import pytest
 
 from yosai.core import (
-    DefaultPermission,
     SimpleIdentifierCollection,
     UnauthorizedException,
     EVENT_TOPIC,
@@ -148,10 +147,10 @@ def test_is_permitted_account_doesnt_exist(
     """
     mra = modular_realm_authorizer
 
-    perm1 = DefaultPermission('money:write:bankcheck_19911109069')
-    perm2 = DefaultPermission('money:withdrawal')
-    perm3 = DefaultPermission('leatherduffelbag:transport:theringer')
-    perm4 = DefaultPermission('leatherduffelbag:access:theringer')
+    perm1 = 'money:write:bankcheck_19911109069'
+    perm2 = 'money:withdrawal'
+    perm3 = 'leatherduffelbag:transport:theringer'
+    perm4 = 'leatherduffelbag:access:theringer'
 
     perms = [perm1, perm2, perm3, perm4]
 

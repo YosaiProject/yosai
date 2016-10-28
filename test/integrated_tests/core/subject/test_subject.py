@@ -410,7 +410,7 @@ def test_check_role_succeeds(
             new_subject.login(valid_thedude_totp_token)
 
         assert (new_subject.check_role(tr['roles'], any) is None and
-                event_detected == tr['roles'])
+                event_detected == list(tr['roles']))
 
         new_subject.logout()
 
