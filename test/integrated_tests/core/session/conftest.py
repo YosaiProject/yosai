@@ -1,7 +1,7 @@
 import pytest
 
 from yosai.core import (
-    DefaultSessionKey,
+    SessionKey,
     NativeSessionManager,
     NativeSessionHandler,
     CachingSessionStore,
@@ -10,7 +10,7 @@ from yosai.core import (
 
 @pytest.fixture(scope='function')
 def session_key(session):
-    return DefaultSessionKey(session.session_id)
+    return SessionKey(session.session_id)
 
 
 @pytest.fixture(scope='function')

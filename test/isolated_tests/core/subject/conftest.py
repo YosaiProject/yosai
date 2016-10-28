@@ -1,8 +1,8 @@
 import pytest
 
 from yosai.core import (
-    DefaultSubjectContext,
-    DefaultSubjectStore,
+    SubjectContext,
+    SubjectStore,
     DelegatingSubject,
     SecurityManagerCreator,
     SimpleIdentifierCollection,
@@ -11,7 +11,7 @@ from yosai.core import (
 
 @pytest.fixture(scope='function')
 def subject_context(yosai):
-    return DefaultSubjectContext(yosai=yosai, security_manager=yosai.security_manager)
+    return SubjectContext(yosai=yosai, security_manager=yosai.security_manager)
 
 
 @pytest.fixture(scope='function')
@@ -22,7 +22,7 @@ def sic_serialized():
 
 @pytest.fixture(scope='function')
 def default_subject_store():
-    return DefaultSubjectStore()
+    return SubjectStore()
 
 # mock_session and mock_security_manager obtained from ../conftest:
 @pytest.fixture(scope='function')

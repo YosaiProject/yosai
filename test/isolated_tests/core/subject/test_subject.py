@@ -4,8 +4,8 @@ from unittest import mock
 
 from yosai.core import (
     AuthenticationException,
-    DefaultSessionStorageEvaluator,
-    DefaultSubjectStore,
+    SessionStorageEvaluator,
+    SubjectStore,
     DelegatingSession,
     DelegatingSubject,
     NativeSecurityManager,
@@ -20,7 +20,7 @@ from ..doubles import (
 )
 
 # ------------------------------------------------------------------------------
-# DefaultSubjectContext
+# SubjectContext
 # ------------------------------------------------------------------------------
 
 
@@ -978,7 +978,7 @@ def test_ds_pop_identity_withmultistack(
 
 
 # ------------------------------------------------------------------------------
-# DefaultSubjectStore
+# SubjectStore
 # ------------------------------------------------------------------------------
 
 def test_dss_is_sse(default_subject_store, monkeypatch):
@@ -989,14 +989,14 @@ def test_dss_is_sse(default_subject_store, monkeypatch):
     delegates call to the sse's method
     """
     dss = default_subject_store
-    with mock.patch.object(DefaultSessionStorageEvaluator,
+    with mock.patch.object(SessionStorageEvaluator,
                            'is_session_storage_enabled') as dsse_isse:
         dsse_isse.return_value = 'yup'
         result = dss.is_session_storage_enabled('subject')
         assert result == 'yup'
 
 
-@mock.patch.object(DefaultSubjectStore, 'merge_identity')
+@mock.patch.object(SubjectStore, 'merge_identity')
 def test_dss_save_with_sse(mock_mi, default_subject_store, monkeypatch):
     dss = default_subject_store
     monkeypatch.setattr(dss, 'is_session_storage_enabled', lambda x: True)
@@ -1021,7 +1021,7 @@ def test_dss_save_without_sse(default_subject_store, monkeypatch, caplog):
     assert 'has been disabled' in out
 
 
-@mock.patch.object(DefaultSubjectStore, 'merge_identity_with_session')
+@mock.patch.object(SubjectStore, 'merge_identity_with_session')
 def test_dss_merge_identity_runas_withsession(
         mock_dss_miws, default_subject_store, monkeypatch):
     """
@@ -1039,7 +1039,7 @@ def test_dss_merge_identity_runas_withsession(
     mock_dss_miws.assert_called_once_with('run_as_identifiers', ds, 'session')
 
 
-@mock.patch.object(DefaultSubjectStore, 'merge_identity_with_session')
+@mock.patch.object(SubjectStore, 'merge_identity_with_session')
 def test_dss_merge_identifiers_notrunas_withsession(
         mock_dss_miws, default_subject_store, monkeypatch):
     """
@@ -1059,7 +1059,7 @@ def test_dss_merge_identifiers_notrunas_withsession(
     mock_dss_miws.assert_called_once_with('subject_identifiers', ds, 'session')
 
 
-@mock.patch.object(DefaultSubjectStore, 'merge_identity_with_session')
+@mock.patch.object(SubjectStore, 'merge_identity_with_session')
 def test_dss_merge_identity_notrunas_withoutsession(
         mock_dss_miws, default_subject_store, delegating_subject,
         monkeypatch, mock_session):

@@ -3,7 +3,7 @@ from unittest import mock
 from yosai.core import (
     AbstractSessionStore,
     CachingSessionStore,
-    DefaultSessionKey,
+    SessionKey,
 )
 
 # -----------------------------------------------------------------------------

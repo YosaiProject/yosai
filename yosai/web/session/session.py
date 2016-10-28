@@ -26,7 +26,7 @@ from yosai.core import (
     CachingSessionStore,
     NativeSessionHandler,
     NativeSessionManager,
-    DefaultSessionStorageEvaluator,
+    SessionStorageEvaluator,
     DelegatingSession,
     SimpleSession,
     session_abcs,
@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 class WebSessionKey(collections.namedtuple('WebSessionKey', 'session_id, web_registry')):
     __slots__ = ()
+    
     def __new__(cls, session_id, web_registry=None):
         return super(WebSessionKey, cls).__new__(cls, session_id, web_registry)
 
@@ -154,7 +155,7 @@ class WebSessionHandler(NativeSessionHandler):
         del web_registry.session_id
 
 
-class DefaultWebSessionManager(NativeSessionManager):
+class WebSessionManager(NativeSessionManager):
     """
     Web-application capable SessionManager implementation
     """
@@ -321,13 +322,13 @@ class WebCachingSessionStore(CachingSessionStore):
             logger.debug(msg)
 
 
-class DefaultWebSessionStorageEvaluator(DefaultSessionStorageEvaluator):
+class WebSessionStorageEvaluator(SessionStorageEvaluator):
     """
     A web-specific ``SessionStorageEvaluator`` that performs the same logic as
-    the parent class ``DefaultSessionStorageEvaluator`` but additionally checks
+    the parent class ``SessionStorageEvaluator`` but additionally checks
     for a request-specific flag that may enable or disable session access.
 
-    This ``DefaultWebSessionStorageEvaluator`` will then inspect this attribute,
+    This ``WebSessionStorageEvaluator`` will then inspect this attribute,
     and if it has been set, will return ``False`` from the
     ``is_session_storage_enabled(subject)`` method, thereby preventing
     Yosai from creating a session for the purpose of storing subject state.

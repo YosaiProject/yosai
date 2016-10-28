@@ -186,7 +186,7 @@ class SessionStorageEvaluator(metaclass=ABCMeta):
     might be used or not to store Subject state on a *per-Subject* basis.
 
     If you simply wish to enable or disable session usage at a global level for
-    all Subject(s), the DefaultSessionStorageEvaluator should be sufficient.
+    all Subject(s), the SessionStorageEvaluator should be sufficient.
     Per-subject behavior should be performed in custom implementations of this
     interface.
     """

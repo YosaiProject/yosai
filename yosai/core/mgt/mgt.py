@@ -29,9 +29,9 @@ from yosai.core import (
     DelegatingSubject,
     EventLogger,
     NativeSessionManager,
-    DefaultSessionKey,
-    DefaultSubjectContext,
-    DefaultSubjectStore,
+    SessionKey,
+    SubjectContext,
+    SubjectStore,
     InvalidSessionException,
     ModularRealmAuthorizer,
     RememberMeSettings,
@@ -351,7 +351,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
                  serialization_manager=None,
                  session_manager=None,
                  remember_me_manager=None,
-                 subject_store=DefaultSubjectStore()):
+                 subject_store=SubjectStore()):
 
         self.yosai = yosai
         self.subject_store = subject_store
@@ -509,7 +509,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
         if not hasattr(self, 'yosai'):
             msg = "SecurityManager has no Yosai attribute set."
             raise AttributeError(msg)
-        return DefaultSubjectContext(self.yosai, self)
+        return SubjectContext(self.yosai, self)
 
     def create_subject(self,
                        authc_token=None,
@@ -811,7 +811,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
     def get_session_key(self, subject_context):
         session_id = subject_context.session_id
         if (session_id is not None):
-            return DefaultSessionKey(session_id)
+            return SessionKey(session_id)
         return None
 
     # yosai.core.omits is_empty method

@@ -88,7 +88,7 @@ from yosai.core.mgt.mgt_settings import(
 
 
 from yosai.core.session.session_settings import (
-    DefaultSessionSettings,
+    SessionSettings,
 )
 
 
@@ -120,9 +120,9 @@ from yosai.core.subject.identifier import (
 from yosai.core.session.session import (
     AbstractSessionStore,
     CachingSessionStore,
-    DefaultSessionKey,
+    SessionKey,
     NativeSessionManager,
-    DefaultSessionStorageEvaluator,
+    SessionStorageEvaluator,
     DelegatingSession,
     MemorySessionStore,
     NativeSessionHandler,
@@ -138,8 +138,8 @@ thread_local = threading.local()  # use only one global instance
 
 from yosai.core.subject.subject import(
     Yosai,
-    DefaultSubjectContext,
-    DefaultSubjectStore,
+    SubjectContext,
+    SubjectStore,
     DelegatingSubject,
     SecurityManagerCreator,
     global_subject_context,
@@ -147,7 +147,7 @@ from yosai.core.subject.subject import(
 )
 
 from yosai.core.authc.strategy import (
-    DefaultAuthenticationAttempt,
+    AuthenticationAttempt,
     all_realms_successful_strategy,
     at_least_one_realm_successful_strategy,
     first_realm_successful_strategy,

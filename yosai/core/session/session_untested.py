@@ -155,7 +155,7 @@ class ScheduledSessionValidator:
                 try:
                     # simulate a lookup key to satisfy the method signature.
                     # self.could probably be cleaned up in future versions:
-                    session_key = DefaultSessionKey(session.session_id)
+                    session_key = SessionKey(session.session_id)
                     self.session_handler.validate(session, session_key)
                 except InvalidSessionException as ex:
                     expired = isinstance(ex, ExpiredSessionException)

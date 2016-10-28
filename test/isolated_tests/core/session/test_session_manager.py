@@ -4,7 +4,7 @@ import collections
 
 from yosai.core import (
     CachingSessionStore,
-    DefaultSessionKey,
+    SessionKey,
     DelegatingSession,
     ExpiredSessionException,
     NativeSessionHandler,
@@ -84,7 +84,7 @@ def test_sh_retrieve_session_withoutsessionid(
     fails to obtain a session_id value from the sessionkey, returning None
     """
     sh = session_handler
-    session_key = DefaultSessionKey(None)
+    session_key = SessionKey(None)
 
     result = sh._retrieve_session(session_key)
     assert result is None
@@ -278,7 +278,7 @@ def test_sh_on_expiration_allset(session_handler, monkeypatch, mock_session):
 
                 sh.on_expiration(session=mock_session,
                                  expired_session_exception='ExpiredSessionException',
-                                 session_key=DefaultSessionKey('sessionkey123'))
+                                 session_key=SessionKey('sessionkey123'))
 
                 sh_ne.assert_called_once_with(mysession, 'SESSION.EXPIRE')
                 sh_ae.assert_called_once_with(mock_session)
@@ -329,7 +329,7 @@ def test_sh_on_invalidation_isetype(session_handler, mock_session, monkeypatch):
     """
     sh = session_handler
     ise = StoppedSessionException('testing')
-    session_key = DefaultSessionKey('sessionkey123')
+    session_key = SessionKey('sessionkey123')
 
     session_tuple = collections.namedtuple(
         'session_tuple', ['identifiers', 'session_key'])
@@ -351,7 +351,7 @@ def test_sh_on_invalidation_isetype(session_handler, mock_session, monkeypatch):
                                    ise=ise,
                                    session_key=session_key)
 
-                mock_onstop.assert_called_once_with(mock_session, DefaultSessionKey('sessionkey123'))
+                mock_onstop.assert_called_once_with(mock_session, SessionKey('sessionkey123'))
                 mock_ns.assert_called_once_with(mysession, 'SESSION.STOP')
                 mock_as.assert_called_once_with(mock_session)
 
@@ -442,10 +442,10 @@ def test_nsm_stop(
             with mock.patch.object(nsm.session_handler, 'after_stopped') as after_stopped:
                 after_stopped.return_value = None
 
-                nsm.stop(DefaultSessionKey('sessionkey123'), 'identifiers')
+                nsm.stop(SessionKey('sessionkey123'), 'identifiers')
 
                 mock_session.stop.assert_called_with()
-                on_stop.assert_called_with(mock_session, DefaultSessionKey('sessionkey123'))
+                on_stop.assert_called_with(mock_session, SessionKey('sessionkey123'))
                 notify_stop.assert_called_with(mysession, 'SESSION.STOP')
                 after_stopped.assert_called_with(mock_session)
 

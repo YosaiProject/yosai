@@ -8,8 +8,8 @@ from .doubles import (
 )
 
 from yosai.core import (
-    DefaultSessionSettings,
-    DefaultSessionKey,
+    SessionSettings,
+    SessionKey,
     ExpiredSessionException,
     NativeSessionManager,
     StoppedSessionException,
@@ -28,7 +28,7 @@ def test_create_session_settings(core_settings):
     test case:
     basic code path exercise, ensuring object instantiation
     """
-    dss = DefaultSessionSettings(core_settings)
+    dss = SessionSettings(core_settings)
     assert hasattr(dss, 'absolute_timeout') and hasattr(dss, 'idle_timeout')
 
 
@@ -36,7 +36,7 @@ def test_create_session_settings(core_settings):
     'attr', ['absolute_timeout', 'idle_timeout', 'validation_scheduler_enable',
              'validation_time_interval'])
 def test_default_session_settings(attr, core_settings):
-    dss = DefaultSessionSettings(core_settings)
+    dss = SessionSettings(core_settings)
     assert getattr(dss, attr) is not None
 
 
@@ -668,7 +668,7 @@ def test_ds_remove_internal_attribute_delegates(patched_delegating_session, monk
 
 
 # ----------------------------------------------------------------------------
-# DefaultSessionKey
+# SessionKey
 # ----------------------------------------------------------------------------
 @pytest.mark.parametrize('first,second,boolcheck',
                          [('sessionid123', 'sessionid123', True),
@@ -682,12 +682,12 @@ def test_dsk_eq(first, second, boolcheck):
     test case:
     equality based on session_id
     """
-    dsk1 = DefaultSessionKey(session_id=first)
-    dsk2 = DefaultSessionKey(session_id=second)
+    dsk1 = SessionKey(session_id=first)
+    dsk2 = SessionKey(session_id=second)
     assert (dsk1 == dsk2) == boolcheck
 
 # ----------------------------------------------------------------------------
-# DefaultSessionStorageEvaluator
+# SessionStorageEvaluator
 # ----------------------------------------------------------------------------
 
 def test_dsse_isse_wo_subject(default_session_storage_evaluator):

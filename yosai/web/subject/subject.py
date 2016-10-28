@@ -22,7 +22,7 @@ from contextlib import contextmanager
 
 from yosai.core import (
     AuthorizationException,
-    DefaultSubjectContext,
+    SubjectContext,
     DelegatingSubject,
     ExpiredSessionException,
     Yosai,
@@ -40,7 +40,7 @@ from yosai.web import (
 logger = logging.getLogger(__name__)
 
 
-class DefaultWebSubjectContext(DefaultSubjectContext,
+class WebSubjectContext(SubjectContext,
                                web_subject_abcs.WebSubjectContext):
     """
     Default ``WebSubjectContext`` implementation that supports a web registry,
@@ -159,7 +159,7 @@ class WebYosai(Yosai):
         :returns: the Subject currently accessible to the calling code
         """
         web_registry = WebYosai.get_current_webregistry()
-        subject_context = DefaultWebSubjectContext(yosai=self,
+        subject_context = WebSubjectContext(yosai=self,
                                                    security_manager=self.security_manager,
                                                    web_registry=web_registry)
         subject = self.security_manager.create_subject(subject_context=subject_context)

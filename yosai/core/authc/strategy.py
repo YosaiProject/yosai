@@ -23,7 +23,7 @@ from yosai.core import (
     MultiRealmAuthenticationException,
 )
 
-DefaultAuthenticationAttempt = namedtuple('DefaultAuthenticationAttempt',
+AuthenticationAttempt = namedtuple('AuthenticationAttempt',
                                           'authentication_token, realms')
 
 

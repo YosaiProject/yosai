@@ -7,9 +7,9 @@ from yosai.core import (
 
 from yosai.web import (
     CookieRememberMeManager,
-    DefaultWebSessionManager,
-    DefaultWebSessionStorageEvaluator,
-    DefaultWebSubjectContext,
+    WebSessionManager,
+    WebSessionStorageEvaluator,
+    WebSubjectContext,
     WebCachingSessionStore,
     WebDelegatingSession,
     WebDelegatingSubject,
@@ -75,7 +75,7 @@ def web_security_manager(web_yosai, settings, account_store_realm,
 
 @pytest.fixture(scope='function')
 def web_subject_context(web_yosai, mock_web_registry):
-    return DefaultWebSubjectContext(web_yosai,
+    return WebSubjectContext(web_yosai,
                                     web_yosai.security_manager,
                                     mock_web_registry)
 
@@ -131,7 +131,7 @@ def web_session_handler(event_bus):
 
 @pytest.fixture(scope='function')
 def web_session_manager(settings):
-    return DefaultWebSessionManager(settings)
+    return WebSessionManager(settings)
 
 
 @pytest.fixture(scope='function')
@@ -152,7 +152,7 @@ def web_caching_session_store():
 
 @pytest.fixture(scope='function')
 def web_session_storage_evaluator():
-    return DefaultWebSessionStorageEvaluator()
+    return WebSessionStorageEvaluator()
 
 
 @pytest.fixture(scope='function')

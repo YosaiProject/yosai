@@ -4,7 +4,7 @@ from unittest import mock
 from yosai.core import (
     IncorrectCredentialsException,
     AuthenticationSettings,
-    DefaultAuthenticationAttempt,
+    AuthenticationAttempt,
 )
 
 from passlib.context import CryptContext
@@ -83,36 +83,36 @@ def two_accountstorerealms_fails(accountstorerealm_fails):
 
 @pytest.fixture(scope='function')
 def default_authc_attempt(username_password_token, one_accountstorerealm_succeeds):
-    return DefaultAuthenticationAttempt(username_password_token,
+    return AuthenticationAttempt(username_password_token,
                                         one_accountstorerealm_succeeds)
 
 
 @pytest.fixture(scope='function')
 def fail_authc_attempt(username_password_token, one_accountstorerealm_fails):
-    return DefaultAuthenticationAttempt(username_password_token,
+    return AuthenticationAttempt(username_password_token,
                                         one_accountstorerealm_fails)
 
 
 @pytest.fixture(scope='function')
 def fail_multi_authc_attempt(username_password_token, two_accountstorerealms_fails):
-    return DefaultAuthenticationAttempt(username_password_token,
+    return AuthenticationAttempt(username_password_token,
                                         two_accountstorerealms_fails)
 
 
 @pytest.fixture(scope='function')
 def realmless_authc_attempt(username_password_token):
-    return DefaultAuthenticationAttempt(username_password_token, tuple())
+    return AuthenticationAttempt(username_password_token, tuple())
 
 
 @pytest.fixture(scope='function')
 def mock_token_attempt(one_accountstorerealm_succeeds):
     mock_token = mock.MagicMock()
-    return DefaultAuthenticationAttempt(mock_token, one_accountstorerealm_succeeds)
+    return AuthenticationAttempt(mock_token, one_accountstorerealm_succeeds)
 
 
 @pytest.fixture(scope='function')
 def multirealm_authc_attempt(username_password_token, two_accountstorerealms_succeeds):
-    return DefaultAuthenticationAttempt(username_password_token,
+    return AuthenticationAttempt(username_password_token,
                                         two_accountstorerealms_succeeds)
 
 

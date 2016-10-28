@@ -26,7 +26,7 @@ from yosai.core import (
     AccountException,
     AdditionalAuthenticationRequired,
     AuthenticationSettings,
-    DefaultAuthenticationAttempt,
+    AuthenticationAttempt,
     first_realm_successful_strategy,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
@@ -179,7 +179,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         return realm.authenticate_account(authc_token)
 
     def authenticate_multi_realm_account(self, realms, authc_token):
-        attempt = DefaultAuthenticationAttempt(authc_token, realms)
+        attempt = AuthenticationAttempt(authc_token, realms)
         return self.authentication_strategy(attempt)
 
     def authenticate_account(self, identifiers, authc_token):

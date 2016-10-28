@@ -9,8 +9,8 @@ from yosai.core import (
     DelegatingSession,
     DelegatingSubject,
     NativeSecurityManager,
-    DefaultSessionKey,
-    DefaultSubjectContext,
+    SessionKey,
+    SubjectContext,
     InvalidSessionException,
     ModularRealmAuthorizer,
     NativeSessionManager,
@@ -190,11 +190,11 @@ def test_nsm_create_subject_context(
     unit tested:  create_subject_context
 
     test case:
-    returns a new DefaultSubjectContext instance
+    returns a new SubjectContext instance
     """
     nsm = native_security_manager
     result = nsm.create_subject_context(mock_subject)
-    assert isinstance(result, DefaultSubjectContext)
+    assert isinstance(result, SubjectContext)
 
 
 def test_nsm_create_subject_wo_context(
@@ -209,7 +209,7 @@ def test_nsm_create_subject_wo_context(
     """
     nsm = native_security_manager
 
-    testcontext = DefaultSubjectContext(yosai=yosai, security_manager=nsm)
+    testcontext = SubjectContext(yosai=yosai, security_manager=nsm)
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account_id = 'dumb_account'
@@ -245,7 +245,7 @@ def test_nsm_create_subject_w_context(native_security_manager, yosai):
     """
     nsm = native_security_manager
 
-    testcontext = DefaultSubjectContext(yosai=yosai, security_manager=nsm)
+    testcontext = SubjectContext(yosai=yosai, security_manager=nsm)
     testcontext.authenticated = True
     testcontext.authentication_token = 'dumb_token'
     testcontext.account_id = 'dumb_account'
@@ -557,7 +557,7 @@ def test_nsm_do_create_subject(mock_ds, native_security_manager, monkeypatch):
 
     """
     nsm = native_security_manager
-    mock_sc = mock.create_autospec(DefaultSubjectContext)
+    mock_sc = mock.create_autospec(SubjectContext)
     mock_sc.resolve_security_manager.return_value = 'security_manager'
     mock_sc.resolve_session.return_value = 'session'
     mock_sc.session_creation_enabled = 'session_creation_enabled'
@@ -734,7 +734,7 @@ def test_nsm_get_session_key_w_sessionid(
 
     result = nsm.get_session_key(msc)
 
-    assert result == DefaultSessionKey('sessionid123')
+    assert result == SessionKey('sessionid123')
 
 def test_nsm_get_session_key_wo_sessionid(
         native_security_manager, monkeypatch, mock_subject_context):

@@ -7,7 +7,7 @@ from yosai.core import (
     AccountStoreRealm,
     AdditionalAuthenticationRequired,
     DefaultAuthenticator,
-    DefaultAuthenticationAttempt,
+    AuthenticationAttempt,
     IncorrectCredentialsException,
     InvalidAuthenticationSequenceException,
     LockedAccountException,
@@ -122,7 +122,7 @@ def test_da_autc_mra(default_authenticator, monkeypatch):
 
     result = da.authenticate_multi_realm_account(('realm1', 'realm2'), 'authc_token')
 
-    assert result == DefaultAuthenticationAttempt('authc_token', ('realm1', 'realm2'))
+    assert result == AuthenticationAttempt('authc_token', ('realm1', 'realm2'))
 
 
 def test_da_authenticate_account_no_authc_identifier_raises(default_authenticator):

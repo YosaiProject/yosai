@@ -19,7 +19,7 @@ def test_generate_security_manager(mock_smc, yosai):
 
 
 @mock.patch('yosai.core.subject.subject.global_subject_context')
-@mock.patch('yosai.core.subject.subject.DefaultSubjectContext', return_value='dsc')
+@mock.patch('yosai.core.subject.subject.SubjectContext', return_value='dsc')
 def test_yosai_get_subject_returns_subject(mock_dsc, mock_gsc, yosai, monkeypatch):
     mock_sm = mock.create_autospec(NativeSecurityManager)
     mock_sm.create_subject.return_value = 'subject'

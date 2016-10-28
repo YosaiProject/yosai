@@ -1,78 +1,26 @@
 import base64
 from unittest import mock
-import pytest
 
 from yosai.core import (
-    DefaultSubjectFactory,
-    MisconfiguredException,
     NativeSecurityManager,
 )
 
 from yosai.web import (
-    DefaultWebSessionContext,
-    DefaultWebSubjectContext,
+    WebSubjectContext,
     WebDelegatingSubject,
     WebSecurityManager,
     WebSessionKey,
 )
 
+# ------------------------------------------------------------------------
+#  WebSecurityManager Tests
+# ------------------------------------------------------------------------
 
-@mock.patch.object(DefaultSubjectFactory, 'create_subject', return_value='subject')
-def test_web_subject_factory_create_subject_not_websubjectcontext(
-        mock_sf_cs, web_subject_factory, web_subject_context):
-    """
-    when the subject_context argument is a DefaultSubjectcontext, super's
-    create_subject method is called and its value returned
-    """
-    wsf = web_subject_factory
-    wsf.create_subject('subject_context')
-    mock_sf_cs.assert_called_once_with(subject_context='subject_context')
-
-
-@mock.patch.object(WebDelegatingSubject, '__init__', return_value=None)
-def test_web_subject_factory_create_subject(
-        mock_wds, web_subject_context, monkeypatch, web_subject_factory):
-    """
-    A WebDelegatingSubject is created and returned when a fully formed web subject
-    context is passed to create_subject
-    """
-    wsf = web_subject_factory
-    wsc = web_subject_context
-    monkeypatch.setattr(wsc, 'resolve_security_manager', lambda: 'security_manager')
-    monkeypatch.setattr(wsc, 'resolve_session', lambda: 'session')
-    monkeypatch.setattr(wsc, 'session_creation_enabled', 'session_creation_enabled')
-    monkeypatch.setattr(wsc, 'resolve_identifiers', lambda x: 'identifiers')
-    monkeypatch.setattr(wsc, 'resolve_authenticated', lambda x: 'authenticated')
-    monkeypatch.setattr(wsc, 'resolve_host', lambda x: 'host')
-    monkeypatch.setattr(wsc, 'web_registry', 'web_registry')
-
-    wsf.create_subject(web_subject_context)
-
-    mock_wds.assert_called_once_with(identifiers='identifiers',
-                                     authenticated='authenticated',
-                                     host='host',
-                                     session='session',
-                                     session_creation_enabled='session_creation_enabled',
-                                     security_manager='security_manager',
-                                     web_registry='web_registry')
-
-
-def test_web_security_manager_create_subject_context_raises(
-        web_security_manager, monkeypatch):
-    """
-    without a yosai attribute, an exception is raised
-    """
-    wsm = web_security_manager
-    monkeypatch.delattr(wsm, 'yosai')
-    with pytest.raises(MisconfiguredException):
-        wsm.create_subject_context('subject')
-
-
-@mock.patch.object(DefaultWebSubjectContext, '__init__', return_value=None)
+@mock.patch.object(WebSubjectContext, '__init__', return_value=None)
 def test_web_security_manager_create_subject_context(
         mock_dwsc_init, web_security_manager, mock_web_registry, web_yosai):
     """
-    returns a new DefaultWebSubjectContext containing yosai, self,
+    returns a new WebSubjectContext containing yosai, self,
     and web_registry
     """
     wsm = web_security_manager
@@ -83,37 +31,12 @@ def test_web_security_manager_create_subject_context(
     mock_dwsc_init.assert_called_once_with(web_yosai, wsm, mock_web_registry)
 
 
-@mock.patch.object(NativeSecurityManager, 'session_manager', new_callable=mock.PropertyMock)
-def test_web_security_manager_session_manager_setter(
-        mock_nsm_sm, web_security_manager, monkeypatch):
-    """
-    calls super's session_manager setter and then sets the session_storage_evaluator's
-    session_manager
-    """
-    mock_nsm_sm.return_value.__set__ = mock.MagicMock()
+def test_wsm_create_session_context(web_security_manager):
     wsm = web_security_manager
-    mock_eval = mock.MagicMock()
-    monkeypatch.setattr(wsm.subject_store, 'session_storage_evaluator', mock_eval)
-
-    wsm.session_manager = 'sessionmanager'
-    mock_nsm_sm.return_value.__set__.assert_called_once_with(wsm, 'sessionmanager')
-    assert mock_eval.session_manager == 'sessionmanager'
-
-
-@mock.patch.object(DefaultWebSessionContext, '__init__', return_value=None)
-def test_web_security_manager_create_session_context(
-        mock_dwsc_init, web_security_manager, web_subject_context, monkeypatch,
-        mock_web_registry):
-    """
-    creates and returns a DefaultWebSessionContext
-    """
-    wsm = web_security_manager
-    monkeypatch.setattr(web_subject_context,
-                        'resolve_web_registry',
-                        lambda: mock_web_registry)
-    result = wsm.create_session_context(web_subject_context)
-    mock_dwsc_init.assert_called_once_with(mock_web_registry)
-    assert result.host == getattr(wsm, 'host', None)
+    subject_context = mock.create_autospec(WebSubjectContext)
+    subject_context.resolve_web_registry.return_value = 'web_registry'
+    result = wsm.create_session_context(subject_context)
+    assert result == {'web_registry': 'web_registry', 'host': None}
 
 
 @mock.patch.object(NativeSecurityManager, 'get_session_key',
@@ -130,10 +53,8 @@ def test_web_security_manager_get_session_key_raise_revert(
     mock_nsm_gsk.assert_called_once_with('subjectcontext')
 
 
-@mock.patch.object(WebSessionKey, '__init__', return_value=None)
 def test_web_security_manager_get_session_key(
-        mock_wsk_init, web_security_manager, web_subject_context,
-        monkeypatch, mock_web_registry):
+        web_security_manager, web_subject_context, monkeypatch, mock_web_registry):
     """
     creates and returns a WebSessionKey
     """
@@ -141,9 +62,7 @@ def test_web_security_manager_get_session_key(
     monkeypatch.setattr(web_subject_context, 'resolve_web_registry', lambda: mock_web_registry)
     monkeypatch.setattr(web_subject_context, 'session_id', 'sessionid1234')
     result = wsm.get_session_key(web_subject_context)
-    mock_wsk_init.assert_called_once_with(session_id='sessionid1234',
-                                          web_registry=mock_web_registry)
-    assert isinstance(result, WebSessionKey)
+    assert result == WebSessionKey(session_id='sessionid1234', web_registry=mock_web_registry)
 
 
 @mock.patch.object(NativeSecurityManager, 'before_logout')
@@ -194,6 +113,35 @@ def test_web_security_manager_on_successful_login(
 
     mock_nsm_rmsl.assert_called_once_with('authc_token', 'account', mock_subject)
     assert mock_subject.session == 'recreated'
+
+
+@mock.patch.object(WebDelegatingSubject, '__init__', return_value=None)
+def test_wsm_do_create_subject(mock_ds, web_security_manager, monkeypatch):
+    wsm = web_security_manager
+    mock_sc = mock.create_autospec(WebSubjectContext)
+    mock_sc.resolve_security_manager.return_value = 'security_manager'
+    mock_sc.resolve_session.return_value = 'session'
+    mock_sc.session_creation_enabled = 'session_creation_enabled'
+    mock_sc.resolve_identifiers.return_value = 'identifiers'
+    mock_sc.remembered = True
+    mock_sc.resolve_authenticated.return_value = True
+    mock_sc.resolve_host.return_value = 'host'
+    mock_sc.web_registry = 'web_registry'
+
+    wsm.do_create_subject(mock_sc)
+    mock_ds.assert_called_once_with(identifiers='identifiers',
+                                    remembered=True,
+                                    authenticated=True,
+                                    host='host',
+                                    session='session',
+                                    session_creation_enabled='session_creation_enabled',
+                                    security_manager='security_manager',
+                                    web_registry=mock_sc.web_registry)
+
+
+# ------------------------------------------------------------------------
+#  CookieRememberMeManager Tests
+# ------------------------------------------------------------------------
 
 
 def test_cookie_rmm_remember_encrypted_identity(

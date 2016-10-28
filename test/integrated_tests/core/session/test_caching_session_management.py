@@ -3,7 +3,7 @@ import time
 from collections import namedtuple
 
 from yosai.core import (
-    DefaultSessionKey,
+    SessionKey,
     DelegatingSession,
     ExpiredSessionException,
     InvalidSessionException,
@@ -72,10 +72,10 @@ def test_session_handler_create_dgs(session_handler, cache_handler, session):
     sh = session_handler
     sh.cache_handler = cache_handler
 
-    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('SubjectContext.IDENTIFIERS_SESSION_KEY',
                                    'user12345678')
     sessionid = sh.create_session(session)
-    cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
+    cachedsession = sh.do_get_session(SessionKey(sessionid))
 
     assert cachedsession == session
 
@@ -87,14 +87,14 @@ def test_session_handler_delete(session_handler, cache_handler, session, capsys)
     sh = session_handler
     sh.cache_handler = cache_handler
 
-    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('SubjectContext.IDENTIFIERS_SESSION_KEY',
                                    'user12345678')
 
     sessionid = sh.create_session(session)
     sh.delete(session)
 
     with pytest.raises(ValueError):
-        sh.do_get_session(DefaultSessionKey(sessionid))
+        sh.do_get_session(SessionKey(sessionid))
 
         out, err = capsys.readouterr()
         assert 'Coult not find session' in out
@@ -119,10 +119,10 @@ def test_sh_idle_expired_session(
 
     event_bus.subscribe(event_listener, 'SESSION.EXPIRE')
 
-    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('SubjectContext.IDENTIFIERS_SESSION_KEY',
                                    'user12345678')
     sessionid = sh.create_session(session)
-    cachedsession = sh.do_get_session(DefaultSessionKey(sessionid))
+    cachedsession = sh.do_get_session(SessionKey(sessionid))
 
     idle_timeout = (5 * 60 * 1000)
     absolute_timeout = (30 * 60 * 1000)
@@ -137,7 +137,7 @@ def test_sh_idle_expired_session(
     sh.on_change(cachedsession)
 
     with pytest.raises(ExpiredSessionException):
-        sh.do_get_session(DefaultSessionKey(sessionid))
+        sh.do_get_session(SessionKey(sessionid))
 
         assert event_detected.items.identifiers
 
@@ -168,7 +168,7 @@ def test_sh_stopped_session(
 
     event_bus.subscribe(event_listener, 'SESSION.STOP')
 
-    session.set_internal_attribute('DefaultSubjectContext.IDENTIFIERS_SESSION_KEY',
+    session.set_internal_attribute('SubjectContext.IDENTIFIERS_SESSION_KEY',
                                    'user12345678')
 
     sessionid = sh.create_session(session)
@@ -179,7 +179,7 @@ def test_sh_stopped_session(
     ch.set(domain='session', identifier=sessionid, value=cachedsession)
 
     with pytest.raises(InvalidSessionException):
-        sh.do_get_session(DefaultSessionKey(sessionid))
+        sh.do_get_session(SessionKey(sessionid))
 
         assert event_detected.identifiers
 
@@ -239,7 +239,7 @@ def test_session_manager_stop(
     sm.stop(session.session_key, 'random')
 
     with pytest.raises(ValueError):
-        sh.do_get_session(DefaultSessionKey(sessionid))
+        sh.do_get_session(SessionKey(sessionid))
 
         out, err = capsys.readouterr()
         assert ('Coult not find session' in out and

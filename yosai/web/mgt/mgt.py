@@ -21,14 +21,14 @@ import logging
 
 from yosai.core import (
     AbstractRememberMeManager,
-    DefaultSubjectStore,
+    SubjectStore,
     NativeSecurityManager,
 )
 
 from yosai.web import (
-    DefaultWebSessionStorageEvaluator,
-    DefaultWebSessionManager,
-    DefaultWebSubjectContext,
+    WebSessionStorageEvaluator,
+    WebSessionManager,
+    WebSubjectContext,
     WebDelegatingSubject,
     WebSessionKey,
     web_subject_abcs,
@@ -67,13 +67,13 @@ class WebSecurityManager(NativeSecurityManager):
                          realms=realms,
                          cache_handler=cache_handler,
                          serialization_manager=serialization_manager,
-                         session_manager=DefaultWebSessionManager(settings),
-                         subject_store=DefaultSubjectStore(DefaultWebSessionStorageEvaluator()),
+                         session_manager=WebSessionManager(settings),
+                         subject_store=SubjectStore(WebSessionStorageEvaluator()),
                          remember_me_manager=CookieRememberMeManager(settings))
 
     def create_subject_context(self, subject):
         web_registry = subject.web_registry
-        return DefaultWebSubjectContext(self.yosai, self, web_registry)
+        return WebSubjectContext(self.yosai, self, web_registry)
 
     # overridden:
     def create_session_context(self, subject_context):
@@ -143,6 +143,7 @@ class WebSecurityManager(NativeSecurityManager):
                                     session_creation_enabled=session_creation_enabled,
                                     security_manager=security_manager,
                                     web_registry=subject_context.web_registry)
+
 
 class CookieRememberMeManager(AbstractRememberMeManager):
     """

@@ -27,7 +27,7 @@ from abc import abstractmethod
 
 from yosai.core import (
     AbsoluteExpiredSessionException,
-    DefaultSessionSettings,
+    SessionSettings,
     ExpiredSessionException,
     IdleExpiredSessionException,
     InvalidSessionException,
@@ -38,7 +38,7 @@ from yosai.core import (
 
 logger = logging.getLogger(__name__)
 
-DefaultSessionKey = collections.namedtuple('DefaultSessionKey', 'session_id')
+SessionKey = collections.namedtuple('SessionKey', 'session_id')
 
 session_tuple = collections.namedtuple(
     'session_tuple', ['identifiers', 'session_id'])
@@ -712,7 +712,7 @@ class NativeSessionHandler(session_abcs.SessionHandler):
 
     def _retrieve_session(self, session_key):
         """
-        :type session_key: DefaultSessionKey
+        :type session_key: SessionKey
         :returns: SimpleSession
         """
         session_id = session_key.session_id
@@ -735,7 +735,7 @@ class NativeSessionHandler(session_abcs.SessionHandler):
 
     def do_get_session(self, session_key):
         """
-        :type session_key: DefaultSessionKey
+        :type session_key: SessionKey
         :returns: SimpleSession
         """
         session_id = session_key.session_id
@@ -782,7 +782,7 @@ class NativeSessionHandler(session_abcs.SessionHandler):
     # Event-driven Methods
     # -------------------------------------------------------------------------
 
-    # used by DefaultWebSessionManager:
+    # used by WebSessionManager:
     def on_start(self, session, session_context):
         """
         placeholder for subclasses to react to a new session being created
@@ -900,7 +900,7 @@ class NativeSessionManager(session_abcs.NativeSessionManager):
     def __init__(self, settings, session_handler=NativeSessionHandler()):
 
         # timeouts are use during session construction:
-        session_settings = DefaultSessionSettings(settings)
+        session_settings = SessionSettings(settings)
         self.absolute_timeout = session_settings.absolute_timeout
         self.idle_timeout = session_settings.idle_timeout
 
@@ -991,7 +991,7 @@ class NativeSessionManager(session_abcs.NativeSessionManager):
         :type session:  SimpleSession
         """
         # shiro ignores key and context parameters
-        return DelegatingSession(self, DefaultSessionKey(session.session_id))
+        return DelegatingSession(self, SessionKey(session.session_id))
 
     # -------------------------------------------------------------------------
     # Session Lookup Methods
@@ -1173,7 +1173,7 @@ class NativeSessionManager(session_abcs.NativeSessionManager):
             raise AttributeError(msg)
 
 
-class DefaultSessionStorageEvaluator:
+class SessionStorageEvaluator:
     """
     Global policy determining whether Subject sessions may be used to persist
     Subject state if the Subject's Session does not yet exist.

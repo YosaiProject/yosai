@@ -2,8 +2,8 @@ import pytest
 
 from yosai.core import (
     NativeSessionManager,
-    DefaultSessionKey,
-    DefaultSessionStorageEvaluator,
+    SessionKey,
+    SessionStorageEvaluator,
     DelegatingSession,
     # ExecutorServiceSessionValidationScheduler,
     MemorySessionStore,
@@ -51,12 +51,12 @@ def memory_session_store():
 
 @pytest.fixture(scope='function')
 def default_session_storage_evaluator():
-    return DefaultSessionStorageEvaluator()
+    return SessionStorageEvaluator()
 
 
 @pytest.fixture(scope='function')
 def session_key():
-    return DefaultSessionKey('sessionid123')
+    return SessionKey('sessionid123')
 
 
 @pytest.fixture(scope='function')

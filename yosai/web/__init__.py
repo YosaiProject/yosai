@@ -40,8 +40,8 @@ from yosai.web.registry.registry_settings import (
 
 
 from yosai.web.session.session import (
-    DefaultWebSessionStorageEvaluator,
-    DefaultWebSessionManager,
+    WebSessionStorageEvaluator,
+    WebSessionManager,
     WebCachingSessionStore,
     WebDelegatingSession,
     WebSimpleSession,
@@ -51,7 +51,7 @@ from yosai.web.session.session import (
 
 
 from yosai.web.subject.subject import (
-    DefaultWebSubjectContext,
+    WebSubjectContext,
     WebDelegatingSubject,
     WebYosai,
     global_webregistry_context,

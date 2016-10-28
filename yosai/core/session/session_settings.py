@@ -1,9 +1,9 @@
 import datetime
 
 
-class DefaultSessionSettings:
+class SessionSettings:
     """
-    DefaultSessionSettings is a settings proxy.  It is new for Yosai.
+    SessionSettings is a settings proxy.  It is new for Yosai.
     It obtains the session configuration from Yosai's global settings
     and default values if there aren't any.
     """

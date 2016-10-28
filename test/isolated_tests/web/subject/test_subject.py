@@ -5,25 +5,20 @@ from yosai.web.subject.subject import global_webregistry_context
 
 from yosai.core import (
     AuthorizationException,
-    DefaultSubjectContext,
+    SubjectContext,
     DelegatingSubject,
-    IdentifiersNotSetException,
-    IllegalStateException,
-    YosaiContextException,
 )
 
 from yosai.web import (
-    DefaultWebSessionContext,
-    DefaultWebSubjectContext,
+    WebSubjectContext,
     WebYosai,
     WebDelegatingSubject,
-    WebProxiedSession,
     WebSubjectBuilder,
     global_webregistry_context,
 )
 
 
-@mock.patch.object(DefaultSubjectContext, 'resolve_host', return_value='resolved_host')
+@mock.patch.object(SubjectContext, 'resolve_host', return_value='resolved_host')
 def test_web_subject_context_resolve_host_super(
         super_resolve_host, web_subject_context):
     """
@@ -35,7 +30,7 @@ def test_web_subject_context_resolve_host_super(
     assert result == 'resolved_host'
 
 
-@mock.patch.object(DefaultSubjectContext, 'resolve_host', return_value=None)
+@mock.patch.object(SubjectContext, 'resolve_host', return_value=None)
 def test_web_subject_context_resolve_host_webregistry(
         super_resolve_host, web_subject_context, monkeypatch, mock_web_registry):
     """
@@ -92,7 +87,7 @@ def test_web_subject_builder_create_subject_context(
 
     wsb = web_subject_builder
     result = wsb.create_subject_context(mock_web_registry)
-    assert isinstance(result, DefaultWebSubjectContext)
+    assert isinstance(result, WebSubjectContext)
 
 
 @mock.patch.object(WebSubjectBuilder, 'create_subject_context')
@@ -105,7 +100,7 @@ def test_web_subject_builder_build_subject_raises(
     wsb = web_subject_builder
     monkeypatch.setattr(wsb.security_manager, 'create_subject', lambda subject_context: 'subject')
 
-    with pytest.raises(IllegalStateException):
+    with pytest.raises(ValueError):
         wsb.build_subject('web_registry')
         mock_wsb_csb.assert_called_once_with('web_registry')
 
@@ -121,7 +116,7 @@ def test_web_subject_builder_build_subject_returns(
                         'create_subject',
                         lambda subject_context: 'subject')
 
-    with pytest.raises(IllegalStateException):
+    with pytest.raises(ValueError):
         wsb.build_subject('web_registry')
         mock_wsb_csb.assert_called_once_with('web_registry')
 
@@ -129,21 +124,8 @@ def test_web_subject_builder_build_subject_returns(
 def test_web_delegating_subject_create_session_context(
         web_delegating_subject):
     result = web_delegating_subject.create_session_context()
-    assert (result.host == web_delegating_subject.host and
-            isinstance(result, DefaultWebSessionContext))
+    assert result.host == web_delegating_subject.host
 
-
-@mock.patch.object(WebProxiedSession, 'stop')
-def test_web_delegating_subject_proxied_session_stop(
-        mock_wps_stop, web_stopping_aware_proxied_session, monkeypatch):
-    """
-    calls super's stop and owner.session_stopped()
-    """
-    wsaps = web_stopping_aware_proxied_session
-    monkeypatch.setattr(wsaps, 'owner', mock.create_autospec(WebDelegatingSubject))
-    wsaps.stop('identifiers')
-    mock_wps_stop.assert_called_once_with('identifiers')
-    wsaps.owner.session_stopped.assert_called_once_with()
 
 
 def test_web_yosai_get_subject_returns_subject(
@@ -174,7 +156,7 @@ def test_web_yosai_get_current_webregistry_raises(web_yosai, monkeypatch):
     mock_stack = []
     monkeypatch.setattr(global_webregistry_context, 'stack', mock_stack)
 
-    with pytest.raises(YosaiContextException):
+    with pytest.raises(ValueError):
         WebYosai.get_current_webregistry()
 
 
@@ -387,7 +369,7 @@ def test_requires_permission_raises_one(monkeypatch):
     @staticmethod
     def mock_gcs():
         m = mock.create_autospec(WebDelegatingSubject)
-        m.check_permission.side_effect = IdentifiersNotSetException
+        m.check_permission.side_effect = ValueError 
 
     @staticmethod
     def mock_cwr():
@@ -468,7 +450,7 @@ def test_requires_dynamic_permission_raises_one(monkeypatch):
     This test verifies that the decorator works as expected.
     """
     mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_permission.side_effect = IdentifiersNotSetException
+    mock_wds.check_permission.side_effect = ValueError 
 
     @staticmethod
     def mock_gcs():
@@ -548,7 +530,7 @@ def test_requires_role_raises_one(monkeypatch):
     """
 
     mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_role.side_effect = IdentifiersNotSetException
+    mock_wds.check_role.side_effect = ValueError 
 
     @staticmethod
     def mock_gcs():

@@ -21,7 +21,7 @@ import logging
 from contextlib import contextmanager
 
 from yosai.core import (
-    DefaultSessionStorageEvaluator,
+    SessionStorageEvaluator,
     LazySettings,
     SecurityManagerSettings,
     SerializationManager,
@@ -34,7 +34,7 @@ from yosai.core import (
 logger = logging.getLogger(__name__)
 
 
-class DefaultSubjectContext(subject_abcs.SubjectContext):
+class SubjectContext(subject_abcs.SubjectContext):
     """
     A SubjectContext assists a SecurityManager and SubjectFactory with the
     configuration of new Subject instances.  It employs a number of heuristics
@@ -69,7 +69,7 @@ class DefaultSubjectContext(subject_abcs.SubjectContext):
             try:
                 security_manager = self.yosai.security_manager
             except AttributeError:
-                msg = ("DefaultSubjectContext.resolve_security_manager cannot "
+                msg = ("SubjectContext.resolve_security_manager cannot "
                        "obtain security_manager! No SecurityManager available "
                        "via Yosai.  Heuristics exhausted.")
                 logger.debug(msg, exc_info=True)
@@ -588,10 +588,10 @@ class DelegatingSubject(subject_abcs.Subject):
 
 
 # migrated from /mgt:
-class DefaultSubjectStore:
+class SubjectStore:
 
     """
-    This is known as /mgt/DefaultSubjectDAO in Shiro.
+    This is known as /mgt/SubjectDAO in Shiro.
 
     This is the default ``SubjectStore`` implementation for storing ``Subject`` state.
     The default behavior is to save ``Subject`` state into the Subject's ``Session``.
@@ -638,7 +638,7 @@ class DefaultSubjectStore:
           clients) that authenticate on every request, and therefore don't need
           authentication state to be stored across requests in a session.
     """
-    def __init__(self, ss_evaluator=DefaultSessionStorageEvaluator()):
+    def __init__(self, ss_evaluator=SessionStorageEvaluator()):
         self.session_storage_evaluator = ss_evaluator
         self.dsc_isk = 'identifiers_session_key'
         self.dsc_ask = 'authenticated_session_key'
@@ -648,7 +648,7 @@ class DefaultSubjectStore:
         :type subject:  subject_abcs.Subject
         Determines whether the subject's ``Session`` will be used to persist
         subject state.  This default implementation merely delegates to the
-        internal ``DefaultSessionStorageEvaluator``.
+        internal ``SessionStorageEvaluator``.
         """
         return self.session_storage_evaluator.\
             is_session_storage_enabled(subject)
@@ -791,7 +791,7 @@ class Yosai:
 
         :returns: the Subject currently accessible to the calling code
         """
-        subject_context = DefaultSubjectContext(yosai=self,
+        subject_context = SubjectContext(yosai=self,
                                                 security_manager=self.security_manager)
         subject = self.security_manager.create_subject(subject_context=subject_context)
         global_subject_context.stack.append(subject)
