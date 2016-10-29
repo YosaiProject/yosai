@@ -23,7 +23,6 @@ import collections
 import copy
 
 from yosai.core import (
-    CachingSessionStore,
     NativeSessionHandler,
     NativeSessionManager,
     SessionStorageEvaluator,
@@ -41,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 class WebSessionKey(collections.namedtuple('WebSessionKey', 'session_id, web_registry')):
     __slots__ = ()
-    
+
     def __new__(cls, session_id, web_registry=None):
         return super(WebSessionKey, cls).__new__(cls, session_id, web_registry)
 
@@ -88,8 +87,7 @@ class WebSimpleSession(SimpleSession):
 class WebSessionHandler(NativeSessionHandler):
 
     def __init__(self, delete_invalid_sessions=True):
-        super().__init__(session_store=WebCachingSessionStore(),
-                         delete_invalid_sessions=delete_invalid_sessions)
+        super().__init__(delete_invalid_sessions=delete_invalid_sessions)
 
         self.is_session_id_cookie_enabled = True
 
@@ -291,35 +289,6 @@ class WebDelegatingSession(DelegatingSession):
 
     def recreate_session(self):
         return self.session_manager.recreate_session(self.session_key)
-
-
-class WebCachingSessionStore(CachingSessionStore):
-
-    def __init__(self):
-        super().__init__()
-
-    def _cache_identifiers_to_key_map(self, session, session_id):
-        """
-        creates a cache entry within a user's cache space that is used to
-        identify the active session associated with the user
-
-        when a session is associated with a user, it will have an identifiers
-        attribute
-
-        including a primary identifier is new to yosai
-        """
-        isk = 'identifiers_session_key'
-        identifiers = session.get_internal_attribute(isk)
-
-        try:
-            self.cache_handler.set(domain='session',
-                                   identifier=identifiers.primary_identifier,
-                                   value=WebSessionKey(session_id))
-        except AttributeError:
-            msg = "Could not cache identifiers_session_key."
-            if not identifiers:
-                msg += '  \'identifiers\' internal attribute not set.'
-            logger.debug(msg)
 
 
 class WebSessionStorageEvaluator(SessionStorageEvaluator):

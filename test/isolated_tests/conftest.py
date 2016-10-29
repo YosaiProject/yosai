@@ -10,7 +10,6 @@ from yosai.web import (
     WebSessionManager,
     WebSessionStorageEvaluator,
     WebSubjectContext,
-    WebCachingSessionStore,
     WebDelegatingSession,
     WebDelegatingSubject,
     WebSecurityManager,
@@ -63,7 +62,7 @@ def web_delegating_subject(
 
 
 @pytest.fixture(scope='function')
-def web_security_manager(web_yosai, settings, account_store_realm, 
+def web_security_manager(web_yosai, settings, account_store_realm,
                          cache_handler, serialization_manager):
     realms = (account_store_realm,)
     return WebSecurityManager(web_yosai,
@@ -93,15 +92,15 @@ def web_simple_session_state():
                            'csrf_token': 'csrftoken123',
                            'flash_messages': {}}
 
-    return {'_absolute_timeout': 1800000,
-            '_idle_timeout': 600000,
-            '_host': '123.45.6789',
-            '_session_id': 'sessionid123',
-            '_start_timestamp': 1471552578153,
-            '_stop_timestamp': None,
-            '_last_access_time': 1471552659175,
-            '_is_expired': False,
-            '_internal_attributes': internal_attributes}
+    return {'absolute_timeout': 1800000,
+            'idle_timeout': 600000,
+            'host': '123.45.6789',
+            'session_id': 'sessionid123',
+            'start_timestamp': 1471552578153,
+            'stop_timestamp': None,
+            'last_access_time': 1471552659175,
+            'is_expired': False,
+            'internal_attributes': internal_attributes}
 
 
 @pytest.fixture(scope='function')
@@ -144,10 +143,6 @@ def web_session_key(mock_web_registry):
 def web_delegating_session(web_session_manager, web_session_key):
     return WebDelegatingSession(web_session_manager, web_session_key)
 
-
-@pytest.fixture(scope='function')
-def web_caching_session_store():
-    return WebCachingSessionStore()
 
 
 @pytest.fixture(scope='function')
