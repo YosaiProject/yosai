@@ -182,6 +182,139 @@ most widely used form of authentication.  You could see an example of it in the
 logging-in documentation above.
 
 
+## Two-Factor Authentication
+
+As discussed earlier, a system may feature several factors of authentication.
+One popular form of Two-Factor Authentication (2FA) consists of a username/password
+authentication followed by a one-time password authentication. In this approach, 
+a password represents something (a secret) that a person *knows* and a one-time
+password is a token generated from a private key that is stored in a secure environment,
+representing something that the user *has*.
+
+
+### The One-time Password Authentication Process 
+
+A client generates an OTP token and sends it to a server during OTP authentication.
+An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs 
+a secret key that is unique to a user and an incrementing value (a counter).  
+
+The server obtains from storage an encrypted version of the user's secret key and 
+decrypts the key. 
+
+The server generates its own one-time password token with the decrypted key.
+
+The server verifies that the server-side generated token matches the token 
+provided by the client.
+
+
+### Two Steps , Two Factors
+
+OTP based 2FA features two discrete steps:
+    Step 1:  Username / Password Authentication
+    Step 2:  One-time Password Authentication
+
+Often, service providers offer two-factor authentication as an optional additional 
+layer of security.  Rather than force users into a slightly more inconvenient, yet
+more secure method of authentication, service providers leave users to make an
+uninformed decision as to whether to use 2FA.  Yosai follows this tradition.
+
+A system that accommodates optional 2FA must support two modes of authentication,
+per user:
+    1) Single factor:  username/password
+    2) Two-factor:
+        I) username/password
+        II) A two-factor authentication mechanism (OTP)
+
+In either mode of authentication, a system requires that a user first authenticate
+itself using a username and password combination.  As to how the system reacts
+to a successful username/password authentication depends on whether the user
+requires two-factor authentication:
+    1) Single-step:  If successful, Yosai returns control to the caller
+    2) Multi-step:
+        1) save user state to session
+            - the user is not yet considered authenticated
+        2) signal to the caller to collect 2FA information from client, raising an
+           AdditionalAuthenticationRequired exception and calling an "MFAChallenger",
+           if one is configured
+           
+        3) client requests 2FA information from the user
+
+        4) The next request from client must contain 2FA information.  If
+           the request doesn't contain 2FA information but rather post-authentication
+           request, an AdditionalAuthenticationRequiredException is re-raised and client
+           is expected to re-iterate its 2FA information request to the client
+        5) If the next request contains the required 2FA token, the token is
+           passed to Yosai and OTP authentication is performed.
+        6) If second-factory authentication is successful, Yosai returns control 
+           to the caller.  If failed, an IncorrectCredentialsException is raised.
+
+
+## Account Locking
+
+After the maximum allowable authentication attempts is breached, an account is locked
+and cannot be authenticated without first being released.  This is known as
+account regulation.
+
+An AccountStoreRealm obtains an account from storage.  Prior to authenticating
+an account, the realm determines whether account regulation is enabled in
+Yosai settings.  If account regulation is enabled, the account's access_locked_dt
+attribute is evaluated to determine whether an account is locked (and if so, when was it).
+
+If the account is locked:
+A LockedAccountException is raised, including a tuple containing the timestamp of
+the current authentication attempt and a timestamp of when the account was locked.
+
+If the account is not locked, authentication proceeds.
+
+
+
+------------------------------------------------------------------------------------
+Scenario 1:  When tokens are provided in piecemeal
+
+I. mgt.login --> authenticator.authenticate_account(subject.identifiers, authc_token)
+II. authenticate first checks whether the token was submitted in correct sequence
+    - a usernamepassword token includes an identifier
+    - a totptoken requires an identifier
+III. authenticate -> do_authenticate_account(account)
+IV. do_authenticate:
+    - identifies the realm to pass the token to
+    - calls the realm's authenticate_account method, gets back an account
+    - checks whether the account uses multi-factor authc and determines whether
+      mfa is finished, raising if mfa isn't
+V. do_authenticate --> authenticate
+    - notifies success
+VI. authc.authenticate  --> mgt.login
+    - authc returns account to mgt
+    - mgt creates new subject if no additional authc is required    
+
+Scenario 2:  When all tokens are provided to login at once (sessionless):
+    - pass both the usernamepasswordtoken and the otptoken together in a single
+      login request
+
+    - login needs to accept more than one token, so for now use two separate
+      arguments
+      - The Authenticator will *token_args these tokens
+      - tokens are ordered according to token.TIER, and arbitrarily arranged
+        among tokens of the same tier
+      - tier N+1 tokens depend on actions performed by tier N tokens and are
+        expected to independent of processing of tokens of the same tier
+
+      - tokens = sorted(token_args, key=lambda x: x.TIER, reverse=True)
+         -- now you can tokens.pop() until none are left
+
+      - the first authenticated token, a tier1 token, returns an account (which contains the userid)
+          - if len(tokens) == 1:
+                return authenticate(token)
+          - else:
+                account = authenticate(token)
+                userid = account.account_id.primary_identifier
+
+      - assign the userid into the rest of the tokens without checking whether they need it
+
+      - return the account after all authentication succeeds
+
+
+
 ## Native Support for 'Remember Me' Services
 
 As shown in the example above, Yosai supports "Remember Me" in addition to
@@ -286,3 +419,6 @@ The following table lists the Authentication-related events and subscriber(s):
 
 ## References
 [OWASP Authentication Cheat Sheet](https://www.owasp.org/index.php/Authentication_Cheat_Sheet)
+# One Timei Password-based Two Factor Authentication
+
+
