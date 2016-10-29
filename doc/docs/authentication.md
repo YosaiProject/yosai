@@ -34,7 +34,7 @@ with Yosai.context(yosai):
 When you *log-in*, you are attempting to make a secured system recognize your
 presence.  The system recognizes who you are by verifying your identity.  Once your
 identity is verified, the system considers you present (logged in) by creating a new,
-verified session for you.  
+verified session for you.
 
 There are two key processes involved with logging-in:
 - Session Management
@@ -55,7 +55,7 @@ are considered present through the existence of this *verified* session.
 
 ### Authentication, with Example
 
-*Authentication* is the process of verifying identity.  
+*Authentication* is the process of verifying identity.
 
 In the following example, we log-in a Subject by performing password-based
 authentication.  This process would raise an AuthenticationException
@@ -124,7 +124,7 @@ When you *log-out*, the system no longer recognizes your presence nor will it
 honor any prior recognition of your identity (you would have to re-authenticate
 yourself if you re-engaged the system). When you log-out a user, you are
 releasing the identifying state of the user by the application.  A Subject is
-logged out when the Subject is done interacting with the application by calling:  
+logged out when the Subject is done interacting with the application by calling:
 ``subject.logout()``, relinquishing all identifying information and
 invalidating the user's session.  If you are logging out in a web app,
 the RememberMe cookie will also be deleted.
@@ -140,7 +140,7 @@ Session Management documentation to learn more about timeouts.
 ### Manual Log Out
 
 When you manually log-out, you are explicitly telling the system that your work
-is done and you do no wish to continue your current session with the system.  
+is done and you do no wish to continue your current session with the system.
 Manual log-out is initiated by a user engaging a log-out operation through a user
 interface, such as click a "log-out" or "sign out" button, which would ultimately
 call the `logout` method in the Subject API:
@@ -186,24 +186,24 @@ logging-in documentation above.
 
 As discussed earlier, a system may feature several factors of authentication.
 One popular form of Two-Factor Authentication (2FA) consists of a username/password
-authentication followed by a one-time password authentication. In this approach, 
+authentication followed by a one-time password authentication. In this approach,
 a password represents something (a secret) that a person *knows* and a one-time
 password is a token generated from a private key that is stored in a secure environment,
 representing something that the user *has*.
 
 
-### The One-time Password Authentication Process 
+### The One-time Password Authentication Process
 
 A client generates an OTP token and sends it to a server during OTP authentication.
-An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs 
-a secret key that is unique to a user and an incrementing value (a counter).  
+An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs
+a secret key that is unique to a user and an incrementing value (a counter).
 
-The server obtains from storage an encrypted version of the user's secret key and 
-decrypts the key. 
+The server obtains from storage an encrypted version of the user's secret key and
+decrypts the key.
 
 The server generates its own one-time password token with the decrypted key.
 
-The server verifies that the server-side generated token matches the token 
+The server verifies that the server-side generated token matches the token
 provided by the client.
 
 
@@ -213,7 +213,7 @@ OTP based 2FA features two discrete steps:
     Step 1:  Username / Password Authentication
     Step 2:  One-time Password Authentication
 
-Often, service providers offer two-factor authentication as an optional additional 
+Often, service providers offer two-factor authentication as an optional additional
 layer of security.  Rather than force users into a slightly more inconvenient, yet
 more secure method of authentication, service providers leave users to make an
 uninformed decision as to whether to use 2FA.  Yosai follows this tradition.
@@ -236,7 +236,7 @@ requires two-factor authentication:
         2) signal to the caller to collect 2FA information from client, raising an
            AdditionalAuthenticationRequired exception and calling an "MFAChallenger",
            if one is configured
-           
+
         3) client requests 2FA information from the user
 
         4) The next request from client must contain 2FA information.  If
@@ -245,7 +245,7 @@ requires two-factor authentication:
            is expected to re-iterate its 2FA information request to the client
         5) If the next request contains the required 2FA token, the token is
            passed to Yosai and OTP authentication is performed.
-        6) If second-factory authentication is successful, Yosai returns control 
+        6) If second-factory authentication is successful, Yosai returns control
            to the caller.  If failed, an IncorrectCredentialsException is raised.
 
 
@@ -269,23 +269,6 @@ If the account is not locked, authentication proceeds.
 
 
 ------------------------------------------------------------------------------------
-Scenario 1:  When tokens are provided in piecemeal
-
-I. mgt.login --> authenticator.authenticate_account(subject.identifiers, authc_token)
-II. authenticate first checks whether the token was submitted in correct sequence
-    - a usernamepassword token includes an identifier
-    - a totptoken requires an identifier
-III. authenticate -> do_authenticate_account(account)
-IV. do_authenticate:
-    - identifies the realm to pass the token to
-    - calls the realm's authenticate_account method, gets back an account
-    - checks whether the account uses multi-factor authc and determines whether
-      mfa is finished, raising if mfa isn't
-V. do_authenticate --> authenticate
-    - notifies success
-VI. authc.authenticate  --> mgt.login
-    - authc returns account to mgt
-    - mgt creates new subject if no additional authc is required    
 
 Scenario 2:  When all tokens are provided to login at once (sessionless):
     - pass both the usernamepasswordtoken and the otptoken together in a single
@@ -410,8 +393,8 @@ The following table lists the Authentication-related events and subscriber(s):
 
 | Event Topic              | Subscriber(s)
 |--------------------------|--------------
-| AUTHENTICATION.SUCCEEDED | MRA, EL      
-| AUTHENTICATION.FAILED    | EL           
+| AUTHENTICATION.SUCCEEDED | MRA, EL
+| AUTHENTICATION.FAILED    | EL
 
 - MRA = `yosai.core.authz.authz.ModularRealmAuthorizer`
 - EL = `yosai.core.event.event.EventLogger`
@@ -420,5 +403,3 @@ The following table lists the Authentication-related events and subscriber(s):
 ## References
 [OWASP Authentication Cheat Sheet](https://www.owasp.org/index.php/Authentication_Cheat_Sheet)
 # One Timei Password-based Two Factor Authentication
-
-

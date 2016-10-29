@@ -182,7 +182,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         attempt = AuthenticationAttempt(authc_token, realms)
         return self.authentication_strategy(attempt)
 
-    def authenticate_account(self, identifiers, authc_token):
+    def authenticate_account(self, identifiers, authc_token, second_factor_token=None):
         """
         :type identifiers: SimpleIdentifierCollection or None
 
@@ -213,7 +213,11 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 raise AccountException(msg2)
 
         except AdditionalAuthenticationRequired as exc:
+            if second_factor_token:
+                self.authenticate_account(exc.account_id, second_factor_token, None)
+
             self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
+
             try:
                 self.mfa_challenger.send_challenge(authc_token.identifier)
             except AttributeError:

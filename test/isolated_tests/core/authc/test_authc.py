@@ -185,6 +185,30 @@ def test_da_authenticate_account_catches_additional(
 
 @mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
+def test_da_authenticate_account_catches_additional_includes_secondfactor(
+        da_daa, da_ne, default_authenticator, monkeypatch):
+    sic = mock.MagicMock()
+    sic.primary_identifier = 'user123'
+    da_daa.side_effect = AdditionalAuthenticationRequired(sic)
+    da = default_authenticator
+    mock_token = mock.create_autospec(UsernamePasswordToken)
+    mock_token.identifier = 'user123'
+
+    mock_totptoken = mock.create_autospec(TOTPToken)
+
+    mock_challenger = mock.MagicMock()
+    monkeypatch.setattr(da, 'mfa_challenger', mock_challenger, raising=False)
+
+    with pytest.raises(AdditionalAuthenticationRequired):
+        da.authenticate_account(None, mock_token, mock_totptoken)
+
+    da_ne.assert_called_once_with('user123', 'AUTHENTICATION.PROGRESS')
+    da_daa.assert_has_calls([mock.call(mock_token), mock.call(mock_totptoken)])
+    mock_challenger.send_challenge.assert_called_once_with('user123')
+
+
+@mock.patch.object(DefaultAuthenticator, 'notify_event')
+@mock.patch.object(DefaultAuthenticator, 'do_authenticate_account')
 def test_da_authenticate_account_catches_accountexc(
         da_daa, da_ne, default_authenticator, monkeypatch):
     da_daa.side_effect = AccountException
@@ -321,6 +345,7 @@ def test_da_do_authc_acct_req_additional(
     da_vl.assert_called_once_with(mock_token, [1477077663111])
     da_asra.assert_called_once_with(faux_authc_realm, mock_token)
     da_ne.assert_called_once_with(mock_token.identifier, 'AUTHENTICATION.PROGRESS')
+
 
 
 def test_da_clear_cache(

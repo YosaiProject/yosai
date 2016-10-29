@@ -37,6 +37,13 @@ def test_multi_factor_authc_raises_invalid_sequence(
         da.authenticate_account(None, valid_thedude_totp_token)
 
 
+def test_valid_multi_factor_together(
+        default_authenticator, valid_thedude_username_password_token,
+        valid_thedude_totp_token, event_bus):
+    # pass both tokens to authenticate_account and successfully login
+
+
+
 def test_multi_factor_authc_using_accountstore_success(
         caplog, default_authenticator, valid_thedude_username_password_token,
         valid_thedude_totp_token, event_bus):
