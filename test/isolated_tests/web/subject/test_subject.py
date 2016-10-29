@@ -6,15 +6,11 @@ from yosai.web.subject.subject import global_webregistry_context
 from yosai.core import (
     AuthorizationException,
     SubjectContext,
-    DelegatingSubject,
 )
 
 from yosai.web import (
-    WebSubjectContext,
     WebYosai,
     WebDelegatingSubject,
-    WebSubjectBuilder,
-    global_webregistry_context,
 )
 
 
@@ -81,66 +77,39 @@ def test_web_subject_context_resolve_webregistry_no_reg_returns_subject_wr(
     result = web_subject_context.resolve_web_registry()
     assert result == 'mockwebregistry'
 
-
-def test_web_subject_builder_create_subject_context(
-        web_subject_builder, mock_web_registry):
-
-    wsb = web_subject_builder
-    result = wsb.create_subject_context(mock_web_registry)
-    assert isinstance(result, WebSubjectContext)
-
-
-@mock.patch.object(WebSubjectBuilder, 'create_subject_context')
-def test_web_subject_builder_build_subject_raises(
-        mock_wsb_csb, web_subject_builder, monkeypatch):
-    """
-    when the subject created by the security manager isn't a WebSubject, an
-    exception raises
-    """
-    wsb = web_subject_builder
-    monkeypatch.setattr(wsb.security_manager, 'create_subject', lambda subject_context: 'subject')
-
-    with pytest.raises(ValueError):
-        wsb.build_subject('web_registry')
-        mock_wsb_csb.assert_called_once_with('web_registry')
-
-
-@mock.patch.object(WebSubjectBuilder, 'create_subject_context')
-def test_web_subject_builder_build_subject_returns(
-        mock_wsb_csb, web_subject_builder, monkeypatch):
-    """
-    when the subject created by the security manager is a WebSubject, it is returned
-    """
-    wsb = web_subject_builder
-    monkeypatch.setattr(wsb.security_manager,
-                        'create_subject',
-                        lambda subject_context: 'subject')
-
-    with pytest.raises(ValueError):
-        wsb.build_subject('web_registry')
-        mock_wsb_csb.assert_called_once_with('web_registry')
-
+# ------------------------------------------------------------------------------
+# WebDelegatingSubject
+# ------------------------------------------------------------------------------
 
 def test_web_delegating_subject_create_session_context(
         web_delegating_subject):
     result = web_delegating_subject.create_session_context()
-    assert result.host == web_delegating_subject.host
+    assert result['host'] == web_delegating_subject.host
 
 
+# ------------------------------------------------------------------------------
+# WebYosai
+# ------------------------------------------------------------------------------
 
+@mock.patch('yosai.web.subject.subject.WebSubjectContext', return_value='wsc')
 def test_web_yosai_get_subject_returns_subject(
-        web_yosai, monkeypatch, mock_web_registry):
+        mock_wsc, web_yosai, monkeypatch, mock_web_registry):
 
     @staticmethod
     def mock_cwr():
         return mock_web_registry
 
-    mock_sb = mock.create_autospec(WebSubjectBuilder)
-    monkeypatch.setattr(web_yosai, 'subject_builder', mock_sb)
     monkeypatch.setattr(WebYosai, 'get_current_webregistry', mock_cwr)
-    web_yosai._get_subject()
-
-    mock_sb.build_subject.assert_called_once_with(web_registry=mock_web_registry)
+    with mock.patch.object(web_yosai.security_manager, 'create_subject') as mock_cs:
+        mock_ws = mock.create_autospec(WebDelegatingSubject)
+        mock_ws.web_registry = 'wr'
+        mock_cs.return_value = mock_ws
+        result = web_yosai._get_subject()
+        mock_wsc.assert_called_once_with(yosai=web_yosai,
+                                         security_manager=web_yosai.security_manager,
+                                         web_registry=mock_web_registry)
+        mock_cs.assert_called_once_with(subject_context='wsc')
+        assert result == mock_ws
 
 
 def test_web_yosai_get_current_webregistry(web_yosai, monkeypatch):
@@ -156,7 +125,7 @@ def test_web_yosai_get_current_webregistry_raises(web_yosai, monkeypatch):
     mock_stack = []
     monkeypatch.setattr(global_webregistry_context, 'stack', mock_stack)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         WebYosai.get_current_webregistry()
 
 
@@ -369,7 +338,7 @@ def test_requires_permission_raises_one(monkeypatch):
     @staticmethod
     def mock_gcs():
         m = mock.create_autospec(WebDelegatingSubject)
-        m.check_permission.side_effect = ValueError 
+        m.check_permission.side_effect = ValueError
 
     @staticmethod
     def mock_cwr():
@@ -450,7 +419,7 @@ def test_requires_dynamic_permission_raises_one(monkeypatch):
     This test verifies that the decorator works as expected.
     """
     mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_permission.side_effect = ValueError 
+    mock_wds.check_permission.side_effect = ValueError
 
     @staticmethod
     def mock_gcs():
@@ -530,7 +499,7 @@ def test_requires_role_raises_one(monkeypatch):
     """
 
     mock_wds = mock.create_autospec(WebDelegatingSubject)
-    mock_wds.check_role.side_effect = ValueError 
+    mock_wds.check_role.side_effect = ValueError
 
     @staticmethod
     def mock_gcs():

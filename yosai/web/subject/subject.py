@@ -160,8 +160,8 @@ class WebYosai(Yosai):
         """
         web_registry = WebYosai.get_current_webregistry()
         subject_context = WebSubjectContext(yosai=self,
-                                                   security_manager=self.security_manager,
-                                                   web_registry=web_registry)
+                                            security_manager=self.security_manager,
+                                            web_registry=web_registry)
         subject = self.security_manager.create_subject(subject_context=subject_context)
 
         if not hasattr(subject, 'web_registry'):
@@ -176,7 +176,6 @@ class WebYosai(Yosai):
     @staticmethod
     @contextmanager
     def context(yosai, webregistry):
-
         global_yosai_context.stack.append(yosai)  # how to weakref? TBD
         webregistry.secret = yosai.signed_cookie_secret  # configuration
         global_webregistry_context.stack.append(webregistry)  # how to weakref? TBD
