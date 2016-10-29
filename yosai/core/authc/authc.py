@@ -214,10 +214,10 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
 
         except AdditionalAuthenticationRequired as exc:
             if second_factor_token:
-                self.authenticate_account(exc.account_id, second_factor_token, None)
+                return self.authenticate_account(exc.account_id, second_factor_token, None)
 
             self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
-
+            
             try:
                 self.mfa_challenger.send_challenge(authc_token.identifier)
             except AttributeError:
@@ -272,7 +272,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         # the following condition verifies whether the account uses MFA:
         if len(account['authc_info']) > authc_token.token_info['tier']:
             # the token authenticated but additional authentication is required
-            self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
             raise AdditionalAuthenticationRequired(account['account_id'])
 
         return account

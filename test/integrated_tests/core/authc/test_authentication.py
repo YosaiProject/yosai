@@ -41,7 +41,26 @@ def test_valid_multi_factor_together(
         default_authenticator, valid_thedude_username_password_token,
         valid_thedude_totp_token, event_bus):
     # pass both tokens to authenticate_account and successfully login
+    da = default_authenticator
+    success_event_detected = None
+    progress_event_detected = None
 
+    def progress_event_listener(identifier=None, topic=EVENT_TOPIC):
+        nonlocal progress_event_detected
+        progress_event_detected = identifier
+    event_bus.subscribe(progress_event_listener, 'AUTHENTICATION.PROGRESS')
+
+    def success_event_listener(identifier=None, topic=EVENT_TOPIC):
+        nonlocal success_event_detected
+        success_event_detected = identifier
+    event_bus.subscribe(success_event_listener, 'AUTHENTICATION.SUCCEEDED')
+
+    result = da.authenticate_account(None,
+                                     valid_thedude_username_password_token,
+                                     valid_thedude_totp_token)
+
+    assert progress_event_detected is None
+    assert success_event_detected == result.primary_identifier
 
 
 def test_multi_factor_authc_using_accountstore_success(
