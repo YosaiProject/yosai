@@ -167,98 +167,91 @@ authentication (MFA) methods, are considered stronger fraud deterrents than sing
 MFA because it requires something the user **has** -- a bank card -- *and* it
 requires something the user **knows** -- a PIN code.
 
-The use of a username/password to login is considered single-factor
-authentication because it only involves something the user *knows*.
-
-Yosai is designed to accommodate multi-factor authentication methods.  Be that
-as it may, no concrete MFA implementation is provided within the core library
-because the MFA chosen is discretionary and largely subject to change among
-projects.  Instead, the Yosai community is encouraged to share extensions to
-enable MFA.
-
-However, although no multi-factor solution is provided, a single-factor,
-password-based authentication is provided in yosai.core because it remains the
-most widely used form of authentication.  You could see an example of it in the
-logging-in documentation above.
-
-
 ## Two-Factor Authentication
 
-As discussed earlier, a system may feature several factors of authentication.
-One popular form of Two-Factor Authentication (2FA) consists of a username/password
-authentication followed by a one-time password authentication. In this approach,
-a password represents something (a secret) that a person *knows* and a one-time
-password is a token generated from a private key that is stored in a secure environment,
-representing something that the user *has*.
+Yosai features native support for Time-based One Time Passwords (TOTP), the
+prevailing standard for one-time password authentication.
 
-
-### The One-time Password Authentication Process
-
-A client generates an OTP token and sends it to a server during OTP authentication.
-An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs
-a secret key that is unique to a user and an incrementing value (a counter).
-
-The server obtains from storage an encrypted version of the user's secret key and
-decrypts the key.
-
-The server generates its own one-time password token with the decrypted key.
-
-The server verifies that the server-side generated token matches the token
-provided by the client.
-
-
-### Two Steps , Two Factors
-
-OTP based 2FA features two discrete steps:
+Authenticating a user configured for TOTP authentication involves two steps:
     Step 1:  Username / Password Authentication
     Step 2:  One-time Password Authentication
 
-Often, service providers offer two-factor authentication as an optional additional
-layer of security.  Rather than force users into a slightly more inconvenient, yet
-more secure method of authentication, service providers leave users to make an
-uninformed decision as to whether to use 2FA.  Yosai follows this tradition.
+This is considered two-factor authentication because a password represents
+something that a person *knows* and a one-time password represents something
+that the user *has* -- a token generated from a key stored in a secure environment.
 
-A system that accommodates optional 2FA must support two modes of authentication,
-per user:
+Often, service providers offer two-factor authentication like TOTP as an optional
+feature rather than force it upon every user.  Yosai follows this approach.
+Yosai provides *optional 2FA* by supporting two methods of authentication:
     1) Single factor:  username/password
     2) Two-factor:
         I) username/password
-        II) A two-factor authentication mechanism (OTP)
+        II) A two-factor authentication mechanism (TOTP)
 
-In either mode of authentication, a system requires that a user first authenticate
-itself using a username and password combination.  As to how the system reacts
-to a successful username/password authentication depends on whether the user
-requires two-factor authentication:
-    1) Single-step:  If successful, Yosai returns control to the caller
-    2) Multi-step:
-        1) save user state to session
-            - the user is not yet considered authenticated
-        2) signal to the caller to collect 2FA information from client, raising an
-           AdditionalAuthenticationRequired exception and calling an "MFAChallenger",
-           if one is configured
 
-        3) client requests 2FA information from the user
+### The One-time Password Authentication Process in Yosai
 
-        4) The next request from client must contain 2FA information.  If
-           the request doesn't contain 2FA information but rather post-authentication
-           request, an AdditionalAuthenticationRequiredException is re-raised and client
-           is expected to re-iterate its 2FA information request to the client
-        5) If the next request contains the required 2FA token, the token is
-           passed to Yosai and OTP authentication is performed.
-        6) If second-factory authentication is successful, Yosai returns control
-           to the caller.  If failed, an IncorrectCredentialsException is raised.
+Authentication always begins with a user first authenticating itself using a username
+and password combination.  As to how Yosai responds to a successful username/password
+authentication depends on whether the user is configured for two-factor authentication.
+
+#### Scenario 1:  Single-Factor Authentication
+
+If a user is configured for single-factor authentication and username/password
+is verified, Yosai returns control to the calling application.
+
+#### Scenario 2:  Two-Factor Authentication
+
+If a user is configured for two-factor authentication and username/password
+is verified, Yosai signals to the calling application to collect 2FA information
+from its client by raising an AdditionalAuthenticationRequired exception.
+Furthermore, Yosai will dispatch an "MFAChallenger", if one is configured,
+to send information to the client.  One such implementation of an
+MFAChallenger would be an SMS gateway that messages a client.
+
+#### Two-Factor Authentication Sequence
+
+1. A client authenticates itself using a username and password.
+
+2. Yosai determines whether the user's account is configured for two-factor
+authentication.  If the user successfully authenticates step 1 and is configured
+for 2FA, Yosai will signal to its caller to collect 2FA information from client
+by raising an AdditionalAuthenticationRequired exception.  Further, if a *MFAChallenger*
+is configured, it is dispatched to coordinate OTP token generation for the client.
+
+3. A client obtains a 6-digit OTP token and sends it to the server during OTP authentication.
+An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs
+a secret key that is unique to a user and an incrementing value (a counter).
+
+4. Yosai obtains from a persisted datastore an encrypted version of the user's
+secret key and decrypts it.
+
+5. Yosai generates its own one-time password token with the decrypted key.
+
+6. Yosai verifies that the server-side generated token matches the token
+provided by the client.
+
+7. If the client and server tokens don't match, Yosai raises an IncorrectCredentialsException
+to signal that authentication has failed due to an incorrect token provided by
+the user.  If tokens match, control is returned to the application calling Yosai.
 
 
 ## Account Locking
 
-After the maximum allowable authentication attempts is breached, an account is locked
-and cannot be authenticated without first being released.  This is known as
-account regulation.
+Yosai allows developers to regulate account authentication for any particular
+user account by defining a number of maximum allowable authentication attempts.
+If a developer defines within yosai's authentication settings an **account_lock_threshold**,
+account locking is enabled, using **account_lock_threshold** as the limit.
+
+Assuming account locking is enabled, the moment that the number of failed
+authentication attempts exceeds the maximum-allowable threshold, Yosai will lock
+the account, prohibiting subsequent authentication regardless of whether
+credentials match.
 
 An AccountStoreRealm obtains an account from storage.  Prior to authenticating
 an account, the realm determines whether account regulation is enabled in
-Yosai settings.  If account regulation is enabled, the account's access_locked_dt
-attribute is evaluated to determine whether an account is locked (and if so, when was it).
+Yosai settings.  If account regulation is enabled, the account's locked
+attribute is evaluated to determine whether an account is locked (and if so, when).
 
 If the account is locked:
 A LockedAccountException is raised, including a tuple containing the timestamp of
@@ -266,36 +259,11 @@ the current authentication attempt and a timestamp of when the account was locke
 
 If the account is not locked, authentication proceeds.
 
-
-
-------------------------------------------------------------------------------------
-
-Scenario 2:  When all tokens are provided to login at once (sessionless):
-    - pass both the usernamepasswordtoken and the otptoken together in a single
-      login request
-
-    - login needs to accept more than one token, so for now use two separate
-      arguments
-      - The Authenticator will *token_args these tokens
-      - tokens are ordered according to token.TIER, and arbitrarily arranged
-        among tokens of the same tier
-      - tier N+1 tokens depend on actions performed by tier N tokens and are
-        expected to independent of processing of tokens of the same tier
-
-      - tokens = sorted(token_args, key=lambda x: x.TIER, reverse=True)
-         -- now you can tokens.pop() until none are left
-
-      - the first authenticated token, a tier1 token, returns an account (which contains the userid)
-          - if len(tokens) == 1:
-                return authenticate(token)
-          - else:
-                account = authenticate(token)
-                userid = account.account_id.primary_identifier
-
-      - assign the userid into the rest of the tokens without checking whether they need it
-
-      - return the account after all authentication succeeds
-
+When authentication fails, Yosai caches when the failed attempt happend.  When
+the total number of failed attempts exceeds the maximum allowable fails, the
+account is locked in the underlying accountstore of the realm that facilitates
+locking.  Consequently, failed authentication attempts live in cache until the
+corresponding cache entry expires or is deleted.
 
 
 ## Native Support for 'Remember Me' Services
@@ -402,4 +370,5 @@ The following table lists the Authentication-related events and subscriber(s):
 
 ## References
 [OWASP Authentication Cheat Sheet](https://www.owasp.org/index.php/Authentication_Cheat_Sheet)
-# One Timei Password-based Two Factor Authentication
+
+[IETF Time-based One Time Passwords RFC](https://tools.ietf.org/html/rfc6238)
