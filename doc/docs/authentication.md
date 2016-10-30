@@ -173,6 +173,7 @@ Yosai features native support for Time-based One Time Passwords (TOTP), the
 prevailing standard for one-time password authentication.
 
 Authenticating a user configured for TOTP authentication involves two steps:
+
 1.  Username / Password Authentication
 2.  One-time Password Authentication
 
@@ -183,6 +184,7 @@ that the user *has* -- a token generated from a key stored in a secure environme
 Often, service providers offer two-factor authentication like TOTP as an optional
 feature rather than force it upon every user.  Yosai follows this approach.
 Yosai provides *optional 2FA* by supporting two methods of authentication:
+
 1. Single factor:  username/password
 1. Two-factor:
     A. username/password
