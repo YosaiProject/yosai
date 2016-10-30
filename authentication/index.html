@@ -395,19 +395,23 @@ requires something the user <strong>knows</strong> -- a PIN code.</p>
 <h2 id="two-factor-authentication">Two-Factor Authentication</h2>
 <p>Yosai features native support for Time-based One Time Passwords (TOTP), the
 prevailing standard for one-time password authentication.</p>
-<p>Authenticating a user configured for TOTP authentication involves two steps:
-1.  Username / Password Authentication
-2.  One-time Password Authentication</p>
+<p>Authenticating a user configured for TOTP authentication involves two steps:</p>
+<ol>
+<li>Username / Password Authentication</li>
+<li>One-time Password Authentication</li>
+</ol>
 <p>This is considered two-factor authentication because a password represents
 something that a person <em>knows</em> and a one-time password represents something
 that the user <em>has</em> -- a token generated from a key stored in a secure environment.</p>
 <p>Often, service providers offer two-factor authentication like TOTP as an optional
 feature rather than force it upon every user.  Yosai follows this approach.
-Yosai provides <em>optional 2FA</em> by supporting two methods of authentication:
-1. Single factor:  username/password
-1. Two-factor:
+Yosai provides <em>optional 2FA</em> by supporting two methods of authentication:</p>
+<ol>
+<li>Single factor:  username/password</li>
+<li>Two-factor:
     A. username/password
-    B. A two-factor authentication mechanism (TOTP)</p>
+    B. A two-factor authentication mechanism (TOTP)</li>
+</ol>
 <h3 id="the-one-time-password-authentication-process-in-yosai">The One-time Password Authentication Process in Yosai</h3>
 <p>Authentication always begins with a user first authenticating itself using a username
 and password combination.  As to how Yosai responds to a successful username/password
