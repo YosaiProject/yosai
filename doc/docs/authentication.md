@@ -174,8 +174,8 @@ prevailing standard for one-time password authentication.
 
 Authenticating a user configured for TOTP authentication involves two steps:
 
-1.  Username / Password Authentication
-2.  One-time Password Authentication
+1. Username / Password Authentication
+2. One-time Password Authentication
 
 This is considered two-factor authentication because a password represents
 something that a person *knows* and a one-time password represents something
@@ -186,9 +186,9 @@ feature rather than force it upon every user.  Yosai follows this approach.
 Yosai provides *optional 2FA* by supporting two methods of authentication:
 
 1. Single factor:  username/password
-1. Two-factor:
-    A. username/password
-    B. A two-factor authentication mechanism (TOTP)
+2. Two-factor:
+    * username/password
+    * A two-factor authentication mechanism (TOTP)
 
 
 ### The One-time Password Authentication Process in Yosai
