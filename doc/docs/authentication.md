@@ -173,8 +173,8 @@ Yosai features native support for Time-based One Time Passwords (TOTP), the
 prevailing standard for one-time password authentication.
 
 Authenticating a user configured for TOTP authentication involves two steps:
-    Step 1:  Username / Password Authentication
-    Step 2:  One-time Password Authentication
+1.  Username / Password Authentication
+2.  One-time Password Authentication
 
 This is considered two-factor authentication because a password represents
 something that a person *knows* and a one-time password represents something
@@ -183,10 +183,10 @@ that the user *has* -- a token generated from a key stored in a secure environme
 Often, service providers offer two-factor authentication like TOTP as an optional
 feature rather than force it upon every user.  Yosai follows this approach.
 Yosai provides *optional 2FA* by supporting two methods of authentication:
-    1) Single factor:  username/password
-    2) Two-factor:
-        I) username/password
-        II) A two-factor authentication mechanism (TOTP)
+1. Single factor:  username/password
+1. Two-factor:
+    A. username/password
+    B. A two-factor authentication mechanism (TOTP)
 
 
 ### The One-time Password Authentication Process in Yosai
@@ -204,8 +204,8 @@ is verified, Yosai returns control to the calling application.
 
 If a user is configured for two-factor authentication and username/password
 is verified, Yosai signals to the calling application to collect 2FA information
-from its client by raising an AdditionalAuthenticationRequired exception.
-Furthermore, Yosai will dispatch an "MFAChallenger", if one is configured,
+from its client by raising an **AdditionalAuthenticationRequired** exception.
+Furthermore, Yosai will dispatch an **MFAChallenger**, if one is configured,
 to send information to the client.  One such implementation of an
 MFAChallenger would be an SMS gateway that messages a client.
 
@@ -216,7 +216,7 @@ MFAChallenger would be an SMS gateway that messages a client.
 2. Yosai determines whether the user's account is configured for two-factor
 authentication.  If the user successfully authenticates step 1 and is configured
 for 2FA, Yosai will signal to its caller to collect 2FA information from client
-by raising an AdditionalAuthenticationRequired exception.  Further, if a *MFAChallenger*
+by raising an **AdditionalAuthenticationRequired** exception.  Further, if a **MFAChallenger**
 is configured, it is dispatched to coordinate OTP token generation for the client.
 
 3. A client obtains a 6-digit OTP token and sends it to the server during OTP authentication.
@@ -231,7 +231,7 @@ secret key and decrypts it.
 6. Yosai verifies that the server-side generated token matches the token
 provided by the client.
 
-7. If the client and server tokens don't match, Yosai raises an IncorrectCredentialsException
+7. If the client and server tokens don't match, Yosai raises an **IncorrectCredentialsException**
 to signal that authentication has failed due to an incorrect token provided by
 the user.  If tokens match, control is returned to the application calling Yosai.
 
@@ -254,7 +254,7 @@ Yosai settings.  If account regulation is enabled, the account's locked
 attribute is evaluated to determine whether an account is locked (and if so, when).
 
 If the account is locked:
-A LockedAccountException is raised, including a tuple containing the timestamp of
+A **LockedAccountException** is raised, including a tuple containing the timestamp of
 the current authentication attempt and a timestamp of when the account was locked.
 
 If the account is not locked, authentication proceeds.
