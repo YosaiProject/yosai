@@ -187,8 +187,8 @@ Yosai provides *optional 2FA* by supporting two methods of authentication:
 
 1. Single factor:  username/password
 2. Two-factor:
-    * username/password
-    * A two-factor authentication mechanism (TOTP)
+    - username/password
+    - A two-factor authentication mechanism (TOTP)
 
 
 ### The One-time Password Authentication Process in Yosai
