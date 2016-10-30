@@ -4,14 +4,15 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
-
+        
+        
+        
         <link rel="shortcut icon" href="../img/favicon.ico">
 
 	<title>Authentication - Yosai</title>
 
         <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.5.0.css" rel="stylesheet">
         <link href="../css/base.css" rel="stylesheet">
         <link rel="stylesheet" href="../css/highlight.css">
         <link href="../css/extra.css" rel="stylesheet">
@@ -22,94 +23,175 @@
             <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
         <![endif]-->
 
-
+        
     </head>
 
     <body>
 
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-        <div class="container">
-            <!-- Collapsed navigation -->
-            <div class="navbar-header">
-                <!-- Expander button -->
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <!-- Main title -->
-                <a class="active navbar-brand" href="..">Yosai</a>
-            </div>
-            <!-- Expanded navigation -->
-            <div class="navbar-collapse collapse">
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">Yosai</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
                 <!-- Main navigation -->
                 <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="..">Home</a>
+                    </li>
+                
+                
+                
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Get Started <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                            <li>
-                                <a href="../intro/">Introduction</a>
-                            </li>
-                            <li>
-                                <a href="../installation_setup/">Installation and Setup</a>
-                            </li>
-                            <li >
-                                <a href="../quickstart/">Quick-Start</a>
-                            </li>
+                        
+                            
+<li >
+    <a href="../intro/">Introduction</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../installation_setup/">Installation and Setup</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../quickstart/">Quick-Start</a>
+</li>
+
+                        
                         </ul>
                     </li>
+                
+                
+                
                     <li class="dropdown active">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                            <li class="active">
-                                <a href="./">Authentication</a>
-                            </li>
-                            <li>
-                                <a href="../authorization/">Authorization</a>
-                            </li>
-                            <li>
-                                <a href="../sessionmanagement/">Session Management</a>
-                            </li>
-                            <li>
-                                <a href="../events/">Event Processing</a>
-                            </li>
-                            <li>
-                                <a href="../serialization/">Serialization</a>
-                            </li>
-                            <li>
-                                <a href="../architecture/">Architecture Overview</a>
-                            </li>
-                            <li>
-                                <a href="../web">Web Integration</a>
-                            </li>
+                        
+                            
+<li class="active">
+    <a href="./">Authentication</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../authorization/">Authorization</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../sessionmanagement/">Session Management</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../events/">Event Processing</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../serialization/">Serialization</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../architecture/">Architecture Overview</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../web/">Web Integration</a>
+</li>
+
+                        
                         </ul>
                     </li>
+                
+                
+                
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                            <li>
-                                <a href="../devstatus/">Development Status</a>
-                            </li>
-                            <li>
-                                <a href="../library/">Library</a>
-                            </li>
-                            <li>
-                                <a href="../community/">Community</a>
-                            </li>
-                            <li>
-                                <a href="../credits/">Credits</a>
-                            </li>
+                        
+                            
+<li >
+    <a href="../devstatus/">Development Status</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../library/">Library</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../community/">Community</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../contributing/">Contributing</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../code_of_conduct/">Code of Conduct</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../credits/">Credits</a>
+</li>
+
+                        
                         </ul>
                     </li>
+                
+                
                 </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
-                            <i class="fa fa-search"></i> Search
-                        </a>
-                    </li>
+            
 
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
                     <li >
                         <a rel="next" href="../quickstart/">
                             <i class="fa fa-arrow-left"></i> Previous
@@ -120,47 +202,54 @@
                             Next <i class="fa fa-arrow-right"></i>
                         </a>
                     </li>
-
+                
+                
                     <li>
                         <a href="https://github.com/yosaiproject">
-
-                            <i class="fa fa-github"></i> GitHub
+                            
+                                <i class="fa fa-github"></i>
+                            
+                            GitHub
                         </a>
                     </li>
-
-                </ul>
-            </div>
+                
+            </ul>
         </div>
     </div>
+</div>
 
         <div class="container">
-
+            
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
-
+    
         <li class="main active"><a href="#authentication">Authentication</a></li>
-
-
+        
+    
         <li class="main "><a href="#native-vs-web-yosai-apis">Native vs Web Yosai APIs</a></li>
-
-
+        
+    
         <li class="main "><a href="#powerful-authentication-using-a-simple-api">Powerful Authentication using a Simple API</a></li>
-
+        
             <li><a href="#logging-in-and-logging-out">Logging-In and Logging-Out</a></li>
-
+        
             <li><a href="#logging-in">Logging-In</a></li>
-
+        
             <li><a href="#logging-out">Logging Out</a></li>
-
+        
             <li><a href="#factors-of-authentication">Factors of Authentication</a></li>
-
+        
+            <li><a href="#two-factor-authentication">Two-Factor Authentication</a></li>
+        
+            <li><a href="#account-locking">Account Locking</a></li>
+        
             <li><a href="#native-support-for-remember-me-services">Native Support for 'Remember Me' Services</a></li>
-
+        
             <li><a href="#authentication-events">Authentication Events</a></li>
-
+        
             <li><a href="#references">References</a></li>
-
-
+        
+    
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -192,7 +281,7 @@ that is pushed/popped as context is entered and exited:</p>
 <p>When you <em>log-in</em>, you are attempting to make a secured system recognize your
 presence.  The system recognizes who you are by verifying your identity.  Once your
 identity is verified, the system considers you present (logged in) by creating a new,
-verified session for you.  </p>
+verified session for you.</p>
 <p>There are two key processes involved with logging-in:
 - Session Management
 - Authentication</p>
@@ -207,7 +296,7 @@ from when you were anonymous.  The elevation of status involves deleting the ano
 session and creating a new, <em>verified</em> session for you. Once authenticated, you
 are considered present through the existence of this <em>verified</em> session.</p>
 <h3 id="authentication-with-example">Authentication, with Example</h3>
-<p><em>Authentication</em> is the process of verifying identity.  </p>
+<p><em>Authentication</em> is the process of verifying identity.</p>
 <p>In the following example, we log-in a Subject by performing password-based
 authentication.  This process would raise an AuthenticationException
 if it were to fail.  Yosai features a rich exception hierarchy that offers detailed
@@ -269,7 +358,7 @@ documentation [1], the <em>bcrypt_sha256</em> algorithm works as follows:</p>
 honor any prior recognition of your identity (you would have to re-authenticate
 yourself if you re-engaged the system). When you log-out a user, you are
 releasing the identifying state of the user by the application.  A Subject is
-logged out when the Subject is done interacting with the application by calling:<br />
+logged out when the Subject is done interacting with the application by calling:
 <code>subject.logout()</code>, relinquishing all identifying information and
 invalidating the user's session.  If you are logging out in a web app,
 the RememberMe cookie will also be deleted.</p>
@@ -279,7 +368,7 @@ ways: idle timeout and absolute time to live timeout.  Please consult the
 Session Management documentation to learn more about timeouts.</p>
 <h3 id="manual-log-out">Manual Log Out</h3>
 <p>When you manually log-out, you are explicitly telling the system that your work
-is done and you do no wish to continue your current session with the system.<br />
+is done and you do no wish to continue your current session with the system.
 Manual log-out is initiated by a user engaging a log-out operation through a user
 interface, such as click a "log-out" or "sign out" button, which would ultimately
 call the <code>logout</code> method in the Subject API:</p>
@@ -303,17 +392,92 @@ authentication (MFA) methods, are considered stronger fraud deterrents than sing
  methods as they are more difficult to compromise.  A bank ATM transaction involves
 MFA because it requires something the user <strong>has</strong> -- a bank card -- <em>and</em> it
 requires something the user <strong>knows</strong> -- a PIN code.</p>
-<p>The use of a username/password to login is considered single-factor
-authentication because it only involves something the user <em>knows</em>.</p>
-<p>Yosai is designed to accommodate multi-factor authentication methods.  Be that
-as it may, no concrete MFA implementation is provided within the core library
-because the MFA chosen is discretionary and largely subject to change among
-projects.  Instead, the Yosai community is encouraged to share extensions to
-enable MFA.</p>
-<p>However, although no multi-factor solution is provided, a single-factor,
-password-based authentication is provided in yosai.core because it remains the
-most widely used form of authentication.  You could see an example of it in the
-logging-in documentation above.</p>
+<h2 id="two-factor-authentication">Two-Factor Authentication</h2>
+<p>Yosai features native support for Time-based One Time Passwords (TOTP), the
+prevailing standard for one-time password authentication.</p>
+<p>Authenticating a user configured for TOTP authentication involves two steps:
+    Step 1:  Username / Password Authentication
+    Step 2:  One-time Password Authentication</p>
+<p>This is considered two-factor authentication because a password represents
+something that a person <em>knows</em> and a one-time password represents something
+that the user <em>has</em> -- a token generated from a key stored in a secure environment.</p>
+<p>Often, service providers offer two-factor authentication like TOTP as an optional
+feature rather than force it upon every user.  Yosai follows this approach.
+Yosai provides <em>optional 2FA</em> by supporting two methods of authentication:
+    1) Single factor:  username/password
+    2) Two-factor:
+        I) username/password
+        II) A two-factor authentication mechanism (TOTP)</p>
+<h3 id="the-one-time-password-authentication-process-in-yosai">The One-time Password Authentication Process in Yosai</h3>
+<p>Authentication always begins with a user first authenticating itself using a username
+and password combination.  As to how Yosai responds to a successful username/password
+authentication depends on whether the user is configured for two-factor authentication.</p>
+<h4 id="scenario-1-single-factor-authentication">Scenario 1:  Single-Factor Authentication</h4>
+<p>If a user is configured for single-factor authentication and username/password
+is verified, Yosai returns control to the calling application.</p>
+<h4 id="scenario-2-two-factor-authentication">Scenario 2:  Two-Factor Authentication</h4>
+<p>If a user is configured for two-factor authentication and username/password
+is verified, Yosai signals to the calling application to collect 2FA information
+from its client by raising an AdditionalAuthenticationRequired exception.
+Furthermore, Yosai will dispatch an "MFAChallenger", if one is configured,
+to send information to the client.  One such implementation of an
+MFAChallenger would be an SMS gateway that messages a client.</p>
+<h4 id="two-factor-authentication-sequence">Two-Factor Authentication Sequence</h4>
+<ol>
+<li>
+<p>A client authenticates itself using a username and password.</p>
+</li>
+<li>
+<p>Yosai determines whether the user's account is configured for two-factor
+authentication.  If the user successfully authenticates step 1 and is configured
+for 2FA, Yosai will signal to its caller to collect 2FA information from client
+by raising an AdditionalAuthenticationRequired exception.  Further, if a <em>MFAChallenger</em>
+is configured, it is dispatched to coordinate OTP token generation for the client.</p>
+</li>
+<li>
+<p>A client obtains a 6-digit OTP token and sends it to the server during OTP authentication.
+An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs
+a secret key that is unique to a user and an incrementing value (a counter).</p>
+</li>
+<li>
+<p>Yosai obtains from a persisted datastore an encrypted version of the user's
+secret key and decrypts it.</p>
+</li>
+<li>
+<p>Yosai generates its own one-time password token with the decrypted key.</p>
+</li>
+<li>
+<p>Yosai verifies that the server-side generated token matches the token
+provided by the client.</p>
+</li>
+<li>
+<p>If the client and server tokens don't match, Yosai raises an IncorrectCredentialsException
+to signal that authentication has failed due to an incorrect token provided by
+the user.  If tokens match, control is returned to the application calling Yosai.</p>
+</li>
+</ol>
+<h2 id="account-locking">Account Locking</h2>
+<p>Yosai allows developers to regulate account authentication for any particular
+user account by defining a number of maximum allowable authentication attempts.
+If a developer defines within yosai's authentication settings an <strong>account_lock_threshold</strong>,
+account locking is enabled, using <strong>account_lock_threshold</strong> as the limit.</p>
+<p>Assuming account locking is enabled, the moment that the number of failed
+authentication attempts exceeds the maximum-allowable threshold, Yosai will lock
+the account, prohibiting subsequent authentication regardless of whether
+credentials match.</p>
+<p>An AccountStoreRealm obtains an account from storage.  Prior to authenticating
+an account, the realm determines whether account regulation is enabled in
+Yosai settings.  If account regulation is enabled, the account's locked
+attribute is evaluated to determine whether an account is locked (and if so, when).</p>
+<p>If the account is locked:
+A LockedAccountException is raised, including a tuple containing the timestamp of
+the current authentication attempt and a timestamp of when the account was locked.</p>
+<p>If the account is not locked, authentication proceeds.</p>
+<p>When authentication fails, Yosai caches when the failed attempt happend.  When
+the total number of failed attempts exceeds the maximum allowable fails, the
+account is locked in the underlying accountstore of the realm that facilitates
+locking.  Consequently, failed authentication attempts live in cache until the
+corresponding cache entry expires or is deleted.</p>
 <h2 id="native-support-for-remember-me-services">Native Support for 'Remember Me' Services</h2>
 <p>As shown in the example above, Yosai supports "Remember Me" in addition to
 the normal login process.  Yosai makes a very precise distinction between a
@@ -400,13 +564,14 @@ method registered for a consumer, using the event payload as its argument(s).</p
 <li>EL = <code>yosai.core.event.event.EventLogger</code></li>
 </ul>
 <h2 id="references">References</h2>
-<p><a href="https://www.owasp.org/index.php/Authentication_Cheat_Sheet">OWASP Authentication Cheat Sheet</a></p></div>
-
+<p><a href="https://www.owasp.org/index.php/Authentication_Cheat_Sheet">OWASP Authentication Cheat Sheet</a></p>
+<p><a href="https://tools.ietf.org/html/rfc6238">IETF Time-based One Time Passwords RFC</a></p></div>
+            
         </div>
 
         <footer class="col-md-12">
             <hr>
-
+            
             <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
         </footer>
 
