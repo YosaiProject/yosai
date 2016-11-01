@@ -110,10 +110,10 @@ class TOTPToken(authc_abcs.AuthenticationToken):
     @credentials.setter
     def credentials(self, credentials):
         try:
-            assert 99999 < credentials < 1000000
+            assert len(credentials) == 6  # TODO: hard coding this for now..
             self._credentials = credentials
         except (TypeError, AssertionError) as exc:
-            msg = 'TOTPToken must be a 6-digit int. Got: ', str(credentials)
+            msg = 'TOTPToken must be a 6-digit *string*. Got: ' + str(credentials)
             raise exc.__class__(msg)
 
 # the verify field corresponds to the human intelligible name of the credential type,
@@ -217,7 +217,7 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 return self.authenticate_account(exc.account_id, second_factor_token, None)
 
             self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
-            
+
             try:
                 self.mfa_challenger.send_challenge(authc_token.identifier)
             except AttributeError:

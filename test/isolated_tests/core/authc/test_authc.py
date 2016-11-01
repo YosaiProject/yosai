@@ -39,11 +39,9 @@ def test_upt_credentials_setting_raise(username_password_token):
 # TOTPToken Tests
 # -----------------------------------------------------------------------------
 
-@pytest.mark.parametrize('credential, exc_class', [(1234, AssertionError),
-                                                   ('123456', TypeError)])
-def test_totp_credentials_raises(totp_token, credential, exc_class):
-    with pytest.raises(exc_class):
-        totp_token.credentials = credential
+def test_totp_credentials_raises():
+    with pytest.raises(TypeError):
+        TOTPToken(123456)
 
 
 # -----------------------------------------------------------------------------
@@ -322,11 +320,10 @@ def test_da_do_authc_acct_multi_realm(
     da_amra.assert_called_once_with(da.realms, mock_token)
 
 
-@mock.patch.object(DefaultAuthenticator, 'notify_event')
 @mock.patch.object(DefaultAuthenticator, 'validate_locked')
 @mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
 def test_da_do_authc_acct_req_additional(
-        da_asra, da_vl, da_ne, default_authenticator, sample_acct_info, monkeypatch):
+        da_asra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
     da_asra.return_value = sample_acct_info
     da = default_authenticator
 
@@ -344,8 +341,6 @@ def test_da_do_authc_acct_req_additional(
 
     da_vl.assert_called_once_with(mock_token, [1477077663111])
     da_asra.assert_called_once_with(faux_authc_realm, mock_token)
-    da_ne.assert_called_once_with(mock_token.identifier, 'AUTHENTICATION.PROGRESS')
-
 
 
 def test_da_clear_cache(

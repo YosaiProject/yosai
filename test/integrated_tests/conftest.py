@@ -1,7 +1,6 @@
 from passlib.totp import TOTP
 
 from yosai.core import (
-    DefaultPermission,
     load_logconfig,
     SimpleIdentifierCollection,
     TOTPToken,
@@ -95,9 +94,11 @@ def valid_thedude_username_password_token(cache_handler):
     for key in keys:
         cache_handler.cache_region.delete(key)
 
+
 @pytest.fixture(scope='function')
 def thedude_totp_key():
     return 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+
 
 @pytest.fixture(scope='function')
 def valid_thedude_totp_token(thedude_totp_key, cache_handler):
@@ -105,7 +106,7 @@ def valid_thedude_totp_token(thedude_totp_key, cache_handler):
     for key in keys:
         cache_handler.cache_region.delete(key)
 
-    token = int(TOTP(key=thedude_totp_key, digits=6).generate().token)
+    token = TOTP(key=thedude_totp_key, digits=6).generate().token
     yield TOTPToken(totp_token=token)
 
     keys = cache_handler.keys('*authentication*')

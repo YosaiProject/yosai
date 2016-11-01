@@ -92,7 +92,7 @@ def username_password_token():
 
 @pytest.fixture(scope='function')
 def totp_token():
-    return TOTPToken(123456)
+    return TOTPToken('123456')
 
 
 @pytest.fixture(scope='function')
