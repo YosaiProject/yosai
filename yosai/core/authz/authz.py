@@ -230,9 +230,6 @@ class WildcardPermission(serialize_abcs.Serializable):
                                      self.parts.get('action'),
                                      self.parts.get('target')))
 
-    def __hash__(self):
-        return hash(set(self.parts.items()))
-
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
             return self.parts == other.parts

@@ -626,11 +626,11 @@ def test_requires_permission_succeeds(yosai, valid_thedude_username_password_tok
 
 
 def test_requires_permission_fails(yosai, valid_thedude_username_password_token,
-        valid_thedude_totp_token):
+                                   valid_thedude_totp_token):
 
     status = None
 
-    @Yosai.requires_permission(['money:write:bankcheck_12345'])
+    @Yosai.requires_permission(['money:bounce:bankcheck_12345'])
     def do_something():
         nonlocal status
         status = True
@@ -641,13 +641,10 @@ def test_requires_permission_fails(yosai, valid_thedude_username_password_token,
             new_subject.login(valid_thedude_username_password_token)
         except AdditionalAuthenticationRequired:
             new_subject.login(valid_thedude_totp_token)
-        try:
+        with pytest.raises(UnauthorizedException):
             do_something()
-        except UnauthorizedException:
-            assert status is None
-            new_subject.logout()
-        else:
-            raise Exception('failed to raise')
+        assert status is None
+        new_subject.logout()
 
 
 def test_requires_dynamic_permission_succeeds(yosai, valid_thedude_username_password_token,
@@ -684,7 +681,7 @@ def test_requires_dynamic_permission_fails(yosai, valid_thedude_username_passwor
 
     status = None
 
-    @Yosai.requires_dynamic_permission(['money:write:{bankcheck.bankcheck_id}'])
+    @Yosai.requires_dynamic_permission(['money:bounce:{bankcheck.bankcheck_id}'])
     def do_something(bankcheck):
         nonlocal status
         status = True
@@ -695,13 +692,10 @@ def test_requires_dynamic_permission_fails(yosai, valid_thedude_username_passwor
             new_subject.login(valid_thedude_username_password_token)
         except AdditionalAuthenticationRequired:
             new_subject.login(valid_thedude_totp_token)
-        try:
+        with pytest.raises(UnauthorizedException):
             do_something(bankcheck=BankCheck())
-        except UnauthorizedException:
-            new_subject.logout()
-            assert status is None
-        else:
-            raise Exception('failed to raise')
+        new_subject.logout()
+        assert status is None
 
 
 def test_requires_role_succeeds(yosai, valid_thedude_username_password_token,
@@ -746,3 +740,17 @@ def test_requires_role_fails(yosai, valid_thedude_username_password_token,
         except UnauthorizedException:
             assert status is None
             new_subject.logout()
+
+
+def test_totp_replay_attack(yosai, valid_thedude_username_password_token,
+                            valid_thedude_totp_token):
+
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+        try:
+            new_subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            new_subject.login(valid_thedude_totp_token)
+
+        with pytest.raises(IncorrectCredentialsException):
+            new_subject.login(valid_thedude_totp_token)

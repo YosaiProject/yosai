@@ -57,7 +57,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
 
             if consumed_token == submitted:
                 msg = 'TOTP token already consumed: ' + consumed_token
-                raise ValueError(msg)
+                raise IncorrectCredentialsException(msg)
 
             result = self.totp_factory.verify(submitted, stored)
 
