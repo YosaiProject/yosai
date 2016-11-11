@@ -181,7 +181,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                 self.parts[myindex].add(sp)
 
         # final step is to make it immutable:
-        self.parts.update((k, frozenset(v)) for k, v in self.parts.items())
+        self.parts.update((k, set(v)) for k, v in self.parts.items())
 
     def implies(self, permission):
         """
@@ -231,7 +231,7 @@ class WildcardPermission(serialize_abcs.Serializable):
                                      self.parts.get('target')))
 
     def __hash__(self):
-        return hash(frozenset(self.parts.items()))
+        return hash(set(self.parts.items()))
 
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
@@ -247,83 +247,19 @@ class WildcardPermission(serialize_abcs.Serializable):
         }
 
     def __setstate__(self, state):
-        parts = {part: frozenset(items) for part, items in state['parts'].items()}
+        parts = {part: set(items) for part, items in state['parts'].items()}
         self.parts = parts
         self.case_sensitive = state['case_sensitive']
 
 
 class DefaultPermission(WildcardPermission):
-    """
-    This class is known in Shiro as DomainPermission.  It has been renamed
-    and refactored a bit for Yosai.  It is a 'plain vanilla' permission.
-
-    Differences between yosai and shiro implementations include:
-    - Unlike Shiro's DomainPermission, DefaultPermission obtains its domain
-      attribute by argument (rather than by using class name (and subclassing)).
-    - Set order is removed (no OrderedSet) until it is determined that using
-      ordered set will improve performance (TBD).
-    - refactored interaction between set_parts and encode_parts
-
-    This class can be used as a base class for ORM-persisted (SQLAlchemy)
-    permission model(s).  The ORM model maps the parts of a permission
-    string to separate table columns (e.g. 'domain', 'action' and 'target'
-    columns) and is subsequently used in querying strategies.
-    """
-    def __init__(self, wildcard_string=None,
-                 domain=None, action=None, target=None):
-        """
-        :type domain: str
-        :type action: str or set of strings
-        :type target: str or set of strings
-        :type wildcard_permission: str
-
-        After initializing, the state of a DomainPermission object includes:
-            self.results = a list populated by WildcardPermission.set_results
-            self._domain = a Str, or None
-            self._action = a set, or None
-            self._target = a set, or None
-        """
+    def __init__(self, wildcard_string=None, parts=None, case_sensitive=False):
         if wildcard_string is not None:
             super().__init__(wildcard_string=wildcard_string)
         else:
-            super().__init__()
-            self.set_parts(domain=domain, action=action, target=target)
-        self._domain = self.parts.get('domain')
-        self._action = self.parts.get('action')
-        self._target = self.parts.get('target')
+            self.__setstate__(parts)
 
-    @property
-    def domain(self):
-        return self._domain
-
-    @domain.setter
-    def domain(self, domain):
-        self.set_parts(domain=domain,
-                       action=getattr(self, '_action'),
-                       target=getattr(self, '_target'))
-        self._domain = self.parts.get('domain')
-
-    @property
-    def action(self):
-        return self._action
-
-    @action.setter
-    def action(self, action):
-        self.set_parts(domain=getattr(self, '_domain'),
-                       action=action,
-                       target=getattr(self, '_target'))
-        self._action = self.parts.get('action')
-
-    @property
-    def target(self):
-        return self._target
-
-    @target.setter
-    def target(self, target):
-        self.set_parts(domain=getattr(self, '_domain'),
-                       action=getattr(self, '_action'),
-                       target=target)
-        self._target = self.parts.get('target')
+        self.case_sensitive = case_sensitive
 
     def encode_parts(self, domain, action, target):
         """
@@ -363,15 +299,15 @@ class DefaultPermission(WildcardPermission):
         action_string = action
         target_string = target
 
-        if (isinstance(domain, set) or isinstance(domain, frozenset)):
+        if (isinstance(domain, set) or isinstance(domain, set)):
             domain_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in domain])
 
-        if (isinstance(action, set) or isinstance(action, frozenset)):
+        if (isinstance(action, set) or isinstance(action, set)):
             action_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in action])
 
-        if (isinstance(target, set) or isinstance(target, frozenset)):
+        if (isinstance(target, set) or isinstance(target, set)):
             target_string = self.SUBPART_DIVIDER_TOKEN.\
                 join([token for token in target])
 
@@ -381,21 +317,17 @@ class DefaultPermission(WildcardPermission):
 
         super().setparts(wildcard_string=permission)
 
-    # removed getDomain
-
     def __getstate__(self):
-        parts = {part: list(items) for part, items in self.parts.items()}
         return {
-            'parts': parts,
+            'parts': {part: list(items) for part, items in self.parts.items()},
             'case_sensitive': self.case_sensitive
         }
 
     def __setstate__(self, state):
-        self.parts = {part: frozenset(items) for part, items in state['parts'].items()}
-        self._domain = self.parts.get('domain')
-        self._action = self.parts.get('action')
-        self._target = self.parts.get('target')
-        self.case_sensitive = state['case_sensitive']
+        self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
+        new_parts = {part: set(items) for part, items in state['parts'].items()}
+        self.parts.update(new_parts)
+        self.case_sensitive = state.get('case_sensitive', False)
 
 
 class ModularRealmAuthorizer(authz_abcs.Authorizer):
@@ -471,7 +403,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                              calling method to do so instead (False)
         :type log_results:  bool
 
-        :returns: a frozenset of tuple(s), containing the Permission and a Boolean
+        :returns: a set of tuple(s), containing the Permission and a Boolean
                   indicating whether the permission is granted
         """
         self.assert_realms_configured()
@@ -491,7 +423,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                               list(results.items()),
                               'AUTHORIZATION.RESULTS')
 
-        results = frozenset(results.items())
+        results = set(results.items())
         return results
 
     # yosai.core.refactored is_permitted_all to support ANY or ALL operations
@@ -512,7 +444,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         """
         self.assert_realms_configured()
 
-        # interim_results is a frozenset of tuples:
+        # interim_results is a set of tuples:
         interim_results = self.is_permitted(identifiers, permission_s,
                                             log_results=False)
 
@@ -572,7 +504,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                              calling method to do so instead (False)
         :type log_results:  bool
 
-        :returns: a frozenset of tuple(s), containing the role and a Boolean
+        :returns: a set of tuple(s), containing the role and a Boolean
                   indicating whether the user is a member of the Role
         """
         self.assert_realms_configured()
@@ -590,7 +522,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
             self.notify_event(identifiers,
                               list(results.items()),
                               'AUTHORIZATION.RESULTS')  # before freezing
-        results = frozenset(results.items())
+        results = set(results.items())
         return results
 
     def has_role_collective(self, identifiers, role_s, logical_operator):
@@ -609,7 +541,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         """
         self.assert_realms_configured()
 
-        # interim_results is a frozenset of tuples:
+        # interim_results is a set of tuples:
         interim_results = self.has_role(identifiers, role_s, log_results=False)
 
         results = logical_operator(has_role for role, has_role
@@ -703,6 +635,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
         return ("ModularRealmAuthorizer(realms={0})".
                 format(self.realms))
 
+
 class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     """
     This is an implementation of the authz_abcs.AuthorizationInfo interface that
@@ -775,7 +708,7 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         :type domain:  str
         :returns: a set of Permission objects
         """
-        return {DefaultPermission(permission) for permission
+        return {DefaultPermission(parts=parts) for parts
                 in self._permissions.get(domain, set())}
 
     def __repr__(self):
@@ -806,13 +739,13 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
             1) permissions with a wildcard domain
             2) permissions of the same domain as the requested permission
 
-        :returns: frozenset
+        :returns: set
         """
         required_domain = next(iter(required_permission.domain))
         # get_permissions returns a set of Permission objects
         related_perms = authz_info.get_permissions(required_domain)
         wildcard_perms = authz_info.get_permissions('*')
-        return frozenset(itertools.chain(wildcard_perms, related_perms))
+        return set(itertools.chain(wildcard_perms, related_perms))
 
     def is_permitted(self, authz_info, permission_s):
         """
@@ -825,7 +758,7 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
         """
         for required_perm in permission_s:
             is_permitted = False
-            permission = DefaultPermission(required_perm)
+            permission = DefaultPermission(wildcard_string=required_perm)
             authorized_perms = self.get_authzd_permissions(authz_info,
                                                            permission)
             for authz_perm in authorized_perms:

@@ -21,6 +21,7 @@ from uuid import uuid4
 import time
 from yosai.core import (
     AccountException,
+    ConsumedTOTPToken,
     IncorrectCredentialsException,
     IndexedPermissionVerifier,
     LockedAccountException,
@@ -268,6 +269,11 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                 get('failed_attempts', [])
 
             raise IncorrectCredentialsException(failed_attempts)
+        except ConsumedTOTPToken:
+            account['authc_info']['consumed_token'] = authc_token.credentials
+            self.cache_handler.set(domain='authentication:' + self.name,
+                                   identifier=authc_token.identifier,
+                                   value=account)
 
     # --------------------------------------------------------------------------
     # Authorization

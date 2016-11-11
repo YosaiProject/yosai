@@ -125,7 +125,7 @@ class Authorizer(metaclass=ABCMeta):
         :param role_s: 1..N role identifiers (strings)
         :type role_s:  Set of Strings
 
-        :returns: a frozenset of tuple(s), each containing the Role identifier
+        :returns: a set of tuple(s), each containing the Role identifier
                   requested and a Boolean indicating whether the subject is
                   a member of that Role
                   - the tuple format is: (role, Boolean)
@@ -278,7 +278,7 @@ class PermissionVerifier(metaclass=ABCMeta):
         :param permission: a Permission that has already been resolved (if needed)
         :type permission: a Permission object
 
-        :returns: frozenset
+        :returns: set
         """
         pass
 

@@ -68,9 +68,9 @@ def test_wcp_setparts_casesensitive(
     monkeypatch.setattr(wcp, 'case_sensitive', True)
     wildcardstring = "One,Two,Three:Four,Five,Six:Seven,Eight"
     wcp.setparts(wildcard_string=wildcardstring)
-    expected_parts = {'domain': frozenset(['One', 'Two', 'Three']),
-                      'action': frozenset(['Four', 'Five', 'Six']),
-                      'target': frozenset(['Seven', 'Eight'])}
+    expected_parts = {'domain': set(['One', 'Two', 'Three']),
+                      'action': set(['Four', 'Five', 'Six']),
+                      'target': set(['Seven', 'Eight'])}
     assert expected_parts == wcp.parts
 
 def test_wcp_setparts(default_wildcard_permission, monkeypatch):
@@ -85,9 +85,9 @@ def test_wcp_setparts(default_wildcard_permission, monkeypatch):
     wildcardstring = "one,two,three:four,five,six:seven,eight"
     wcp.setparts(wildcard_string=wildcardstring)
     expected_parts = {}
-    expected_parts['domain'] = frozenset(['one', 'two', 'three'])
-    expected_parts['action'] = frozenset(['four', 'five', 'six'])
-    expected_parts['target'] = frozenset(['seven', 'eight'])
+    expected_parts['domain'] = set(['one', 'two', 'three'])
+    expected_parts['action'] = set(['four', 'five', 'six'])
+    expected_parts['target'] = set(['seven', 'eight'])
     assert expected_parts == wcp.parts
 
 def test_wcp_implies_nonwildcardpermission(default_wildcard_permission):
@@ -301,7 +301,7 @@ def test_dp_normal_init(actions, targets, actionset, targetset):
     test case:
     confirm that the DefaultPermission initializes as expected
     """
-    ddp = DefaultPermission(action=actions, target=targets)
+    ddp = DefaultPermission(parts=dict(action=actions, target=targets))
     assert (ddp.action == actionset and ddp.target == targetset)
 
 def test_dp_domain_setter_sets_parts(default_permission):
@@ -313,7 +313,7 @@ def test_dp_domain_setter_sets_parts(default_permission):
     """
     ddp = default_permission
     ddp.domain = 'test'
-    assert ddp.domain == frozenset({'test'})
+    assert ddp.domain == set({'test'})
 
 def test_dp_action_setter_sets_parts(default_permission):
     """
@@ -325,7 +325,7 @@ def test_dp_action_setter_sets_parts(default_permission):
     ddp = default_permission
     dumbactions = set(['actiona', 'actionb', 'actionc'])
     ddp.action = dumbactions
-    assert ddp.action == frozenset(dumbactions)
+    assert ddp.action == set(dumbactions)
 
 def test_dp_targets_setter_sets_parts(default_permission):
     """
@@ -337,7 +337,7 @@ def test_dp_targets_setter_sets_parts(default_permission):
     ddp = default_permission
     dumbtargets = set(['targeta', 'targetb', 'targetc'])
     ddp.target = dumbtargets
-    assert ddp.target == frozenset(dumbtargets)
+    assert ddp.target == set(dumbtargets)
 
 @pytest.mark.parametrize(
     "domain,actions,targets,permission",

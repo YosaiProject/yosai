@@ -571,7 +571,7 @@ def test_iai_index_permission(indexed_authz_info, monkeypatch):
 
 
 @pytest.mark.parametrize('domain, expected',
-                         [('domain1', {DefaultPermission('domain1:action1')}),
+                         [('domain1', {DefaultPermission(wildcard_string='domain1:action1')}),
                           ('domainQ', set())])
 def test_iai_get_permissions(indexed_authz_info, domain, expected, monkeypatch):
     """
@@ -597,13 +597,13 @@ def test_ipv_get_authzd_permissions(
     permission argument
     """
     ipv = indexed_permission_verifier
-    perm = DefaultPermission('domain4:action4')
+    perm = DefaultPermission(wildcard_string='domain4:action4')
 
-    domainperms = frozenset([DefaultPermission(domain={'domain4'},
-                                               action={'action1', 'action2'}),
-                             DefaultPermission(domain={'domain4'},
-                                               action={'action3'},
-                                               target={'target1'})])
+    domainperms = set([DefaultPermission(parts=dict(domain={'domain4'},
+                                                    action={'action1', 'action2'})),
+                             DefaultPermission(parts=dict(domain={'domain4'},
+                                                          action={'action3'},
+                                                          target={'target1'}))])
 
     monkeypatch.setattr(indexed_authz_info, 'get_permissions',
                         lambda x: domainperms)
@@ -626,11 +626,11 @@ def test_ipv_is_permitted(
     """
     ipv = indexed_permission_verifier
 
-    dp1 = DefaultPermission('domain6:action1')
+    dp1 = DefaultPermission(wildcard_string='domain6:action1')
     monkeypatch.setattr(dp1, 'implies', lambda x: False)
-    dp2 = DefaultPermission('domain7:action1')
+    dp2 = DefaultPermission(wildcard_string='domain7:action1')
     monkeypatch.setattr(dp2, 'implies', lambda x: True)
-    authz_perms = frozenset([dp1, dp2])
+    authz_perms = set([dp1, dp2])
     monkeypatch.setattr(ipv, 'get_authzd_permissions', lambda x,y: authz_perms)
 
     perm1 = 'domain1:action1'

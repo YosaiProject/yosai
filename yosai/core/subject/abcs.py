@@ -380,7 +380,7 @@ class Subject(metaclass=ABCMeta):
         :param permission_s: a collection of 1..N permissions, all of the same type
         :type permission_s: List of authz_abcs.Permission object(s) or String(s)
 
-        :returns: a frozenset of tuple(s), each containing the Permission
+        :returns: a set of tuple(s), each containing the Permission
                   requested and a Boolean indicating whether permission is
                   granted
                   - the tuple format is: (Permission, Boolean)
@@ -442,7 +442,7 @@ class Subject(metaclass=ABCMeta):
         :param role_s: 1..N role identifiers (strings)
         :type role_s:  Set of Strings
 
-        :returns: a frozenset of tuple(s), each containing the Role identifier
+        :returns: a set of tuple(s), each containing the Role identifier
                   requested and a Boolean indicating whether the subject is
                   a member of that Role
                   - the tuple format is: (role, Boolean)

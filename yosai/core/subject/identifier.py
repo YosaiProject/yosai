@@ -109,7 +109,7 @@ class SimpleIdentifierCollection(subject_abcs.MutableIdentifierCollection,
         for identifier in self.source_identifiers.values():
             if (isinstance(identifier, identifier_class)):
                 myidentifiers.update([identifier])
-        return frozenset(myidentifiers)
+        return set(myidentifiers)
 
     def from_source(self, source_name):
         return self.source_identifiers.get(source_name)

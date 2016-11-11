@@ -363,7 +363,7 @@ def test_has_role(valid_thedude_username_password_token, thedude_testroles,
         result = new_subject.has_role(tr['roles'])
 
         assert (tr['expected_results'] == result and
-                frozenset(event_detected) == result)
+                set(event_detected) == result)
 
         new_subject.logout()
 

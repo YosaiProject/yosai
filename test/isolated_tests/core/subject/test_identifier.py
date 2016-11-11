@@ -78,7 +78,7 @@ def test_sic_by_type():
     sic = SimpleIdentifierCollection(source_name='realm1',
                                      identifier='identifier')
     result = set(sic.by_type(str))  # convert to set to always match
-    assert result == frozenset(['identifier'])
+    assert result == set(['identifier'])
 
 
 def test_sic_from_source(simple_identifiers_collection):

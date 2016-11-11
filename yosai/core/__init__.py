@@ -32,6 +32,7 @@ from .exceptions import (
     AdditionalAuthenticationRequired,
     AuthenticationException,
     AuthorizationException,
+    ConsumedTOTPToken,
     ExpiredSessionException,
     IdleExpiredSessionException,
     IncorrectCredentialsException,

@@ -19,7 +19,7 @@ under the License.
 from collections import defaultdict
 import logging
 from passlib.context import CryptContext
-from passlib.totp import OTPContext, TokenError, TOTP
+from passlib.totp import TokenError, TOTP
 
 from yosai.core import (
     EVENT_TOPIC,

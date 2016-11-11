@@ -19,10 +19,11 @@ under the License.
 
 import logging
 from passlib.context import CryptContext
-from passlib.totp import OTPContext, TokenError, TOTP
+from passlib.totp import TokenError, TOTP
 
 from yosai.core import (
     AuthenticationSettings,
+    ConsumedTOTPToken,
     IncorrectCredentialsException,
     TOTPToken,
     UsernamePasswordToken,
@@ -37,24 +38,28 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
     def __init__(self, settings):
         authc_settings = AuthenticationSettings(settings)
         self.password_cc = self.create_password_crypt_context(authc_settings)
-        self.totp_cc = self.create_totp_crypt_context(authc_settings)
-        self.cc_token_resolver = {UsernamePasswordToken: self.password_cc,
-                                  TOTPToken: self.totp_cc}
+        self.totp_factory = self.create_totp_factory(authc_settings)
         self.supported_tokens = self.cc_token_resolver.keys()
 
     def verify_credentials(self, authc_token, authc_info):
         submitted = authc_token.credentials
         stored = self.get_stored_credentials(authc_token, authc_info)
-        service = self.cc_token_resolver[authc_token.__class__]
+
+        if isinstance(authc_token, UsernamePasswordToken):
+            result = self.password_cc.verify(submitted, stored)
+            if not result:
+                raise IncorrectCredentialsException
+            return
 
         try:
-            if isinstance(authc_token, UsernamePasswordToken):
-                result = service.verify(submitted, stored)
-                if not result:
-                    raise IncorrectCredentialsException
-            else:
-                totp = TOTP(key=stored)
-                totp.verify(submitted)
+            result = self.totp_factory.verify(submitted, stored)
+            consumed_token = authc_info.get('consumed_token', None)
+
+            if consumed_token == submitted:
+                msg = 'TOTP token already consumed: ' + consumed_token
+                raise ValueError(msg)
+
+            raise ConsumedTOTPToken(totp_match=result)
 
         except (ValueError, TokenError):
             raise IncorrectCredentialsException
@@ -75,7 +80,6 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         context.update(authc_settings.preferred_algorithm_context)
         return CryptContext(**context)
 
-    def create_totp_crypt_context(self, saved_key):
-        pass
-        # context = authc_settings.totp_context
-        # return OTPContext(**context).new(type='totp')
+    def create_totp_factory(self, authc_settings):
+        return TOTP.using(secrets=authc_settings.totp_secrets,
+                          issuer=authc_settings.totp_issuer)

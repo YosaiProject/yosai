@@ -38,6 +38,15 @@ class AdditionalAuthenticationRequired(YosaiException):
         self.account_id = account_id
 
 
+class ConsumedTOTPToken(YosaiException):
+    """
+    Raises following a successful TOTP authentication as a signal to the
+    authenticating method to consume the TOTP token and prevent replay attack
+    """
+    def __init__(self, totp_match=None):
+        self.totp_match = totp_match
+
+
 class AuthenticationException(YosaiException):
     """
     A sub-root exception type

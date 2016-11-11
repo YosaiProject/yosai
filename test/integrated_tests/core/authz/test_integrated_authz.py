@@ -10,7 +10,7 @@ from yosai.core import (
 def test_is_permitted(modular_realm_authorizer, thedude_testpermissions,
         event_bus, thedude_identifier):
     """
-    get a frozenset of tuple(s), containing the Permission and a Boolean
+    get a set of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
     """
     mra = modular_realm_authorizer
@@ -24,7 +24,7 @@ def test_is_permitted(modular_realm_authorizer, thedude_testpermissions,
 
     results = mra.is_permitted(thedude_identifier, tp['perms'])
     assert (tp['expected_results'] == results and
-            frozenset(event_detected) == results)
+            set(event_detected) == results)
 
 
 def test_is_permitted_collective(
@@ -77,7 +77,7 @@ def test_has_role(modular_realm_authorizer, thedude_identifier, event_bus):
 
     roles = {'bankcustomer', 'courier', 'thief'}
 
-    expected_results = frozenset([('bankcustomer', True),
+    expected_results = set([('bankcustomer', True),
                                   ('courier', True),
                                   ('thief', False)])
 
@@ -91,7 +91,7 @@ def test_has_role(modular_realm_authorizer, thedude_identifier, event_bus):
     result = mra.has_role(thedude_identifier, roles)
 
     assert (expected_results == result and
-            frozenset(event_detected) == result)
+            set(event_detected) == result)
 
 
 def test_has_role_collective(modular_realm_authorizer, thedude_identifier):
@@ -117,7 +117,7 @@ def test_check_role_succeeds(modular_realm_authorizer, thedude_identifier, event
     event_bus.subscribe(event_listener, 'AUTHORIZATION.GRANTED')
 
     assert (mra.check_role(thedude_identifier, roles, any) is None and
-            frozenset(event_detected) == roles)
+            set(event_detected) == roles)
 
 
 def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
@@ -136,7 +136,7 @@ def test_check_role_raises(thedude_identifier, modular_realm_authorizer,
     with pytest.raises(UnauthorizedException):
         mra.check_role(thedude_identifier, roles, all)
 
-        assert frozenset(event_detected) == roles
+        assert set(event_detected) == roles
 
 
 def test_is_permitted_account_doesnt_exist(
@@ -154,7 +154,7 @@ def test_is_permitted_account_doesnt_exist(
 
     perms = [perm1, perm2, perm3, perm4]
 
-    expected_results = frozenset([(perm1, False), (perm2, False),
+    expected_results = set([(perm1, False), (perm2, False),
                                   (perm3, False), (perm4, False)])
 
     unrecognized_identifier = \
@@ -170,4 +170,4 @@ def test_is_permitted_account_doesnt_exist(
 
     results = mra.is_permitted(unrecognized_identifier, perms)
     assert (expected_results == results and
-            frozenset(event_detected) == results)
+            set(event_detected) == results)

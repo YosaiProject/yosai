@@ -85,7 +85,7 @@ def test_has_role(web_yosai, mock_web_registry, thedude_testroles, event_bus,
         result = new_web_subject.has_role(tr['roles'])
 
         assert (tr['expected_results'] == result and
-                frozenset(event_detected) == result)
+                set(event_detected) == result)
 
         new_web_subject.logout()
 

@@ -69,11 +69,11 @@ def indexed_authz_info(permission_collection, role_collection):
 
 @pytest.fixture(scope='function')
 def permission_collection():
-    return {DefaultPermission(domain={'domain1'}, action={'action1'}),
-            DefaultPermission(domain={'domain2'}, action={'action1', 'action2'}),
-            DefaultPermission(domain={'domain3'}, action={'action1', 'action2', 'action3'}, target={'target1'}),
-            DefaultPermission(domain={'domain4'}, action={'action1', 'action2'}),
-            DefaultPermission(domain={'domain4'}, action={'action3'}, target={'target1'}),
+    return {DefaultPermission(parts=dict(domain={'domain1'}, action={'action1'})),
+            DefaultPermission(parts=dict(domain={'domain2'}, action={'action1', 'action2'})),
+            DefaultPermission(parts=dict(domain={'domain3'}, action={'action1', 'action2', 'action3'}, target={'target1'})),
+            DefaultPermission(parts=dict(domain={'domain4'}, action={'action1', 'action2'})),
+            DefaultPermission(parts=dict(domain={'domain4'}, action={'action3'}, target={'target1'})),
             DefaultPermission(wildcard_string='*:action5')}
 
 

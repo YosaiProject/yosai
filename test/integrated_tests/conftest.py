@@ -187,7 +187,7 @@ def thedude_testpermissions():
 
     perms = [perm1, perm2, perm3, perm4]
 
-    expected_results = frozenset([(perm1, True), (perm2, False),
+    expected_results = set([(perm1, True), (perm2, False),
                                   (perm3, True), (perm4, False)])
 
     return dict(perms=perms, expected_results=expected_results)
@@ -197,7 +197,7 @@ def thedude_testpermissions():
 def thedude_testroles():
     roles = {'bankcustomer', 'courier', 'gangster'}
 
-    expected_results = frozenset([('bankcustomer', True),
+    expected_results = set([('bankcustomer', True),
                                   ('courier', True),
                                   ('gangster', False)])
 
@@ -213,7 +213,7 @@ def jackie_testpermissions():
 
     perms = [perm1, perm2, perm3]
 
-    expected_results = frozenset([(perm1, True), (perm2, True),
+    expected_results = set([(perm1, True), (perm2, True),
                                   (perm3, False)])
 
     return dict(perms=perms, expected_results=expected_results)
@@ -228,7 +228,7 @@ def walter_testpermissions():
 
     perms = [perm1, perm2, perm3]
 
-    expected_results = frozenset([(perm1, True), (perm2, False),
+    expected_results = set([(perm1, True), (perm2, False),
                                   (perm3, True)])
 
     return dict(perms=perms, expected_results=expected_results)

@@ -336,7 +336,7 @@ class DelegatingSubject(subject_abcs.Subject):
         :param role_s: 1..N role identifiers (strings)
         :type role_s:  Set of Strings
 
-        :returns: a frozenset of tuple(s), containing the role and a Boolean
+        :returns: a set of tuple(s), containing the role and a Boolean
                   indicating whether the user is a member of the Role
         """
         if self.authorized:
