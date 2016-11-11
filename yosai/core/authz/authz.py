@@ -331,13 +331,13 @@ class DefaultPermission(WildcardPermission):
 
     def __getstate__(self):
         return {
-            'parts': {part: list(items) for part, items in self.parts.items()},
+            'parts': self.parts,
             'case_sensitive': self.case_sensitive
         }
 
     def __setstate__(self, state):
         self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
-        new_parts = {part: set([items]) for part, items in state['parts'].items()}
+        new_parts = {part: set(items) for part, items in state['parts'].items()}
         self.parts.update(new_parts)
         self.case_sensitive = state.get('case_sensitive', False)
 
@@ -707,7 +707,7 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         """
         try:
             for permission in permission_s:
-                self._permissions[permission['parts']['domain']].append(permission)
+                self._permissions[permission['parts']['domain'][0]].append(permission)
 
         except TypeError:
             logger.debug(self.__class__.__name__ + ': No permissions to index.')

@@ -200,7 +200,7 @@ def thedude_testpermissions():
     perms = [perm1, perm2, perm3, perm4]
 
     expected_results = set([(perm1, True), (perm2, False),
-                                  (perm3, True), (perm4, False)])
+                              (perm3, True), (perm4, False)])
 
     return dict(perms=perms, expected_results=expected_results)
 

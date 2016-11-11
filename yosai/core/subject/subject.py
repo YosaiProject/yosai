@@ -533,9 +533,9 @@ class DelegatingSubject(subject_abcs.Subject):
         :returns: an IdentifierCollection
         """
         session = self.get_session(False)
+
         try:
-            return session.get_internal_attribute(
-                self.run_as_identifiers_session_key)
+            return session.get_internal_attribute(self.run_as_identifiers_session_key)
         except AttributeError:
             return None
 
