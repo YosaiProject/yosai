@@ -80,6 +80,7 @@ def invalid_walter_username_password_token(cache_handler, yosai, monkeypatch):
         da.init_locking()
         da.locking_realm.unlock_account('walter')
 
+
 @pytest.fixture(scope='function')
 def valid_thedude_username_password_token(cache_handler):
     keys = cache_handler.keys('*authentication*')
@@ -96,17 +97,28 @@ def valid_thedude_username_password_token(cache_handler):
 
 
 @pytest.fixture(scope='function')
-def thedude_totp_key():
-    return 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+def totp_factory(core_settings):
+    authc_config = core_settings.AUTHC_CONFIG
+    totp_settings = authc_config.get('totp')
+    totp_context = totp_settings.get('context')
+    totp_secrets = totp_context.get('secrets')
+
+    return TOTP.using(secrets=totp_secrets, issuer="testing")
 
 
 @pytest.fixture(scope='function')
-def valid_thedude_totp_token(thedude_totp_key, cache_handler):
+def thedude_totp_key():
+    return '{"enckey":{"c":14,"k":"CAEC5ELC3O7G3PSA55JLWLI2HM2ESMKW","s":"HQDWA3BNQXYP4PYH4COA","t":"1478866824532","v":1},"type":"totp","v":1}'
+
+
+@pytest.fixture(scope='function')
+def valid_thedude_totp_token(thedude_totp_key, cache_handler, totp_factory):
     keys = cache_handler.keys('*authentication*')
     for key in keys:
         cache_handler.cache_region.delete(key)
 
-    token = TOTP(key=thedude_totp_key, digits=6).generate().token
+    totp = totp_factory.from_json(thedude_totp_key)
+    token = totp.generate().token
     yield TOTPToken(totp_token=token)
 
     keys = cache_handler.keys('*authentication*')

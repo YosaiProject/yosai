@@ -25,8 +25,8 @@ from yosai.core import (
     AuthenticationSettings,
     ConsumedTOTPToken,
     IncorrectCredentialsException,
-    TOTPToken,
     UsernamePasswordToken,
+    TOTPToken,
     authc_abcs,
 )
 
@@ -39,7 +39,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         authc_settings = AuthenticationSettings(settings)
         self.password_cc = self.create_password_crypt_context(authc_settings)
         self.totp_factory = self.create_totp_factory(authc_settings)
-        self.supported_tokens = self.cc_token_resolver.keys()
+        self.supported_tokens = [UsernamePasswordToken, TOTPToken]
 
     def verify_credentials(self, authc_token, authc_info):
         submitted = authc_token.credentials
@@ -52,12 +52,14 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
             return
 
         try:
-            result = self.totp_factory.verify(submitted, stored)
-            consumed_token = authc_info.get('consumed_token', None)
+            cred_type = authc_token.token_info['cred_type']
+            consumed_token = authc_info[cred_type].get('consumed_token', None)
 
             if consumed_token == submitted:
                 msg = 'TOTP token already consumed: ' + consumed_token
                 raise ValueError(msg)
+
+            result = self.totp_factory.verify(submitted, stored)
 
             raise ConsumedTOTPToken(totp_match=result)
 

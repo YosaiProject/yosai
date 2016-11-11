@@ -144,7 +144,7 @@ def account_store_realm(cache_handler, alchemy_store, authc_verifiers,
 
 @pytest.fixture(scope='session')
 def event_bus():
-    return eventbus 
+    return eventbus
 
 
 @pytest.fixture(scope='function')
@@ -217,5 +217,3 @@ def session_handler(session_store, event_bus):
     handler.session_store = session_store
     handler.event_bus = event_bus
     return handler
-
-

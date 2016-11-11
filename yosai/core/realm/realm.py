@@ -259,18 +259,19 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
                                                 including unix epoch timestamps
                                                 of recently failed attempts
         """
+        cred_type = authc_token.token_info['cred_type']
+
         try:
             verifier.verify_credentials(authc_token, account['authc_info'])
         except IncorrectCredentialsException:
             updated_account = self.update_failed_attempt(authc_token, account)
 
-            cred_type = authc_token.token_info['cred_type']
             failed_attempts = updated_account['authc_info'][cred_type].\
                 get('failed_attempts', [])
 
             raise IncorrectCredentialsException(failed_attempts)
         except ConsumedTOTPToken:
-            account['authc_info']['consumed_token'] = authc_token.credentials
+            account['authc_info'][cred_type]['consumed_token'] = authc_token.credentials
             self.cache_handler.set(domain='authentication:' + self.name,
                                    identifier=authc_token.identifier,
                                    value=account)

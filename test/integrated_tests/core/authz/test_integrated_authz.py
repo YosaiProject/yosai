@@ -2,13 +2,17 @@
 import pytest
 
 from yosai.core import (
+    AdditionalAuthenticationRequired,
     SimpleIdentifierCollection,
     UnauthorizedException,
+    Yosai,
     EVENT_TOPIC,
 )
 
+
 def test_is_permitted(modular_realm_authorizer, thedude_testpermissions,
-        event_bus, thedude_identifier):
+                      event_bus, thedude_identifier, yosai, valid_thedude_totp_token,
+                      valid_thedude_username_password_token):
     """
     get a set of tuple(s), containing the Permission and a Boolean
     indicating whether the permission is granted
@@ -22,9 +26,17 @@ def test_is_permitted(modular_realm_authorizer, thedude_testpermissions,
         event_detected = items
     event_bus.subscribe(event_listener, 'AUTHORIZATION.RESULTS')
 
-    results = mra.is_permitted(thedude_identifier, tp['perms'])
-    assert (tp['expected_results'] == results and
-            set(event_detected) == results)
+    with Yosai.context(yosai):
+        new_subject = Yosai.get_current_subject()
+
+        try:
+            new_subject.login(valid_thedude_username_password_token)
+        except AdditionalAuthenticationRequired:
+            new_subject.login(valid_thedude_totp_token)
+
+        results = mra.is_permitted(thedude_identifier, tp['perms'])
+        assert (tp['expected_results'] == results and
+                set(event_detected) == results)
 
 
 def test_is_permitted_collective(

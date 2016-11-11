@@ -261,6 +261,18 @@ class DefaultPermission(WildcardPermission):
 
         self.case_sensitive = case_sensitive
 
+    @property
+    def domain(self):
+        return self.parts['domain']
+
+    @property
+    def action(self):
+        return self.parts['action']
+
+    @property
+    def target(self):
+        return self.parts['target']
+
     def encode_parts(self, domain, action, target):
         """
         Yosai redesigned encode_parts to return permission, rather than
@@ -325,7 +337,7 @@ class DefaultPermission(WildcardPermission):
 
     def __setstate__(self, state):
         self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
-        new_parts = {part: set(items) for part, items in state['parts'].items()}
+        new_parts = {part: set([items]) for part, items in state['parts'].items()}
         self.parts.update(new_parts)
         self.case_sensitive = state.get('case_sensitive', False)
 
@@ -642,18 +654,18 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     stores roles and permissions as internal attributes, indexing permissions
     to facilitate is_permitted requests.
     """
-    def __init__(self, roles=set(), permissions=set()):
+    def __init__(self, roles=set(), permissions=[]):
         """
         :type roles: set of Role objects
-        :type perms: set of DefaultPermission objects
+        :type perms: list of permission parts dicts
         """
         self.roles = roles
-        self._permissions = collections.defaultdict(set)
+        self._permissions = collections.defaultdict(list)
         self.index_permission(permissions)
 
     @property
     def permissions(self):
-        return set(itertools.chain.from_iterable(self._permissions.values()))
+        return list(itertools.chain.from_iterable(self._permissions.values()))
 
     @permissions.setter
     def permissions(self, perms):
@@ -694,8 +706,8 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
                                                   'prescription:read:*'}
         """
         try:
-            for domain, permission in permission_s:
-                self._permissions[domain].add(permission)
+            for permission in permission_s:
+                self._permissions[permission['parts']['domain']].append(permission)
 
         except TypeError:
             logger.debug(self.__class__.__name__ + ': No permissions to index.')
@@ -708,8 +720,8 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         :type domain:  str
         :returns: a set of Permission objects
         """
-        return {DefaultPermission(parts=parts) for parts
-                in self._permissions.get(domain, set())}
+        return [DefaultPermission(parts=parts) for parts
+                in self._permissions.get(domain, [])]
 
     def __repr__(self):
         perms = ','.join(str(perm) for perm in self.permissions)
@@ -718,12 +730,11 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
 
     def __getstate__(self):
         return {'roles': list(self.roles),
-                '_permissions': {key: list(val) for key, val in self._permissions.items()}
-                }
+                '_permissions': self._permissions}
 
     def __setstate__(self, state):
         self.roles = set(state['roles'])
-        self._permissions = {key: set(val) for key, val in state['_permissions'].items()}
+        self._permissions = state['_permissions']
 
 
 class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
@@ -745,7 +756,7 @@ class IndexedPermissionVerifier(authz_abcs.PermissionVerifier):
         # get_permissions returns a set of Permission objects
         related_perms = authz_info.get_permissions(required_domain)
         wildcard_perms = authz_info.get_permissions('*')
-        return set(itertools.chain(wildcard_perms, related_perms))
+        return list(itertools.chain(wildcard_perms, related_perms))
 
     def is_permitted(self, authz_info, permission_s):
         """
