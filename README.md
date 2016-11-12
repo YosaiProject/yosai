@@ -130,11 +130,11 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
-Yosai v0.3 dev and testing is nearly finished.  Documentation is basically all that remains, 
+Yosai v0.3 dev and testing is nearly finished.  Documentation is basically all that remains,
 except for minor expected modifications to PasslibVerifier.
 
 This release includes:
-1) Configurable account locking
+1) Configurable rate limiting / account locking
 2) General support for second factor authentication (2FA)
 3) A complete time-based one time password authentication solution (TOTP)
 4) Significant refactoring to achieve pythonic design

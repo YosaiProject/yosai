@@ -30,18 +30,6 @@ class Serializable(metaclass=ABCMeta):
                 self.__dict__ == other.__dict__)
 
 
-class Serializer(metaclass=ABCMeta):
-
-    @classmethod
-    @abstractmethod
-    def serialize(self, obj):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def deserialize(self, message):
-        pass
-
 # taken from asphalt.serialization
 class Serializer(metaclass=ABCMeta):
     """

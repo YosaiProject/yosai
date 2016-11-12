@@ -112,13 +112,3 @@ class CredentialsVerifier(metaclass=ABCMeta):
     @abstractmethod
     def verify_credentials(authc_token, account):
         pass
-
-
-class LogoutAware(metaclass=ABCMeta):
-
-    @abstractmethod
-    def on_logout(self, identifiers):
-        """
-        :type identifiers:  SimpleIdentifierCollection
-        """
-        pass
