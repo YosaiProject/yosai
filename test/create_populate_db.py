@@ -76,7 +76,7 @@ cred_types =  dict((ct.title, ct) for ct in session.query(CredentialType).all())
 thirty_from_now = datetime.datetime.now() + datetime.timedelta(days=30)
 print('thirty from now is:  ', thirty_from_now)
 
-cc = CryptContext(schemes=['bcrypt'])
+cc = CryptContext(schemes=['argon2'])
 password = cc.hash('letsgobowling')
 
 totp_key = '{"enckey":{"c":14,"k":"CAEC5ELC3O7G3PSA55JLWLI2HM2ESMKW","s":"HQDWA3BNQXYP4PYH4COA","t":"1478866824532","v":1},"type":"totp","v":1}'

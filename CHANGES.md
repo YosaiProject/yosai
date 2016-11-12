@@ -36,6 +36,7 @@ v0.3
 - permission-based authorization checks no longer supports a list of Permission instances
   as an argument but rather only list of string-typed permissions
 - successful TOTP authentication raises a ConsumedTOTPToken exception
+- argon2 configured as the default hashing scheme for passwords
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 
