@@ -1,8 +1,9 @@
 ---
 AUTHC_CONFIG:
     account_lock_threshold: null
-    preferred_algorithm: argon2 
+    preferred_algorithm: argon2
     hash_algorithms:
+        argon2: {}
         bcrypt_sha256: {}
         sha256_crypt:
             default_rounds: 110000

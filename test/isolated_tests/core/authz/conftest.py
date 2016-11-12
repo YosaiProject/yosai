@@ -10,11 +10,11 @@ from yosai.core import (
 
 @pytest.fixture(scope='function')
 def default_wildcard_permission():
-    return WildcardPermission()
+    return WildcardPermission('*:*:*')
 
 @pytest.fixture(scope='function')
 def default_permission():
-    return DefaultPermission()
+    return DefaultPermission('*:*:*')
 
 
 @pytest.fixture(scope='function')

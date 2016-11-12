@@ -1,17 +1,11 @@
 import pytest
 from unittest import mock
-from collections import OrderedDict
 
 from yosai.core import (
     DefaultPermission,
-    ModularRealmAuthorizer,
-    UnauthorizedException,
     WildcardPermission,
 )
 
-from .doubles import (
-    MockPermission,
-)
 
 # -----------------------------------------------------------------------------
 # WildcardPermission Tests
@@ -38,23 +32,9 @@ def test_wcp_init_without_wildcard_string(monkeypatch):
     """
     with mock.patch.object(WildcardPermission, 'setparts') as wp_sp:
         wp_sp.return_value = None
-        wcs = WildcardPermission()
-        assert not wcs.setparts.called
+        with pytest.raises(ValueError):
+            wcs = WildcardPermission()
 
-@pytest.mark.parametrize("wildcardstring", [None, '', "  ", ":::", "A:,,:C:D"])
-def test_wcp_setparts_raises_illegalargumentexception(
-        default_wildcard_permission, wildcardstring):
-    """
-    unit tested:  setparts
-
-    test case:
-    wilcard_string must be populated with parts, else an exception raises
-    """
-
-    wcp = default_wildcard_permission
-
-    with pytest.raises(ValueError):
-        wcp.setparts(wildcard_string=wildcardstring)
 
 def test_wcp_setparts_casesensitive(
         default_wildcard_permission, monkeypatch):
@@ -287,57 +267,17 @@ def test_wcp_not_equals_bad_type():
 # DefaultPermission Tests
 # -----------------------------------------------------------------------------
 
-@pytest.mark.parametrize(
-    "actions,targets,actionset,targetset",
-    [(None, None, set(['*']), set(['*'])),
-     ('action1,action2', 'target1,target2',
-      set(['action1', 'action2']), set(['target1', 'target2'])),
-     (set(['action1', 'action2']), set(['target1', 'target2']),
-      set(['action1', 'action2']), set(['target1', 'target2']))])
-def test_dp_normal_init(actions, targets, actionset, targetset):
-    """
-    unit tested:  __init__
+@mock.patch.object(WildcardPermission, '__init__', return_value=None)
+def test_dp_init_wildcard(mock_wpi):
+    result = DefaultPermission(wildcard_string='domain1:action1')
+    mock_wpi.assert_called_once_with(wildcard_string='domain1:action1')
 
-    test case:
-    confirm that the DefaultPermission initializes as expected
-    """
-    ddp = DefaultPermission(parts=dict(action=actions, target=targets))
-    assert (ddp.action == actionset and ddp.target == targetset)
 
-def test_dp_domain_setter_sets_parts(default_permission):
-    """
-    unit tested:  domain.setter
+@mock.patch.object(DefaultPermission, '__setstate__', return_value=None)
+def test_dp_init_parts(mock_dps):
+    result = DefaultPermission(parts='parts')
+    mock_dps.assert_called_once_with('parts')
 
-    test case:
-    setting domain in turn calls set_parts
-    """
-    ddp = default_permission
-    ddp.domain = 'test'
-    assert ddp.domain == set({'test'})
-
-def test_dp_action_setter_sets_parts(default_permission):
-    """
-    unit tested:  action.setter
-
-    test case:
-    setting actions in turn calls set_parts
-    """
-    ddp = default_permission
-    dumbactions = set(['actiona', 'actionb', 'actionc'])
-    ddp.action = dumbactions
-    assert ddp.action == set(dumbactions)
-
-def test_dp_targets_setter_sets_parts(default_permission):
-    """
-    unit tested:  targets.setter
-
-    test case:
-
-    """
-    ddp = default_permission
-    dumbtargets = set(['targeta', 'targetb', 'targetc'])
-    ddp.target = dumbtargets
-    assert ddp.target == set(dumbtargets)
 
 @pytest.mark.parametrize(
     "domain,actions,targets,permission",

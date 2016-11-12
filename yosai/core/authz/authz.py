@@ -137,6 +137,9 @@ class WildcardPermission(serialize_abcs.Serializable):
         self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
         if wildcard_string:
             self.setparts(wildcard_string, case_sensitive)
+        else:
+            msg = 'WildcardPermission init requires a wildcard_string.'
+            raise ValueError(msg)
 
     def setparts(self, wildcard_string, case_sensitive=False):
         """
@@ -333,8 +336,13 @@ class DefaultPermission(WildcardPermission):
         }
 
     def __setstate__(self, state):
+        try:
+            new_parts = {part: set(items) for part, items in state['parts'].items()}
+        except TypeError:
+            msg = 'DefaultPermission init requires parts.'
+            raise ValueError(msg)
+
         self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
-        new_parts = {part: set(items) for part, items in state['parts'].items()}
         self.parts.update(new_parts)
         self.case_sensitive = state.get('case_sensitive', False)
 
@@ -667,7 +675,7 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
     @permissions.setter
     def permissions(self, perms):
         """
-        :type perms: a set of DefaultPermission objects
+        :type perms: a list of DefaultPermission parts dicts
         """
         self._permissions.clear()
         self.index_permission(perms)
@@ -717,8 +725,7 @@ class IndexedAuthorizationInfo(serialize_abcs.Serializable):
         :type domain:  str
         :returns: a set of Permission objects
         """
-        return [DefaultPermission(parts=parts) for parts
-                in self._permissions.get(domain, [])]
+        return [DefaultPermission(parts=parts) for parts in self._permissions[domain]]
 
     def __repr__(self):
         perms = ','.join(str(perm) for perm in self.permissions)
