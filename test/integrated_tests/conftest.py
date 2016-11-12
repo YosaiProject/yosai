@@ -163,13 +163,14 @@ def remembered_valid_thedude_username_password_token(cache_handler):
         cache_handler.cache_region.delete(key)
 
 @pytest.fixture(scope='function')
-def remembered_valid_thedude_totp_token(thedude_totp_key, cache_handler):
+def remembered_valid_thedude_totp_token(thedude_totp_key, cache_handler, totp_factory):
     keys = cache_handler.keys('*authentication*')
     for key in keys:
         cache_handler.cache_region.delete(key)
 
-    token = int(TOTP(key=thedude_totp_key, digits=6).generate().token)
-    yield TOTPToken(token, remember_me=True)
+    totp = totp_factory.from_json(thedude_totp_key)
+    token = totp.generate().token
+    yield TOTPToken(totp_token=token, remember_me=True)
 
     keys = cache_handler.keys('*authentication*')
     for key in keys:
