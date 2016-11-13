@@ -2,8 +2,10 @@ import pytest
 
 from yosai.core import (
     AccountStoreRealm,
+    ConsumedTOTPToken,
     IncorrectCredentialsException,
     PasslibVerifier,
+    TOTPToken,
     UsernamePasswordToken,
 )
 from unittest import mock
@@ -176,9 +178,11 @@ def test_asr_acm_succeeds(account_store_realm, sample_acct_info):
     """
     asr = account_store_realm
     mock_verifier = mock.create_autospec(PasslibVerifier)
-    asr.assert_credentials_match(mock_verifier, 'authc_token', sample_acct_info)
+    mock_authc_token = mock.MagicMock()
+    mock_authc_token.token_info = {'cred_type': 'password'}
+    asr.assert_credentials_match(mock_verifier, mock_authc_token, sample_acct_info)
     mock_verifier.verify_credentials.\
-        assert_called_once_with('authc_token', sample_acct_info['authc_info'])
+        assert_called_once_with(mock_authc_token, sample_acct_info['authc_info'])
 
 
 @mock.patch.object(AccountStoreRealm, 'update_failed_attempt')
@@ -206,6 +210,27 @@ def test_asr_acm_raises(mock_ufa, account_store_realm, sample_acct_info,
 
     assert exc.value.failed_attempts == [1, 2, 3]
     mock_ufa.assert_called_once_with(upt, sample_acct_info)
+
+
+def test_asr_acm_consumed_token(account_store_realm, sample_acct_info,
+                                monkeypatch):
+    asr = account_store_realm
+    mock_token = mock.create_autospec(TOTPToken)
+    mock_token.token_info = {'cred_type': 'totp_key'}
+    mock_token.identifier = 'identifier'
+    monkeypatch.setitem(sample_acct_info['authc_info'], 'totp_key', dict())
+
+    mock_verifier = mock.create_autospec(PasslibVerifier)
+    mock_verifier.verify_credentials.side_effect = ConsumedTOTPToken
+
+    mock_ch = mock.MagicMock()
+    monkeypatch.setattr(asr, 'cache_handler', mock_ch)
+
+    asr.assert_credentials_match(mock_verifier, mock_token, sample_acct_info)
+
+    mock_ch.set.assert_called_once_with(domain='authentication:'+ asr.name,
+                                        identifier=mock_token.identifier,
+                                        value=sample_acct_info)
 
 
 def test_asr_get_authz_info_from_cache(
