@@ -46,14 +46,16 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         stored = self.get_stored_credentials(authc_token, authc_info)
 
         if isinstance(authc_token, UsernamePasswordToken):
-            result = self.password_cc.verify(submitted, stored)
-            if not result:
+            try:
+                result = self.password_cc.verify(submitted, stored)
+                if not result:
+                    raise IncorrectCredentialsException
+            except ValueError:
                 raise IncorrectCredentialsException
             return
 
         try:
-            cred_type = authc_token.token_info['cred_type']
-            consumed_token = authc_info[cred_type].get('consumed_token', None)
+            consumed_token = authc_info['totp_key'].get('consumed_token', None)
 
             if consumed_token == submitted:
                 msg = 'TOTP token already consumed: ' + consumed_token

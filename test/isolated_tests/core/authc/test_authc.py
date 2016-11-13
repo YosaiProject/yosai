@@ -1,4 +1,5 @@
 import pytest
+from passlib.totp import MalformedTokenError, TokenError
 from unittest import mock
 import collections
 
@@ -6,6 +7,7 @@ from yosai.core import (
     AccountException,
     AccountStoreRealm,
     AdditionalAuthenticationRequired,
+    ConsumedTOTPToken,
     DefaultAuthenticator,
     AuthenticationAttempt,
     IncorrectCredentialsException,
@@ -14,7 +16,6 @@ from yosai.core import (
     SimpleIdentifierCollection,
     UsernamePasswordToken,
     TOTPToken,
-    realm_abcs,
     event_bus,
 )
 
@@ -40,8 +41,8 @@ def test_upt_credentials_setting_raise(username_password_token):
 # -----------------------------------------------------------------------------
 
 def test_totp_credentials_raises():
-    with pytest.raises(TypeError):
-        TOTPToken(123456)
+    with pytest.raises(MalformedTokenError):
+        TOTPToken(1234567)
 
 
 # -----------------------------------------------------------------------------
@@ -465,36 +466,58 @@ def test_init_algorithms(authc_settings, monkeypatch, authc_config):
 def test_verify_userpass_credentials(
         passlib_verifier, username_password_token, monkeypatch):
     pv = passlib_verifier
-    mock_service = mock.MagicMock()
-    mock_token_resolver = {username_password_token.__class__: mock_service}
-    monkeypatch.setattr(pv, 'cc_token_resolver', mock_token_resolver)
     monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: 'stored')
-
-    pv.verify_credentials(username_password_token, 'authc_info')
+    mock_service = mock.MagicMock()
+    monkeypatch.setattr(pv, 'password_cc', mock_service)
+    pv.verify_credentials(username_password_token, {'totp': {}})
 
     mock_service.verify.assert_called_once_with(username_password_token.credentials, 'stored')
 
 
-def test_verify_totp_credentials(passlib_verifier, totp_token, monkeypatch):
+def test_verify_credentials_totp_fails(passlib_verifier, totp_token, monkeypatch):
     pv = passlib_verifier
-    monkeypatch.setattr(pv, 'cc_token_resolver', {totp_token.__class__: None})
     key = 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
     monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: key)
+    totp_factory = mock.MagicMock()
+    totp_factory.verify.side_effect = ValueError 
+    monkeypatch.setattr(pv, 'totp_factory', totp_factory)
 
-    with mock.patch.object(TOTP, 'verify') as totp_verify:
-        pv.verify_credentials(totp_token, 'authc_info')
+    with pytest.raises(IncorrectCredentialsException):
+        pv.verify_credentials(totp_token, {'totp_key': {'consumed_token': None}})
 
-        totp_verify.assert_called_once_with(totp_token.credentials)
+
+def test_verify_totp_credentials(passlib_verifier, totp_token, monkeypatch):
+    pv = passlib_verifier
+    key = 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
+    monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: key)
+    totp_factory = mock.MagicMock()
+    totp_factory.verify.return_value = 'result'
+    monkeypatch.setattr(pv, 'totp_factory', totp_factory)
+
+    with pytest.raises(ConsumedTOTPToken) as exc:
+        pv.verify_credentials(totp_token, {'totp_key': {'consumed_token': None}})
+        assert exc.totp_match == 'result'
+
+    totp_factory.verify.assert_called_once_with(totp_token.credentials, key)
 
 
 def test_verify_credentials_noresult_raises_incorrect(
         passlib_verifier, username_password_token, monkeypatch):
     pv = passlib_verifier
-    mock_service = mock.MagicMock()
-    mock_service.verify.side_effect = IncorrectCredentialsException
-    mock_token_resolver = {username_password_token.__class__: mock_service}
-    monkeypatch.setattr(pv, 'cc_token_resolver', mock_token_resolver)
     monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: 'stored')
 
     with pytest.raises(IncorrectCredentialsException):
         pv.verify_credentials(username_password_token, 'authc_info')
+
+
+@mock.patch.object(TOTP, 'using')
+def test_create_totp_factory(totp_using, passlib_verifier):
+    totp_using.return_value = 'factory'
+    pv = passlib_verifier
+    mock_settings = mock.MagicMock()
+
+    result = pv.create_totp_factory(mock_settings)
+
+    assert result == 'factory'
+    totp_using.assert_called_once_with(secrets=mock_settings.totp_secrets,
+                                       issuer=mock_settings.totp_issuer)
