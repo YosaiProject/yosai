@@ -37,7 +37,7 @@ from yosai.core import (
 logger = logging.getLogger(__name__)
 
 
-class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
+class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                         realm_abcs.AuthorizingRealm,
                         realm_abcs.LockingRealm):
     """
@@ -80,7 +80,6 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
         return token.__class__ in self.token_resolver
 
     def init_token_resolution(self):
-        # M:1 between token class and verifier within a realm
         token_resolver = {}
         for verifier in self.authc_verifiers:
             for token_cls in verifier.supported_tokens:
@@ -275,6 +274,17 @@ class AccountStoreRealm(realm_abcs.AuthenticatingRealm,
             self.cache_handler.set(domain='authentication:' + self.name,
                                    identifier=authc_token.identifier,
                                    value=account)
+
+    def generate_totp_token(self, account):
+        try:
+            stored_totp_key = account['authc_info']['totp_key']['credential']
+        except KeyError:
+            identifier = account['account_id'].primary_identifier
+            account = self.get_authentication_info(identifier)
+            stored_totp_key = account['authc_info']['totp_key']['credential']
+
+        verifier = self.token_resolver[TOTPToken]
+        return verifier.generate_totp_token(stored_totp_key)
 
     # --------------------------------------------------------------------------
     # Authorization

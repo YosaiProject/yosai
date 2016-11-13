@@ -23,7 +23,7 @@ def authc_config():
                 "min_rounds": 1000,
                 "salt_size": 16}},
         "totp": {
-            "challenger": None,
+            "dispatcher": None,
             "context": {
                 "default_tag": None,
                 "cost": None,

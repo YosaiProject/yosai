@@ -127,8 +127,10 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         self.authc_settings = AuthenticationSettings(settings)
         self.authentication_strategy = strategy
 
-        if self.authc_settings.mfa_challenger:
-            self.mfa_challenger = self.authc_settings.mfa_challenger()
+        try:
+            self.mfa_dispatcher = self.authc_settings.mfa_dispatcher()
+        except TypeError:
+            self.mfa_dispatcher = None
 
         self.realms = None
         self.token_realm_resolver = None
@@ -213,11 +215,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
 
             self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
 
-            try:
-                self.mfa_challenger.send_challenge(authc_token.identifier)
-            except AttributeError:
-                # implies no multi-factor authc challenger is set
-                pass
             raise exc  # the security_manager saves subject identifiers
 
         except AccountException:
@@ -264,12 +261,14 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         attempts = account['authc_info'][cred_type].get('failed_attempts', [])
         self.validate_locked(authc_token, attempts)
 
-        # the following condition verifies whether the account uses MFA:
         if len(account['authc_info']) > authc_token.token_info['tier']:
-            # the token authenticated but additional authentication is required
+            if self.mfa_dispatcher:
+                realm = self.token_realm_resolver[TOTPToken][0]  # s/b only one
+                totp_token = realm.generate_totp_token(account)
+                self.mfa_dispatcher.dispatch(account['2fa_info'], totp_token)
             raise AdditionalAuthenticationRequired(account['account_id'])
-
         return account
+
     # --------------------------------------------------------------------------
     # Event Communication
     # --------------------------------------------------------------------------

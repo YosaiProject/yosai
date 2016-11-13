@@ -1,5 +1,5 @@
 import pytest
-from passlib.totp import MalformedTokenError, TokenError
+from passlib.totp import MalformedTokenError
 from unittest import mock
 import collections
 
@@ -171,15 +171,12 @@ def test_da_authenticate_account_catches_additional(
     da = default_authenticator
     mock_token = mock.create_autospec(UsernamePasswordToken)
     mock_token.identifier = 'user123'
-    mock_challenger = mock.MagicMock()
-    monkeypatch.setattr(da, 'mfa_challenger', mock_challenger, raising=False)
 
     with pytest.raises(AdditionalAuthenticationRequired):
         da.authenticate_account(None, mock_token)
 
     da_ne.assert_called_once_with('user123', 'AUTHENTICATION.PROGRESS')
     da_daa.assert_called_once_with(mock_token)
-    mock_challenger.send_challenge.assert_called_once_with('user123')
 
 
 @mock.patch.object(DefaultAuthenticator, 'notify_event')
@@ -195,15 +192,11 @@ def test_da_authenticate_account_catches_additional_includes_secondfactor(
 
     mock_totptoken = mock.create_autospec(TOTPToken)
 
-    mock_challenger = mock.MagicMock()
-    monkeypatch.setattr(da, 'mfa_challenger', mock_challenger, raising=False)
-
     with pytest.raises(AdditionalAuthenticationRequired):
         da.authenticate_account(None, mock_token, mock_totptoken)
 
     da_ne.assert_called_once_with('user123', 'AUTHENTICATION.PROGRESS')
     da_daa.assert_has_calls([mock.call(mock_token), mock.call(mock_totptoken)])
-    mock_challenger.send_challenge.assert_called_once_with('user123')
 
 
 @mock.patch.object(DefaultAuthenticator, 'notify_event')
@@ -325,6 +318,7 @@ def test_da_do_authc_acct_multi_realm(
 @mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
 def test_da_do_authc_acct_req_additional(
         da_asra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
+    monkeypatch.setitem(sample_acct_info, '2fa_info', '2fa_info')
     da_asra.return_value = sample_acct_info
     da = default_authenticator
 
@@ -333,15 +327,21 @@ def test_da_do_authc_acct_req_additional(
     mock_token.token_info = {'tier': 1, 'cred_type': 'password'}
 
     faux_authc_realm = mock.create_autospec(AccountStoreRealm)
-    token_realm_resolver = {UsernamePasswordToken: (faux_authc_realm,)}
+    faux_authc_realm.generate_totp_token.return_value = 'totp_token'
+    token_realm_resolver = {UsernamePasswordToken: (faux_authc_realm,),
+                            TOTPToken: (faux_authc_realm,)}
     monkeypatch.setattr(da, 'token_realm_resolver', token_realm_resolver)
     monkeypatch.setattr(da, 'realms', (faux_authc_realm,))
+    mock_dispatcher = mock.MagicMock()
+    monkeypatch.setattr(da, 'mfa_dispatcher', mock_dispatcher, raising=False)
 
     with pytest.raises(AdditionalAuthenticationRequired):
         da.do_authenticate_account(mock_token)
 
     da_vl.assert_called_once_with(mock_token, [1477077663111])
     da_asra.assert_called_once_with(faux_authc_realm, mock_token)
+    mock_dispatcher.dispatch.assert_called_once_with(sample_acct_info['2fa_info'],
+                                                     'totp_token')
 
 
 def test_da_clear_cache(
@@ -479,7 +479,7 @@ def test_verify_credentials_totp_fails(passlib_verifier, totp_token, monkeypatch
     key = 'DP3RDO3FAAFUAFXQELW6OTB2IGM3SS6G'
     monkeypatch.setattr(pv, 'get_stored_credentials', lambda x, y: key)
     totp_factory = mock.MagicMock()
-    totp_factory.verify.side_effect = ValueError 
+    totp_factory.verify.side_effect = ValueError
     monkeypatch.setattr(pv, 'totp_factory', totp_factory)
 
     with pytest.raises(IncorrectCredentialsException):

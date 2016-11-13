@@ -107,6 +107,13 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
         pass
 
 
+class TOTPAuthenticatingRealm(AuthenticatingRealm):
+
+    @abstractmethod
+    def generate_totp_token(self, totp_key):
+        pass
+
+
 # new to yosai.core:
 class AuthorizingRealm(Realm):
     """

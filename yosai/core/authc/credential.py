@@ -87,3 +87,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
     def create_totp_factory(self, authc_settings):
         return TOTP.using(secrets=authc_settings.totp_secrets,
                           issuer=authc_settings.totp_issuer)
+
+    def generate_totp_token(self, totp_key):
+        totp = self.totp_factory.from_json(totp_key)
+        return totp.generate().token

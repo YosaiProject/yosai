@@ -11,7 +11,7 @@ AUTHC_CONFIG:
             min_rounds: 1000
             salt_size: 16
     totp:
-        challenger: null
+        mfa_dispatcher: null
         context:
             default_tag: null
             cost: null
