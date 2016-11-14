@@ -97,8 +97,9 @@ def modular_realm_authorizer_patched(
 def sample_authc_info():
     return {'password': {'credential': '$2a$12$Gf.YpcTN8r5vQydvLl9o1O8KoTbeFrYCkR22NaJawMFFfceiQ0XOi',
                          'failed_attempts': [1477077663111]},
-            'totp': {'credential': 'ZOYHBEXJEFUUGFCPGLJWCZDR3Y6CD43EJQZIGAHB3NRWJYXWY3HQ',
-                     'failed_attempts': []}}
+            'totp_key': {'credential': 'ZOYHBEXJEFUUGFCPGLJWCZDR3Y6CD43EJQZIGAHB3NRWJYXWY3HQ',
+                     'failed_attempts': [],
+                     '2fa_info': {'phone_number': '123456789'}}}
 
 
 @pytest.fixture(scope='function')

@@ -112,3 +112,10 @@ class CredentialsVerifier(metaclass=ABCMeta):
     @abstractmethod
     def verify_credentials(authc_token, account):
         pass
+
+
+class MFADispatcher(metaclass=ABCMeta):
+
+    @abstractmethod
+    def dispatch(self, mfa_info, token):
+        pass

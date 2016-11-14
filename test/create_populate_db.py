@@ -26,13 +26,11 @@ settings = LazySettings(env_var='YOSAI_SETTINGS')
 engine = init_engine(settings=settings)
 Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
-import pprint
-pp = pprint.PrettyPrinter(indent=1)
 
 Session = init_session(settings=settings)
 
 # Please watch 'The Big Lebowski' so that you may understand the following data.
-users = [User(first_name='Jeffrey', last_name='Lebowski', identifier='thedude'),
+users = [User(first_name='Jeffrey', last_name='Lebowski', identifier='thedude', phone_number='12123841000'),
          User(first_name='Walter', last_name='Sobchak', identifier='walter'),
          User(first_name='Larry', last_name='Sellers', identifier='larry'),
          User(first_name='Jackie', last_name='Treehorn', identifier='jackie'),
@@ -153,8 +151,6 @@ karl.roles.extend([bankcustomer, thief])
 
 session.commit()
 
-pp.pprint(karl.permissions)
-
 def get_permissions_query(session, identifier_s):
     """
     :type identifier_s: list
@@ -177,6 +173,4 @@ def get_permissions_query(session, identifier_s):
             filter(User.identifier.in_(identifier_s)).
             group_by(Permission.domain_id, Permission.resource_id))
 
-#result = get_permissions_query(session, ['walter']).all()
-#pp.pprint(result)
 session.close()

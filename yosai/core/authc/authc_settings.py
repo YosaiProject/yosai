@@ -21,8 +21,8 @@ class AuthenticationSettings:
         totp_context = totp_settings.get('context')
         self.totp_secrets = totp_context.get('secrets')
         self.totp_issuer = totp_settings.get('issuer')
-
-        self.mfa_dispatcher = maybe_resolve(self.authc_config.get('mfa_dispatcher'))
+        self.mfa_dispatcher = maybe_resolve(totp_settings.get('mfa_dispatcher'))
+        self.mfa_dispatcher_config = totp_settings.get('mfa_dispatcher_config')
 
     def init_algorithms(self):
         algorithms = self.authc_config.get('hash_algorithms')

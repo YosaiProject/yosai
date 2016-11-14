@@ -255,7 +255,7 @@ def test_da_authenticate_account_catches_incorrectexc(
 @mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
 def test_da_do_authc_acct_sra_succeeds(
         da_asra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
-    monkeypatch.delitem(sample_acct_info['authc_info'], 'totp')
+    monkeypatch.delitem(sample_acct_info['authc_info'], 'totp_key')
     da_asra.return_value = sample_acct_info
     da = default_authenticator
 
@@ -294,7 +294,7 @@ def test_da_do_authc_acct_resolver_raises(default_authenticator, monkeypatch):
 @mock.patch.object(DefaultAuthenticator, 'authenticate_multi_realm_account')
 def test_da_do_authc_acct_multi_realm(
         da_amra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
-    monkeypatch.delitem(sample_acct_info['authc_info'], 'totp')
+    monkeypatch.delitem(sample_acct_info['authc_info'], 'totp_key')
     da_amra.return_value = sample_acct_info
     da = default_authenticator
 
@@ -318,10 +318,8 @@ def test_da_do_authc_acct_multi_realm(
 @mock.patch.object(DefaultAuthenticator, 'authenticate_single_realm_account')
 def test_da_do_authc_acct_req_additional(
         da_asra, da_vl, default_authenticator, sample_acct_info, monkeypatch):
-    monkeypatch.setitem(sample_acct_info, '2fa_info', '2fa_info')
     da_asra.return_value = sample_acct_info
     da = default_authenticator
-
     mock_token = mock.create_autospec(UsernamePasswordToken)
     mock_token.identifier = 'user123'
     mock_token.token_info = {'tier': 1, 'cred_type': 'password'}
@@ -340,7 +338,8 @@ def test_da_do_authc_acct_req_additional(
 
     da_vl.assert_called_once_with(mock_token, [1477077663111])
     da_asra.assert_called_once_with(faux_authc_realm, mock_token)
-    mock_dispatcher.dispatch.assert_called_once_with(sample_acct_info['2fa_info'],
+    mock_dispatcher.dispatch.assert_called_once_with('user123',
+                                                     sample_acct_info['authc_info']['totp_key']['2fa_info'],
                                                      'totp_token')
 
 

@@ -27,6 +27,7 @@ from yosai.core import (
     LockedAccountException,
     SimpleIdentifierCollection,
     SimpleRoleVerifier,
+    TOTPToken,
     UsernamePasswordToken,
     authc_abcs,
     authz_abcs,

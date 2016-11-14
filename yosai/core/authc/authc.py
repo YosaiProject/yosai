@@ -128,7 +128,8 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         self.authentication_strategy = strategy
 
         try:
-            self.mfa_dispatcher = self.authc_settings.mfa_dispatcher()
+            self.mfa_dispatcher = self.authc_settings.\
+                mfa_dispatcher(self.authc_settings.mfa_dispatcher_config)
         except TypeError:
             self.mfa_dispatcher = None
 
@@ -214,7 +215,6 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
                 return self.authenticate_account(exc.account_id, second_factor_token, None)
 
             self.notify_event(authc_token.identifier, 'AUTHENTICATION.PROGRESS')
-
             raise exc  # the security_manager saves subject identifiers
 
         except AccountException:
@@ -261,11 +261,15 @@ class DefaultAuthenticator(authc_abcs.Authenticator):
         attempts = account['authc_info'][cred_type].get('failed_attempts', [])
         self.validate_locked(authc_token, attempts)
 
+        # TODO:  refactor this to something less rigid as it is unreliable:
         if len(account['authc_info']) > authc_token.token_info['tier']:
             if self.mfa_dispatcher:
                 realm = self.token_realm_resolver[TOTPToken][0]  # s/b only one
                 totp_token = realm.generate_totp_token(account)
-                self.mfa_dispatcher.dispatch(account['2fa_info'], totp_token)
+                mfa_info = account['authc_info']['totp_key']['2fa_info']
+                self.mfa_dispatcher.dispatch(authc_token.identifier,
+                                             mfa_info,
+                                             totp_token)
             raise AdditionalAuthenticationRequired(account['account_id'])
         return account
 
