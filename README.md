@@ -1,5 +1,6 @@
 ![yosai_logo](/doc/docs/img/yosai_logo_with_title.png)
 
+
 # A Security Framework for Python Applications
 
 ## Project web site:  http://yosaiproject.github.io/yosai
