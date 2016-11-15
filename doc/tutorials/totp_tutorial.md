@@ -1,1 +1,1 @@
-# Time-based One Time Passwords
+# Time-based One Time Password Authentication
