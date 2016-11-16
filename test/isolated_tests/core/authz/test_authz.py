@@ -568,9 +568,9 @@ def test_iai_index_permission(indexed_authz_info, monkeypatch):
     info = indexed_authz_info
     perms = collections.defaultdict(list)
     monkeypatch.setattr(info, '_permissions', perms)
-    test_results = [{'parts': {'domain': 'domain1', 'action': 'action1', 'target': 'target1'}},
-                    {'parts': {'domain': '*', 'action': ['action2', 'action3'], 'target': '*'}},
-                    {'parts': {'domain': '*', 'action': 'action3', 'target': ['target3', 'target4']}}]
+    test_results = [{'domain': 'domain1', 'action': 'action1', 'target': 'target1'},
+                    {'domain': '*', 'action': ['action2', 'action3'], 'target': '*'},
+                    {'domain': '*', 'action': 'action3', 'target': ['target3', 'target4']}]
 
     info.index_permission(test_results)
     assert len(list(itertools.chain.from_iterable(info._permissions.values()))) == 3
@@ -587,7 +587,7 @@ def test_iai_get_permissions(indexed_authz_info, domain, expected, monkeypatch):
     """
     info = indexed_authz_info
     perms = collections.defaultdict(list)
-    perms['domain1'].append(dict(parts=dict(domain={'domain1'}, action={'action1'})))
+    perms['domain1'].append(dict(domain={'domain1'}, action={'action1'}))
     monkeypatch.setattr(info, '_permissions', perms)
     result = info.get_permissions(domain)
     assert result == expected
@@ -605,8 +605,8 @@ def test_ipv_get_authzd_permissions(
     ipv = indexed_permission_verifier
     perm = DefaultPermission(wildcard_string='domain4:action4')
 
-    domainperms = [DefaultPermission(parts=dict(parts=dict(domain={'domain4'}, action={'action1', 'action2'}))),
-                   DefaultPermission(parts=dict(parts=dict(domain={'domain4'}, action={'action3'}, target={'target1'})))]
+    domainperms = [DefaultPermission(parts=dict(domain={'domain4'}, action={'action1', 'action2'})),
+                   DefaultPermission(parts=dict(domain={'domain4'}, action={'action3'}, target={'target1'}))]
 
     monkeypatch.setattr(indexed_authz_info, 'get_permissions', lambda x: domainperms)
 

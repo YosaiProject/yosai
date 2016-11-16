@@ -254,10 +254,12 @@ class WildcardPermission(serialize_abcs.Serializable):
 
 class DefaultPermission(WildcardPermission):
     def __init__(self, wildcard_string=None, parts=None, case_sensitive=False):
-        if wildcard_string is not None:
+        if wildcard_string:
             super().__init__(wildcard_string=wildcard_string)
         else:
-            self.__setstate__(parts)
+            new_parts = {part: set(item) for part, item in parts.items()}
+            self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
+            self.parts.update(new_parts)
 
         self.case_sensitive = case_sensitive
 

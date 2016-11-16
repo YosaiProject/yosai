@@ -149,28 +149,62 @@ jackie.roles.extend([bankcustomer, thief])  # karl may be working for him-- clos
 karl = users['Karl_Hungus']
 karl.roles.extend([bankcustomer, thief])
 
+# ------------------------------------------------------------------------------
+# The following data is for performance testing purposes
+# ------------------------------------------------------------------------------
+
+dumb_domains = [Domain(name='domain'+str(x)) for x in range(1, 10)]
+dd_two =[Domain(name='domain11'), Domain(name='domain12'),
+         Domain(name='domain13'), Domain(name='domain14')]
+dumb_actions = [Action(name='action'+str(x)) for x in range(1, 5)]
+dumb_resources = [Resource(name='resource'+str(x)) for x in range(1, 10)]
+dr_two = [Resource(name='resource11'), Resource(name='resource12'), Resource(name='resource13')]
+session.add_all(dumb_domains + dd_two + dumb_actions + dumb_resources + dr_two)
+session.commit()
+dumb_permissions = [Permission(domain=d, action=a, resource=r)
+                    for d in dumb_domains for a in dumb_actions for r in dumb_resources]
+
+dumb_wildcard_perms = [Permission(domain=dd_two[0], action=dumb_actions[0]),
+                       Permission(domain=dd_two[0], action=dumb_actions[1]),
+                       Permission(domain=dd_two[0], action=dumb_actions[2]),
+                       Permission(domain=dd_two[1]),
+                       Permission(domain=dd_two[2], resource=dr_two[0])]
+
+other_perms = [Permission(domain=dd_two[3], action=dumb_actions[0]),
+               Permission(domain=dd_two[3], action=dumb_actions[1]),
+               Permission(domain=dd_two[3], resource=dumb_resources[2]),
+               Permission(domain=dd_two[3], resource=dumb_resources[3]),
+               Permission(domain=dd_two[3], action=dumb_actions[2], resource=dumb_resources[0])]
+
+dumb_roles = [Role(title='role'+str(x)) for x in range(1, 10)]
+
+dumb_perms = dumb_permissions + dumb_wildcard_perms + other_perms
+session.add_all(dumb_perms + dumb_roles)
+
+session.commit()
+print('Added: ' + str(len(dumb_permissions)) + ' dumb permissions')
+print('Added: ' + str(len(dumb_perms)) + ' total dumb permissions')
+print('Added: ' + str(len(dumb_roles)) + ' dumb roles')
+
+chunk_size = (len(dumb_permissions) // len(dumb_roles))
+chunked_perms = [dumb_permissions[i: i + chunk_size]
+                 for i in range(0, len(dumb_permissions), chunk_size)]
+
+print('Chunked: ', sum(len(x) for x in chunked_perms))
+
+for r in dumb_roles:
+    r.permissions.extend(chunked_perms.pop())
+
+dumb_roles[0].permissions.extend(dumb_wildcard_perms + other_perms)
+
+thedude.roles.extend(r for r in dumb_roles)
+
 session.commit()
 
-def get_permissions_query(session, identifier_s):
-    """
-    :type identifier_s: list
-    """
-    thedomain = case([(Domain.name == None, '*')], else_=Domain.name)
-    theaction = case([(Action.name == None, '*')], else_=Action.name)
-    theresource = case([(Resource.name == None, '*')], else_=Resource.name)
 
-    action_agg = func.group_concat(theaction.distinct())
-    resource_agg = func.group_concat(theresource.distinct())
+# ------------------------------------------------------------------------------
+# End of performance testing data
+# ------------------------------------------------------------------------------
 
-    return (session.query(thedomain + ':' + action_agg + ':' + resource_agg).
-            select_from(User).
-            join(role_membership, User.pk_id == role_membership.c.user_id).
-            join(role_permission, role_membership.c.role_id == role_permission.c.role_id).
-            join(Permission, role_permission.c.permission_id == Permission.pk_id).
-            outerjoin(Domain, Permission.domain_id == Domain.pk_id).
-            outerjoin(Action, Permission.action_id == Action.pk_id).
-            outerjoin(Resource, Permission.resource_id == Resource.pk_id).
-            filter(User.identifier.in_(identifier_s)).
-            group_by(Permission.domain_id, Permission.resource_id))
 
 session.close()

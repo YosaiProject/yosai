@@ -1,6 +1,5 @@
 from time import sleep
 import pytest
-import pdb
 
 from yosai.core import (
     AdditionalAuthenticationRequired,
