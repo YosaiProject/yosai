@@ -37,6 +37,9 @@ v0.3
   as an argument but rather only list of string-typed permissions
 - successful TOTP authentication raises a ConsumedTOTPToken exception
 - argon2 configured as the default hashing scheme for passwords
+- consolidated authorization checks to realm, eliminating authz Verifier classes
+- eliminated the need for an IndexedAuthorizationInfo class by indexing permissions
+  during query of account_store
 
 Yosai uses [GitHub's Releases feature](https://github.com/blog/1547-release-your-software) for its changelogs.
 

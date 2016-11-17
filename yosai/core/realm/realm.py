@@ -22,16 +22,11 @@ import time
 from yosai.core import (
     AccountException,
     ConsumedTOTPToken,
+    DefaultPermission,
     IncorrectCredentialsException,
-    IndexedPermissionVerifier,
     LockedAccountException,
     SimpleIdentifierCollection,
-    SimpleRoleVerifier,
     TOTPToken,
-    UsernamePasswordToken,
-    authc_abcs,
-    authz_abcs,
-    cache_abcs,
     realm_abcs,
 )
 
@@ -54,17 +49,13 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
     def __init__(self,
                  name='AccountStoreRealm_' + str(uuid4()),
                  account_store=None,
-                 authc_verifiers=None,
-                 permission_verifier=None,
-                 role_verifier=None):
+                 authc_verifiers=None):
         """
         :authc_verifiers: tuple of Verifier objects
         """
         self.name = name
         self.account_store = account_store
         self.authc_verifiers = authc_verifiers
-        self.permission_verifier = permission_verifier
-        self.role_verifier = role_verifier
 
         self.cache_handler = None
         self.token_resolver = self.init_token_resolution()
@@ -355,21 +346,24 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
 
         :yields: tuple(Permission, Boolean)
         """
+        identifier = identifiers.primary_identifier
 
-        account = self.get_authorization_info(identifiers)
+        for required_perm in permission_s:
 
-        if account is None:
-            msg = 'is_permitted:  authz_info returned None for [{0}]'.\
-                format(identifiers)
-            logger.warning(msg)
+            required_permission = DefaultPermission(wildcard_string=required_perm)
 
-            for permission in permission_s:
-                yield (permission, False)
-        else:
-            yield from self.permission_verifier.is_permitted(account['authz_info'],
-                                                             permission_s)
+            # get_authzd_permissions returns a list of DefaultPermission instances,
+            # requesting from cache using '*' and permission.domain as hash keys:
+            assigned_permission_s = self.get_authzd_permissions(identifier,
+                                                                required_permission.domain)
+            is_permitted = False
+            for authorized_permission in assigned_permission_s:
+                if authorized_permission.implies(required_permission):
+                    is_permitted = True
+                    break
+            yield (required_perm, is_permitted)
 
-    def has_role(self, identifiers, role_s):
+    def has_role(self, identifiers, required_role_s):
         """
         Confirms whether a subject is a member of one or more roles.
 
@@ -378,18 +372,21 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
 
         :type identifiers:  subject_abcs.IdentifierCollection
 
-        :param role_s: a collection of 1..N Role identifiers
-        :type role_s: Set of String(s)
+        :param required_role_s: a collection of 1..N Role identifiers
+        :type required_role_s: Set of String(s)
 
         :yields: tuple(role, Boolean)
         """
-        account = self.get_authorization_info(identifiers)
+        identifier = identifiers.primary_identifier
+        assigned_role_s = self.get_authzd_roles(identifier)
 
-        if account is None:
-            msg = 'has_role:  authz_info returned None for [{0}]'.\
-                format(identifiers)
+        if not assigned_role_s:
+            msg = 'has_role:  no roles obtained from account_store for [{0}]'.\
+                format(identifier)
             logger.warning(msg)
-            for role in role_s:
+            for role in required_role_s:
                 yield (role, False)
         else:
-            yield from self.role_verifier.has_role(account['authz_info'], role_s)
+            for role in required_role_s:
+                hasrole = ({role} <= assigned_role_s)
+                yield (role, hasrole)
