@@ -293,9 +293,9 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         permission_s = []
         keys = ['*', domain]
 
-        def query_authz_info(self):
-            msg = ("Could not obtain cached authz_info for [{0}].  "
-                   "Will try to acquire authz_info from account store."
+        def query_permissions(self):
+            msg = ("Could not obtain cached permissions for [{0}].  "
+                   "Will try to acquire permissions from account store."
                    .format(identifier))
             logger.debug(msg)
 
@@ -317,12 +317,12 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                 hmget_or_create(domain=domain,
                                 identifier=identifier,
                                 keys=keys,
-                                creator_func=query_authz_info,
+                                creator_func=query_permissions,
                                 creator=self)
 
         except AttributeError:
             # this means the cache_handler isn't configured
-            authz_info = query_authz_info(self)
+            authz_info = query_permissions(self)
 
             related_perms = [authz_info['permissions']['*'],
                              authz_info['permissions'][domain]]
@@ -338,7 +338,39 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         return permission_s
 
     def get_authzd_roles(self, identifier):
-        pass
+
+        def query_roles(self):
+            msg = ("Could not obtain cached roles for [{0}].  "
+                   "Will try to acquire roles from account store."
+                   .format(identifier))
+            logger.debug(msg)
+
+            roles = self.account_store.get_authz_roles(identifier)
+            if not roles:
+                msg = "Could not get roles from account_store for {0}".\
+                    format(identifier)
+                raise ValueError(msg)
+            return roles
+        try:
+            msg2 = ("Attempting to get cached roles for [{0}]"
+                    .format(identifier))
+            logger.debug(msg2)
+
+            # account_info is a dict
+            roles = self.cache_handler.get_or_create(
+                domain='authorization:roles:' + self.name,
+                identifier=identifier,
+                creator_func=query_roles,
+                creator=self)
+        except AttributeError:
+            # this means the cache_handler isn't configured
+            roles = query_roles(self)
+        except ValueError:
+            msg3 = ("No roles found for identifiers [{0}].  "
+                    "Returning None.".format(identifier))
+            logger.warning(msg3)
+
+        return set(roles)
 
     def is_permitted(self, identifiers, permission_s):
         """
@@ -387,6 +419,8 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         :yields: tuple(role, Boolean)
         """
         identifier = identifiers.primary_identifier
+
+        # assigned_role_s is a set
         assigned_role_s = self.get_authzd_roles(identifier)
 
         if not assigned_role_s:

@@ -2,8 +2,6 @@ import pytest
 
 from yosai.core import (
     DefaultPermission,
-    IndexedPermissionVerifier,
-    SimpleRoleVerifier,
     WildcardPermission,
 )
 
@@ -21,12 +19,3 @@ def default_permission():
 def test_permission_collection():
     return {'domain_a:action_a', 'domain_b:action_b', 'domain_c:action_c'}
 
-
-@pytest.fixture(scope='function')
-def indexed_permission_verifier():
-    return IndexedPermissionVerifier()
-
-
-@pytest.fixture(scope='function')
-def simple_role_verifier():
-    return SimpleRoleVerifier()

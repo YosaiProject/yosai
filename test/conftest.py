@@ -4,14 +4,11 @@ from yosai.core import (
     AccountStoreRealm,
     CachingSessionStore,
     DefaultPermission,
-    IndexedAuthorizationInfo,
-    IndexedPermissionVerifier,
     LazySettings,
     NativeSecurityManager,
     NativeSessionHandler,
     PasslibVerifier,
     SerializationManager,
-    SimpleRoleVerifier,
     TOTPToken,
     UsernamePasswordToken,
     Yosai,
@@ -61,11 +58,6 @@ def session(cache_handler, request, settings):
     return session
 
 
-@pytest.fixture(scope='function')
-def indexed_authz_info(permission_collection, role_collection):
-    return IndexedAuthorizationInfo(roles=role_collection,
-                                    permissions=permission_collection)
-
 
 @pytest.fixture(scope='function')
 def permission_collection():
@@ -109,15 +101,6 @@ def serialization_manager(session_attributes):
 def cache_handler(settings, serialization_manager):
     return DPCacheHandler(settings=settings, serialization_manager=serialization_manager)
 
-
-@pytest.fixture(scope='function')
-def permission_verifier():
-    return IndexedPermissionVerifier()
-
-
-@pytest.fixture(scope='function')
-def role_verifier():
-    return SimpleRoleVerifier()
 
 
 @pytest.fixture(scope='function')

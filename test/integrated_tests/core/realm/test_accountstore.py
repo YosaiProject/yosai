@@ -1,6 +1,5 @@
 from yosai.core import (
     Account,
-    IndexedAuthorizationInfo,
     SimpleIdentifierCollection,
     account_abcs,
     cache_abcs,
