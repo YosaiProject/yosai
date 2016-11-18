@@ -299,12 +299,12 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                    .format(identifier))
             logger.debug(msg)
 
-            authz_info = self.account_store.get_authz_info(identifier)
-            if not authz_info:
-                msg = "Could not get authz_info from account_store for {0}".\
+            permissions = self.account_store.get_authz_permissions(identifier)
+            if not permissions:
+                msg = "Could not get permissions from account_store for {0}".\
                     format(identifier)
                 raise ValueError(msg)
-            return authz_info
+            return permissions
 
         try:
             msg2 = ("Attempting to get cached authz_info for [{0}]"
@@ -328,8 +328,12 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                              authz_info['permissions'][domain]]
 
         for perms in related_perms:
-            for parts in rapidjson.loads(perms):
-                permission_s.append(DefaultPermission(parts=parts))
+            # must account for None values:
+            try:
+                for parts in rapidjson.loads(perms):
+                    permission_s.append(DefaultPermission(parts=parts))
+            except (TypeError, ValueError):
+                pass
 
         return permission_s
 

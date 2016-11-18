@@ -59,10 +59,9 @@ class CredentialsAccountStore(AccountStore):
 class AuthorizationAccountStore(AccountStore):
 
     @abstractmethod
-    def get_authz_info(self, identifiers):
-        """
-        creates an Account that includes only the authorization information
-        (and not credentials)
-        :returns: Account
-        """
+    def get_authz_permissions(self, identifiers):
+        pass
+
+    @abstractmethod
+    def get_authz_roles(self, identifiers):
         pass
