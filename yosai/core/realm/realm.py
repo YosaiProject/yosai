@@ -19,6 +19,7 @@ under the License.
 import logging
 from uuid import uuid4
 import time
+import rapidjson
 from yosai.core import (
     AccountException,
     ConsumedTOTPToken,
@@ -282,20 +283,15 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
     # Authorization
     # --------------------------------------------------------------------------
 
-    def get_authorization_info(self, identifiers):
+    def get_authzd_permissions(self, identifier, domain):
         """
-        The default caching policy is to cache an account's authorization info,
-        obtained from an account store so to facilitate subsequent authorization
-        checks. In order to cache, a realm must have a CacheHandler.
+        :type identifier:  str
+        :type domain:  str
 
-        :type identifiers:  subject_abcs.IdentifierCollection
-
-        :returns: Account
+        :returns: a list of relevant DefaultPermission instances (permission_s)
         """
-        account_info = None
-        ch = self.cache_handler
-
-        identifier = identifiers.primary_identifier  # TBD
+        permission_s = []
+        keys = ['*', domain]
 
         def query_authz_info(self):
             msg = ("Could not obtain cached authz_info for [{0}].  "
@@ -303,34 +299,42 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                    .format(identifier))
             logger.debug(msg)
 
-            account_info = self.account_store.get_authz_info(identifier)
-            if account_info is None:
-                msg = "Could not get authz_info for {0}".format(identifier)
+            authz_info = self.account_store.get_authz_info(identifier)
+            if not authz_info:
+                msg = "Could not get authz_info from account_store for {0}".\
+                    format(identifier)
                 raise ValueError(msg)
-            return account_info
+            return authz_info
 
         try:
             msg2 = ("Attempting to get cached authz_info for [{0}]"
                     .format(identifier))
             logger.debug(msg2)
 
-            account_info = ch.get_or_create(domain='authorization:' + self.name,
-                                            identifier=identifier,
-                                            creator_func=query_authz_info,
-                                            creator=self)
+            domain = 'authorization:permissions:' + self.name
+
+            related_perms = self.cache_handler.\
+                hmget_or_create(domain=domain,
+                                identifier=identifier,
+                                keys=keys,
+                                creator_func=query_authz_info,
+                                creator=self)
+
         except AttributeError:
             # this means the cache_handler isn't configured
-            account_info = query_authz_info(self)
+            authz_info = query_authz_info(self)
 
-        except ValueError:
-            msg3 = ("No account authz_info found for identifier [{0}].  "
-                    "Returning None.".format(identifier))
-            logger.warning(msg3)
+            related_perms = [authz_info['permissions']['*'],
+                             authz_info['permissions'][domain]]
 
-        if account_info:
-            account_info['account_id'] = SimpleIdentifierCollection(source_name=self.name,
-                                                                    identifier=identifier)
-        return account_info
+        for perms in related_perms:
+            for parts in rapidjson.loads(perms):
+                permission_s.append(DefaultPermission(parts=parts))
+
+        return permission_s
+
+    def get_authzd_roles(self, identifier):
+        pass
 
     def is_permitted(self, identifiers, permission_s):
         """

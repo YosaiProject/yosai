@@ -229,9 +229,10 @@ class WildcardPermission(serialize_abcs.Serializable):
         return True
 
     def __repr__(self):
-        return ("{0}:{1}:{2}".format(self.parts.get('domain'),
-                                     self.parts.get('action'),
-                                     self.parts.get('target')))
+        return ("{0}({1}:{2}:{3})".format(self.__class__.__name__,
+                                          self.parts.get('domain'),
+                                          self.parts.get('action'),
+                                          self.parts.get('target')))
 
     def __eq__(self, other):
         if (isinstance(other, WildcardPermission)):
@@ -257,9 +258,9 @@ class DefaultPermission(WildcardPermission):
         if wildcard_string:
             super().__init__(wildcard_string=wildcard_string)
         else:
-            new_parts = {part: set(item) for part, item in parts.items()}
-            self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
-            self.parts.update(new_parts)
+            self.parts = {'domain': set([parts.get('domain', '*')]),
+                          'action': set(parts.get('action', '*')),
+                          'target': set(parts.get('target', '*'))}
 
         self.case_sensitive = case_sensitive
 
@@ -338,14 +339,11 @@ class DefaultPermission(WildcardPermission):
         }
 
     def __setstate__(self, state):
-        try:
-            new_parts = {part: set(items) for part, items in state['parts'].items()}
-        except TypeError:
-            msg = 'DefaultPermission init requires parts.'
-            raise ValueError(msg)
+        parts = state['parts']
+        self.parts = {'domain': set([parts.get('domain', '*')]),
+                      'action': set(parts.get('action', '*')),
+                      'target': set(parts.get('target', '*'))}
 
-        self.parts = {'domain': {'*'}, 'action': {'*'}, 'target': {'*'}}
-        self.parts.update(new_parts)
         self.case_sensitive = state.get('case_sensitive', False)
 
 

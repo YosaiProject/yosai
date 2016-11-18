@@ -91,7 +91,7 @@ class AuthenticatingRealm(Realm, authc_abcs.Authenticator):
         pass
 
     @abstractmethod
-    def get_authentication_info(self, authc_token):
+    def get_authentication_info(self, identifier):
         pass
 
     @abstractmethod
@@ -123,10 +123,11 @@ class AuthorizingRealm(Realm):
     """
 
     @abstractmethod
-    def get_authorization_info(self, identifiers):
-        """
-        :type identifiers:  SimpleRealmCollection
-        """
+    def get_authzd_permissions(self, identitier, domain):
+        pass
+
+    @abstractmethod
+    def get_authzd_roles(self, identitier):
         pass
 
     @abstractmethod
