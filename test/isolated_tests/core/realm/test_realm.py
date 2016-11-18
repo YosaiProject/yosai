@@ -7,6 +7,7 @@ from yosai.core import (
     DefaultPermission,
     IncorrectCredentialsException,
     PasslibVerifier,
+    SimpleIdentifierCollection,
     TOTPToken,
     UsernamePasswordToken,
 )
@@ -271,7 +272,6 @@ def test_asr_get_authz_roles_cannot_locate(
         asr.get_authzd_roles('marty')
 
 
-
 def test_asr_get_authz_permissions_from_cache(
         account_store_realm, monkeypatch, simple_identifier_collection, sample_parts):
     asr = account_store_realm
@@ -309,27 +309,30 @@ def test_asr_get_authz_permissions_cannot_locate(
         asr.get_authzd_permissions('marty', 'domain12')
 
 
-def test_asr_is_permitted_yields(
-        account_store_realm, monkeypatch, simple_identifier_collection,
-        sample_acct_info):
+@mock.patch.object(AccountStoreRealm, 'get_authzd_permissions')
+def test_asr_is_permitted_yields(asr_gap, account_store_realm, monkeypatch):
     """
     unit tested:  is_permitted
 
     test case:
-    - gets authorization info
-    - yields from the permission_verifier, one permission at a time
+    - gets permissions
+    - yields one permission at a time
     """
+    mock1 = mock.MagicMock()
+    mock1.implies.return_value = False
+    mock2 = mock.MagicMock()
+    mock2.implies.return_value = True
+
+    asr_gap.return_value = [mock1, mock2]
     asr = account_store_realm
-    sic = simple_identifier_collection
+    mock_identifiers = mock.create_autospec(SimpleIdentifierCollection)
+    mock_identifiers.primary_identifier = 'thedude'
+    test_permissions = ['domain1:action1']
 
-    def mock_yielder(authz_info, input):
-        yield ('permission', True)
+    result = list(asr.is_permitted(mock_identifiers, test_permissions))
 
-    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: sample_acct_info)
-    monkeypatch.setattr(asr.permission_verifier, 'is_permitted', mock_yielder)
-
-    results = list(asr.is_permitted(sic, ['domain:action']))
-    assert results == [('permission', True)]
+    asr_gap.assert_called_once_with('thedude', 'domain1')
+    assert result == [('domain1:action1', True)]
 
 
 def test_asr_is_permitted_no_account_obtained(
@@ -344,7 +347,7 @@ def test_asr_is_permitted_no_account_obtained(
     asr = account_store_realm
     sic = simple_identifier_collection
 
-    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: None)
+    monkeypatch.setattr(asr, 'get_authzd_permissions', lambda x, y: [])
 
     results = list(asr.is_permitted(sic, ['domain1:action1', 'domain2:action1']))
     assert results == [('domain1:action1', False), ('domain2:action1', False)]
@@ -358,18 +361,15 @@ def test_asr_has_role_yields(
 
     test case:
     - gets authorization info
-    - yields from the role_verifier, one role at a time
+    - yields one role at a time
     """
     asr = account_store_realm
     sic = simple_identifier_collection
-
-    def mock_yielder(authz_info, input):
-        yield ('roleid1', False)
-
-    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: sample_acct_info)
-    monkeypatch.setattr(asr.role_verifier, 'has_role', mock_yielder)
+    sample_roles = {'role1', 'role2'}
+    monkeypatch.setattr(asr, 'get_authzd_roles', lambda x: sample_roles)
 
     results = list(asr.has_role(sic, {'roleid1'}))
+
     assert results == [('roleid1', False)]
 
 
@@ -385,7 +385,7 @@ def test_asr_has_role_no_account_obtained(
     asr = account_store_realm
     sic = simple_identifier_collection
 
-    monkeypatch.setattr(asr, 'get_authorization_info', lambda x: None)
+    monkeypatch.setattr(asr, 'get_authzd_roles', lambda x: set())
 
     results = list(asr.has_role(sic, ['role1', 'role2']))
     assert results == [('role1', False), ('role2', False)]

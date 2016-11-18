@@ -343,6 +343,7 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         return permission_s
 
     def get_authzd_roles(self, identifier):
+        roles = [] 
 
         def query_roles(self):
             msg = ("Could not obtain cached roles for [{0}].  "
