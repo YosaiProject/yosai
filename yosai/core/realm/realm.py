@@ -283,7 +283,7 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
     # Authorization
     # --------------------------------------------------------------------------
 
-    def get_authzd_permissions(self, identifier, domain):
+    def get_authzd_permissions(self, identifier, perm_domain):
         """
         :type identifier:  str
         :type domain:  str
@@ -292,7 +292,7 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         """
         permission_s = []
         related_perms = []
-        keys = ['*', domain]
+        keys = ['*', perm_domain]
 
         def query_permissions(self):
             msg = ("Could not obtain cached permissions for [{0}].  "
@@ -327,10 +327,10 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
 
         except AttributeError:
             # this means the cache_handler isn't configured
-            authz_info = query_permissions(self)
+            queried_permissions = query_permissions(self)
 
-            related_perms = [authz_info['permissions']['*'],
-                             authz_info['permissions'][domain]]
+            related_perms = [queried_permissions.get('*'),
+                             queried_permissions.get(perm_domain)]
 
         for perms in related_perms:
             # must account for None values:
@@ -361,7 +361,6 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                     .format(identifier))
             logger.debug(msg2)
 
-            # account_info is a dict
             roles = self.cache_handler.get_or_create(
                 domain='authorization:roles:' + self.name,
                 identifier=identifier,

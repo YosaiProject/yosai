@@ -1,8 +1,10 @@
 import pytest
+import rapidjson
 
 from yosai.core import (
     AccountStoreRealm,
     ConsumedTOTPToken,
+    DefaultPermission,
     IncorrectCredentialsException,
     PasslibVerifier,
     TOTPToken,
@@ -233,42 +235,78 @@ def test_asr_acm_consumed_token(account_store_realm, sample_acct_info,
                                         value=sample_acct_info)
 
 
-def test_asr_get_authz_info_from_cache(
+def test_asr_get_authz_roles_from_cache(
         account_store_realm, monkeypatch, simple_identifier_collection):
-
-    sic = simple_identifier_collection
     asr = account_store_realm
-
     mock_cache = mock.Mock()
-    mock_cache.get_or_create.return_value = {'authz_info': 'cached_authz_info'}
+    sample_roles = ['role1', 'role2']
+    mock_cache.get_or_create.return_value = sample_roles
     monkeypatch.setattr(asr, 'cache_handler', mock_cache)
 
-    result = asr.get_authorization_info(sic)
+    result = asr.get_authzd_roles('thedude')
 
-    assert (result['account_id'] == sic and
-            result['authz_info'] == 'cached_authz_info')
+    assert result == set(sample_roles)
 
 
-def test_asr_get_authz_info_without_cache_from_accountstore(
+def test_asr_get_authz_roles_without_cache_from_accountstore(
         account_store_realm, monkeypatch, simple_identifier_collection,
-        sample_acct_info):
+        sample_acct_info, sample_parts):
     asr = account_store_realm
-    sic = simple_identifier_collection
+
     monkeypatch.setattr(asr, 'cache_handler', None)
-    monkeypatch.setattr(asr.account_store, 'get_authz_info', lambda x: sample_acct_info)
-    result = asr.get_authorization_info(sic)
-    assert result['authz_info'] == 'authz_info'
+    sample_roles = ['role1', 'role2']
+    monkeypatch.setattr(asr.account_store, 'get_authz_roles', lambda x: sample_roles)
+    result = asr.get_authzd_roles('thedude')
+    assert result == set(sample_roles)
 
 
-def test_asr_get_authz_info_cannot_locate(
+def test_asr_get_authz_roles_cannot_locate(
         account_store_realm, monkeypatch, simple_identifier_collection):
     asr = account_store_realm
-    sic = simple_identifier_collection
+
     monkeypatch.setattr(asr, 'cache_handler', None)
-    monkeypatch.setattr(asr.account_store, 'get_authz_info', lambda x: None)
+    monkeypatch.setattr(asr.account_store, 'get_authz_roles', lambda x: None)
 
     with pytest.raises(ValueError):
-        asr.get_authorization_info(sic)
+        asr.get_authzd_roles('marty')
+
+
+
+def test_asr_get_authz_permissions_from_cache(
+        account_store_realm, monkeypatch, simple_identifier_collection, sample_parts):
+    asr = account_store_realm
+    dp = DefaultPermission(parts=sample_parts)
+    mock_cache = mock.Mock()
+    mock_cache.hmget_or_create.return_value = [rapidjson.dumps([sample_parts])]
+    monkeypatch.setattr(asr, 'cache_handler', mock_cache)
+
+    result = asr.get_authzd_permissions('thedude', 'domain1')
+
+    assert result == [dp]
+
+
+def test_asr_get_authz_perms_without_cache_from_accountstore(
+        account_store_realm, monkeypatch, simple_identifier_collection,
+        sample_acct_info, sample_parts):
+    asr = account_store_realm
+    dp = DefaultPermission(parts=sample_parts)
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    sample = {'domain1': rapidjson.dumps([sample_parts])}
+
+    monkeypatch.setattr(asr.account_store, 'get_authz_permissions', lambda x: sample)
+    result = asr.get_authzd_permissions('thedude', 'domain1')
+    assert result == [dp]
+
+
+def test_asr_get_authz_permissions_cannot_locate(
+        account_store_realm, monkeypatch, simple_identifier_collection):
+    asr = account_store_realm
+
+    monkeypatch.setattr(asr, 'cache_handler', None)
+    monkeypatch.setattr(asr.account_store, 'get_authz_permissions', lambda x: None)
+
+    with pytest.raises(ValueError):
+        asr.get_authzd_permissions('marty', 'domain12')
 
 
 def test_asr_is_permitted_yields(
