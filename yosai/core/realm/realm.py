@@ -291,6 +291,7 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         :returns: a list of relevant DefaultPermission instances (permission_s)
         """
         permission_s = []
+        related_perms = []
         keys = ['*', domain]
 
         def query_permissions(self):
@@ -319,6 +320,10 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                                 keys=keys,
                                 creator_func=query_permissions,
                                 creator=self)
+        except ValueError:
+            msg3 = ("No permissions found for identifiers [{0}].  "
+                    "Returning None.".format(identifier))
+            logger.warning(msg3)
 
         except AttributeError:
             # this means the cache_handler isn't configured

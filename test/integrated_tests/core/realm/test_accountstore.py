@@ -1,8 +1,5 @@
 from yosai.core import (
-    Account,
     SimpleIdentifierCollection,
-    account_abcs,
-    cache_abcs,
 )
 import pytest
 
@@ -11,7 +8,7 @@ import pytest
                          [('thedude', "Could not obtain cached", "No account"),
                           ('thedude', "get cached", "Could not obtain cached")])
 def test_get_authc_info(identifier, expected_in, expected_out,
-                         caplog, account_store_realm, cache_handler):
+                        caplog, account_store_realm, cache_handler):
 
     """
     I) Obtains from account store, caches
@@ -25,7 +22,7 @@ def test_get_authc_info(identifier, expected_in, expected_out,
         for key in keys:
             cache_handler.cache_region.delete(key)
 
-    result = asr.get_authentication_info(identifier=identifier)
+    asr.get_authentication_info(identifier=identifier)
 
     out = caplog.text
 
@@ -38,12 +35,9 @@ def test_get_authc_info(identifier, expected_in, expected_out,
                            "Could not obtain cached", "No account"),
                           (SimpleIdentifierCollection(source_name='AccountStoreRealm',
                                                       identifier='thedude'),
-                           "get cached", "Could not obtain cached"),
-                          (SimpleIdentifierCollection(source_name='AccountStoreRealm',
-                                                      identifier='anonymous'),
-                           "No account", "blabla")])
-def test_get_authz_info(identifiers, expected_in, expected_out,
-                        caplog, account_store_realm, cache_handler):
+                           "get cached", "Could not obtain cached")])
+def test_get_authzd_permissions(identifiers, expected_in, expected_out,
+                                caplog, account_store_realm, cache_handler):
     """
     I) Obtains from account store, caches
     II) Obtains from cache
@@ -56,7 +50,7 @@ def test_get_authz_info(identifiers, expected_in, expected_out,
         for key in keys:
             cache_handler.cache_region.delete(key)
 
-    result = asr.get_authorization_info(identifiers=identifiers)
+    asr.get_authzd_permissions(identifier='thedude', domain='domain1')
 
     out = caplog.text
     assert (expected_in in out and

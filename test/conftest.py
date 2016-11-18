@@ -114,13 +114,10 @@ def authc_verifiers(passlib_verifier):
 
 
 @pytest.fixture(scope='function')
-def account_store_realm(cache_handler, alchemy_store, authc_verifiers,
-                        permission_verifier, role_verifier):
+def account_store_realm(cache_handler, alchemy_store, authc_verifiers):
     asr = AccountStoreRealm(name='AccountStoreRealm',
                             account_store=alchemy_store,
-                            authc_verifiers=authc_verifiers,
-                            permission_verifier=permission_verifier,
-                            role_verifier=role_verifier)
+                            authc_verifiers=authc_verifiers)
     asr.cache_handler = cache_handler
     return asr
 

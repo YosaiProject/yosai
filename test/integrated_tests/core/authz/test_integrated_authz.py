@@ -167,7 +167,7 @@ def test_is_permitted_account_doesnt_exist(
     perms = [perm1, perm2, perm3, perm4]
 
     expected_results = set([(perm1, False), (perm2, False),
-                                  (perm3, False), (perm4, False)])
+                            (perm3, False), (perm4, False)])
 
     unrecognized_identifier = \
         SimpleIdentifierCollection(source_name='AccountStoreRealm',

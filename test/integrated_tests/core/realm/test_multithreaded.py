@@ -2,15 +2,13 @@ import time
 from threading import Thread, Lock
 
 
-def test_multithreaded_authz_dogpile(
-        indexed_authz_info, cache_handler, session):
+def test_multithreaded_authz_dogpile(cache_handler, session):
 
     lock = Lock()
     canary = []
     results = []
 
     def create_func(arbitrary):
-        nonlocal indexed_authz_info
         nonlocal canary
         nonlocal lock
         ack = lock.acquire(False)
@@ -18,7 +16,7 @@ def test_multithreaded_authz_dogpile(
         time.sleep(.25)
         if ack:
             lock.release()
-        return indexed_authz_info
+        return 'authz_info'
 
     def f():
         for x in range(5):
