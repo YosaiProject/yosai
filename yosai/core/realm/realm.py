@@ -362,8 +362,9 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
 
             # get_authzd_permissions returns a list of DefaultPermission instances,
             # requesting from cache using '*' and permission.domain as hash keys:
-            assigned_permission_s = self.get_authzd_permissions(identifier,
-                                                                required_permission.domain)
+            domain = next(iter(required_permission.domain))
+            assigned_permission_s = self.get_authzd_permissions(identifier, domain)
+
             is_permitted = False
             for authorized_permission in assigned_permission_s:
                 if authorized_permission.implies(required_permission):
