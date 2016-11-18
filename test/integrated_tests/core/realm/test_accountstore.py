@@ -50,7 +50,7 @@ def test_get_authzd_permissions(identifiers, expected_in, expected_out,
         for key in keys:
             cache_handler.cache_region.delete(key)
 
-    asr.get_authzd_permissions(identifier='thedude', domain='domain1')
+    asr.get_authzd_permissions('thedude', 'domain1')
 
     out = caplog.text
     assert (expected_in in out and
