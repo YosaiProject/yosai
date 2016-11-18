@@ -273,10 +273,23 @@ def test_dp_init_wildcard(mock_wpi):
     mock_wpi.assert_called_once_with(wildcard_string='domain1:action1')
 
 
-@mock.patch.object(DefaultPermission, '__setstate__', return_value=None)
-def test_dp_init_parts(mock_dps):
-    result = DefaultPermission(parts='parts')
-    mock_dps.assert_called_once_with('parts')
+def test_dp_init_parts():
+    parts = {'domain': 'domain1', 'action': ['action1'], 'target': ['target1']}
+    expected_parts = {'domain': {'domain1'}, 'action': {'action1'}, 'target': {'target1'}}
+    dp = DefaultPermission(parts=parts)
+    assert dp.parts == expected_parts
+
+
+def test_dp_setstate():
+    parts = {'domain': 'domain1', 'action': ['action1'], 'target': ['target1']}
+    state = {'parts': parts}
+
+    expected_parts = {'domain': {'domain1'}, 'action': {'action1'}, 'target': {'target1'}}
+
+    dp = DefaultPermission.__new__(DefaultPermission)
+    dp.__setstate__(state)
+
+    assert dp.parts == expected_parts
 
 
 @pytest.mark.parametrize(

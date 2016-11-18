@@ -19,24 +19,16 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm):
         return None
 
     @property
-    def permission_verifier(self):
-        pass
-        
-    @property
-    def role_verifier(self):
-        pass
-
-    @property
     def authorization_cache_handler(self):
         pass
 
     def do_clear_cache(self, identifiers):
         pass
 
-    def get_authorization_info(self, identifiers):
+    def get_authzd_permissions(self, identifier, domain):
         pass
- 
-    def resolve_permissions(self, string_perms):
+
+    def get_authzd_roles(self, identifier):
         pass
 
     def __hash__(self):
@@ -47,10 +39,10 @@ class MockAuthzAccountStoreRealm(realm_abcs.AuthorizingRealm):
 
     def clear_cached_authorization_info(self, identifier):
         pass
-   
+
 
 class MockPermission(authz_abcs.Permission):
-   
+
     # using init to define whether implies is always True or False
     def __init__(self, implied):
         self.implied = implied
