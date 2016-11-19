@@ -13,9 +13,6 @@ AUTHC_CONFIG:
     totp:
         mfa_dispatcher: null
         context:
-            default_tag: null
-            cost: null
-            secrets_path: null
             secrets:
                 update_this_tag_with_unixepoch:  update_this_using_passlib.totp.generate_secret()
 

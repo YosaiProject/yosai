@@ -82,16 +82,14 @@ with Yosai.context(yosai):
 
     try:
         subject.login(authc_token)
-    except UnknownAccountException:
-        # insert here
+    except AccountException:
+        # unrecognized userid
     except IncorrectCredentialsException:
-        # insert here
+        # incorrect password provided
     except LockedAccountException:
-        # insert here
-    except ExcessiveAttemptsException:
-        # insert here
-    except AuthenticationException:
-        # insert here
+        # too many failed authentication attempts, account locked
+    except AdditionalAuthenticationRequired:
+        # second factor authentication
 ```
 
 As you can see, authentication entails a single method call: ``subject.login(authc_token)``. The Subject API requires a single method call to authenticate, regardless of the underlying authentication strategy chosen.
@@ -207,9 +205,10 @@ is verified, Yosai returns control to the calling application.
 If a user is configured for two-factor authentication and username/password
 is verified, Yosai signals to the calling application to collect 2FA information
 from its client by raising an **AdditionalAuthenticationRequired** exception.
-Furthermore, Yosai will dispatch an **MFAChallenger**, if one is configured,
+Furthermore, Yosai will call an **MFADispatcher**, if one is configured,
 to send information to the client.  One such implementation of an
-MFAChallenger would be an SMS gateway that messages a client.
+**MFADispatcher** is an [SMSDispatcher](https://github.com/YosaiProject/yosai_totp_sms)
+that SMS messages a client a newly-generated TOTP token (a 6-digit integer).
 
 #### Two-Factor Authentication Sequence
 
@@ -218,12 +217,15 @@ MFAChallenger would be an SMS gateway that messages a client.
 2. Yosai determines whether the user's account is configured for two-factor
 authentication.  If the user successfully authenticates step 1 and is configured
 for 2FA, Yosai will signal to its caller to collect 2FA information from client
-by raising an **AdditionalAuthenticationRequired** exception.  Further, if a **MFAChallenger**
-is configured, it is dispatched to coordinate OTP token generation for the client.
+by raising an **AdditionalAuthenticationRequired** exception.  Further, if a **MFADispatcher**
+is configured, it is dispatched with information that the client requires
+to perform TOTP authentication.
 
-3. A client obtains a 6-digit OTP token and sends it to the server during OTP authentication.
-An OTP token is produced by a hashing algorithm (sha1) that uses as its inputs
-a secret key that is unique to a user and an incrementing value (a counter).
+3. A client obtains a 6-digit OTP token and sends it to the server through a
+user interface of some kind, such as a web-based form input box.  The TOTP token
+is produced by a hashing algorithm (sha1) that uses as its inputs
+a secret key that is unique to a user and an incrementing value (a counter) that
+is derived from the current time on the server.
 
 4. Yosai obtains from a persisted datastore an encrypted version of the user's
 secret key and decrypts it.
@@ -238,7 +240,7 @@ to signal that authentication has failed due to an incorrect token provided by
 the user.  If tokens match, control is returned to the application calling Yosai.
 
 
-## Account Locking
+## Rate Limiting / Account Locking (Throttling)
 
 Yosai allows developers to regulate account authentication for any particular
 user account by defining a number of maximum allowable authentication attempts.
