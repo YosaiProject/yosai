@@ -2,8 +2,28 @@
 
 ![totp_logo](img/totp.jpg)
 
-Yosai uses Passlib's totp module, available as of passlib v1.7.  Details about
-this module are available from [passlib documentation](https://pythonhosted.org/passlib/)
+## TOTP In a Nutshell
+
+Generate an application-specific secret key used to encrypt/decrypt user-specific keys.
+When a user's key is first generated, it is encrypted prior to being persisted to
+long term storage (database).  The secret key is used during every TOTP
+authentication attempt.
+
+For each user, generate a user-specific key and share it with the user, recommending
+that it be kept in a trusted, secure manner. The key is a rather long string of characters.
+It can be copy/pasted into a secure, trusted environment.  If you choose to use
+a mobile phone to store the key, the key can be encoded into a QRCode that is read
+and stored by trusted authentication apps such as Google Authenticator.
+
+Using the application-specific secret key, encrypt the user-specific key prior
+to storing it to disk.
+
+For more information about TOTP:  https://tools.ietf.org/html/rfc6238
+
+## Passlib 1.7
+
+Yosai uses Passlib's totp module, available as of passlib v1.7.  Information about
+this library are available from [passlib documentation](https://pythonhosted.org/passlib/)
 
 
 ## Client Step 1
@@ -62,9 +82,10 @@ The Dispatcher is called prior to raising the AdditionalAuthenticationRequired e
 ## Client Step 2
 
 2. Client is prompted to enter a TOTP token.  Client submits the requested
-   information to the server, authenticating itself.
+   totp token to the server, authenticating itself.
 
 ![totp_token_login](img/totp_login.jpg)
+
 
 
 ## Server Second Authentication Request:  TOTPToken
@@ -91,6 +112,18 @@ You can't two-factor authenticate using TOTP without configuring Yosai to do so.
 
 Within the ``AUTHC_CONFIG`` section of your Yosai yaml settings file, include a ``totp`` section.
 
+```yaml
+AUTHC_CONFIG:
+
+    ...
+
+    totp:
+        mfa_dispatcher: yosai_totp_sms.SMSDispatcher
+        context:
+            secrets:
+                1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
+```
+
 In this example, an SMS-based dispatcher is configured for the ``mfa_dispatcher``.
 
 ``secrets`` is a key/value store containing the secret key(s) used to encrypt/decrypt
@@ -103,17 +136,8 @@ good choice because it can tell anyone looking at the settings when the secret w
 last generated.  The secrets key is stored with every user-specific private key
 in storage so that Yosai will know which secret value was used to encrypt.
 
-```yaml
-AUTHC_CONFIG:
 
-    ...
 
-    totp:
-        mfa_dispatcher: yosai_totp_sms.SMSDispatcher
-        context:
-            secrets:
-                1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
-```
 It's easy to generate the current unix epoch using the time module from the
 standard library.  To generate a secret key, use the "secret generator" from passlib.totp:
 
@@ -128,3 +152,12 @@ Out[3]: '9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV'
 In [4]: int(time.time())
 Out[4]: 1479569669
 ```
+
+
+## TOTP Token Sources
+
+Secured USB:  NitroKey
+
+Google Authenticator
+
+SMS Message
