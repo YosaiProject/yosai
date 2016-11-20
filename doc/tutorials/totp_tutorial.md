@@ -2,23 +2,14 @@
 
 ![totp_logo](img/totp.jpg)
 
-## TOTP In a Nutshell
+## TOTP Overview
 
-Generate an application-specific secret key used to encrypt/decrypt user-specific keys.
-When a user's key is first generated, it is encrypted prior to being persisted to
-long term storage (database).  The secret key is used during every TOTP
-authentication attempt.
+Step 1:  A user submits a TOTP Token to the application.
 
-For each user, generate a user-specific key and share it with the user, recommending
-that it be kept in a trusted, secure manner. The key is a rather long string of characters.
-It can be copy/pasted into a secure, trusted environment.  If you choose to use
-a mobile phone to store the key, the key can be encoded into a QRCode that is read
-and stored by trusted authentication apps such as Google Authenticator.
 
-Using the application-specific secret key, encrypt the user-specific key prior
-to storing it to disk.
+Step 2: The application generates its own TOTP token and compares it with that
+provided by the user.  If the tokens match, TOTP authentication is successful.
 
-For more information about TOTP:  https://tools.ietf.org/html/rfc6238
 
 ## Passlib 1.7
 
@@ -26,15 +17,39 @@ Yosai uses Passlib's totp module, available as of passlib v1.7.  Information abo
 this library are available from [passlib documentation](https://pythonhosted.org/passlib/)
 
 
-## Client Step 1
+## The TOTP Token
 
-Client is prompted to enter a username and password.  Client submits the requested
-   information to the server, authenticating itself.
+A TOTP token is a N-digit string, usually 6 digits in length, that can be used only
+once for authentication and within a very short time window (+-30 seconds from now).
+The TOTP token is generated from a private key -- a uniquely generated hash -- that
+is shared between the user and application.
+
+![totp_token](img/totp_token.jpg)
+
+
+## The User-Specific Private Key
+
+Each user gets its own unique, private key.  This key is a 40+ character hash that
+is shared between the user and application.  The application keeps this key stored
+in a database in encrypted form.  The user keeps this key stored in a protected,
+secure "space".  This secure "space" typically is a security-hardened USB dongle,
+such as a NitroKey, or a secure space on a mobile phone accessible by an
+application such as GoogleAuthenticator.
+
+![private_key](img/private_key.jpg)
+
+
+
+
+## TOTP Authentication Step 1:  User Login
+
+Client is prompted with a standard login form to enter a username and password.
+Client submits the requested information to the server, authenticating itself.
 
 ![username_password_login](img/username_password_login.jpg)
 
 
-## Server First Authentication Request:  UsernamePasswordToken
+### Server First Authentication Request:  UsernamePasswordToken
 
 ```python
     with Yosai.context(yosai):
@@ -55,7 +70,7 @@ Client is prompted to enter a username and password.  Client submits the request
             # too many failed username/password authentication attempts, account locked
 ```
 
-## Following Successful UsernamePassword Authentication
+## TOTP Authentication Step 2: Post-login Escalation
 
 If a user is configured for two-factor authentication and username/password
 is verified, Yosai signals to the calling application to collect 2FA information
@@ -79,16 +94,16 @@ The Dispatcher is called prior to raising the AdditionalAuthenticationRequired e
 
 
 
-## Client Step 2
+## TOTP Authentication Step 3: TOTP Key Entry
 
-2. Client is prompted to enter a TOTP token.  Client submits the requested
-   totp token to the server, authenticating itself.
+Client is prompted to enter a TOTP token.  Client submits the requested
+totp token to the server, authenticating itself.
 
 ![totp_token_login](img/totp_login.jpg)
 
 
 
-## Server Second Authentication Request:  TOTPToken
+### Server Second Authentication Request:  TOTPToken
 
 ```python
     with Yosai.context(yosai):
@@ -106,7 +121,18 @@ The Dispatcher is called prior to raising the AdditionalAuthenticationRequired e
             # when TOTPToken authentication is attempted prior to username/password
 ```
 
-## Settings
+## Token Consumption
+
+In order to control for a one-time password to truly be used once, Yosai caches
+the TOTP Token that successfully authenticated.  If an attacker were to try to
+replay totp authentication, any subsequent TOTP authentication of the valid
+token would raise an IncorrectCredentialsException.  Granted, without this
+token consumption facility, an attacker would have a very small window of
+opportunity -- seconds -- to replay a TOTP Token before a new one would be required for
+authentication.
+
+
+## Yosai Settings
 
 You can't two-factor authenticate using TOTP without configuring Yosai to do so.
 
@@ -136,8 +162,6 @@ good choice because it can tell anyone looking at the settings when the secret w
 last generated.  The secrets key is stored with every user-specific private key
 in storage so that Yosai will know which secret value was used to encrypt.
 
-
-
 It's easy to generate the current unix epoch using the time module from the
 standard library.  To generate a secret key, use the "secret generator" from passlib.totp:
 
@@ -156,8 +180,15 @@ Out[4]: 1479569669
 
 ## TOTP Token Sources
 
-Secured USB:  NitroKey
+1. Secured USB:  [NitroKey](http://www.nitrokey.com)
 
-Google Authenticator
+2. SMS Message:  See [Yosai's SMS Messaging Extension](https://github.com/YosaiProject/yosai_totp_sms)
 
-SMS Message
+3. [Google Authenticator](https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=en)
+
+
+## Reference Information
+
+TOTP, see the [IETF specs](https://tools.ietf.org/html/rfc6238)
+
+A concrete implementation of TOTP within [passlib](https://pythonhosted.org/passlib/)
