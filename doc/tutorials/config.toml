@@ -1,0 +1,19 @@
+baseurl = "https://yosaiproject.github.io/yosai"
+name = "Yosai"
+license = "Apache"
+licenselink = "https://github.com/YosaiProject/yosai/blob/master/LICENSE"
+description = "Tutorials for the Yosai security framework"
+homepage = "https://yosaiproject.github.io/yosai"
+tags = ["documentation", "tutorial", "yosai", "security"]
+features = ["documentation"]
+min_version = 0.3
+theme = "hugo-theme-learn"
+
+[author]
+  name = "Darin Gordon"
+  homepage = "http://www.daringordon.com"
+
+[original]
+  name = "The Yosai Project"
+  homepage = "https://yosaiproject.github.io/yosai"
+  repo = "https://github.com/yosaiproject"

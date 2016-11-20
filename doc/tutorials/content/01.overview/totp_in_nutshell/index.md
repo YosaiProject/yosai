@@ -1,0 +1,17 @@
++++
+date = "2016-11-20T12:50:29-05:00"
+next = "/next/path"
+prev = "/prev/path"
+title = "TOTP In a Nutshell"
+toc = true
+weight = 5
+
++++
+
+# TOTP In a Nutshell
+
+Step 1:  A user submits an N-digit TOTP token to the application
+
+
+Step 2: The application generates its own TOTP token and compares it with that
+provided by the user.  If the tokens match, TOTP authentication is successful.
