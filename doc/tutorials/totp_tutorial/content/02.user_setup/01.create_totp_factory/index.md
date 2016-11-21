@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Create TOTP Factory"
 toc = true
-weight = 10 
+weight = 10
 +++
 
 # Create a TOTP Factory
@@ -12,7 +12,9 @@ weight = 10
 Create a TOTP factory by passing ``create_totp_factory`` **either** an *env_var*
 **or** *file_path* keyword argument, just as you do when instantiating a Yosai instance.
 
-!! It is important that the application creating TOTP instances uses the same configuration as Yosai to verify tokens.
+{{% notice warning %}}
+ It is important that the application creating TOTP instances uses the same configuration as Yosai to verify tokens.
+{{% /notice %}}
 
 ```python
 >>> from yosai.core import create_totp_factory
