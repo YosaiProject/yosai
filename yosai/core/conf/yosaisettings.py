@@ -16,17 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 """
-
-"""
-Following are the settings and configuration for Yosai.
-
-Yosai follows a custom-else-default method of obtaining configuration
-settings: First, it obtains customized, user-specied configuration.  Any
-other required configuration attributes that are unavailable through customized
-configuration are obtained by (global) default settings.
-
-This design is inspired by, or a copy of, source code written for Django.
-"""
 import logging
 from pathlib import Path
 import yaml
@@ -35,6 +24,8 @@ import os
 empty = object()
 logger = logging.getLogger(__name__)
 
+
+# largely copied from django:
 
 class LazySettings:
     """

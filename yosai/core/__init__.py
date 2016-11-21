@@ -163,6 +163,7 @@ from yosai.core.authc.authc import (
 
 from yosai.core.authc.credential import (
     PasslibVerifier,
+    create_totp_factory,
 )
 
 from yosai.core.authz.authz import (

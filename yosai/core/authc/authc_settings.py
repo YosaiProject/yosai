@@ -18,9 +18,9 @@ class AuthenticationSettings:
         self.account_lock_threshold = self.authc_config.get('account_lock_threshold')
 
         totp_settings = self.authc_config.get('totp')
-        totp_context = totp_settings.get('context')
-        self.totp_secrets = totp_context.get('secrets')
-        self.totp_issuer = totp_settings.get('issuer')
+        # context contains:  secrets, digits, alg, period, label, issuer
+        self.totp_context = totp_settings.get('context')
+
         self.mfa_dispatcher = maybe_resolve(totp_settings.get('mfa_dispatcher'))
         self.mfa_dispatcher_config = totp_settings.get('mfa_dispatcher_config')
 

@@ -25,6 +25,7 @@ from yosai.core import (
     AuthenticationSettings,
     ConsumedTOTPToken,
     IncorrectCredentialsException,
+    LazySettings,
     UsernamePasswordToken,
     TOTPToken,
     authc_abcs,
@@ -38,7 +39,7 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
     def __init__(self, settings):
         authc_settings = AuthenticationSettings(settings)
         self.password_cc = self.create_password_crypt_context(authc_settings)
-        self.totp_factory = self.create_totp_factory(authc_settings)
+        self.totp_factory = create_totp_factory(authc_settings=authc_settings)
         self.supported_tokens = [UsernamePasswordToken, TOTPToken]
 
     def verify_credentials(self, authc_token, authc_info):
@@ -84,10 +85,16 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         context.update(authc_settings.preferred_algorithm_context)
         return CryptContext(**context)
 
-    def create_totp_factory(self, authc_settings):
-        return TOTP.using(secrets=authc_settings.totp_secrets,
-                          issuer=authc_settings.totp_issuer)
-
     def generate_totp_token(self, totp_key):
         totp = self.totp_factory.from_json(totp_key)
         return totp.generate().token
+
+
+def create_totp_factory(self, env_var=None, file_path=None, authc_settings=None):
+    if not authc_settings:
+        yosai_settings = LazySettings(env_var=env_var, file_path=file_path)
+        authc_settings = AuthenticationSettings(yosai_settings)
+
+    totp_context = authc_settings.get('totp_context')
+
+    return TOTP.using(**totp_context)
