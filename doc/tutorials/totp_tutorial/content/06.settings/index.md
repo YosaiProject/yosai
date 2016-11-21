@@ -4,9 +4,8 @@ date = "2016-11-20T14:34:23-05:00"
 icon = "<b>X. </b>"
 next = "/next/path"
 prev = "/prev/path"
-title = "index"
+title = "Settings"
 weight = 0
-
 +++
 
 # Yosai Settings
