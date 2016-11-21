@@ -21,6 +21,11 @@ authentication attempts exceeds the maximum-allowable threshold, Yosai will lock
 the account, prohibiting subsequent authentication regardless of whether
 credentials match.
 
+```yaml
+AUTHC_CONFIG:
+    account_lock_threshold: null
+```
+
 An AccountStoreRealm obtains an account from storage.  Prior to authenticating
 an account, the realm determines whether account regulation is enabled in
 Yosai settings.  If account regulation is enabled, the account's locked
