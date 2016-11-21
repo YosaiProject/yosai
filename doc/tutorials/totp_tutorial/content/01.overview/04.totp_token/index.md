@@ -2,10 +2,9 @@
 date = "2016-11-20T14:04:10-05:00"
 next = "/next/path"
 prev = "/prev/path"
-title = "totp_token"
+title = "TOTP Token"
 toc = true
-weight = 5
-
+weight = 20 
 +++
 
 # The TOTP Token

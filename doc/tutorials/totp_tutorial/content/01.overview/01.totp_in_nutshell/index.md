@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "TOTP In a Nutshell"
 toc = true
-weight = 5
+weight = 2
 
 +++
 

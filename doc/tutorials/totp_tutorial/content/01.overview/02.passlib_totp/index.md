@@ -2,7 +2,7 @@
 date = "2016-11-20T14:03:07-05:00"
 next = "/next/path"
 prev = "/prev/path"
-title = "passlib_totp"
+title = "Passlib TOTP"
 toc = true
 weight = 5
 

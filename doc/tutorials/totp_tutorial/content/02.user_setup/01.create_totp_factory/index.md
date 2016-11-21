@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Create TOTP Factory"
 toc = true
-weight = 5
+weight = 10 
 +++
 
 # Create a TOTP Factory

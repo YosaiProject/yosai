@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Share TOTP Key"
 toc = true
-weight = 5
+weight = 30 
 +++
 
 # Share the private totp key with the user.

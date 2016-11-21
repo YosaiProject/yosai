@@ -5,7 +5,7 @@ icon = "<b>X. </b>"
 next = "/next/path"
 prev = "/prev/path"
 title = "TOTP Login"
-weight = 0
+weight = 15 
 
 +++
 

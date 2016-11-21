@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Generate TOTP Instance"
 toc = true
-weight = 5
+weight = 15
 
 +++
 

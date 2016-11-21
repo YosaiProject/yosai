@@ -2,13 +2,13 @@
 date = "2016-11-20T16:05:08-05:00"
 next = "/next/path"
 prev = "/prev/path"
-title = "index"
+title = "Token Stores"
 toc = true
-weight = 5
+weight = 10
 
 +++
 
-# TOTP Token Sources
+# TOTP Token Stores
 
 1. Secured USB Dongle: example [NitroKey](http://www.nitrokey.com)
 
