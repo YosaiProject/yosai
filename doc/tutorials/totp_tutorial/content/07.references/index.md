@@ -5,7 +5,7 @@ icon = "<b>X. </b>"
 next = "/next/path"
 prev = "/prev/path"
 title = "References"
-weight = 30
+weight = 70 
 +++
 
 # References

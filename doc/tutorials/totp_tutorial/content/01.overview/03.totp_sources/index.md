@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Token Stores"
 toc = true
-weight = 10
+weight = 13
 
 +++
 

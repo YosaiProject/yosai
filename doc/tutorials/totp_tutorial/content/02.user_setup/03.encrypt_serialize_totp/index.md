@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Encrypted, Serialized TOTP"
 toc = true
-weight = 20 
+weight = 23
 
 +++
 

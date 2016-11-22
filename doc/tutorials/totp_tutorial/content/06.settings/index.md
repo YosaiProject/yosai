@@ -5,7 +5,7 @@ icon = "<b>X. </b>"
 next = "/next/path"
 prev = "/prev/path"
 title = "Settings"
-weight = 25 
+weight = 60 
 +++
 
 # Yosai Settings

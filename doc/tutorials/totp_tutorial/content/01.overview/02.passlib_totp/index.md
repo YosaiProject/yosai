@@ -4,11 +4,11 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Passlib TOTP"
 toc = true
-weight = 5
+weight = 12 
 
 +++
 
-# Passlib TOTP 
+# Passlib TOTP
 
 Yosai uses Passlib's totp module, available as of passlib v1.7.  Information about
 this library are available from [passlib documentation](https://pythonhosted.org/passlib/)

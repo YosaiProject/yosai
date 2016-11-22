@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Persist to Storage"
 toc = true
-weight = 35
+weight = 26 
 +++
 
 # Persist the encrypted, serialized TOTP key to long term storage (database)

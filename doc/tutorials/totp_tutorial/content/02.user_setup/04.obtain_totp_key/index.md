@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "Obtain TOTP Key"
 toc = true
-weight = 25
+weight = 24
 +++
 
 # Obtain the private totp key

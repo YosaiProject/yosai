@@ -5,7 +5,7 @@ icon = "<b>X. </b>"
 next = "/next/path"
 prev = "/prev/path"
 title = "TOTP Setup"
-weight = 5
+weight = 20 
 +++
 
 # One-Time Password User Setup

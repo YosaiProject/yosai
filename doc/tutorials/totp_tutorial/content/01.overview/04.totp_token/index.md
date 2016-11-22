@@ -4,7 +4,7 @@ next = "/next/path"
 prev = "/prev/path"
 title = "TOTP Token"
 toc = true
-weight = 20 
+weight = 14 
 +++
 
 # The TOTP Token

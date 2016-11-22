@@ -5,7 +5,7 @@ icon = "<b>1. </b>"
 next = "/next/path"
 prev = "/prev/path"
 title = "Overview"
-weight = 1
+weight = 10
 
 +++
 

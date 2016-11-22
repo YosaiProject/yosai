@@ -8,6 +8,7 @@ tags = ["documentation", "tutorial", "yosai", "security"]
 features = ["documentation"]
 min_version = 0.3
 theme = "hugo-theme-learn"
+canonifyURLs = true
 
 [author]
   name = "Darin Gordon"
