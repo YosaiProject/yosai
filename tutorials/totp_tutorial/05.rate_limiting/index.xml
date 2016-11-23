@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>05.rate_limitings on </title>
+    <link>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/05/index.rate_limiting/</link>
+    <description>Recent content in 05.rate_limitings on </description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sun, 20 Nov 2016 15:26:53 -0500</lastBuildDate>
+    <atom:link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/05.rate_limiting/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Rate Limiting</title>
+      <link>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/05.rate_limiting/</link>
+      <pubDate>Sun, 20 Nov 2016 15:26:53 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/05.rate_limiting/</guid>
+      <description>
+
+&lt;h1 id=&#34;center-rate-limiting-center&#34;&gt;&lt;center&gt; Rate Limiting &lt;/center&gt;&lt;/h1&gt;
+
+&lt;p&gt;Yosai allows developers to regulate account authentication for any particular
+user account by defining a number of maximum allowable authentication attempts.
+If a developer defines within yosai&amp;rsquo;s authentication settings an &lt;strong&gt;account_lock_threshold&lt;/strong&gt;,
+account locking is enabled, using &lt;strong&gt;account_lock_threshold&lt;/strong&gt; as the limit.&lt;/p&gt;
+
+&lt;p&gt;Assuming account locking is enabled, the moment that the number of failed
+authentication attempts exceeds the maximum-allowable threshold, Yosai will lock
+the account, prohibiting subsequent authentication regardless of whether
+credentials match.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;AUTHC_CONFIG:
+    account_lock_threshold: null
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;An AccountStoreRealm obtains an account from storage.  Prior to authenticating
+an account, the realm determines whether account regulation is enabled in
+Yosai settings.  If account regulation is enabled, the account&amp;rsquo;s locked
+attribute is evaluated to determine whether an account is locked (and if so, when).&lt;/p&gt;
+
+&lt;p&gt;If the account is locked:
+A &lt;strong&gt;LockedAccountException&lt;/strong&gt; is raised, including a tuple containing the timestamp of
+the current authentication attempt and a timestamp of when the account was locked.&lt;/p&gt;
+
+&lt;p&gt;If the account is not locked, authentication proceeds.&lt;/p&gt;
+
+&lt;p&gt;When authentication fails, Yosai caches when the failed attempt happend.  When
+the total number of failed attempts exceeds the maximum allowable fails, the
+account is locked in the underlying accountstore of the realm that facilitates
+locking.  Consequently, failed authentication attempts live in cache until the
+corresponding cache entry expires or is deleted.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

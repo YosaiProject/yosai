@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="generator" content="Hugo 0.16" />
+    <meta name="description" content="">
+
+
+    <link rel="shortcut icon" href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/images/favicon.jpg" type="image/x-icon" />
+
+    
+    <title>Overview</title>
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/nucleus.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/hybrid.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/featherlight.min.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/perfect-scrollbar.min.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/horsey.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/theme.css" rel="stylesheet">
+    <link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/hugo-theme.css" rel="stylesheet">
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/jquery-2.x.min.js"></script>
+    <style type="text/css">:root #header + #content > #left > #rlblock_left
+    {display:none !important;}</style>
+    
+<link href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/css/yosai_tutorial.css" rel="stylesheet">
+
+  </head>
+  <body class="" data-url="/01.overview/">
+    <nav id="sidebar">
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="http://yosaiproject.github.io/yosai">
+<img src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/images/yosai.jpg" />
+</a>
+
+    </div>
+    
+</div>
+
+
+  <div class="highlightable">
+    <ul class="topics">
+      
+      
+        
+      
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/./">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/./">
+          <span>
+            
+             TOTP Tutorial
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item active parent" data-nav-id="/01.overview/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/">
+          <span>
+            
+              <b>1. </b>
+            
+             Overview
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+          
+          
+          
+            <li class="dd-item " data-nav-id="/01.overview/01.totp_in_nutshell/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/01.totp_in_nutshell/">
+                <span>TOTP In a Nutshell     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/01.overview/02.passlib_totp/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/02.passlib_totp/">
+                <span>Passlib TOTP     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/01.overview/03.totp_sources/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/03.totp_sources/">
+                <span>Token Stores     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/01.overview/04.totp_token/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/04.totp_token/">
+                <span>TOTP Token     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/01.overview/05.user_key/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/05.user_key/">
+                <span>User-Specific Key     </i></span>
+              </a>
+            </li>
+          
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/02.user_setup/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/">
+          <span>
+            
+              <b>2. </b>
+            
+             TOTP Setup
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+          
+          
+          
+            <li class="dd-item " data-nav-id="/02.user_setup/01.create_totp_factory/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/01.create_totp_factory/">
+                <span>TOTP Factory     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/02.user_setup/02.generate_totp_instance/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/02.generate_totp_instance/">
+                <span>Generate TOTP     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/02.user_setup/03.encrypt_serialize_totp/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/03.encrypt_serialize_totp/">
+                <span>Encrypt &amp; Serialize     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/02.user_setup/04.obtain_totp_key/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/04.obtain_totp_key/">
+                <span>TOTP Key     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/02.user_setup/05.share_key/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/05.share_key/">
+                <span>Share Key     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/02.user_setup/06.persist_key_to_db/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/06.persist_key_to_db/">
+                <span>Save Key     </i></span>
+              </a>
+            </li>
+          
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/03.userpass_login/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/03.userpass_login/">
+          <span>
+            
+              <b>3. </b>
+            
+             Step 1: UserPass Login
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/04.totp_login/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/04.totp_login/">
+          <span>
+            
+              <b>4. </b>
+            
+             Step 2: TOTP Login
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/05.rate_limiting/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/05.rate_limiting/">
+          <span>
+            
+              <b>5. </b>
+            
+             Rate Limiting
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/06.settings/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/">
+          <span>
+            
+              <b>6. </b>
+            
+             Settings
+            
+           </span>
+        </a>
+        
+        <ul>
+          
+          
+          
+          
+            <li class="dd-item " data-nav-id="/06.settings/01.dispatcher/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/01.dispatcher/">
+                <span>SMS Dispatcher     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/06.settings/02.totp_context/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/02.totp_context/">
+                <span>TOTP Context     </i></span>
+              </a>
+            </li>
+          
+          
+          
+            <li class="dd-item " data-nav-id="/06.settings/03.secrets/">
+              <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/03.secrets/">
+                <span>Secrets     </i></span>
+              </a>
+            </li>
+          
+          
+        </ul>
+        
+      </li>
+      
+      
+      
+
+      
+        
+      
+      
+      
+
+      <li class="dd-item  " data-nav-id="/07.references/">
+        <a href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/07.references/">
+          <span>
+            
+              <b>7. </b>
+            
+             References
+            
+           </span>
+        </a>
+        
+      </li>
+      
+      
+    </ul>
+    <hr>
+     
+    <section id="footer">
+    </section>
+  </div>
+</nav>
+
+        <section id="body">
+        <div id="overlay"></div>
+
+        <div class="padding highlightable">
+
+            <div id="top-bar">
+              
+              <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                  <span id="sidebar-toggle-span">
+                      <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                        <i class="fa fa-bars"></i>
+                      </a>
+                  </span>
+                
+                
+                
+                
+                  
+                
+                  
+                    
+                    
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                  
+                
+                <span itemprop="title"> Overview</span>
+              </div>
+              
+
+            </div>
+            
+              <div id="chapter">
+            
+    	        <div id="body-inner">
+                
+
+
+
+<h1 id="overview">Overview</h1>
+
+<h3 id="two-factor-authentication-using-time-based-one-time-passwords">Two-Factor Authentication using Time-based One Time Passwords</h3>
+
+<p><img src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/content/images/totp.jpg" alt="totp_logo" /></p>
+
+
+      
+        </div> 
+      
+      </div>
+    </div>
+
+    <div id="navigation">
+        
+        <a class="nav nav-next" href="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/01.totp_in_nutshell" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+    </div>
+
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/clipboard.min.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/perfect-scrollbar.min.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/perfect-scrollbar.jquery.min.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/jquery.sticky-kit.min.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/featherlight.min.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/html5shiv-printshiv.min.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/modernizr.custom.71422.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/learn.js"></script>
+    <script src="https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/js/hugo-learn.js"></script>
+    
+
+  </body>
+</html>
+

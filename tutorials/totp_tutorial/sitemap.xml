@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/</loc>
+    <lastmod>2016-11-21T15:03:12-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/</loc>
+    <lastmod>2016-11-21T15:03:12-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/</loc>
+    <lastmod>2016-11-20T12:19:18-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/01.totp_in_nutshell/</loc>
+    <lastmod>2016-11-20T12:50:29-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/02.passlib_totp/</loc>
+    <lastmod>2016-11-20T14:03:07-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/03.totp_sources/</loc>
+    <lastmod>2016-11-20T16:05:08-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/04.totp_token/</loc>
+    <lastmod>2016-11-20T14:04:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/01.overview/05.user_key/</loc>
+    <lastmod>2016-11-20T14:04:18-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/</loc>
+    <lastmod>2016-11-20T15:26:06-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/01.create_totp_factory/</loc>
+    <lastmod>2016-11-21T12:43:05-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/02.generate_totp_instance/</loc>
+    <lastmod>2016-11-21T12:42:58-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/03.encrypt_serialize_totp/</loc>
+    <lastmod>2016-11-21T12:42:52-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/04.obtain_totp_key/</loc>
+    <lastmod>2016-11-21T12:42:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/05.share_key/</loc>
+    <lastmod>2016-11-21T12:42:35-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/02.user_setup/06.persist_key_to_db/</loc>
+    <lastmod>2016-11-21T12:42:28-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/03.userpass_login/</loc>
+    <lastmod>2016-11-20T15:16:01-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/04.totp_login/</loc>
+    <lastmod>2016-11-20T15:16:11-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/05.rate_limiting/</loc>
+    <lastmod>2016-11-20T15:26:53-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/</loc>
+    <lastmod>2016-11-20T14:34:23-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/01.dispatcher/</loc>
+    <lastmod>2016-11-20T14:36:18-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/02.totp_context/</loc>
+    <lastmod>2016-11-21T10:46:52-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/06.settings/03.secrets/</loc>
+    <lastmod>2016-11-20T14:35:16-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://yosaiproject.github.io/yosai/tutorials/totp_tutorial/07.references/</loc>
+    <lastmod>2016-11-20T14:48:49-05:00</lastmod>
+  </url>
+  
+</urlset>
