@@ -8,8 +8,6 @@ weight = 13
 
 +++
 
-# TOTP Token Stores
-
 1. Secured USB Dongle: example [NitroKey](http://www.nitrokey.com)
 
 2. SMS Message:  See [Yosai's SMS Messaging Extension](https://github.com/YosaiProject/yosai_totp_sms)

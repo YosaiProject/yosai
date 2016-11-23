@@ -4,12 +4,11 @@ date = "2016-11-20T15:16:11-05:00"
 icon = "<b>4. </b>"
 next = "/05.rate_limiting"
 prev = "/03.userpass_login"
-title = "TOTP Login"
+title = "Step 2: TOTP Login"
 weight = 40
-
 +++
 
-# TOTP Authentication Step 2: Post-login Escalation
+## <center> Step 2: TOTP Login </center>
 
 If a user is configured for two-factor authentication and username/password
 is verified, Yosai signals to the calling application to collect 2FA information
@@ -29,20 +28,20 @@ to send information to the client.  One such implementation of an
 that SMS messages a client a newly-generated TOTP token (a 6-digit integer).
 The Dispatcher is called prior to raising the AdditionalAuthenticationRequired exception.
 
-![mfa_dispatcher](img/sms_totp_thumbnail.jpg)
+![mfa_dispatcher](img/totp_sms.png)
 
 
 
-## TOTP Authentication Step 3: TOTP Key Entry
+### TOTP Authentication Step 3: TOTP Key Entry
 
 Client is prompted to enter a TOTP token.  Client submits the requested
 totp token to the server, authenticating itself.
 
-![totp_token_login](img/totp_login.jpg)
+![totp_token_login](img/totp_token.png)
 
 
 
-### Server Second Authentication Request:  TOTPToken
+### Server-side Second Authentication Request:  TOTPToken
 
 ```python
     with Yosai.context(yosai):

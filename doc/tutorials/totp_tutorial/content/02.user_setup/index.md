@@ -8,9 +8,10 @@ title = "TOTP Setup"
 weight = 20
 +++
 
-# One-Time Password User Setup
+# TOTP User Setup
 
 You will perform the following steps to enable a user for TOTP second-factor authentication:
+
 - Create a TOTP Factory
 - Use the TOTP Factory to generate a new TOTP instance
 - Create an encrypted and json-serialized form of the TOTP instance

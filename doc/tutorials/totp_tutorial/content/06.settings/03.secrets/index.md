@@ -13,8 +13,6 @@ weight = 63
                 1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
 ```
 
-# An Application's TOTP Secrets
-
 ``secrets`` is a key/value store containing the secret key(s) used to encrypt/decrypt
 user-specific, private keys.  This secret is application-specific.  A secret key may change
 periodically based on an organization's security policy.  As the secret key

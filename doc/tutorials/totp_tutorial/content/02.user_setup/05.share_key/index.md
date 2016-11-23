@@ -6,15 +6,14 @@ title = "Share Key"
 toc = true
 weight = 25
 +++
-
-# Share the private totp key with the user.
-
 How or whether you share the private totp key with the user will depend on what
 facilities you want to support for TOTP authentication.  If you decide to
 use SMS-based TOTP authentication, you don't ever share the private key with the user.
 
-## Secure USB
-![nitrokey_usb](images/nitrokey_renderered.jpg)
+
+
+### 1. Secure USB
+![nitrokey_usb](images/nitrokey-rendered.jpg)
 
 If a user is using a USB dongle, such as a Nitrokey, the hardware is accompanied
 with management software that saves the private totp key to USB memory.  A user will copy/paste
@@ -25,7 +24,7 @@ To facilitate this method of storage, share the key as a string, either in base3
 ![nitrokey_reg](images/nitrokey_totp_registration.png)
 
 
-## QR Code
+### 2. QR Code
 
 ![qrcode](images/enable_twostep_qrcode.png)
 

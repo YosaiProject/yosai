@@ -7,8 +7,6 @@ toc = true
 weight = 21
 +++
 
-# Create a TOTP Factory
-
 Create a TOTP factory by passing ``create_totp_factory`` **either** an *env_var*
 **or** *file_path* keyword argument, just as you do when instantiating a Yosai instance.
 

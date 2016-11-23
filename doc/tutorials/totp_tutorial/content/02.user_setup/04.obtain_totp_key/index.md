@@ -6,9 +6,6 @@ title = "TOTP Key"
 toc = true
 weight = 24
 +++
-
-# Obtain the private totp key
-
 The TOTP instance can format the key in a few ways:  in base32, hex, or a
 "pretty" base32.
 

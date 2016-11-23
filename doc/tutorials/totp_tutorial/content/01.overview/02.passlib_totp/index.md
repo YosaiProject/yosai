@@ -8,7 +8,5 @@ weight = 12
 
 +++
 
-# Passlib TOTP
-
 Yosai uses Passlib's totp module, available as of passlib v1.7.  Information about
 this library are available from [passlib documentation](https://pythonhosted.org/passlib/)

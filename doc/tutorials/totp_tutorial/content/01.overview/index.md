@@ -9,6 +9,7 @@ weight = 10
 +++
 
 # Overview
-## Two-Factor Authentication using Time-based One Time Passwords
+
+### Two-Factor Authentication using Time-based One Time Passwords
 
 ![totp_logo](/content/images/totp.jpg)

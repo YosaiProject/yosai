@@ -6,10 +6,9 @@ next = "/06.settings"
 prev = "/04.totp_login"
 title = "Rate Limiting"
 weight = 50
-
 +++
 
-# Rate Limiting
+# <center> Rate Limiting </center>
 
 Yosai allows developers to regulate account authentication for any particular
 user account by defining a number of maximum allowable authentication attempts.

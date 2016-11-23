@@ -7,6 +7,6 @@ toc = true
 weight = 26
 +++
 
-# Persist the encrypted, serialized TOTP key to long term storage (database)
+### Persist the encrypted, serialized TOTP key to long term storage (database)
 
 ![secure_db](images/secure_database.png)

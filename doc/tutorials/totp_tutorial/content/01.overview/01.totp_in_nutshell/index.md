@@ -8,8 +8,6 @@ weight = 11
 
 +++
 
-# TOTP In a Nutshell
-
 Step 1:  A user submits an N-digit TOTP token to the application
 
 

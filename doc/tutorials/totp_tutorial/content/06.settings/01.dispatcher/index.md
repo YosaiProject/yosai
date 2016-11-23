@@ -12,6 +12,4 @@ weight = 61
         mfa_dispatcher: yosai_totp_sms.SMSDispatcher
 ```
 
-# The MFA Dispatcher
-
 In the example above, an SMS-based dispatcher is configured for the ``mfa_dispatcher``.

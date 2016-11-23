@@ -7,9 +7,6 @@ toc = true
 weight = 22
 
 +++
-
-# Use the TOTP Factory to generate a new TOTP instance
-
 Generate a new TOTP instance for a user by calling TOTPFactory.new().
 
 ```python
