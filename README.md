@@ -28,17 +28,20 @@ and writing adapters for each specific type of client.
 
 # Key Features
 
-- Enables Role-Based Access Control Policies
-- Native Support for Caching, Including Serialization
+- Enables Role-Based Access Control policies through permission-level and role-level
+  access control
+- Two-Factor Authentication using Time-based One-Time Passwords
+- Native Support for Caching and Serialization
 - A Complete Audit Trail of Events
 - Batteries Included:  Extensions Ready for Use
 - "RunAs" Administration Tool
 - Event-driven Processing
 - Ready for Web Integration
 
+
 ## Python 3 Supported
 
-Yosai v0.2.0 requires Python 3.4 or newer. There are no plans to support python2
+Yosai requires Python 3.4 or newer. There are no plans to support python2
 due to anticipated optimizations that require newer versions of python.
 
 
@@ -51,7 +54,7 @@ Installing from PyPI, using pip, will install the project package that includes
 ``yosai.core`` and ``yosai.web``, a default configuration, and project dependencies.
 
 
-## Authentication Example
+## Basic Authentication:  UsernamePassword
 ```Python
 yosai = Yosai(env_var='YOSAI_SETTINGS')
 
@@ -66,6 +69,48 @@ with Yosai.context(yosai):
     except AuthenticationException:
         # insert here
 ```
+
+
+## Two-Factor Authentication:  UsernamePassword and TOTP
+
+### 2FA Step 1:  UsernamePassword
+```Python
+yosai = Yosai(env_var='YOSAI_SETTINGS')
+
+
+with Yosai.context(yosai):
+    current_user = Yosai.get_current_subject()
+
+    userpass_token = UsernamePasswordToken(username='thedude',
+                                        credentials='letsgobowling')
+
+    try:
+        current_user.login(userpass_token)
+    except AdditionalAuthenticationRequired: 
+        # communicate a two-factor token request to user         
+    except IncorrectCredentialsException: 
+        # user failed to authenticate 
+```
+
+
+### 2FA Step 2:  TOTP
+
+```Python
+yosai = Yosai(env_var='YOSAI_SETTINGS')
+
+
+with Yosai.context(yosai):
+    current_user = Yosai.get_current_subject()
+
+    totp_token = TOTPToken(user_provided_token) 
+
+    try:
+        current_user.login(totp_token)
+    except IncorrectCredentialsException: 
+        # user failed to authenticate 
+
+```
+
 
 ## Authorization Example
 
@@ -131,22 +176,18 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
-Yosai v0.3 dev and testing is nearly finished.  Documentation is basically all that remains,
-except for minor expected modifications to PasslibVerifier.
+Yosai v0.3 was released Nov 25, 2016. 
 
 This release includes:
-1) Configurable rate limiting / account locking
-2) General support for second factor authentication (2FA)
-3) A complete time-based one time password authentication solution (TOTP)
-4) Significant refactoring to achieve pythonic design
+1) General support for second factor authentication (2FA)
+2) A complete time-based one time password authentication solution (TOTP)
+3) Configurable rate limiting / account locking
+4) Significant refactoring / optimizatio
 
-See the master branch for detail.
-
-The latest pypi release for Yosai, v0.2, was made 09/01/2016.
 Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/)
 for details about that release.
 
-v0.2 test coverage stats (ao 09/01/2016):
+v0.3 test coverage stats (ao 11/25/2016):
 
 |Name                                        |Stmt|Miss |Cover |
 |:-------------------------------------------|:----:|:-----:|:------:|
@@ -190,9 +231,7 @@ Google Groups Mailing List:  https://groups.google.com/d/forum/yosai
 
 
 # CONTACT INFORMATION
-If you would like to get involved, please contact me by:
-- emailing dkcdkg at gmail
-- finding me on Freenode under the nickname dowwie
+Darin Gordon is the author of Yosai  http://www.daringordon.com
 
 
 # LICENSE
