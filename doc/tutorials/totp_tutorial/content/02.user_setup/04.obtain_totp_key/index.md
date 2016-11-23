@@ -1,8 +1,8 @@
 +++
 date = "2016-11-21T12:42:42-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "Obtain TOTP Key"
+next = "/02.user_setup/05.share_key"
+prev = "/02.user_setup/03.encrypt_serialize_totp"
+title = "TOTP Key"
 toc = true
 weight = 24
 +++

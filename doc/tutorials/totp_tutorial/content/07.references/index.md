@@ -1,11 +1,10 @@
 +++
 chapter = true
 date = "2016-11-20T14:48:49-05:00"
-icon = "<b>X. </b>"
-next = "/next/path"
-prev = "/prev/path"
+icon = "<b>7. </b>"
+prev = "/06.settings/03.secrets"
 title = "References"
-weight = 70 
+weight = 70
 +++
 
 # References

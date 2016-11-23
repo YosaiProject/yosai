@@ -1,10 +1,10 @@
 +++
 date = "2016-11-20T14:04:10-05:00"
-next = "/next/path"
-prev = "/prev/path"
+next = "/01.overview/05.user_key"
+prev = "/01.overview/03.totp_sources"
 title = "TOTP Token"
 toc = true
-weight = 14 
+weight = 14
 +++
 
 # The TOTP Token

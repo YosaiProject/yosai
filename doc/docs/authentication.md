@@ -240,6 +240,11 @@ to signal that authentication has failed due to an incorrect token provided by
 the user.  If tokens match, control is returned to the application calling Yosai.
 
 
+## TOTP Tutorial
+
+To learn how to use TOTP in your project, see the [TOTP Tutorial](http://yosaiproject.github.io/yosai/tutorials/totp_tutorial)
+
+
 ## Rate Limiting / Account Locking (Throttling)
 
 Yosai allows developers to regulate account authentication for any particular

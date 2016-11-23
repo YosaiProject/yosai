@@ -1,10 +1,10 @@
 +++
 date = "2016-11-21T12:42:35-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "Share TOTP Key"
+next = "/02.user_setup/06.persist_key_to_db"
+prev = "/02.user_setup/04.obtain_totp_key"
+title = "Share Key"
 toc = true
-weight = 25 
+weight = 25
 +++
 
 # Share the private totp key with the user.

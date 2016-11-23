@@ -1,11 +1,10 @@
 +++
 date = "2016-11-20T14:04:18-05:00"
-next = "/next/path"
-prev = "/prev/path"
+next = "/02.user_setup"
+prev = "/01.overview/04.totp_token"
 title = "User-Specific Key"
 toc = true
-weight = 15 
-
+weight = 15
 +++
 
 # The User-Specific Private Key

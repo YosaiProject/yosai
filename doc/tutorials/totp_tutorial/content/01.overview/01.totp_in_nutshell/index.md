@@ -1,7 +1,7 @@
 +++
 date = "2016-11-20T12:50:29-05:00"
-next = "/next/path"
-prev = "/prev/path"
+next = "/01.overview/02.passlib_totp"
+prev = "/01.overview"
 title = "TOTP In a Nutshell"
 toc = true
 weight = 11

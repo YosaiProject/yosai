@@ -1,11 +1,11 @@
 +++
 chapter = true
 date = "2016-11-20T14:34:23-05:00"
-icon = "<b>X. </b>"
-next = "/next/path"
-prev = "/prev/path"
+icon = "<b>6. </b>"
+next = "/06.settings/01.dispatcher"
+prev = "/05.rate_limiting"
 title = "Settings"
-weight = 60 
+weight = 60
 +++
 
 # Yosai Settings

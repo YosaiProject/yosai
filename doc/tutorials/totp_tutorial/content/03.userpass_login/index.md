@@ -1,9 +1,9 @@
 +++
 chapter = true
 date = "2016-11-20T15:16:01-05:00"
-icon = "<b>X. </b>"
-next = "/next/path"
-prev = "/prev/path"
+icon = "<b>3. </b>"
+next = "/04.totp_login"
+prev = "/02.user_setup/06.persist_key_to_db"
 title = "UserPass Login"
 weight = 30
 

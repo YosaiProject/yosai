@@ -1,10 +1,10 @@
 +++
 date = "2016-11-21T10:46:52-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "index"
+next = "/06.settings/03.secrets"
+prev = "/06.settings/01.dispatcher"
+title = "TOTP Context"
 toc = true
-weight = 62 
+weight = 62
 
 +++
 

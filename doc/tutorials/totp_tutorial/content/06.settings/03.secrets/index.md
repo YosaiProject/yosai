@@ -1,10 +1,10 @@
 +++
 date = "2016-11-20T14:35:16-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "index"
+next = "/07.references"
+prev = "/06.settings/02.totp_context"
+title = "Secrets"
 toc = true
-weight = 63 
+weight = 63
 +++
 
 ```yaml

@@ -2,8 +2,7 @@
 chapter = true
 date = "2016-11-20T12:19:18-05:00"
 icon = "<b>1. </b>"
-next = "/next/path"
-prev = "/prev/path"
+next = "/01.overview/01.totp_in_nutshell"
 title = "Overview"
 weight = 10
 

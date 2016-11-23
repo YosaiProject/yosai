@@ -1,7 +1,7 @@
 +++
 date = "2016-11-20T16:05:08-05:00"
-next = "/next/path"
-prev = "/prev/path"
+next = "/01.overview/04.totp_token"
+prev = "/01.overview/02.passlib_totp"
 title = "Token Stores"
 toc = true
 weight = 13

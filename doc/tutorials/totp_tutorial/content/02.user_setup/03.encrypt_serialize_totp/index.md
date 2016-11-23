@@ -1,8 +1,8 @@
 +++
 date = "2016-11-21T12:42:52-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "Encrypted, Serialized TOTP"
+next = "/02.user_setup/04.obtain_totp_key"
+prev = "/02.user_setup/02.generate_totp_instance"
+title = "Encrypt & Serialize"
 toc = true
 weight = 23
 

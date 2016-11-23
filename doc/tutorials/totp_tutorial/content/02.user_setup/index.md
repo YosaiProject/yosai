@@ -1,11 +1,11 @@
 +++
 chapter = true
 date = "2016-11-20T15:26:06-05:00"
-icon = "<b>X. </b>"
-next = "/next/path"
-prev = "/prev/path"
+icon = "<b>2. </b>"
+next = "/02.user_setup/01.create_totp_factory"
+prev = "/01.overview/05.user_key"
 title = "TOTP Setup"
-weight = 20 
+weight = 20
 +++
 
 # One-Time Password User Setup

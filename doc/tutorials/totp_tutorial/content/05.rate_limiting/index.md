@@ -1,11 +1,11 @@
 +++
 chapter = true
 date = "2016-11-20T15:26:53-05:00"
-icon = "<b>X. </b>"
-next = "/next/path"
-prev = "/prev/path"
+icon = "<b>5. </b>"
+next = "/06.settings"
+prev = "/04.totp_login"
 title = "Rate Limiting"
-weight = 50 
+weight = 50
 
 +++
 

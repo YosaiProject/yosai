@@ -1,10 +1,10 @@
 +++
 date = "2016-11-21T12:43:05-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "Create TOTP Factory"
+next = "/02.user_setup/02.generate_totp_instance"
+prev = "/02.user_setup"
+title = "TOTP Factory"
 toc = true
-weight = 21 
+weight = 21
 +++
 
 # Create a TOTP Factory

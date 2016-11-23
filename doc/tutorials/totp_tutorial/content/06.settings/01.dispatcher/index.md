@@ -1,10 +1,10 @@
 +++
 date = "2016-11-20T14:36:18-05:00"
-next = "/next/path"
-prev = "/prev/path"
-title = "index"
+next = "/06.settings/02.totp_context"
+prev = "/06.settings"
+title = "SMS Dispatcher"
 toc = true
-weight = 61 
+weight = 61
 +++
 
 ```yaml

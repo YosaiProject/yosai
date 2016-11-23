@@ -1,11 +1,11 @@
 +++
 chapter = true
 date = "2016-11-20T15:16:11-05:00"
-icon = "<b>X. </b>"
-next = "/next/path"
-prev = "/prev/path"
+icon = "<b>4. </b>"
+next = "/05.rate_limiting"
+prev = "/03.userpass_login"
 title = "TOTP Login"
-weight = 40 
+weight = 40
 
 +++
 
