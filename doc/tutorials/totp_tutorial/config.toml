@@ -1,14 +1,14 @@
-baseurl = "https://yosaiproject.github.io/"
+baseurl = "https://yosaiproject.github.io/yosai/tutorials/totp_tutorial"
 name = "Yosai"
 license = "Apache"
 licenselink = "https://github.com/YosaiProject/yosai/blob/master/LICENSE"
 description = "Tutorials for the Yosai security framework"
-homepage = "https://yosaiproject.github.io/yosai"
+homepage = "https://yosaiproject.github.io/yosai/tutorials/totp_tutorial"
 tags = ["documentation", "tutorial", "yosai", "security"]
 features = ["documentation"]
 min_version = 0.3
 theme = "hugo-theme-learn"
-canonifyURLs = false 
+canonifyURLs = true 
 
 [author]
   name = "Darin Gordon"

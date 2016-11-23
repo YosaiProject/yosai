@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>06.settings on </title>
+    <link>https://yosaiproject.github.io/06/index.settings/</link>
+    <description>Recent content in 06.settings on </description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sun, 20 Nov 2016 14:34:23 -0500</lastBuildDate>
+    <atom:link href="https://yosaiproject.github.io/06.settings/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Settings</title>
+      <link>https://yosaiproject.github.io/06.settings/</link>
+      <pubDate>Sun, 20 Nov 2016 14:34:23 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/06.settings/</guid>
+      <description>
+
+&lt;h1 id=&#34;yosai-settings&#34;&gt;Yosai Settings&lt;/h1&gt;
+
+&lt;p&gt;You can&amp;rsquo;t two-factor authenticate using TOTP without configuring Yosai to support it.&lt;/p&gt;
+
+&lt;p&gt;All of Yosai&amp;rsquo;s configuration resides within a single yaml-formatted settings file.&lt;/p&gt;
+
+&lt;p&gt;Include a &lt;code&gt;totp&lt;/code&gt; section within the &lt;code&gt;AUTHC_CONFIG&lt;/code&gt; section of this file like
+so:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;AUTHC_CONFIG:
+
+    ...
+
+    totp:
+        mfa_dispatcher: yosai_totp_sms.SMSDispatcher
+        context:
+            secrets:
+                1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SMS Dispatcher</title>
+      <link>https://yosaiproject.github.io/06.settings/01.dispatcher/</link>
+      <pubDate>Sun, 20 Nov 2016 14:36:18 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/06.settings/01.dispatcher/</guid>
+      <description>&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;    totp:
+        mfa_dispatcher: yosai_totp_sms.SMSDispatcher
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In the example above, an SMS-based dispatcher is configured for the &lt;code&gt;mfa_dispatcher&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TOTP Context</title>
+      <link>https://yosaiproject.github.io/06.settings/02.totp_context/</link>
+      <pubDate>Mon, 21 Nov 2016 10:46:52 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/06.settings/02.totp_context/</guid>
+      <description>&lt;p&gt;A TOTP instance can be initialized using a number of arguments that are passed
+during TOTP Factory initialization.  Customizing configuration is entirely optional.
+The default values defined within passlib will likely address your needs.&lt;/p&gt;
+
+&lt;p&gt;Yosai currently supports the following attributes within the &amp;ldquo;totp -&amp;gt; context&amp;rdquo;
+settings section of the Yosai yaml settings file.  Below is the context config
+that comes packaged with Yosai.  As you can see, only secrets is defined within
+context, enabling use of passlib.totp&amp;rsquo;s default values.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;    totp:
+        context:
+            secrets:
+                1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This is what a hypothetical configuration looks like if you were to use the
+default configuration defined within passlib.totp:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;        context:
+            digits: 6
+            alg: sha1
+            period: 30
+            label: token_label_123
+            issuer: my_application_name
+            secrets:
+                1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;secrets&lt;/code&gt; is the only dict.  The other attributes are simple key/values:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;digits&lt;/code&gt;:  The number of digits (length) of the the TOTP token, where 6 &amp;lt; len(digits) &amp;lt; 10  and default is 6&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;alg&lt;/code&gt;:  Name of hash algorithm to use. Defaults to &lt;code&gt;&amp;quot;sha1&amp;quot;&lt;/code&gt;. &lt;code&gt;&amp;quot;sha256&amp;quot;&lt;/code&gt; and &lt;code&gt;&amp;quot;sha512&amp;quot;&lt;/code&gt; are also accepted, per :rfc:&lt;code&gt;6238&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;period&lt;/code&gt;:  The number of seconds per counter step, defaults to 30 seconds&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;label&lt;/code&gt;: Label to associate with this token when generating a URI.  It is displayed to a user by most OTP client applications (e.g. Google Authenticator), and typically has format such as &lt;code&gt;&amp;quot;John Smith&amp;quot;&lt;/code&gt; or &lt;code&gt;&amp;quot;jsmith@webservice.example.org&amp;quot;&lt;/code&gt;. Defaults to &lt;code&gt;None&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;issuer&lt;/code&gt;: String identifying the token issuer (e.g. the domain name of your service). Used internally by some OTP client applications (e.g. Google Authenticator) to distinguish entries which otherwise have the same label. Optional but strongly recommended if you&amp;rsquo;re rendering to a URI. Defaults to &lt;code&gt;None&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Secrets</title>
+      <link>https://yosaiproject.github.io/06.settings/03.secrets/</link>
+      <pubDate>Sun, 20 Nov 2016 14:35:16 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/06.settings/03.secrets/</guid>
+      <description>&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;        context:
+            secrets:
+                1479568656:  9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;secrets&lt;/code&gt; is a key/value store containing the secret key(s) used to encrypt/decrypt
+user-specific, private keys.  This secret is application-specific.  A secret key may change
+periodically based on an organization&amp;rsquo;s security policy.  As the secret key
+changes, old secrets are kept in the &lt;code&gt;secrets&lt;/code&gt; store so to support any user key encrypted
+using an old secret.  The key used in the example below is a unix-epoch timestamp.
+You can use whatever value you&amp;rsquo;d like for a key, but a unix epoch timestamp is a
+good choice because it can tell anyone looking at the settings when the secret was
+last generated.  The secrets key is stored with every user-specific private key
+in storage so that Yosai will know which secret value was used to encrypt.&lt;/p&gt;
+
+&lt;p&gt;It&amp;rsquo;s easy to generate the current unix epoch using the time module from the
+standard library.  To generate a secret key, use the &amp;ldquo;secret generator&amp;rdquo; from passlib.totp:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;In [1]: import time
+
+In [2]: from passlib.totp import generate_secret
+
+In [3]: generate_secret()
+Out[3]: &#39;9xEF7DRojqkJLUENWmOoF3ZCWz3kFHylDCES92dSvYV&#39;
+
+In [4]: int(time.time())
+Out[4]: 1479569669
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

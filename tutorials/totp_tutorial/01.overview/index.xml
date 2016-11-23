@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>01.overviews on </title>
+    <link>https://yosaiproject.github.io/01/index.overview/</link>
+    <description>Recent content in 01.overviews on </description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sun, 20 Nov 2016 12:19:18 -0500</lastBuildDate>
+    <atom:link href="https://yosaiproject.github.io/01.overview/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Overview</title>
+      <link>https://yosaiproject.github.io/01.overview/</link>
+      <pubDate>Sun, 20 Nov 2016 12:19:18 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/01.overview/</guid>
+      <description>
+
+&lt;h1 id=&#34;overview&#34;&gt;Overview&lt;/h1&gt;
+
+&lt;h3 id=&#34;two-factor-authentication-using-time-based-one-time-passwords&#34;&gt;Two-Factor Authentication using Time-based One Time Passwords&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://yosaiproject.github.io/content/images/totp.jpg&#34; alt=&#34;totp_logo&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TOTP In a Nutshell</title>
+      <link>https://yosaiproject.github.io/01.overview/01.totp_in_nutshell/</link>
+      <pubDate>Sun, 20 Nov 2016 12:50:29 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/01.overview/01.totp_in_nutshell/</guid>
+      <description>&lt;p&gt;Step 1:  A user submits an N-digit TOTP token to the application&lt;/p&gt;
+
+&lt;p&gt;Step 2: The application generates its own TOTP token and compares it with that
+provided by the user.  If the tokens match, TOTP authentication is successful.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Passlib TOTP</title>
+      <link>https://yosaiproject.github.io/01.overview/02.passlib_totp/</link>
+      <pubDate>Sun, 20 Nov 2016 14:03:07 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/01.overview/02.passlib_totp/</guid>
+      <description>&lt;p&gt;Yosai uses Passlib&amp;rsquo;s totp module, available as of passlib v1.7.  Information about
+this library are available from &lt;a href=&#34;https://pythonhosted.org/passlib/&#34;&gt;passlib documentation&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Token Stores</title>
+      <link>https://yosaiproject.github.io/01.overview/03.totp_sources/</link>
+      <pubDate>Sun, 20 Nov 2016 16:05:08 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/01.overview/03.totp_sources/</guid>
+      <description>&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;Secured USB Dongle: example &lt;a href=&#34;http://www.nitrokey.com&#34;&gt;NitroKey&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;SMS Message:  See &lt;a href=&#34;https://github.com/YosaiProject/yosai_totp_sms&#34;&gt;Yosai&amp;rsquo;s SMS Messaging Extension&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;a href=&#34;https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;amp;hl=en&#34;&gt;Google Authenticator&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TOTP Token</title>
+      <link>https://yosaiproject.github.io/01.overview/04.totp_token/</link>
+      <pubDate>Sun, 20 Nov 2016 14:04:10 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/01.overview/04.totp_token/</guid>
+      <description>&lt;p&gt;A TOTP token is a N-digit string, usually 6 digits in length, that can be used only
+once for authentication and within a very short time window (+-30 seconds from now).
+The TOTP token is generated from a private key &amp;ndash; a uniquely generated hash &amp;ndash; that
+is shared between the user and application.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;img/totp_token.png&#34; alt=&#34;totp_token&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>User-Specific Key</title>
+      <link>https://yosaiproject.github.io/01.overview/05.user_key/</link>
+      <pubDate>Sun, 20 Nov 2016 14:04:18 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/01.overview/05.user_key/</guid>
+      <description>&lt;p&gt;Each user gets its own unique, private key.  This key is a 40+ character hash that
+is shared between the user and application, except for sms-based totp authc.
+The application keeps this key stored in a database in encrypted form.  The user
+keeps this key stored in a protected, secure &amp;ldquo;space&amp;rdquo;.  This secure &amp;ldquo;space&amp;rdquo; typically
+is a security-hardened USB dongle, such as a NitroKey, or a secure space on a mobile
+phone accessible by an application such as GoogleAuthenticator.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; totp.base32_key
+&#39;HXTRYI7EPSX3LVQ2EPCFQSYJIHENTG5T&#39;
+
+&amp;gt;&amp;gt;&amp;gt; totp.pretty_key()
+&#39;HXTR-YI7E-PSX3-LVQ2-EPCF-QSYJ-IHEN-TG5T&#39;
+
+&amp;gt;&amp;gt;&amp;gt; totp.hex_key
+&#39;3de71c23e47cafb5d61a23c4584b0941c8d99bb3&#39;
+
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

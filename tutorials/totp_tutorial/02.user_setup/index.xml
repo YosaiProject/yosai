@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>02.user_setups on </title>
+    <link>https://yosaiproject.github.io/02/index.user_setup/</link>
+    <description>Recent content in 02.user_setups on </description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sun, 20 Nov 2016 15:26:06 -0500</lastBuildDate>
+    <atom:link href="https://yosaiproject.github.io/02.user_setup/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>TOTP Setup</title>
+      <link>https://yosaiproject.github.io/02.user_setup/</link>
+      <pubDate>Sun, 20 Nov 2016 15:26:06 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/</guid>
+      <description>
+
+&lt;h1 id=&#34;totp-user-setup&#34;&gt;TOTP User Setup&lt;/h1&gt;
+
+&lt;p&gt;You will perform the following steps to enable a user for TOTP second-factor authentication:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Create a TOTP Factory&lt;/li&gt;
+&lt;li&gt;Use the TOTP Factory to generate a new TOTP instance&lt;/li&gt;
+&lt;li&gt;Create an encrypted and json-serialized form of the TOTP instance&lt;/li&gt;
+&lt;li&gt;Obtain the private totp key&lt;/li&gt;
+&lt;li&gt;Share the private totp key with the user&lt;/li&gt;
+&lt;li&gt;Persist the encrypted, serialize TOTP key to long term storage (database)&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TOTP Factory</title>
+      <link>https://yosaiproject.github.io/02.user_setup/01.create_totp_factory/</link>
+      <pubDate>Mon, 21 Nov 2016 12:43:05 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/01.create_totp_factory/</guid>
+      <description>&lt;p&gt;Create a TOTP factory by passing &lt;code&gt;create_totp_factory&lt;/code&gt; &lt;strong&gt;either&lt;/strong&gt; an &lt;em&gt;env_var&lt;/em&gt;
+&lt;strong&gt;or&lt;/strong&gt; &lt;em&gt;file_path&lt;/em&gt; keyword argument, just as you do when instantiating a Yosai instance.&lt;/p&gt;
+
+&lt;div class=&#34;notices warning&#34; &gt;&lt;p&gt;It is important that the application creating TOTP instances uses the same configuration as Yosai to verify tokens.&lt;/p&gt;
+&lt;/div&gt;
+
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; from yosai.core import create_totp_factory
+
+# you can pass EITHER an environment_variable OR filepath:
+&amp;gt;&amp;gt;&amp;gt; TOTPFactory = create_totp_factory(env_var=&#39;YOSAI_SETTINGS&#39;)
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Generate TOTP</title>
+      <link>https://yosaiproject.github.io/02.user_setup/02.generate_totp_instance/</link>
+      <pubDate>Mon, 21 Nov 2016 12:42:58 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/02.generate_totp_instance/</guid>
+      <description>&lt;p&gt;Generate a new TOTP instance for a user by calling TOTPFactory.new().&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; totp = TOTPFactory.new()
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Encrypt &amp; Serialize</title>
+      <link>https://yosaiproject.github.io/02.user_setup/03.encrypt_serialize_totp/</link>
+      <pubDate>Mon, 21 Nov 2016 12:42:52 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/03.encrypt_serialize_totp/</guid>
+      <description>&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; totp.to_json()
+&#39;{&amp;quot;enckey&amp;quot;:{&amp;quot;c&amp;quot;:14,&amp;quot;k&amp;quot;:&amp;quot;FENAUW5P6VICNS6C2ODIMJT7QNJMN2RU&amp;quot;,&amp;quot;s&amp;quot;:&amp;quot;G5TMYOMHODXB2Q3IBWQQ&amp;quot;,&amp;quot;t&amp;quot;:&amp;quot;1479726717783&amp;quot;,&amp;quot;v&amp;quot;:1},&amp;quot;type&amp;quot;:&amp;quot;totp&amp;quot;,&amp;quot;v&amp;quot;:1}&#39;
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TOTP Key</title>
+      <link>https://yosaiproject.github.io/02.user_setup/04.obtain_totp_key/</link>
+      <pubDate>Mon, 21 Nov 2016 12:42:42 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/04.obtain_totp_key/</guid>
+      <description>&lt;p&gt;The TOTP instance can format the key in a few ways:  in base32, hex, or a
+&amp;ldquo;pretty&amp;rdquo; base32.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; totp.base32_key
+&#39;HXTRYI7EPSX3LVQ2EPCFQSYJIHENTG5T&#39;
+
+&amp;gt;&amp;gt;&amp;gt; totp.hex_key
+&#39;3de71c23e47cafb5d61a23c4584b0941c8d99bb3&#39;
+
+&amp;gt;&amp;gt;&amp;gt; totp.pretty_key()
+&#39;HXTR-YI7E-PSX3-LVQ2-EPCF-QSYJ-IHEN-TG5T&#39;
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Share Key</title>
+      <link>https://yosaiproject.github.io/02.user_setup/05.share_key/</link>
+      <pubDate>Mon, 21 Nov 2016 12:42:35 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/05.share_key/</guid>
+      <description>
+
+&lt;p&gt;How or whether you share the private totp key with the user will depend on what
+facilities you want to support for TOTP authentication.  If you decide to
+use SMS-based TOTP authentication, you don&amp;rsquo;t ever share the private key with the user.&lt;/p&gt;
+
+&lt;h3 id=&#34;1-secure-usb&#34;&gt;1. Secure USB&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&#34;images/nitrokey-rendered.jpg&#34; alt=&#34;nitrokey_usb&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;If a user is using a USB dongle, such as a Nitrokey, the hardware is accompanied
+with management software that saves the private totp key to USB memory.  A user will copy/paste
+the key into the software&amp;rsquo;s interface and save the record to memory.
+&lt;img src=&#34;images/enable_twostep_authc.png&#34; alt=&#34;base32_key&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;To facilitate this method of storage, share the key as a string, either in base32 or hex format.
+&lt;img src=&#34;images/nitrokey_totp_registration.png&#34; alt=&#34;nitrokey_reg&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;2-qr-code&#34;&gt;2. QR Code&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&#34;images/enable_twostep_qrcode.png&#34; alt=&#34;qrcode&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;If a user is using a mobile application, such as Google Authenticator, the
+application can read the private key as a QR code.  &lt;code&gt;passlib.totp&lt;/code&gt; facilitates
+QR code generation.  Consult &lt;a href=&#34;https://passlib.readthedocs.io/en/latest/narr/totp-tutorial.html#rendering-uris&#34;&gt;its documentation&lt;/a&gt; to learn how.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Save Key</title>
+      <link>https://yosaiproject.github.io/02.user_setup/06.persist_key_to_db/</link>
+      <pubDate>Mon, 21 Nov 2016 12:42:28 -0500</pubDate>
+      
+      <guid>https://yosaiproject.github.io/02.user_setup/06.persist_key_to_db/</guid>
+      <description>
+
+&lt;h3 id=&#34;persist-the-encrypted-serialized-totp-key-to-long-term-storage-database&#34;&gt;Persist the encrypted, serialized TOTP key to long term storage (database)&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&#34;images/secure_database.png&#34; alt=&#34;secure_db&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
