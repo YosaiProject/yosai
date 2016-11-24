@@ -16,6 +16,7 @@ from yosai.core import (
     SimpleIdentifierCollection,
     UsernamePasswordToken,
     TOTPToken,
+    create_totp_factory,
     event_bus,
 )
 
@@ -512,11 +513,9 @@ def test_verify_credentials_noresult_raises_incorrect(
 @mock.patch.object(TOTP, 'using')
 def test_create_totp_factory(totp_using, passlib_verifier):
     totp_using.return_value = 'factory'
-    pv = passlib_verifier
     mock_settings = mock.MagicMock()
-
-    result = pv.create_totp_factory(mock_settings)
+    mock_settings.totp_context = {'secrets': {'one': 'one'}}
+    result = create_totp_factory(authc_settings=mock_settings)
 
     assert result == 'factory'
-    totp_using.assert_called_once_with(secrets=mock_settings.totp_secrets,
-                                       issuer=mock_settings.totp_issuer)
+    totp_using.assert_called_once_with(secrets={'one': 'one'})

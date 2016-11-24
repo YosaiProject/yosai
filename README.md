@@ -176,7 +176,7 @@ Like the words, the frameworks are similar yet different.
 
 # Development Status
 
-Yosai v0.3 was released Nov 25, 2016. 
+Yosai v0.3 was released Nov 24, 2016. 
 
 This release includes:
 1) General support for second factor authentication (2FA)
@@ -187,44 +187,41 @@ This release includes:
 Please see the [release notes](https://yosaiproject.github.io/yosai/devstatus/)
 for details about that release.
 
-v0.3 test coverage stats (ao 11/25/2016):
+v0.3 test coverage stats (ao 11/24/2016):
 
-|Name                                        |Stmt|Miss |Cover |
-|:-------------------------------------------|:----:|:-----:|:------:|
-yosai/core/account/account                   |  25|    1|    96%
-yosai/core/authc/authc                       | 168|   16|    90%
-yosai/core/authc/authc_account               |  58|    8|    86%
-yosai/core/authc/authc_settings              |  11|    1|    91%
-yosai/core/authc/context                     |  24|    1|    96%
-yosai/core/authc/credential                  |  62|    7|    89%
-yosai/core/authc/strategy                    |  96|    6|    94%
-yosai/core/authz/authz                       | 351|   26|    93%
-yosai/core/concurrency/concurrency           |  16|    4|    75%
-yosai/core/conf/yosaisettings                |  60|    7|    88%
-yosai/core/event/event                       | 120|    0|   100%
-yosai/core/exceptions                        | 181|    1|    99%
-yosai/core/logging/formatters                |  35|    0|   100%
-yosai/core/logging/slogging                  |   5|    0|   100%
-yosai/core/mgt/mgt                           | 388|    6|    98%
-yosai/core/mgt/mgt_settings                  |  29|    1|    97%
-yosai/core/realm/realm                       | 155|    6|    96%
-yosai/core/serialize/marshalling             |  14|    8|    43%
-yosai/core/serialize/serialize               |  24|    0|   100%
-yosai/core/serialize/serializers/cbor        |  53|    3|    94%
-yosai/core/serialize/serializers/json        |  56|   41|    27%
-yosai/core/serialize/serializers/msgpack     |  49|   29|    41%
-yosai/core/session/session                   | 750|   68|    91%
-yosai/core/session/session_gen               |  10|    0|   100%
-yosai/core/session/session_settings          |  13|    1|    92%
-yosai/core/subject/identifier                |  60|    3|    95%
-yosai/core/subject/subject                   | 525|   21|    96%
-yosai/core/utils/utils                       | 137|   78|    43%
-yosai/web/exceptions                         |   7|    0|   100%
-yosai/web/mgt/mgt                            |  89|    0|   100%
-yosai/web/registry/registry_settings         |   5|    0|   100%
-yosai/web/session/session                    | 202|    1|    99%
-yosai/web/subject/subject                    | 188|    3|    98%
-|--------------------------------------------|----|-----|------|
+|Name                                         |Stmt |Miss|Cover |
+|:---------------------------------------------|:-----:|:----:|:------:|
+| yosai/core/account/account.py               | 5   | 1  | 80%  |
+| yosai/core/authc/authc.py                   | 196 | 33 | 83%  |
+| yosai/core/authc/authc_settings.py          | 19  | 2  | 89%  |
+| yosai/core/authc/credential.py              | 51  | 5  | 90%  |
+| yosai/core/authc/strategy.py                | 40  | 0  | 100% |
+| yosai/core/authz/authz.py                   | 199 | 28 | 86%  |
+| yosai/core/concurrency/concurrency.py       | 16  | 4  | 75%  |
+| yosai/core/conf/yosaisettings.py            | 59  | 7  | 88%  |
+| yosai/core/event/event.py                   | 28  | 0  | 100% |
+| yosai/core/exceptions.py                    | 40  | 0  | 100% |
+| yosai/core/logging/formatters.py            | 35  | 0  | 100% |
+| yosai/core/logging/slogging.py              | 5   | 0  | 100% |
+| yosai/core/mgt/mgt.py                       | 285 | 5  | 98%  |
+| yosai/core/mgt/mgt_settings.py              | 37  | 2  | 95%  |
+| yosai/core/realm/realm.py                   | 186 | 11 | 94%  |
+| yosai/core/serialize/marshalling.py         | 14  | 8  | 43%  |
+| yosai/core/serialize/serialize.py           | 24  | 0  | 100% |
+| yosai/core/serialize/serializers/cbor.py    | 53  | 3  | 94%  |
+| yosai/core/serialize/serializers/json.py    | 56  | 41 | 27%  |
+| yosai/core/serialize/serializers/msgpack.py | 49  | 29 | 41%  |
+| yosai/core/session/session.py               | 547 | 63 | 88%  |
+| yosai/core/session/session_settings.py      | 13  | 1  | 92%  |
+| yosai/core/subject/identifier.py            | 60  | 3  | 95%  |
+| yosai/core/subject/subject.py               | 451 | 22 | 95%  |
+| yosai/core/utils/utils.py                   | 137 | 87 | 36%  |
+| yosai/web/exceptions.py                     | 7   | 0  | 100% |
+| yosai/web/mgt/mgt.py                        | 74  | 1  | 99%  |
+| yosai/web/registry/registry_settings.py     | 5   | 0  | 100% |
+| yosai/web/session/session.py                | 143 | 2  | 99%  |
+| yosai/web/subject/subject.py                | 162 | 4  | 98%  |
+|---------------------------------------------|-----|----|------|
 
 # GROUP COMMUNICATION
 Google Groups Mailing List:  https://groups.google.com/d/forum/yosai

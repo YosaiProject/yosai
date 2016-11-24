@@ -90,11 +90,11 @@ class PasslibVerifier(authc_abcs.CredentialsVerifier):
         return totp.generate().token
 
 
-def create_totp_factory(self, env_var=None, file_path=None, authc_settings=None):
+def create_totp_factory(env_var=None, file_path=None, authc_settings=None):
     if not authc_settings:
         yosai_settings = LazySettings(env_var=env_var, file_path=file_path)
         authc_settings = AuthenticationSettings(yosai_settings)
 
-    totp_context = authc_settings.get('totp_context')
+    totp_context = authc_settings.totp_context
 
     return TOTP.using(**totp_context)
