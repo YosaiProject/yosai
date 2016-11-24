@@ -30,7 +30,7 @@ and writing adapters for each specific type of client.
 
 - Enables Role-Based Access Control policies through permission-level and role-level
   access control
-- Two-Factor Authentication using Time-based One-Time Passwords
+- Two-Factor Authentication, featuring Time-based One-Time Passwords
 - Native Support for Caching and Serialization
 - A Complete Audit Trail of Events
 - Batteries Included:  Extensions Ready for Use
