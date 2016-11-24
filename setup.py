@@ -41,10 +41,7 @@ install_requires = [
 
 setup(
     name='yosai',
-    use_scm_version={
-        'version_scheme': 'post-release',
-        'local_scheme': 'dirty-tag'
-    },
+    version='0.3.2',
     description="Yosai is a powerful security framework with an intuitive api.",
     long_description=README,
     classifiers=[
@@ -65,9 +62,6 @@ setup(
     url='http://yosaiproject.github.io/yosai',
     license='Apache License 2.0',
     packages=find_packages('.', exclude=['ez_setup', 'test*']),
-    setup_requires=[
-        'setuptools_scm >= 1.7.0'
-    ],
     install_requires=install_requires,
     zip_safe=False,
     cmdclass={'clean': CleanCommand}
