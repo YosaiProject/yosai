@@ -881,7 +881,6 @@ class Yosai:
                        "current Subject is NOT a user (they haven't been "
                        "authenticated or remembered from a previous login). "
                        "ACCESS DENIED.")
-                print('\n\n', msg)
                 raise UnauthenticatedException(msg)
 
             return fn(*args, **kwargs)

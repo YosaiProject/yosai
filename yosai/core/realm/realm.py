@@ -23,7 +23,8 @@ import rapidjson
 from yosai.core import (
     AccountException,
     ConsumedTOTPToken,
-    DefaultPermission,
+    Permission,
+    DefaultPermissionVerifier,
     IncorrectCredentialsException,
     LockedAccountException,
     SimpleIdentifierCollection,
@@ -50,13 +51,15 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
     def __init__(self,
                  name='AccountStoreRealm_' + str(uuid4()),
                  account_store=None,
-                 authc_verifiers=None):
+                 authc_verifiers=None,
+                 permission_verifier=DefaultPermissionVerifier()):
         """
         :authc_verifiers: tuple of Verifier objects
         """
         self.name = name
         self.account_store = account_store
-        self.authc_verifiers = authc_verifiers
+        self.authc_verifiers = authc_verifiers  # a tuple
+        self.permission_verifier = permission_verifier
 
         self.cache_handler = None
         self.token_resolver = self.init_token_resolution()
@@ -288,9 +291,8 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         :type identifier:  str
         :type domain:  str
 
-        :returns: a list of relevant DefaultPermission instances (permission_s)
+        :returns: a list of relevant json blobs, each a list of permission dicts
         """
-        permission_s = []
         related_perms = []
         keys = ['*', perm_domain]
 
@@ -300,6 +302,7 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
                    .format(identifier))
             logger.debug(msg)
 
+            # permissions is a dict:  {'domain': json blob of lists of dicts}
             permissions = self.account_store.get_authz_permissions(identifier)
             if not permissions:
                 msg = "Could not get permissions from account_store for {0}".\
@@ -314,6 +317,8 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
 
             domain = 'authorization:permissions:' + self.name
 
+            # related_perms is a list of json blobs whose contents are ordered
+            # such that the order matches that in the keys parameter:
             related_perms = self.cache_handler.\
                 hmget_or_create(domain=domain,
                                 identifier=identifier,
@@ -332,18 +337,10 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
             related_perms = [queried_permissions.get('*'),
                              queried_permissions.get(perm_domain)]
 
-        for perms in related_perms:
-            # must account for None values:
-            try:
-                for parts in rapidjson.loads(perms):
-                    permission_s.append(DefaultPermission(parts=parts))
-            except (TypeError, ValueError):
-                pass
-
-        return permission_s
+        return related_perms
 
     def get_authzd_roles(self, identifier):
-        roles = [] 
+        roles = []
 
         def query_roles(self):
             msg = ("Could not obtain cached roles for [{0}].  "
@@ -393,21 +390,18 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         """
         identifier = identifiers.primary_identifier
 
-        for required_perm in permission_s:
+        for required in permission_s:
+            domain = Permission.get_domain(required)
 
-            required_permission = DefaultPermission(wildcard_string=required_perm)
-
-            # get_authzd_permissions returns a list of DefaultPermission instances,
-            # requesting from cache using '*' and permission.domain as hash keys:
-            domain = next(iter(required_permission.domain))
-            assigned_permission_s = self.get_authzd_permissions(identifier, domain)
+            # assigned is a list of json blobs:
+            assigned = self.get_authzd_permissions(identifier, domain)
 
             is_permitted = False
-            for authorized_permission in assigned_permission_s:
-                if authorized_permission.implies(required_permission):
-                    is_permitted = True
-                    break
-            yield (required_perm, is_permitted)
+            if assigned:
+                is_permitted = self.permission_verifier.\
+                    is_permitted_from_json(required, assigned)
+
+            yield (required, is_permitted)
 
     def has_role(self, identifiers, required_role_s):
         """

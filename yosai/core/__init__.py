@@ -167,9 +167,9 @@ from yosai.core.authc.credential import (
 )
 
 from yosai.core.authz.authz import (
-    DefaultPermission,
+    DefaultPermissionVerifier,
     ModularRealmAuthorizer,
-    WildcardPermission,
+    Permission,
 )
 
 

@@ -1,3 +1,10 @@
+v0.4
+--------------
+- consolidated WildcardPermission and DefaultPermission to a single, more efficient
+  Permission class
+- introduced PermissionVerifier, configurable from yaml
+
+
 v0.3
 --------------
 - removed authc.authc_account module

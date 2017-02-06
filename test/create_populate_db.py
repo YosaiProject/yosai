@@ -198,6 +198,7 @@ for r in dumb_roles:
 dumb_roles[0].permissions.extend(dumb_wildcard_perms + other_perms)
 
 thedude.roles.extend(r for r in dumb_roles)
+walter.roles.extend(r for r in dumb_roles)
 
 session.commit()
 

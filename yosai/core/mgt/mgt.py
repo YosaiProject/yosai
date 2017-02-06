@@ -605,7 +605,7 @@ class NativeSecurityManager(mgt_abcs.SecurityManager):
                    " instance does not have a [RememberMeManager] instance " +
                    "configured.  RememberMe services will not be performed " +
                    "for account_id [" + str(account_id) + "].")
-            logger.warning(msg)
+            logger.info(msg)
 
     def remember_me_failed_login(self, authc_token, authc_exc, subject):
         rmm = self.remember_me_manager

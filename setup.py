@@ -27,7 +27,6 @@ except IOError:
 
 install_requires = [
     'PyYAML',
-    'python-dateutil',
     'pytz',
     'PyPubSub',
     'argon2_cffi',
@@ -36,7 +35,6 @@ install_requires = [
     'cryptography',
     'msgpack-python',
     'cbor2',
-    'python-rapidjson',
 ]
 
 setup(

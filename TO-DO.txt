@@ -17,11 +17,7 @@ specific language governing permissions and limitations
 under the License.
 """
 
-refactoring shiro thread-based concurrency to an appropriate concurrency
-    - alternative concurrency solution in python:
-        - porting callables, runnables, etc (used in DelegatingSubject)
-
-add the "fingerprint" attribute wherever the host attribute is currently captured
+refactor ValueError to TypeError for None checks
 
 RememberMe cookies:
     - require an expiration date on the cookie itself

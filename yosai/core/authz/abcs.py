@@ -262,3 +262,14 @@ class Permission(metaclass=ABCMeta):
         :returns: bool
         """
         pass
+
+
+class PermissionVerifier(metaclass=ABCMeta):
+
+    @abstractmethod
+    def is_permitted_from_json(self, required_perm, serialized_perms):
+        pass
+
+    @abstractmethod
+    def is_permitted_from_str(self, required_perm, assigned_perms):
+        pass
