@@ -71,9 +71,9 @@ class SecurityManagerSettings:
                     authc_verifiers_cls = tuple([maybe_resolve(authc_verifiers)(self.settings)])
                 verifiers['authc_verifiers'] = authc_verifiers_cls
 
-            authz_verifiers = realm_attributes.get('authz_verifiers')
-            if authz_verifiers:
-                permission_verifier_cls = authz_verifiers.get('permission_verifier')
+            authz_verifier = realm_attributes.get('authz_verifier')
+            if authz_verifier:
+                permission_verifier_cls = maybe_resolve(authz_verifier)
                 if permission_verifier_cls:
                     verifiers['permission_verifier'] = maybe_resolve(permission_verifier_cls)()
 
