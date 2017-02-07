@@ -1,6 +1,6 @@
 import traceback
 import itertools
-import json   # stdlib json works with pypy -- if not using pypy, using rapidjson
+import rapidjson   # stdlib json works with pypy -- if not using pypy, using rapidjson
 
 import logging
 import pytz
@@ -32,7 +32,7 @@ class JSONFormatter(logging.Formatter):
         extra = self.extra_from_record(record)
         json_record = self.json_record(message, extra, record, traceback)
         self.mutate_json_record(json_record)
-        return json.dumps(json_record)
+        return rapidjson.dumps(json_record)
 
     def extra_from_record(self, record):
         """Returns `extra` dict you passed to logger.
