@@ -195,7 +195,10 @@ print('Chunked: ', sum(len(x) for x in chunked_perms))
 for r in dumb_roles:
     r.permissions.extend(chunked_perms.pop())
 
-dumb_roles[0].permissions.extend(dumb_wildcard_perms + other_perms)
+more_actions = [Action(name='action121'), Action(name='action357'), Action(name='action189')]
+more_perms = [Permission(action=x) for x in more_actions]
+
+dumb_roles[0].permissions.extend(dumb_wildcard_perms + other_perms + more_perms)
 
 thedude.roles.extend(r for r in dumb_roles)
 walter.roles.extend(r for r in dumb_roles)

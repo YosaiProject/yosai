@@ -63,7 +63,7 @@ class Permission:
 
     Instance-level Access Control
     -----------------------------
-    Another common usage of the ``Permission`` is to model instance-level
+    Another usage of ``Permission`` is to model instance-level
     Access Control Lists (ACLs). In this scenario, you use three tokens:
         * the first token is the *domain*
         * the second token is the *action*
@@ -105,7 +105,7 @@ class Permission:
     def partify(self, wildcard_perm):
         return [set(a.strip() for a in y.split(self.SUBPART_DIVIDER_TOKEN))
                 for y in [x[0] if x[0] else x[1]
-                          for x in zip_longest(
+                          for x in itertools.zip_longest(
                           wildcard_perm.split(self.PART_DIVIDER_TOKEN),
                           [self.WILDCARD_TOKEN] * 3)
                           ]
@@ -411,7 +411,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
 
     def session_clears_cache(self, items=None, topic=EVENT_TOPIC):
         try:
-            identifier = items.identifier
+            identifier = items.identifiers.primary_identifier
             for realm in self.realms:
                 realm.clear_cached_authorization_info(identifier)
         except AttributeError:

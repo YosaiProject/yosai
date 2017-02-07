@@ -791,8 +791,7 @@ class Yosai:
 
         :returns: the Subject currently accessible to the calling code
         """
-        subject_context = SubjectContext(yosai=self,
-                                                security_manager=self.security_manager)
+        subject_context = SubjectContext(yosai=self, security_manager=self.security_manager)
         subject = self.security_manager.create_subject(subject_context=subject_context)
         global_subject_context.stack.append(subject)
         return subject

@@ -19,7 +19,6 @@ under the License.
 import logging
 from uuid import uuid4
 import time
-import rapidjson
 from yosai.core import (
     AccountException,
     ConsumedTOTPToken,
@@ -123,7 +122,8 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
         """
         msg = "Clearing cached authz_info for [{0}]".format(identifier)
         logger.debug(msg)
-        self.cache_handler.delete('authorization:' + self.name, identifier)
+        key = 'authorization:permissions:' + self.name
+        self.cache_handler.delete(key, identifier)
 
     def lock_account(self, identifier):
         """
@@ -397,9 +397,9 @@ class AccountStoreRealm(realm_abcs.TOTPAuthenticatingRealm,
             assigned = self.get_authzd_permissions(identifier, domain)
 
             is_permitted = False
-            if assigned:
+            for perms_blob in assigned:
                 is_permitted = self.permission_verifier.\
-                    is_permitted_from_json(required, assigned)
+                    is_permitted_from_json(required, perms_blob)
 
             yield (required, is_permitted)
 
