@@ -1,0 +1,25 @@
+language: python
+sudo: false
+python:
+  - "3.4"
+  - "3.5"
+
+env:
+  global:
+    - YOSAI_ALCHEMYSTORE_SETTINGS=$TRAVIS_BUILD_DIR/accountstore_settings.yaml
+    - YOSAI_CACHE_SETTINGS=$TRAVIS_BUILD_DIR/cache_settings.yaml
+    - YOSAI_CORE_SETTINGS=$TRAVIS_BUILD_DIR/yosai_settings.yaml
+    - YOSAI_LOG_DIRECTORY=$TRAVIS_BUILD_DIR
+
+services:
+  - redis-server
+
+# command to install dependencies
+install:
+  - python setup.py develop
+  - pip install pytest-catchlog
+  - pip install pytest-cov
+  - pip install yosai_alchemystore
+  - pip install yosai_dpcache
+# command to run tests
+script: py.test

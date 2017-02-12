@@ -18,14 +18,20 @@ under the License.
 """
 
 from logging import config
+import os
 
-
+from yosai.core import settings
 from yosai.core.logging.formatters import (
     JSONFormatter,
 )
 
 
 def load_logconfig():
+    log_directory = "/var/log/yosai/"
+    if settings.LOG_DIRECTORY:
+        log_directory = settings.LOG_DIRECTORY
+    if os.environ.get('YOSAI_LOG_DIRECTORY'):
+        log_directory = os.environ.get('YOSAI_LOG_DIRECTORY')
 
     default_logging = {
         'version': 1,
@@ -48,7 +54,7 @@ def load_logconfig():
             'debug_file_handler': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'DEBUG',
-                'filename': '/var/log/yosai/debug.log',
+                'filename': log_directory  + 'debug.log',
                 'formatter': 'json_format',
                 'maxBytes': 10485760,
                 'backupCount': 20,
@@ -57,7 +63,7 @@ def load_logconfig():
             'info_file_handler': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'INFO',
-                'filename': '/var/log/yosai/info.log',
+                'filename': log_directory  + 'info.log',
                 'formatter': 'json_format',
                 'maxBytes': 10485760,
                 'backupCount': 20,
@@ -66,7 +72,7 @@ def load_logconfig():
             'error_file_handler': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'ERROR',
-                'filename': '/var/log/yosai/errors.log',
+                'filename': log_directory  + 'errors.log',
                 'formatter': 'json_format',
                 'maxBytes': 10485760,
                 'backupCount': 20,

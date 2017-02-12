@@ -1,0 +1,8 @@
+ENGINE_CONFIG: 
+    dialect:  sqlite
+    path: '//'
+    userid:
+    password:
+    hostname:
+    port:
+    db:

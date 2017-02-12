@@ -1,0 +1,24 @@
+---
+INIT_CONFIG:
+    backend: 'yosai_dpcache.redis'
+    region_name: 'yosai_dpcache'
+
+SERVER_CONFIG:
+  REDIS:
+    url: '127.0.0.1'
+    host: 'localhost'
+    port: 6379
+    # password:
+    # db:
+    # distributed_lock:
+    # socket_timeout:
+    # lock_timeout:
+    # lock_sleep:
+    # redis_expiration_time:
+    # connection_pool:
+
+TTL_CONFIG:
+    absolute_ttl: 3600
+    credentials_ttl: 300
+    authz_info_ttl: 1800
+    session_absolute_ttl: 1800

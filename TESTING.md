@@ -2,6 +2,7 @@ To run the tests you need to install additional requirements:
 ```bash
 pip install pytest
 pip install pytest-catchlog
+pip install pytest-cov
 ```
 
 Tests are categorized as integrated and isolated (unit).  
