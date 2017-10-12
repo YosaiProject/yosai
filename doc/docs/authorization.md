@@ -108,6 +108,7 @@ def remove_comment(self, yosai, submission):
             subject.check_role(['moderator', 'creator'], logical_operator=any)
         except UnauthorizedException:
             print('Cannot remove comment:  Access Denied.'')
+            return
 
         self.database_handler.delete(submission)
 ```
