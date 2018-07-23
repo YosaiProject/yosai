@@ -425,7 +425,7 @@ class ModularRealmAuthorizer(authz_abcs.Authorizer):
                 realm.clear_cached_authorization_info(identifier)
         except AttributeError:
             msg = ('Could not clear authc_info from cache after event. '
-                   'identifiers: ' + identifiers)
+                   'identifiers: ' + identifier)
             logger.warn(msg)
 
     def register_cache_clear_listener(self):
